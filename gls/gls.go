@@ -1,0 +1,529 @@
+// Copyright 2016 The G3N Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Encapsulates the raw OpenGL in a more friendly API and
+// keeps some state to minimize function calling
+//
+package gls
+
+import (
+	"github.com/g3n/engine/util/logger"
+	"github.com/go-gl/gl/v3.3-core/gl"
+)
+
+type GLS struct {
+	// Check openGL API errors flags
+	CheckErrors bool
+	// Current active program
+	Prog *Program
+	// Programs cache
+	Programs map[*Program]bool
+	// Statistics
+	Stats struct {
+		Vaos     int
+		Vbos     int
+		Textures int
+	}
+	// Current view port
+	viewportX      int32
+	viewportY      int32
+	viewportWidth  int32
+	viewportHeight int32
+	// Current clear color
+	clearColorR  float32
+	clearColorG  float32
+	clearColorB  float32
+	clearColorA  float32
+	lineWidth    float32
+	sideView     int
+	depthFunc    uint32
+	depthMask    int
+	capabilities map[int]int
+	// Current blending state
+	blendEquation      uint32
+	blendSrc           uint32
+	blendDst           uint32
+	blendEquationRGB   uint32
+	blendEquationAlpha uint32
+	blendSrcRGB        uint32
+	blendSrcAlpha      uint32
+	blendDstRGB        uint32
+	blendDstAlpha      uint32
+}
+
+// Internal capability enable/disabled state
+const (
+	capUndef    = 0
+	capDisabled = 1
+	capEnabled  = 2
+)
+const (
+	intUndef = -1
+	intFalse = 0
+	intTrue  = 1
+)
+
+// Polygon side view.
+const (
+	FrontSide = iota + 1
+	BackSide
+	DoubleSide
+)
+
+// Package logger
+var log = logger.New("GL", logger.Default)
+
+//
+// New creates and returns a new instance of an GLS object
+// which encapsulates the state of an OpenGL context
+//
+func New() (*GLS, error) {
+
+	gs := new(GLS)
+	gs.Reset()
+
+	// Initialize GL
+	err := gl.Init()
+	if err != nil {
+		return nil, err
+	}
+	gs.CheckErrors = true
+	return gs, nil
+}
+
+//
+// Reset resets the internal state kept of the OpenGL
+//
+func (gs *GLS) Reset() {
+
+	gs.lineWidth = 0.0
+	gs.sideView = intUndef
+	gs.depthFunc = 0
+	gs.depthMask = intUndef
+	gs.capabilities = make(map[int]int)
+	gs.Programs = make(map[*Program]bool)
+
+	//gs.blendEquation = intUndef
+	//gs.blendSrc = intUndef
+	//gs.blendDst = intUndef
+	//gs.blendEquationRGB = 0
+	//gs.blendEquationAlpha = 0
+	//gs.blendSrcRGB = intUndef
+	//gs.blendSrcAlpha = intUndef
+	//gs.blendDstRGB = intUndef
+	//gs.blendDstAlpha = intUndef
+}
+
+func (gs *GLS) SetDefaultState() {
+
+	gl.ClearColor(0, 0, 0, 1)
+	gl.ClearDepth(1)
+	gl.ClearStencil(0)
+
+	gs.Enable(gl.DEPTH_TEST)
+	gs.DepthFunc(gl.LEQUAL)
+	gl.FrontFace(gl.CCW)
+	gl.CullFace(gl.BACK)
+	gs.Enable(gl.CULL_FACE)
+	gs.Enable(gl.BLEND)
+	gs.BlendEquation(gl.FUNC_ADD)
+	gs.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+	gs.Enable(gl.VERTEX_PROGRAM_POINT_SIZE)
+	gs.Enable(gl.PROGRAM_POINT_SIZE)
+	gs.Enable(gl.MULTISAMPLE)
+
+	//gl.Viewport(gs.viewportX, gs.viewportY, gs.viewportWidth, gs.viewportHeight)
+	//gl.ClearColor(g.ClearColor.R, g.ClearColor.G, g.ClearColor.B, 1.0)
+}
+
+func (gs *GLS) ActiveTexture(texture uint32) {
+
+	gl.ActiveTexture(texture)
+	gs.checkError("ActiveTexture")
+}
+
+func (gs *GLS) BindBuffer(target int, vbo uint32) {
+
+	gl.BindBuffer(uint32(target), vbo)
+	gs.checkError("BindBuffer")
+}
+
+// BindTexture
+func (gs *GLS) BindTexture(target int, tex uint32) {
+
+	gl.BindTexture(uint32(target), tex)
+	gs.checkError("BindTexture")
+}
+
+// Bind Vertex Array Object
+func (gs *GLS) BindVertexArray(vao uint32) {
+
+	gl.BindVertexArray(vao)
+	gs.checkError("BindVertexArray")
+}
+
+// BlendEquation set the equation for blending pixels.
+func (gs *GLS) BlendEquation(mode uint32) {
+
+	if gs.blendEquation == mode {
+		return
+	}
+	gl.BlendEquation(mode)
+	gs.checkError("BlendEquation")
+	gs.blendEquation = mode
+}
+
+func (gs *GLS) BlendEquationSeparate(modeRGB uint32, modeAlpha uint32) {
+
+	if gs.blendEquationRGB == modeRGB && gs.blendEquationAlpha == modeAlpha {
+		return
+	}
+	gl.BlendEquationSeparate(uint32(modeRGB), uint32(modeAlpha))
+	gs.checkError("BlendEquationSeparate")
+	gs.blendEquationRGB = modeRGB
+	gs.blendEquationAlpha = modeAlpha
+}
+
+func (gs *GLS) BlendFunc(sfactor, dfactor uint32) {
+
+	if gs.blendSrc == sfactor && gs.blendDst == dfactor {
+		return
+	}
+	gl.BlendFunc(sfactor, dfactor)
+	gs.checkError("BlendFunc")
+	gs.blendSrc = sfactor
+	gs.blendDst = dfactor
+}
+
+func (gs *GLS) BlendFuncSeparate(srcRGB uint32, dstRGB uint32, srcAlpha uint32, dstAlpha uint32) {
+
+	if gs.blendSrcRGB == srcRGB && gs.blendDstRGB == dstRGB &&
+		gs.blendSrcAlpha == srcAlpha && gs.blendDstAlpha == dstAlpha {
+		return
+	}
+	gl.BlendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha)
+	gs.checkError("BlendFuncSeparate")
+	gs.blendSrcRGB = srcRGB
+	gs.blendDstRGB = dstRGB
+	gs.blendSrcAlpha = srcAlpha
+	gs.blendDstAlpha = dstAlpha
+}
+
+func (gs *GLS) BufferData(target uint32, size int, data interface{}, usage uint32) {
+
+	gl.BufferData(target, size, gl.Ptr(data), usage)
+	gs.checkError("BufferData")
+}
+
+func (gs *GLS) ClearColor(r, g, b, a float32) {
+
+	if gs.clearColorR == a && gs.clearColorG == g && gs.clearColorB == b && gs.clearColorA == a {
+		return
+	}
+	gl.ClearColor(r, g, b, a)
+	gs.clearColorR = r
+	gs.clearColorG = g
+	gs.clearColorB = b
+	gs.clearColorA = a
+}
+
+func (gs *GLS) Clear(mask int) {
+
+	gl.Clear(uint32(mask))
+}
+
+func (gs *GLS) DeleteBuffers(vbos ...uint32) {
+
+	gl.DeleteBuffers(int32(len(vbos)), &vbos[0])
+	gs.checkError("DeleteBuffers")
+}
+
+func (gs *GLS) DeleteTextures(tex ...uint32) {
+
+	gl.DeleteTextures(int32(len(tex)), &tex[0])
+	gs.checkError("DeleteTextures")
+	gs.Stats.Textures -= len(tex)
+}
+
+func (gs *GLS) DeleteVertexArrays(vaos ...uint32) {
+
+	gl.DeleteVertexArrays(int32(len(vaos)), &vaos[0])
+	gs.checkError("DeleteVertexArrays")
+}
+
+func (gs *GLS) DepthFunc(mode uint32) {
+
+	if gs.depthFunc == mode {
+		return
+	}
+	gl.DepthFunc(mode)
+	gs.checkError("DepthFunc")
+	gs.depthFunc = mode
+}
+
+func (gs *GLS) DepthMask(flag bool) {
+
+	if gs.depthMask == intTrue && flag {
+		return
+	}
+	if gs.depthMask == intFalse && !flag {
+		return
+	}
+	gl.DepthMask(flag)
+	gs.checkError("DepthMask")
+	if flag {
+		gs.depthMask = intTrue
+	} else {
+		gs.depthMask = intFalse
+	}
+}
+
+func (gs *GLS) DrawArrays(mode uint32, first int32, count int32) {
+
+	gl.DrawArrays(mode, first, count)
+	gs.checkError("DrawArrays")
+}
+
+func (gs *GLS) DrawElements(mode uint32, count int32, itype uint32, start uint32) {
+
+	gl.DrawElements(mode, int32(count), itype, gl.PtrOffset(int(start)))
+	gs.checkError("DrawElements")
+}
+
+func (gs *GLS) Enable(cap int) {
+
+	if gs.capabilities[cap] == capEnabled {
+		return
+	}
+	gl.Enable(uint32(cap))
+	gs.checkError("Enable")
+	gs.capabilities[cap] = capEnabled
+}
+
+func (gs *GLS) EnableVertexAttribArray(index uint32) {
+
+	gl.EnableVertexAttribArray(index)
+	gs.checkError("EnableVertexAttribArray")
+}
+
+func (gs *GLS) Disable(cap int) {
+
+	if gs.capabilities[cap] == capDisabled {
+		return
+	}
+	gl.Disable(uint32(cap))
+	gs.checkError("Disable")
+	gs.capabilities[cap] = capDisabled
+}
+
+func (gs *GLS) FrontFace(mode uint32) {
+
+	gl.FrontFace(mode)
+	gs.checkError("FrontFace")
+}
+
+// GenBuffer generates and returns one Vertex Buffer Object name
+func (gs *GLS) GenBuffer() uint32 {
+
+	var buf uint32
+	gl.GenBuffers(1, &buf)
+	gs.checkError("GenBuffers")
+	gs.Stats.Vbos++
+	return buf
+}
+
+// GenerateMipmap generates mipmaps for the specified texture object.
+func (gs *GLS) GenerateMipmap(target uint32) {
+
+	gl.GenerateMipmap(target)
+	gs.checkError("GenerateMipmap")
+}
+
+// GenTexture generates and returns one Texture Object name
+func (gs *GLS) GenTexture() uint32 {
+
+	var tex uint32
+	gl.GenTextures(1, &tex)
+	gs.checkError("GenTextures")
+	gs.Stats.Textures++
+	return tex
+}
+
+func (gs *GLS) GenVertexArray() uint32 {
+
+	var vao uint32
+	gl.GenVertexArrays(1, &vao)
+	gs.checkError("GenVertexArrays")
+	gs.Stats.Vaos++
+	return vao
+}
+
+func (gs *GLS) GetString(name uint32) string {
+
+	cstr := gl.GetString(name)
+	return gl.GoStr(cstr)
+}
+
+func (gs *GLS) GetViewport() (x, y, width, height int32) {
+
+	return gs.viewportX, gs.viewportY, gs.viewportWidth, gs.viewportHeight
+}
+
+func (gs *GLS) LineWidth(width float32) {
+
+	if gs.lineWidth == width {
+		return
+	}
+	gl.LineWidth(width)
+	gs.checkError("LineWidth")
+	gs.lineWidth = width
+}
+
+func (gs *GLS) SetDepthTest(mode bool) {
+
+	if mode {
+		gs.Enable(gl.DEPTH_TEST)
+	} else {
+		gs.Disable(gl.DEPTH_TEST)
+	}
+}
+
+func (gs *GLS) SetSideView(mode int) {
+
+	if gs.sideView == mode {
+		return
+	}
+	switch mode {
+	// Default: show only the front size
+	case FrontSide:
+		gs.Enable(gl.CULL_FACE)
+		gl.FrontFace(gl.CCW)
+	// Show only the back side
+	case BackSide:
+		gs.Enable(gl.CULL_FACE)
+		gl.FrontFace(gl.CW)
+	// Show both sides
+	case DoubleSide:
+		gs.Disable(gl.CULL_FACE)
+	default:
+		panic("SetSideView() invalid mode")
+	}
+	gs.sideView = mode
+}
+
+func (gs *GLS) TexImage2D(target uint32, level int32, iformat int32, width int32, height int32, border int32, format uint32, itype uint32, data interface{}) {
+
+	gl.TexImage2D(uint32(target), int32(level), int32(iformat), int32(width), int32(height), int32(border), uint32(format), uint32(itype), gl.Ptr(data))
+	gs.checkError("TexImage2D")
+}
+
+func (gs *GLS) TexStorage2D(target int, levels int, iformat int, width, height int) {
+
+	gl.TexStorage2D(uint32(target), int32(levels), uint32(iformat), int32(width), int32(height))
+	gs.checkError("TexStorage2D")
+}
+
+func (gs *GLS) TexParameteri(target uint32, pname uint32, param int32) {
+
+	gl.TexParameteri(target, pname, param)
+	gs.checkError("TexParameteri")
+}
+
+func (gs *GLS) PolygonMode(face, mode int) {
+
+	gl.PolygonMode(uint32(face), uint32(mode))
+	gs.checkError("PolygonMode")
+}
+
+func (gs *GLS) PolygonOffset(factor float32, units float32) {
+
+	gl.PolygonOffset(factor, units)
+	gs.checkError("PolygonOffset")
+}
+
+func (gs *GLS) Uniform1i(location int32, v0 int32) {
+
+	gl.Uniform1i(location, v0)
+	gs.checkError("Uniform1i")
+}
+
+func (gs *GLS) Uniform1f(location int32, v0 float32) {
+
+	gl.Uniform1f(location, v0)
+	gs.checkError("Uniform1f")
+}
+
+func (gs *GLS) Uniform2f(location int32, v0, v1 float32) {
+
+	gl.Uniform2f(location, v0, v1)
+	gs.checkError("Uniform2f")
+}
+
+func (gs *GLS) Uniform3f(location int32, v0, v1, v2 float32) {
+
+	gl.Uniform3f(location, v0, v1, v2)
+	gs.checkError("Uniform3f")
+}
+
+func (gs *GLS) Uniform4f(location int32, v0, v1, v2, v3 float32) {
+
+	gl.Uniform4f(location, v0, v1, v2, v3)
+	gs.checkError("Uniform4f")
+}
+
+func (gs *GLS) UniformMatrix3fv(location int32, count int32, transpose bool, v []float32) {
+
+	gl.UniformMatrix3fv(location, count, transpose, &v[0])
+	gs.checkError("UniformMatrix3fv")
+}
+
+func (gs *GLS) UniformMatrix4fv(location int32, count int32, transpose bool, v []float32) {
+
+	gl.UniformMatrix4fv(location, count, transpose, &v[0])
+	gs.checkError("UniformMatrix4fv")
+}
+
+// Use set this program as the current program.
+func (gs *GLS) UseProgram(prog *Program) {
+
+	if prog.handle == 0 {
+		panic("Invalid program")
+	}
+	gl.UseProgram(prog.handle)
+	gs.checkError("UseProgram")
+	gs.Prog = prog
+
+	// Inserts program in cache if not already there.
+	if !gs.Programs[prog] {
+		gs.Programs[prog] = true
+		log.Warn("New Program activated. Total: %d", len(gs.Programs))
+	}
+}
+
+func (gs *GLS) VertexAttribPointer(index uint32, size int32, xtype uint32, normalized bool, stride int32, offset uint32) {
+
+	gl.VertexAttribPointer(index, size, xtype, normalized, stride, gl.PtrOffset(int(offset)))
+	gs.checkError("VertexAttribPointer")
+}
+
+func (gs *GLS) Viewport(x, y, width, height int32) {
+
+	gl.Viewport(x, y, width, height)
+	gs.checkError("Viewport")
+	gs.viewportX = x
+	gs.viewportY = y
+	gs.viewportWidth = width
+	gs.viewportHeight = height
+}
+
+// checkError checks the error code of the previously called OpenGL function
+func (gls *GLS) checkError(fname string) {
+
+	if gls.CheckErrors {
+		ecode := gl.GetError()
+		if ecode != 0 {
+			log.Fatal("Error:%d calling:%s()", ecode, fname)
+		}
+	}
+}

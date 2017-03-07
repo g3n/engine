@@ -1,0 +1,280 @@
+// Copyright 2016 The G3N Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package gui
+
+import (
+	"github.com/g3n/engine/gui/assets"
+	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/window"
+)
+
+type DropDown struct {
+	Panel                        // Embedded panel
+	icon         *Label          // internal label with icon
+	list         *List           // internal list
+	styles       *DropDownStyles // pointer to dropdown styles
+	litem        *ImageLabel     // Item shown in drop box (copy of selected)
+	selItem      *ImageLabel     // selected item from list
+	overDropdown bool
+	overList     bool
+	focus        bool
+	clickOut     bool
+}
+
+// DropDown list style
+type DropDownStyle struct {
+	Border      BorderSizes
+	Paddings    BorderSizes
+	BorderColor math32.Color4
+	BgColor     math32.Color
+	FgColor     math32.Color
+}
+
+// DropDown list styles
+type DropDownStyles struct {
+	Normal   *DropDownStyle
+	Over     *DropDownStyle
+	Focus    *DropDownStyle
+	Disabled *DropDownStyle
+}
+
+// NewDropDown creates and returns a pointer to a new drop down widget with the specified width.
+func NewDropDown(width float32, item *ImageLabel) *DropDown {
+
+	dd := new(DropDown)
+	dd.styles = &StyleDefault.DropDown
+	dd.litem = item
+
+	dd.Panel.Initialize(width, 0)
+	dd.Panel.Subscribe(OnKeyDown, dd.onKeyEvent)
+	dd.Panel.Subscribe(OnMouseDown, dd.onMouse)
+	dd.Panel.Subscribe(OnCursorEnter, dd.onCursor)
+	dd.Panel.Subscribe(OnCursorLeave, dd.onCursor)
+
+	// ListItem
+	dd.Panel.Add(dd.litem)
+
+	// Create icon
+	dd.icon = NewIconLabel(" ")
+	dd.icon.SetFontSize(StyleDefault.Font.Size() * 1.3)
+	dd.icon.SetText(string(assets.ArrowDropDown))
+	dd.Panel.Add(dd.icon)
+
+	/// Create list
+	dd.list = NewVList(0, 0)
+	dd.list.bounded = false
+	dd.list.dropdown = true
+	dd.list.SetVisible(false)
+
+	dd.list.Subscribe(OnMouseDown, dd.onListMouse)
+	dd.list.Subscribe(OnMouseOut, dd.onListMouse)
+	dd.list.Subscribe(OnChange, dd.onListChangeEvent)
+	dd.Panel.Add(dd.list)
+
+	dd.update()
+	dd.recalc()
+	return dd
+}
+
+// Add add a list item at the end of the list
+func (dd *DropDown) Add(item *ImageLabel) {
+
+	dd.list.Add(item)
+}
+
+// InsertAt inserts a list item at the specified position
+// Returs true if the item was successfuly inserted
+func (dd *DropDown) InsertAt(pos int, item *ImageLabel) {
+
+	dd.list.InsertAt(pos, item)
+}
+
+// RemoveAt removes the list item from the specified position
+// Returs true if the item was successfuly removed
+func (dd *DropDown) RemoveAt(pos int) {
+
+	dd.list.RemoveAt(pos)
+}
+
+// ItemAt returns the list item at the specified position
+func (dd *DropDown) ItemAt(pos int) *ImageLabel {
+
+	return dd.list.ItemAt(pos).(*ImageLabel)
+}
+
+// Returns the currently selected item or nil if not item
+// was selected
+func (dd *DropDown) Selected() *ImageLabel {
+
+	return dd.selItem
+}
+
+// SetSelected sets the selected item
+func (dd *DropDown) SetSelected(item *ImageLabel) {
+
+	dd.list.SetSelected(item, true)
+}
+
+// SelectPos selects the item at the specified position
+func (dd *DropDown) SelectPos(pos int) {
+
+	dd.list.SelectPos(pos, true)
+}
+
+// onKeyEvent is called when key event is received when this dropdown has the key focus.
+func (dd *DropDown) onKeyEvent(evname string, ev interface{}) {
+
+	kev := ev.(*window.KeyEvent)
+	switch kev.Keycode {
+	case window.KeyF1:
+		if dd.list.Visible() {
+			dd.list.SetVisible(false)
+		}
+	default:
+		return
+	}
+}
+
+// onMouse receives subscribed mouse events over the dropdown
+func (dd *DropDown) onMouse(evname string, ev interface{}) {
+
+	if evname == OnMouseDown {
+		// If clickOut list already closed
+		if dd.clickOut {
+			dd.clickOut = false
+			return
+		}
+		dd.list.SetVisible(true)
+		dd.root.SetKeyFocus(dd.list)
+		return
+	}
+}
+
+// onCursor receives subscribed cursor events over the dropdown
+func (dd *DropDown) onCursor(evname string, ev interface{}) {
+
+	if evname == OnCursorEnter {
+		dd.overDropdown = true
+		dd.update()
+		return
+	}
+	if evname == OnCursorLeave {
+		dd.overDropdown = false
+		dd.update()
+		return
+	}
+}
+
+// onListMouseEvent receives mouse events over the list
+func (dd *DropDown) onListMouse(evname string, ev interface{}) {
+
+	mev := ev.(*window.MouseEvent)
+	// List was clicked
+	if evname == OnMouseDown {
+		// If click occurred inside the list scrollbar ignore it
+		if dd.list.vscroll != nil {
+			if dd.list.vscroll.ContainsPosition(mev.Xpos, mev.Ypos) {
+				return
+			}
+		}
+		// Otherwise, closes the list
+		dd.list.SetVisible(false)
+		//dd.copySelected()
+		dd.overList = false
+		dd.update()
+		return
+	}
+	// Hide list when clicked out
+	if evname == OnMouseOut {
+		if dd.list.Visible() {
+			dd.list.SetVisible(false)
+		}
+		// If list clickout occurred inside the dropdown, set 'clickOut' to
+		// indicate that the list was already closed
+		if dd.Panel.ContainsPosition(mev.Xpos, mev.Ypos) {
+			dd.clickOut = true
+		}
+	}
+}
+
+// onListCursor receives subscribed events over the list
+func (dd *DropDown) onListCursor(evname string, ev interface{}) {
+
+	if evname == OnCursorEnter {
+		dd.overList = true
+		dd.update()
+		return
+	}
+	if evname == OnCursorLeave {
+		dd.overList = false
+		dd.update()
+		return
+	}
+
+}
+
+// copySelected copy to the dropdown panel the selected item
+// from the list.
+func (dd *DropDown) copySelected() {
+
+	dd.selItem = dd.list.Selected()[0].(*ImageLabel)
+	dd.litem.CopyFields(dd.selItem)
+	dd.recalc()
+	dd.Dispatch(OnChange, nil)
+}
+
+// onListChangeEvent is called when an item in the list is selected
+func (dd *DropDown) onListChangeEvent(evname string, ev interface{}) {
+
+	dd.copySelected()
+}
+
+// recalc recalculates the dimensions and positions of the dropdown
+// panel, children and list
+func (dd *DropDown) recalc() {
+
+	// Dropdown icon position
+	posx := dd.Panel.ContentWidth() - dd.icon.Width()
+	dd.icon.SetPosition(posx, 0)
+
+	// List item position and width
+	ipan := dd.litem.GetPanel()
+	ipan.SetPosition(0, 0)
+	//ipan.SetWidth(posx)
+	height := ipan.Height()
+	dd.Panel.SetContentHeight(height)
+
+	// List position
+	dd.list.SetWidth(dd.Panel.Width())
+	dd.list.SetHeight(6*height + 1)
+	dd.list.SetPositionX(0)
+	dd.list.SetPositionY(dd.Panel.Height())
+}
+
+// update updates the visual state
+func (dd *DropDown) update() {
+
+	if dd.overDropdown || dd.overList {
+		dd.applyStyle(dd.styles.Over)
+		dd.list.ApplyStyle(OverStyle)
+		return
+	}
+	if dd.focus {
+		dd.applyStyle(dd.styles.Focus)
+		dd.list.ApplyStyle(FocusStyle)
+		return
+	}
+	dd.applyStyle(dd.styles.Normal)
+	dd.list.ApplyStyle(NormalStyle)
+}
+
+// applyStyle applies the specified style
+func (dd *DropDown) applyStyle(s *DropDownStyle) {
+
+	dd.SetBordersFrom(&s.Border)
+	dd.SetBordersColor4(&s.BorderColor)
+	dd.SetPaddingsFrom(&s.Paddings)
+	dd.SetColor(&s.BgColor)
+}
