@@ -140,8 +140,8 @@ func main() {
 
 # Documentation
 
-* For the engine API reference, please see https://godoc.org/github.com/g3n/engine
-* For
+For the engine API reference, please see use
+[![GoDoc](https://godoc.org/github.com/g3n/engine?status.svg)](https://godoc.org/github.com/g3n/engine)
 
 # Contributing
 
