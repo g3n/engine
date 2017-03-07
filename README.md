@@ -38,12 +38,14 @@ G3N was only tested with Go1.7.4+
 
 * Hierarchical scene graph. Any node can contain other nodes.
 * Supports perspective and orthographic cameras. The camera can be controlled
-  by the orbit control which allow zoom, rotation and pan using the mouse or keyboard.
-* Suports ambient, directional and spot lights. Many lights can be added to the scene.
+  by the orbit control which allow zooming, rotation and panning using the mouse or keyboard.
+* Suports ambient, directional, point and spot lights. Many lights can be added to the scene.
+* Generators for primitive geometries such as: lines, box, sphere, cylinder and torus.
 * Loaders for the following 3D formats: Obj and Collada
-* Basic GUI supporting the following widgets: label, image, button checkbox, radiobutton,
+* Basic GUI supporting the following widgets: label, image, button, checkbox, radiobutton,
   edit, list, dropdown, tree, folder and layouts(horizontal box, vertical box, grid, dock)
-* Spatial audio support.
+* Users' applications can use their own vertex and fragment shaders.
+* Spatial audio support supports playing sound from wave or Ogg Vorbis files.
 
 # Basic application
 
