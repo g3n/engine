@@ -140,8 +140,11 @@ func main() {
 
 # Documentation
 
-For the engine API reference, please see use
-[![GoDoc](https://godoc.org/github.com/g3n/engine?status.svg)](https://godoc.org/github.com/g3n/engine)
+For the engine API reference, please use
+[![GoDoc](https://godoc.org/github.com/g3n/engine?status.svg)](https://godoc.org/github.com/g3n/engine).
+We intend to add a user guide in the future.
+Currently the best way to learn how to use the engine is to see the source code
+of the demos from [G3ND](https://github.com/g3n/g3nd).
 
 # Contributing
 
