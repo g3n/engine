@@ -4,7 +4,6 @@ G3N is a basic (for now!) OpenGL 3D Game Engine written in Go.
 G3N was heavily inspired and based on the [three.js](https://threejs.org/) Javascript 3D library.
 If you are curious about G3N and would like to see it in action
 we recommend that you install the [G3N demo program](https://github.com/g3n/g3nd).
-The G3N API is not still completely stable.
 
 # Dependencies
 
@@ -52,6 +51,8 @@ G3N was only tested with Go1.7.4+
 The following code shows a basic G3N application 
 ([hellog3n](https://github.com/g3n/engine/tree/master/hellog3n))
 which shows a wireframed sphere rotating.
+You can install hellog3n by:
+`go get -u github.com/g3n/engine/hellog3n`
 For more complex demos please see the [G3N demo program](https://github.com/g3n/g3nd).
 
 
