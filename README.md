@@ -40,11 +40,15 @@ G3N was only tested with Go1.7.4+
   by the orbit control which allow zooming, rotation and panning using the mouse or keyboard.
 * Suports ambient, directional, point and spot lights. Many lights can be added to the scene.
 * Generators for primitive geometries such as: lines, box, sphere, cylinder and torus.
+* Geometries can support multimaterials.
+* Image textures can loaded from GIF, PNG or JPEG files and applied to materials.
 * Loaders for the following 3D formats: Obj and Collada
-* Basic GUI supporting the following widgets: label, image, button, checkbox, radiobutton,
-  edit, list, dropdown, tree, folder and layouts(horizontal box, vertical box, grid, dock)
+* Text support allowing loading freetype fonts.
+* Basic GUI supporting the widgets: label, image, button, checkbox, radiobutton,
+  edit, scrollbar, slider, splitter, list, dropdown, tree, folder, window and layout managers
+  (horizontal box, vertical box, grid, dock)
+* Spatial audio support allowing playing sound from wave or Ogg Vorbis files.
 * Users' applications can use their own vertex and fragment shaders.
-* Spatial audio support supports playing sound from wave or Ogg Vorbis files.
 
 # Basic application
 
