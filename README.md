@@ -36,10 +36,14 @@ G3N was only tested with Go1.7.4+
 
 # Features
 
-* Hierarchical scene graph 
+* Hierarchical scene graph. Any node can contain other nodes.
 * Supports perspective and orthographic cameras. The camera can be controlled
   by the orbit control which allow zoom, rotation and pan using the mouse or keyboard.
-* Suports ambient, directional and spot lights which could be added to the scene.
+* Suports ambient, directional and spot lights. Many lights can be added to the scene.
+* Loaders for the following 3D formats: Obj and Collada
+* Basic GUI supporting the following widgets: label, image, button checkbox, radiobutton,
+  edit, list, dropdown, tree, folder and layouts(horizontal box, vertical box, grid, dock)
+* Spatial audio support.
 
 # Basic application
 
@@ -146,7 +150,7 @@ func main() {
 # To Do
 
 G3N is a basic game engine. There is a lot of things to do.
-We will insert here a list of the most important missing features.
+We will soon insert here a list of the most important missing features.
 
 # Documentation
 
