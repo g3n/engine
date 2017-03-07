@@ -4,11 +4,12 @@ G3N is a basic (for now!) OpenGL 3D Game Engine written in Go.
 G3N was heavily inspired and based on the [three.js](https://threejs.org/) Javascript 3D library.
 If you are curious about G3N and would like to see it in action
 we recommend that you install the [G3N demo program](https://github.com/g3n/g3nd).
+The G3N API is not still completely stable.
 
 # Dependencies
 
 The engine needs an OpenGL driver installed in the system and
-on Unix like systems depends on some C libraries that must be installed.
+on Unix like systems depends on some C libraries that can be installed using the platform package manager.
 In all cases it is necessary to have a C compiler installed.
 
 * For Ubuntu/Debian-like Linux distributions, install `libgl1-mesa-dev` and `xorg-dev` packages.
@@ -16,16 +17,16 @@ In all cases it is necessary to have a C compiler installed.
 * Currently it was not tested on OS X. We encourage some feedback.
 * For Windows it is recommended to have MingGW vx.x.x installed.
 
-G3N supports spatial audio using external libraries, but G3N loads these libraries
+G3N supports spatial audio using external libraries but loads these libraries
 dinamically on demand, so you can install G3N and build a 3D application
 (not using audio) without installing these libraries.
 
 The following libraries are necessary for the optional audio support:
 
 * For Ubuntu/Debian-like Linux distributions, install `libopenal1` and `libvorbisfile3`
-* For CentOS/Fedora-like Linux distributions, install `libopenal1` and `libvorbisfile3`
+* For CentOS/Fedora-like Linux distributions, install `libopenal1` and `libvorbisfile3 (to be verified)`
 * Currently it was not tested on OS X. We encourage some feedback.
-* For Windows install `OpenAL32.dll` and ???
+* For Windows its is necessary to install the following dlls: OpenAL32.dll, libogg.dll, libvorbis.dll and libvorbisfile.dll.
 
 G3N was only tested with Go1.7.4+
 
@@ -35,17 +36,17 @@ G3N was only tested with Go1.7.4+
 
 # Features
 
-* Scene graph based
-* supports perspective and orthographic cameras.
-  Orbit control to move (zoom, rotate and pan) camera using the mouse or keyboard
-* supports perspective and orthographic cameras
-
+* Hierarchical scene graph 
+* Supports perspective and orthographic cameras. The camera can be controlled
+  by the orbit control which allow zoom, rotation and pan using the mouse or keyboard.
+* Suports ambient, directional and spot lights which could be added to the scene.
 
 # Basic application
 
-The following code shows a minimum G3N application 
+The following code shows a basic G3N application 
 [hellog3n](https://github.com/g3n/engine/tree/master/hellog3n)
 which shows a wireframed sphere rotating.
+For more complex demos please see the [G3N demo program](https://github.com/g3n/g3nd).
 
 
 ```Go
@@ -137,6 +138,7 @@ func main() {
 	}
 }
 ```
+# To Do
 
 # Documentation
 
