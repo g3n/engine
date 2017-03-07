@@ -31,7 +31,10 @@ G3N was only tested with Go1.7.4+
 
 # Installation
 
-`go get -u github.com/g3n/engine`
+The following command will download the engine and all its dependencies, compile and
+install the packages. Make sure your GOPATH is set.
+
+`go get -u github.com/g3n/engine/...`
 
 # Features
 
