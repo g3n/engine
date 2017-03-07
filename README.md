@@ -8,7 +8,7 @@ we recommend that you install the [G3N demo program](https://github.com/g3n/g3nd
 # Dependencies
 
 The engine needs an OpenGL driver installed in the system and
-on Unix like systems depends on some C libraries that can be installed using the platform package manager.
+on Unix like systems depends on some C libraries that can be installed using the distribution package manager.
 In all cases it is necessary to have gcc compatible C compiler installed.
 
 * For Ubuntu/Debian-like Linux distributions, install `libgl1-mesa-dev` and `xorg-dev` packages.
@@ -27,6 +27,7 @@ The following libraries are necessary for the optional audio support:
 * Currently it was not tested on OS X. We encourage some feedback.
 * For Windows its is necessary to install the following dlls:
   OpenAL32.dll, libogg.dll, libvorbis.dll and libvorbisfile.dll.
+  See [windows_audio_dlls](https://github.com/g3n/windows_audio_dlls) for how to get them.
 
 G3N was only tested with Go1.7.4+
 
