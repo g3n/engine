@@ -31,7 +31,7 @@ G3N was only tested with Go1.7.4+
 
 # Installation
 
-go get -u github.com/g3n/engine
+`go get -u github.com/g3n/engine`
 
 # Features
 
@@ -47,7 +47,7 @@ The following code shows a minimum G3N application [hellog3n](https://github.com
 which shows a wireframed sphere rotating.
 
 
-```
+```Go
 package main
 
 import (
