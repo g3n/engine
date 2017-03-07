@@ -13,7 +13,7 @@ In all cases it is necessary to have gcc compatible C compiler installed.
 
 * For Ubuntu/Debian-like Linux distributions, install `libgl1-mesa-dev` and `xorg-dev` packages.
 * For CentOS/Fedora-like Linux distributions, install `libX11-devel libXcursor-devel libXrandr-devel libXinerama-devel mesa-libGL-devel libXi-devel` packages.
-* Currently it was not tested on OS X. We encourage some feedback.
+* Currently it was not tested on OS X.
 * For Windows we tested the build using the [mingw-w64](https://mingw-w64.org) toolchain.
 
 G3N supports spatial audio using external libraries but loads these libraries
@@ -26,7 +26,7 @@ The following libraries are necessary for the optional audio support:
 * For CentOS/Fedora-like Linux distributions, install `libopenal1` and `libvorbisfile3 (to be verified)`
 * Currently it was not tested on OS X. We encourage some feedback.
 * For Windows its is necessary to install the following dlls:
-  OpenAL32.dll, libogg.dll, libvorbis.dll and libvorbisfile.dll.
+  `OpenAL32.dll, libogg.dll, libvorbis.dll` and `libvorbisfile.dll`.
   See [windows_audio_dlls](https://github.com/g3n/windows_audio_dlls) for how to get them.
 
 G3N was only tested with Go1.7.4+
