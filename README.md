@@ -44,7 +44,7 @@ G3N was only tested with Go1.7.4+
 # Basic application
 
 The following code shows a basic G3N application 
-[hellog3n](https://github.com/g3n/engine/tree/master/hellog3n)
+([hellog3n](https://github.com/g3n/engine/tree/master/hellog3n))
 which shows a wireframed sphere rotating.
 For more complex demos please see the [G3N demo program](https://github.com/g3n/g3nd).
 
@@ -144,6 +144,9 @@ func main() {
 </p>
 
 # To Do
+
+G3N is a basic game engine. There is a lot of things to do.
+We will insert here a list of the most important missing features.
 
 # Documentation
 
