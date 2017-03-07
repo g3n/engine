@@ -51,10 +51,11 @@ G3N was only tested with Go1.7.4+
 The following code shows a basic G3N application 
 ([hellog3n](https://github.com/g3n/engine/tree/master/hellog3n))
 which shows a wireframed sphere rotating.
-You can install hellog3n by:
-`go get -u github.com/g3n/engine/hellog3n`
+You can install hellog3n using:
+```
+go get -u github.com/g3n/engine/hellog3n
+```
 For more complex demos please see the [G3N demo program](https://github.com/g3n/g3nd).
-
 
 ```Go
 package main
