@@ -24,7 +24,7 @@ The following libraries are necessary for the optional audio support:
 
 * For Ubuntu/Debian-like Linux distributions, install `libopenal1` and `libvorbisfile3`
 * For CentOS/Fedora-like Linux distributions, install `libopenal1` and `libvorbisfile3 (to be verified)`
-* Currently it was not tested on OS X. We encourage some feedback.
+* Currently it was not tested on OS X.
 * For Windows its is necessary to install the following dlls:
   `OpenAL32.dll, libogg.dll, libvorbis.dll` and `libvorbisfile.dll`.
   See [windows_audio_dlls](https://github.com/g3n/windows_audio_dlls) for how to get them.
@@ -141,7 +141,7 @@ func main() {
 		// Clear buffers
 		gs.Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
 
-		// Rotates the sphere a bit around the Z axis (up)
+		// Rotates the sphere a bit around the Y axis (up)
 		sphere.AddRotationY(0.005)
 
 		// Render the scene using the specified camera
