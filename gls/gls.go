@@ -2,45 +2,37 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Encapsulates the raw OpenGL in a more friendly API and
-// keeps some state to minimize function calling
-//
+// Package gls allows access to the OpenGL functions.
 package gls
 
 import (
 	"github.com/g3n/engine/util/logger"
 	"github.com/go-gl/gl/v3.3-core/gl"
+	"math"
 )
 
+// GLS allows access to the OpenGL functions and keeps state to
+// minimize functions calling.
+// It also keeps some statistics of some OpenGL objects currently allocated
 type GLS struct {
-	// Check openGL API errors flags
-	CheckErrors bool
-	// Current active program
-	Prog *Program
-	// Programs cache
-	Programs map[*Program]bool
 	// Statistics
 	Stats struct {
-		Vaos     int
-		Vbos     int
-		Textures int
+		Vaos     int // Number of Vertex Array Objects
+		Vbos     int // Number of Vertex Buffer Objects
+		Textures int // Number of Textures
 	}
-	// Current view port
-	viewportX      int32
-	viewportY      int32
-	viewportWidth  int32
-	viewportHeight int32
-	// Current clear color
-	clearColorR  float32
-	clearColorG  float32
-	clearColorB  float32
-	clearColorA  float32
-	lineWidth    float32
-	sideView     int
-	depthFunc    uint32
-	depthMask    int
-	capabilities map[int]int
-	// Current blending state
+	Prog               *Program          // Current active program
+	programs           map[*Program]bool // Programs cache
+	checkErrors        bool              // Check openGL API errors flag
+	viewportX          int32
+	viewportY          int32
+	viewportWidth      int32
+	viewportHeight     int32
+	lineWidth          float32
+	sideView           int
+	depthFunc          uint32
+	depthMask          int
+	capabilities       map[int]int
 	blendEquation      uint32
 	blendSrc           uint32
 	blendDst           uint32
@@ -52,16 +44,15 @@ type GLS struct {
 	blendDstAlpha      uint32
 }
 
-// Internal capability enable/disabled state
 const (
 	capUndef    = 0
 	capDisabled = 1
 	capEnabled  = 2
 )
 const (
-	intUndef = -1
-	intFalse = 0
-	intTrue  = 1
+	uintUndef = math.MaxUint32
+	intFalse  = 0
+	intTrue   = 1
 )
 
 // Polygon side view.
@@ -72,12 +63,12 @@ const (
 )
 
 // Package logger
-var log = logger.New("GL", logger.Default)
+var log = logger.New("GLS", logger.Default)
 
-//
 // New creates and returns a new instance of an GLS object
 // which encapsulates the state of an OpenGL context
-//
+// This should be called only after an active OpenGL context
+// was established, such as by creating a new window.
 func New() (*GLS, error) {
 
 	gs := new(GLS)
@@ -88,31 +79,45 @@ func New() (*GLS, error) {
 	if err != nil {
 		return nil, err
 	}
-	gs.CheckErrors = true
+	gs.SetDefaultState()
+	gs.checkErrors = true
 	return gs, nil
 }
 
-//
+// SetCheckErrors enables/disables checking for errors after the
+// call of any OpenGL function. It is enabled by default but
+// could be disabled after an application is stable to improve the performance.
+func (gs *GLS) SetCheckErrors(enable bool) {
+
+	gs.checkErrors = enable
+}
+
+// ChecksErrors returns if error checking is enabled or not.
+func (gs *GLS) CheckErrors() bool {
+
+	return gs.checkErrors
+}
+
 // Reset resets the internal state kept of the OpenGL
-//
 func (gs *GLS) Reset() {
 
 	gs.lineWidth = 0.0
-	gs.sideView = intUndef
+	gs.sideView = uintUndef
 	gs.depthFunc = 0
-	gs.depthMask = intUndef
+	gs.depthMask = uintUndef
 	gs.capabilities = make(map[int]int)
-	gs.Programs = make(map[*Program]bool)
+	gs.programs = make(map[*Program]bool)
+	gs.Prog = nil
 
-	//gs.blendEquation = intUndef
-	//gs.blendSrc = intUndef
-	//gs.blendDst = intUndef
-	//gs.blendEquationRGB = 0
-	//gs.blendEquationAlpha = 0
-	//gs.blendSrcRGB = intUndef
-	//gs.blendSrcAlpha = intUndef
-	//gs.blendDstRGB = intUndef
-	//gs.blendDstAlpha = intUndef
+	gs.blendEquation = uintUndef
+	gs.blendSrc = uintUndef
+	gs.blendDst = uintUndef
+	gs.blendEquationRGB = 0
+	gs.blendEquationAlpha = 0
+	gs.blendSrcRGB = uintUndef
+	gs.blendSrcAlpha = uintUndef
+	gs.blendDstRGB = uintUndef
+	gs.blendDstAlpha = uintUndef
 }
 
 func (gs *GLS) SetDefaultState() {
@@ -120,7 +125,6 @@ func (gs *GLS) SetDefaultState() {
 	gl.ClearColor(0, 0, 0, 1)
 	gl.ClearDepth(1)
 	gl.ClearStencil(0)
-
 	gs.Enable(gl.DEPTH_TEST)
 	gs.DepthFunc(gl.LEQUAL)
 	gl.FrontFace(gl.CCW)
@@ -132,9 +136,6 @@ func (gs *GLS) SetDefaultState() {
 	gs.Enable(gl.VERTEX_PROGRAM_POINT_SIZE)
 	gs.Enable(gl.PROGRAM_POINT_SIZE)
 	gs.Enable(gl.MULTISAMPLE)
-
-	//gl.Viewport(gs.viewportX, gs.viewportY, gs.viewportWidth, gs.viewportHeight)
-	//gl.ClearColor(g.ClearColor.R, g.ClearColor.G, g.ClearColor.B, 1.0)
 }
 
 func (gs *GLS) ActiveTexture(texture uint32) {
@@ -149,21 +150,18 @@ func (gs *GLS) BindBuffer(target int, vbo uint32) {
 	gs.checkError("BindBuffer")
 }
 
-// BindTexture
 func (gs *GLS) BindTexture(target int, tex uint32) {
 
 	gl.BindTexture(uint32(target), tex)
 	gs.checkError("BindTexture")
 }
 
-// Bind Vertex Array Object
 func (gs *GLS) BindVertexArray(vao uint32) {
 
 	gl.BindVertexArray(vao)
 	gs.checkError("BindVertexArray")
 }
 
-// BlendEquation set the equation for blending pixels.
 func (gs *GLS) BlendEquation(mode uint32) {
 
 	if gs.blendEquation == mode {
@@ -218,14 +216,7 @@ func (gs *GLS) BufferData(target uint32, size int, data interface{}, usage uint3
 
 func (gs *GLS) ClearColor(r, g, b, a float32) {
 
-	if gs.clearColorR == a && gs.clearColorG == g && gs.clearColorB == b && gs.clearColorA == a {
-		return
-	}
 	gl.ClearColor(r, g, b, a)
-	gs.clearColorR = r
-	gs.clearColorG = g
-	gs.clearColorB = b
-	gs.clearColorA = a
 }
 
 func (gs *GLS) Clear(mask int) {
@@ -323,7 +314,6 @@ func (gs *GLS) FrontFace(mode uint32) {
 	gs.checkError("FrontFace")
 }
 
-// GenBuffer generates and returns one Vertex Buffer Object name
 func (gs *GLS) GenBuffer() uint32 {
 
 	var buf uint32
@@ -333,14 +323,12 @@ func (gs *GLS) GenBuffer() uint32 {
 	return buf
 }
 
-// GenerateMipmap generates mipmaps for the specified texture object.
 func (gs *GLS) GenerateMipmap(target uint32) {
 
 	gl.GenerateMipmap(target)
 	gs.checkError("GenerateMipmap")
 }
 
-// GenTexture generates and returns one Texture Object name
 func (gs *GLS) GenTexture() uint32 {
 
 	var tex uint32
@@ -495,9 +483,9 @@ func (gs *GLS) UseProgram(prog *Program) {
 	gs.Prog = prog
 
 	// Inserts program in cache if not already there.
-	if !gs.Programs[prog] {
-		gs.Programs[prog] = true
-		log.Warn("New Program activated. Total: %d", len(gs.Programs))
+	if !gs.programs[prog] {
+		gs.programs[prog] = true
+		log.Debug("New Program activated. Total: %d", len(gs.programs))
 	}
 }
 
@@ -520,7 +508,7 @@ func (gs *GLS) Viewport(x, y, width, height int32) {
 // checkError checks the error code of the previously called OpenGL function
 func (gls *GLS) checkError(fname string) {
 
-	if gls.CheckErrors {
+	if gls.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("Error:%d calling:%s()", ecode, fname)

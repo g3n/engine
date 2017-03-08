@@ -155,7 +155,7 @@ func (prog *Program) GetActiveUniformBlockSize(ubindex uint32) int32 {
 
 	var uboSize int32
 	gl.GetActiveUniformBlockiv(prog.handle, ubindex, gl.UNIFORM_BLOCK_DATA_SIZE, &uboSize)
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("GetUniformBlockSize(%v) error: %d", ubindex, ecode)
@@ -170,7 +170,7 @@ func (prog *Program) GetActiveUniformsiv(indices []uint32, pname uint32) []int32
 
 	data := make([]int32, len(indices))
 	gl.GetActiveUniformsiv(prog.handle, int32(len(indices)), &indices[0], pname, &data[0])
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("GetActiveUniformsiv() error: %d", ecode)
@@ -193,7 +193,7 @@ func (prog *Program) GetAttribLocation(name string) int32 {
 func (prog *Program) GetUniformBlockIndex(name string) uint32 {
 
 	index := gl.GetUniformBlockIndex(prog.handle, gl.Str(name+"\x00"))
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("GetUniformBlockIndex(%s) error", name)
@@ -215,7 +215,7 @@ func (prog *Program) GetUniformIndices(names []string) []uint32 {
 
 	indices := make([]uint32, len(names))
 	gl.GetUniformIndices(prog.handle, int32(len(names)), unames, &indices[0])
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("GetUniformIndices() error: %d", ecode)
@@ -236,7 +236,7 @@ func (prog *Program) GetUniformLocation(name string) int32 {
 	}
 	// Get location from GL
 	loc = gl.GetUniformLocation(prog.handle, gl.Str(name+"\x00"))
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("GetUniformLocation(%s) error: %d", name, ecode)
@@ -255,7 +255,7 @@ func (prog *Program) GetUniformLocation(name string) int32 {
 func (prog *Program) SetUniformInt(loc int32, v int) {
 
 	gl.Uniform1i(loc, int32(v))
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("SetUniformInt() error: %d", ecode)
@@ -268,7 +268,7 @@ func (prog *Program) SetUniformInt(loc int32, v int) {
 func (prog *Program) SetUniformFloat(loc int32, v float32) {
 
 	gl.Uniform1f(loc, v)
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("SetUniformFloat() error: %d", ecode)
@@ -281,7 +281,7 @@ func (prog *Program) SetUniformFloat(loc int32, v float32) {
 func (prog *Program) SetUniformVector2(loc int32, v *math32.Vector2) {
 
 	gl.Uniform2f(loc, v.X, v.Y)
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("SetUniformVector2() error: %d", ecode)
@@ -294,7 +294,7 @@ func (prog *Program) SetUniformVector2(loc int32, v *math32.Vector2) {
 func (prog *Program) SetUniformVector3(loc int32, v *math32.Vector3) {
 
 	gl.Uniform3f(loc, v.X, v.Y, v.Z)
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("SetUniformVector3() error: %d", ecode)
@@ -307,7 +307,7 @@ func (prog *Program) SetUniformVector3(loc int32, v *math32.Vector3) {
 func (prog *Program) SetUniformVector4(loc int32, v *math32.Vector4) {
 
 	gl.Uniform4f(loc, v.X, v.Y, v.Z, v.W)
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("SetUniformVector4() error: %d", ecode)
@@ -320,7 +320,7 @@ func (prog *Program) SetUniformVector4(loc int32, v *math32.Vector4) {
 func (prog *Program) SetUniformMatrix3(loc int32, m *math32.Matrix3) {
 
 	gl.UniformMatrix3fv(loc, 1, false, &m[0])
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("SetUniformMatrix3() error: %d", ecode)
@@ -333,7 +333,7 @@ func (prog *Program) SetUniformMatrix3(loc int32, m *math32.Matrix3) {
 func (prog *Program) SetUniformMatrix4(loc int32, m *math32.Matrix4) {
 
 	gl.UniformMatrix4fv(loc, 1, false, &m[0])
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("SetUniformMatrix4() error: %d", ecode)
@@ -347,7 +347,7 @@ func (prog *Program) SetUniformMatrix4(loc int32, m *math32.Matrix4) {
 func (prog *Program) SetUniformIntByName(name string, v int) {
 
 	gl.Uniform1i(prog.GetUniformLocation(name), int32(v))
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("GetUniformIntByName(%s) error: %d", name, ecode)
@@ -361,7 +361,7 @@ func (prog *Program) SetUniformIntByName(name string, v int) {
 func (prog *Program) SetUniformFloatByName(name string, v float32) {
 
 	gl.Uniform1f(prog.GetUniformLocation(name), v)
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("SetUniformFloatByName(%s) error: %d", name, ecode)
@@ -375,7 +375,7 @@ func (prog *Program) SetUniformFloatByName(name string, v float32) {
 func (prog *Program) SetUniformVector2ByName(name string, v *math32.Vector2) {
 
 	gl.Uniform2f(prog.GetUniformLocation(name), v.X, v.Y)
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("SetUniformVector2ByName(%s) error: %d", name, ecode)
@@ -389,7 +389,7 @@ func (prog *Program) SetUniformVector2ByName(name string, v *math32.Vector2) {
 func (prog *Program) SetUniformVector3ByName(name string, v *math32.Vector3) {
 
 	gl.Uniform3f(prog.GetUniformLocation(name), v.X, v.Y, v.Z)
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("SetUniformVector3ByName(%s) error: %d", name, ecode)
@@ -403,7 +403,7 @@ func (prog *Program) SetUniformVector3ByName(name string, v *math32.Vector3) {
 func (prog *Program) SetUniformVector4ByName(name string, v *math32.Vector4) {
 
 	gl.Uniform4f(prog.GetUniformLocation(name), v.X, v.Y, v.Z, v.W)
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("SetUniformVector4ByName(%s) error: %d", name, ecode)
@@ -417,7 +417,7 @@ func (prog *Program) SetUniformVector4ByName(name string, v *math32.Vector4) {
 func (prog *Program) SetUniformMatrix3ByName(name string, m *math32.Matrix3) {
 
 	gl.UniformMatrix3fv(prog.GetUniformLocation(name), 1, false, &m[0])
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("SetUniformMatrix3ByName(%s) error: %d", name, ecode)
@@ -431,7 +431,7 @@ func (prog *Program) SetUniformMatrix3ByName(name string, m *math32.Matrix3) {
 func (prog *Program) SetUniformMatrix4ByName(name string, m *math32.Matrix4) {
 
 	gl.UniformMatrix4fv(prog.GetUniformLocation(name), 1, false, &m[0])
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("SetUniformMatrix4ByName(%s) error: %d", name, ecode)
@@ -445,7 +445,7 @@ func (prog *Program) SetUniformMatrix4ByName(name string, m *math32.Matrix4) {
 func (prog *Program) SetUniformColorByName(name string, c *math32.Color) {
 
 	gl.Uniform3f(prog.GetUniformLocation(name), c.R, c.G, c.B)
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("SetUniformColorByName(%s) error: %d", name, ecode)
@@ -459,7 +459,7 @@ func (prog *Program) SetUniformColorByName(name string, c *math32.Color) {
 func (prog *Program) SetUniformColor4ByName(name string, c *math32.Color4) {
 
 	gl.Uniform4f(prog.GetUniformLocation(name), c.R, c.G, c.B, c.A)
-	if prog.gs.CheckErrors {
+	if prog.gs.CheckErrors() {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("SetUniformColor4ByName(%s) error: %d", name, ecode)
