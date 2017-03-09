@@ -389,364 +389,362 @@ static void load_efx_procs(void) {
 //
 // alc.h
 //
-
-ALC_API ALCcontext* ALC_APIENTRY alcCreateContext(ALCdevice *device, const ALCint* attrlist) {
+ALCcontext* _alcCreateContext(ALCdevice *device, const ALCint* attrlist) {
     return palcCreateContext(device, attrlist);
 }
 
-ALC_API ALCboolean  ALC_APIENTRY alcMakeContextCurrent(ALCcontext *context) {
+ALCboolean _alcMakeContextCurrent(ALCcontext *context) {
     return palcMakeContextCurrent(context);
 }
 
-ALC_API void ALC_APIENTRY alcProcessContext(ALCcontext *context) {
-        palcProcessContext(context);
+void _alcProcessContext(ALCcontext *context) {
+    palcProcessContext(context);
 }
 
-ALC_API void ALC_APIENTRY alcSuspendContext(ALCcontext *context) {
+void _alcSuspendContext(ALCcontext *context) {
     palcSuspendContext(context);
 }
 
-ALC_API void ALC_APIENTRY alcDestroyContext(ALCcontext *context) {
+void _alcDestroyContext(ALCcontext *context) {
     palcDestroyContext(context);
 }
 
-ALC_API ALCcontext* ALC_APIENTRY alcGetCurrentContext(void) {
+ALCcontext* _alcGetCurrentContext(void) {
     return palcGetCurrentContext();
 }
 
-ALC_API ALCdevice* ALC_APIENTRY alcGetContextsDevice(ALCcontext *context) {
+ALCdevice* _alcGetContextsDevice(ALCcontext *context) {
     return palcGetContextsDevice(context);
 }
 
-ALC_API ALCdevice* ALC_APIENTRY alcOpenDevice(const ALCchar *devicename) {
+ALCdevice* _alcOpenDevice(const ALCchar *devicename) {
     return palcOpenDevice(devicename);
 }
 
-ALC_API ALCboolean ALC_APIENTRY alcCloseDevice(ALCdevice *device) {
+ALCboolean _alcCloseDevice(ALCdevice *device) {
     return palcCloseDevice(device);
 }
 
-ALC_API ALCenum ALC_APIENTRY alcGetError(ALCdevice *device) {
+ALCenum _alcGetError(ALCdevice *device) {
     return palcGetError(device);
 }
 
-ALC_API ALCboolean ALC_APIENTRY alcIsExtensionPresent(ALCdevice *device, const ALCchar *extname) {
+ALCboolean _alcIsExtensionPresent(ALCdevice *device, const ALCchar *extname) {
     return palcIsExtensionPresent(device, extname);
 }
 
-ALC_API void* ALC_APIENTRY alcGetProcAddress(ALCdevice *device, const ALCchar *funcname) {
+void* _alcGetProcAddress(ALCdevice *device, const ALCchar *funcname) {
     return palcGetProcAddress(device, funcname);
 }
 
-ALC_API ALCenum ALC_APIENTRY alcGetEnumValue(ALCdevice *device, const ALCchar *enumname) {
+ALCenum _alcGetEnumValue(ALCdevice *device, const ALCchar *enumname) {
     return palcGetEnumValue(device, enumname);
 }
 
-ALC_API const ALCchar* ALC_APIENTRY alcGetString(ALCdevice *device, ALCenum param) {
+const ALCchar* _alcGetString(ALCdevice *device, ALCenum param) {
     return palcGetString(device, param);
 }
 
-ALC_API void ALC_APIENTRY alcGetIntegerv(ALCdevice *device, ALCenum param, ALCsizei size, ALCint *values) {
+void _alcGetIntegerv(ALCdevice *device, ALCenum param, ALCsizei size, ALCint *values) {
     return palcGetIntegerv(device, param, size, values);
 }
 
-ALC_API ALCdevice* ALC_APIENTRY alcCaptureOpenDevice(const ALCchar *devicename, ALCuint frequency, ALCenum format, ALCsizei buffersize) {
+ALCdevice* _alcCaptureOpenDevice(const ALCchar *devicename, ALCuint frequency, ALCenum format, ALCsizei buffersize) {
     return palcCaptureOpenDevice(devicename, frequency, format, buffersize);
 }
 
-ALC_API ALCboolean ALC_APIENTRY alcCaptureCloseDevice(ALCdevice *device) {
+ALCboolean _alcCaptureCloseDevice(ALCdevice *device) {
     return palcCaptureCloseDevice(device);
 }
 
-ALC_API void ALC_APIENTRY alcCaptureStart(ALCdevice *device) {
+void _alcCaptureStart(ALCdevice *device) {
     palcCaptureStart(device);
 }
 
-ALC_API void ALC_APIENTRY alcCaptureStop(ALCdevice *device) {
+void _alcCaptureStop(ALCdevice *device) {
     palcCaptureStop(device);
 }
 
-ALC_API void ALC_APIENTRY alcCaptureSamples(ALCdevice *device, ALCvoid *buffer, ALCsizei samples) {
+void _alcCaptureSamples(ALCdevice *device, ALCvoid *buffer, ALCsizei samples) {
     palcCaptureSamples(device, buffer, samples);
 }
 
 //
 // al.h
 //
-
-AL_API void AL_APIENTRY alEnable(ALenum capability) {
+void _alEnable(ALenum capability) {
     palEnable(capability);
 }
 
-AL_API void AL_APIENTRY alDisable(ALenum capability) {
+void _alDisable(ALenum capability) {
     palDisable(capability);
 }
 
-AL_API ALboolean AL_APIENTRY alIsEnabled(ALenum capability) {
+ALboolean _alIsEnabled(ALenum capability) {
     return palIsEnabled(capability);
 }
 
-AL_API const ALchar* AL_APIENTRY alGetString(ALenum param) {
+const ALchar* _alGetString(ALenum param) {
     return palGetString(param);
 }
 
-AL_API void AL_APIENTRY alGetBooleanv(ALenum param, ALboolean *values) {
+void _alGetBooleanv(ALenum param, ALboolean *values) {
     palGetBooleanv(param, values);
 }
 
-AL_API void AL_APIENTRY alGetIntegerv(ALenum param, ALint *values) {
+void _alGetIntegerv(ALenum param, ALint *values) {
     palGetIntegerv(param, values);
 }
 
-AL_API void AL_APIENTRY alGetFloatv(ALenum param, ALfloat *values) {
+void _alGetFloatv(ALenum param, ALfloat *values) {
     palGetFloatv(param, values);
 }
 
-AL_API void AL_APIENTRY alGetDoublev(ALenum param, ALdouble *values) {
+void _alGetDoublev(ALenum param, ALdouble *values) {
     palGetDoublev(param, values);
 }
 
-AL_API ALboolean AL_APIENTRY alGetBoolean(ALenum param) {
+ALboolean _alGetBoolean(ALenum param) {
     return palGetBoolean(param);
 }
 
-AL_API ALint AL_APIENTRY alGetInteger(ALenum param) {
+ALint _alGetInteger(ALenum param) {
     return palGetInteger(param);
 }
 
-AL_API ALfloat AL_APIENTRY alGetFloat(ALenum param) {
+ALfloat _alGetFloat(ALenum param) {
     return palGetFloat(param);
 }
 
-AL_API ALdouble AL_APIENTRY alGetDouble(ALenum param) {
+ALdouble _alGetDouble(ALenum param) {
     return palGetDouble(param);
 }
 
-AL_API ALenum AL_APIENTRY alGetError(void) {
+ALenum _alGetError(void) {
     return palGetError();
 }
 
-AL_API ALboolean AL_APIENTRY alIsExtensionPresent(const ALchar *extname) {
+ALboolean _alIsExtensionPresent(const ALchar *extname) {
     return palIsExtensionPresent(extname);
 }
 
-AL_API void* AL_APIENTRY alGetProcAddress(const ALchar *fname) {
+void* _alGetProcAddress(const ALchar *fname) {
     return palGetProcAddress(fname);
 }
 
-AL_API ALenum AL_APIENTRY alGetEnumValue(const ALchar *ename) {
+ALenum _alGetEnumValue(const ALchar *ename) {
     return palGetEnumValue(ename);
 }
 
-AL_API void AL_APIENTRY alListenerf(ALenum param, ALfloat value) {
+void _alListenerf(ALenum param, ALfloat value) {
     palListenerf(param, value);
 }
 
-AL_API void AL_APIENTRY alListener3f(ALenum param, ALfloat value1, ALfloat value2, ALfloat value3) {
+void _alListener3f(ALenum param, ALfloat value1, ALfloat value2, ALfloat value3) {
     palListener3f(param, value1, value2, value3);
 }
 
-AL_API void AL_APIENTRY alListenerfv(ALenum param, const ALfloat *values) {
+void _alListenerfv(ALenum param, const ALfloat *values) {
     palListenerfv(param, values);
 }
 
-AL_API void AL_APIENTRY alListeneri(ALenum param, ALint value) {
+void _alListeneri(ALenum param, ALint value) {
     palListeneri(param, value);
 }
 
-AL_API void AL_APIENTRY alListener3i(ALenum param, ALint value1, ALint value2, ALint value3) {
+void _alListener3i(ALenum param, ALint value1, ALint value2, ALint value3) {
     palListener3i(param, value1, value2, value3);
 }
 
-AL_API void AL_APIENTRY alListeneriv(ALenum param, const ALint *values) {
+void _alListeneriv(ALenum param, const ALint *values) {
     palListeneriv(param, values);
 }
 
-AL_API void AL_APIENTRY alGetListenerf(ALenum param, ALfloat *value) {
+void  _alGetListenerf(ALenum param, ALfloat *value) {
     palGetListenerf(param, value);
 }
 
-AL_API void AL_APIENTRY alGetListener3f(ALenum param, ALfloat *value1, ALfloat *value2, ALfloat *value3) {
+void  _alGetListener3f(ALenum param, ALfloat *value1, ALfloat *value2, ALfloat *value3) {
     palGetListener3f(param, value1, value2, value3);
 }
 
-AL_API void AL_APIENTRY alGetListenerfv(ALenum param, ALfloat *values) {
+void _alGetListenerfv(ALenum param, ALfloat *values) {
     palGetListenerfv(param, values);
 }
 
-AL_API void AL_APIENTRY alGetListeneri(ALenum param, ALint *value) {
+void _alGetListeneri(ALenum param, ALint *value) {
     palGetListeneri(param, value);
 }
 
-AL_API void AL_APIENTRY alGetListener3i(ALenum param, ALint *value1, ALint *value2, ALint *value3) {
+void _alGetListener3i(ALenum param, ALint *value1, ALint *value2, ALint *value3) {
     palGetListener3i(param, value1, value2, value3);
 }
 
-AL_API void AL_APIENTRY alGetListeneriv(ALenum param, ALint *values) {
+void _alGetListeneriv(ALenum param, ALint *values) {
     palGetListeneriv(param, values);
 }
 
-AL_API void AL_APIENTRY alGenSources(ALsizei n, ALuint *sources) {
+void _alGenSources(ALsizei n, ALuint *sources) {
     palGenSources(n, sources);
 }
 
-AL_API void AL_APIENTRY alDeleteSources(ALsizei n, const ALuint *sources) {
+void  _alDeleteSources(ALsizei n, const ALuint *sources) {
     palDeleteSources(n, sources);
 }
 
-AL_API ALboolean AL_APIENTRY alIsSource(ALuint source) {
+ALboolean _alIsSource(ALuint source) {
     return palIsSource(source);
 }
 
-AL_API void AL_APIENTRY alSourcef(ALuint source, ALenum param, ALfloat value) {
+void _alSourcef(ALuint source, ALenum param, ALfloat value) {
     palSourcef(source, param, value);
 }
 
-AL_API void AL_APIENTRY alSource3f(ALuint source, ALenum param, ALfloat value1, ALfloat value2, ALfloat value3) {
+void _alSource3f(ALuint source, ALenum param, ALfloat value1, ALfloat value2, ALfloat value3) {
     palSource3f(source, param, value1, value2, value3);
 }
 
-AL_API void AL_APIENTRY alSourcefv(ALuint source, ALenum param, const ALfloat *values) {
+void _alSourcefv(ALuint source, ALenum param, const ALfloat *values) {
     palSourcefv(source, param, values);
 }
 
-AL_API void AL_APIENTRY alSourcei(ALuint source, ALenum param, ALint value) {
+void _alSourcei(ALuint source, ALenum param, ALint value) {
     palSourcei(source, param, value);
 }
 
-AL_API void AL_APIENTRY alSource3i(ALuint source, ALenum param, ALint value1, ALint value2, ALint value3) {
+void _alSource3i(ALuint source, ALenum param, ALint value1, ALint value2, ALint value3) {
     palSource3i(source, param, value1, value2, value3);
 }
 
-AL_API void AL_APIENTRY alSourceiv(ALuint source, ALenum param, const ALint *values) {
+void _alSourceiv(ALuint source, ALenum param, const ALint *values) {
     palSourceiv(source, param, values);
 }
 
-AL_API void AL_APIENTRY alGetSourcef(ALuint source, ALenum param, ALfloat *value) {
+void _alGetSourcef(ALuint source, ALenum param, ALfloat *value) {
     palGetSourcef(source, param, value);
 }
 
-AL_API void AL_APIENTRY alGetSource3f(ALuint source, ALenum param, ALfloat *value1, ALfloat *value2, ALfloat *value3) {
+void _alGetSource3f(ALuint source, ALenum param, ALfloat *value1, ALfloat *value2, ALfloat *value3) {
     palGetSource3f(source, param, value1, value2, value3);
 }
 
-AL_API void AL_APIENTRY alGetSourcefv(ALuint source, ALenum param, ALfloat *values) {
+void _alGetSourcefv(ALuint source, ALenum param, ALfloat *values) {
     palGetSourcefv(source, param, values);
 }
 
-AL_API void AL_APIENTRY alGetSourcei(ALuint source, ALenum param, ALint *value) {
+void _alGetSourcei(ALuint source, ALenum param, ALint *value) {
     palGetSourcei(source, param, value);
 }
 
-AL_API void AL_APIENTRY alGetSource3i(ALuint source, ALenum param, ALint *value1, ALint *value2, ALint *value3) {
+void _alGetSource3i(ALuint source, ALenum param, ALint *value1, ALint *value2, ALint *value3) {
     palGetSource3i(source, param, value1, value2, value3);
 }
 
-AL_API void AL_APIENTRY alGetSourceiv(ALuint source, ALenum param, ALint *values) {
+void _alGetSourceiv(ALuint source, ALenum param, ALint *values) {
     palGetSourceiv(source, param, values);
 }
 
-AL_API void AL_APIENTRY alSourcePlayv(ALsizei n, const ALuint *sources) {
+void _alSourcePlayv(ALsizei n, const ALuint *sources) {
     palSourcePlayv(n, sources);
 }
 
-AL_API void AL_APIENTRY alSourceStopv(ALsizei n, const ALuint *sources) {
+void _alSourceStopv(ALsizei n, const ALuint *sources) {
     palSourceStopv(n, sources);
 }
 
-AL_API void AL_APIENTRY alSourceRewindv(ALsizei n, const ALuint *sources) {
+void _alSourceRewindv(ALsizei n, const ALuint *sources) {
     palSourceRewindv(n, sources);
 }
 
-AL_API void AL_APIENTRY alSourcePausev(ALsizei n, const ALuint *sources) {
+void _alSourcePausev(ALsizei n, const ALuint *sources) {
     palSourcePausev(n, sources);
 }
 
-AL_API void AL_APIENTRY alSourcePlay(ALuint source) {
+void _alSourcePlay(ALuint source) {
     palSourcePlay(source);
 }
 
-AL_API void AL_APIENTRY alSourceStop(ALuint source) {
+void _alSourceStop(ALuint source) {
     palSourceStop(source);
 }
 
-AL_API void AL_APIENTRY alSourceRewind(ALuint source) {
+void _alSourceRewind(ALuint source) {
     palSourceRewind(source);
 }
 
-AL_API void AL_APIENTRY alSourcePause(ALuint source) {
+void _alSourcePause(ALuint source) {
     palSourcePause(source);
 }
 
-AL_API void AL_APIENTRY alSourceQueueBuffers(ALuint source, ALsizei nb, const ALuint *buffers) {
+void _alSourceQueueBuffers(ALuint source, ALsizei nb, const ALuint *buffers) {
     palSourceQueueBuffers(source, nb, buffers);
 }
 
-AL_API void AL_APIENTRY alSourceUnqueueBuffers(ALuint source, ALsizei nb, ALuint *buffers) {
+void _alSourceUnqueueBuffers(ALuint source, ALsizei nb, ALuint *buffers) {
     palSourceUnqueueBuffers(source, nb, buffers);
 }
 
-AL_API void AL_APIENTRY alGenBuffers(ALsizei n, ALuint *buffers) {
+void _alGenBuffers(ALsizei n, ALuint *buffers) {
     palGenBuffers(n, buffers);
 }
 
-AL_API void AL_APIENTRY alDeleteBuffers(ALsizei n, const ALuint *buffers) {
+void _alDeleteBuffers(ALsizei n, const ALuint *buffers) {
     palDeleteBuffers(n, buffers);
 }
 
-AL_API ALboolean AL_APIENTRY alIsBuffer(ALuint buffer) {
+ALboolean _alIsBuffer(ALuint buffer) {
     return palIsBuffer(buffer);
 }
 
-AL_API void AL_APIENTRY alBufferData(ALuint buffer, ALenum format, const ALvoid *data, ALsizei size, ALsizei freq) {
+void _alBufferData(ALuint buffer, ALenum format, const ALvoid *data, ALsizei size, ALsizei freq) {
     palBufferData(buffer, format, data, size, freq);
 }
 
-AL_API void AL_APIENTRY alBufferf(ALuint buffer, ALenum param, ALfloat value) {
+void _alBufferf(ALuint buffer, ALenum param, ALfloat value) {
     palBufferf(buffer, param, value);
 }
 
-AL_API void AL_APIENTRY alBuffer3f(ALuint buffer, ALenum param, ALfloat value1, ALfloat value2, ALfloat value3) {
+void _alBuffer3f(ALuint buffer, ALenum param, ALfloat value1, ALfloat value2, ALfloat value3) {
     palBuffer3f(buffer, param, value1, value2, value3);
 }
 
-AL_API void AL_APIENTRY alBufferfv(ALuint buffer, ALenum param, const ALfloat *values) {
+void _alBufferfv(ALuint buffer, ALenum param, const ALfloat *values) {
     palBufferfv(buffer, param, values);
 }
 
-AL_API void AL_APIENTRY alBufferi(ALuint buffer, ALenum param, ALint value) {
+void _alBufferi(ALuint buffer, ALenum param, ALint value) {
     palBufferi(buffer, param, value);
 }
 
-AL_API void AL_APIENTRY alBuffer3i(ALuint buffer, ALenum param, ALint value1, ALint value2, ALint value3) {
+void _alBuffer3i(ALuint buffer, ALenum param, ALint value1, ALint value2, ALint value3) {
     palBuffer3i(buffer, param, value1, value2, value3);
 }
 
-AL_API void AL_APIENTRY alBufferiv(ALuint buffer, ALenum param, const ALint *values) {
+void _alBufferiv(ALuint buffer, ALenum param, const ALint *values) {
     palBufferiv(buffer, param, values);
 }
 
-AL_API void AL_APIENTRY alGetBufferf(ALuint buffer, ALenum param, ALfloat *value) {
+void _alGetBufferf(ALuint buffer, ALenum param, ALfloat *value) {
     palGetBufferf(buffer, param, value);
 }
 
-AL_API void AL_APIENTRY alGetBuffer3f(ALuint buffer, ALenum param, ALfloat *value1, ALfloat *value2, ALfloat *value3) {
+void _alGetBuffer3f(ALuint buffer, ALenum param, ALfloat *value1, ALfloat *value2, ALfloat *value3) {
     palGetBuffer3f(buffer, param, value1, value2, value3);
 }
 
-AL_API void AL_APIENTRY alGetBufferfv(ALuint buffer, ALenum param, ALfloat *values) {
+void _alGetBufferfv(ALuint buffer, ALenum param, ALfloat *values) {
     palGetBufferfv(buffer, param, values);
 }
 
-AL_API void AL_APIENTRY alGetBufferi(ALuint buffer, ALenum param, ALint *value) {
+void _alGetBufferi(ALuint buffer, ALenum param, ALint *value) {
     palGetBufferi(buffer, param, value);
 }
 
-AL_API void AL_APIENTRY alGetBuffer3i(ALuint buffer, ALenum param, ALint *value1, ALint *value2, ALint *value3) {
+void _alGetBuffer3i(ALuint buffer, ALenum param, ALint *value1, ALint *value2, ALint *value3) {
     palGetBuffer3i(buffer, param, value1, value2, value3);
 }
 
-AL_API void AL_APIENTRY alGetBufferiv(ALuint buffer, ALenum param, ALint *values) {
+void _alGetBufferiv(ALuint buffer, ALenum param, ALint *values) {
     palGetBufferiv(buffer, param, values);
 }
 
