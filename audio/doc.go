@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 /*
- Package audio ...
+ Package audio contains sub packages for binding to external audio libraries and
+ implements a spatial audio player.
 */
 package audio
