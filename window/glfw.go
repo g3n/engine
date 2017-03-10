@@ -47,8 +47,17 @@ func newGLFW(width, height int, title string, full bool) (*GLFW, error) {
 		initialized = true
 	}
 
+	// If full screen requested, get primary monitor and screen size
+	var mon *glfw.Monitor
+	if full {
+		mon = glfw.GetPrimaryMonitor()
+		vmode := mon.GetVideoMode()
+		width = vmode.Width
+		height = vmode.Height
+	}
+
 	// Creates window and sets it as the current context
-	win, err := glfw.CreateWindow(width, height, title, nil, nil)
+	win, err := glfw.CreateWindow(width, height, title, mon, nil)
 	if err != nil {
 		return nil, err
 	}

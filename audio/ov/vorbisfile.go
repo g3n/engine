@@ -100,7 +100,6 @@ func Fopen(path string) (*File, error) {
 	// Allocates pointer to vorbisfile structure using C memory
 	var f File
 	f.vf = (*C.OggVorbis_File)(C.malloc(C.size_t(unsafe.Sizeof(C.OggVorbis_File{}))))
-	fmt.Printf("SIZE:%v\n", unsafe.Sizeof(C.OggVorbis_File{}))
 
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))

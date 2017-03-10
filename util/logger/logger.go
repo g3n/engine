@@ -85,7 +85,7 @@ func New(name string, parent *Logger) *Logger {
 	self.name = name
 	self.prefix = name
 	self.enabled = true
-	self.level = DEBUG
+	self.level = ERROR
 	self.format = FDATE | FTIME | FMICROS
 	self.outputs = make([]LoggerWriter, 0)
 	self.children = make([]*Logger, 0)

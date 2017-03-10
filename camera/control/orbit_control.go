@@ -5,7 +5,6 @@
 package control
 
 import (
-	"fmt"
 	"github.com/g3n/engine/camera"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/util/logger"
@@ -331,8 +330,6 @@ func (oc *OrbitControl) updateZoom() {
 
 // Called when mouse button event is received
 func (oc *OrbitControl) onMouse(evname string, ev interface{}) {
-
-	fmt.Printf("mev:%+v\n", ev.(*window.MouseEvent))
 
 	// If control not enabled ignore event
 	if !oc.Enabled {
