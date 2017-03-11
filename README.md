@@ -9,7 +9,7 @@ we recommend that you install the [G3N demo program](https://github.com/g3n/g3nd
 
 The engine needs an OpenGL driver installed in the system and
 on Unix like systems depends on some C libraries that can be installed using the distribution package manager.
-In all cases it is necessary to have gcc compatible C compiler installed.
+In all cases it is necessary to have a gcc compatible C compiler installed.
 
 * For Ubuntu/Debian-like Linux distributions, install `libgl1-mesa-dev` and `xorg-dev` packages.
 * For CentOS/Fedora-like Linux distributions, install `libX11-devel libXcursor-devel libXrandr-devel libXinerama-devel mesa-libGL-devel libXi-devel` packages.
@@ -17,7 +17,7 @@ In all cases it is necessary to have gcc compatible C compiler installed.
 * For Windows we tested the build using the [mingw-w64](https://mingw-w64.org) toolchain.
 
 G3N supports spatial audio using external libraries but loads these libraries
-dinamically on demand, so you can install G3N and build a 3D application
+dynamically on demand, so you can install G3N and build a 3D application
 (not using audio) without installing these libraries.
 
 The following libraries are necessary for the optional audio support:
