@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package graphic ...
 package graphic
 
 import (
@@ -73,10 +72,10 @@ func (gr *Graphic) GetGeometry() *geometry.Geometry {
 // Dispose overrides the embedded Node Dispose method
 func (gr *Graphic) Dispose() {
 
-    gr.igeom.Dispose()
-    for i := 0; i < len(gr.materials); i++ {
-        gr.materials[i].imat.Dispose()
-    }
+	gr.igeom.Dispose()
+	for i := 0; i < len(gr.materials); i++ {
+		gr.materials[i].imat.Dispose()
+	}
 }
 
 // SetRenderable satisfies the IGraphic interface and
@@ -166,7 +165,7 @@ func (grmat *GraphicMaterial) Render(gs *gls.GLS, rinfo *core.RenderInfo) {
 		if count == 0 {
 			count = indices.Size()
 		}
-		gs.DrawElements(gr.mode, int32(count), gls.UNSIGNED_INT, 4 * uint32(grmat.start))
+		gs.DrawElements(gr.mode, int32(count), gls.UNSIGNED_INT, 4*uint32(grmat.start))
 		// Non indexed geometry
 	} else {
 		if count == 0 {
