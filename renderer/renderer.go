@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package renderer...
 package renderer
 
 import (
@@ -139,14 +138,14 @@ func (r *Renderer) Render(iscene core.INode, icam camera.ICamera) error {
 	r.specs.PointLightsMax = len(r.pointLights)
 	r.specs.SpotLightsMax = len(r.spotLights)
 
-    // Render other nodes (audio players, etc)
-    for i := 0; i < len(r.others); i++ {
+	// Render other nodes (audio players, etc)
+	for i := 0; i < len(r.others); i++ {
 		inode := r.others[i]
 		if !inode.GetNode().Visible() {
 			continue
 		}
-        r.others[i].Render(r.gs)
-    }
+		r.others[i].Render(r.gs)
+	}
 
 	// For each *GraphicMaterial
 	for _, grmat := range r.grmats {
