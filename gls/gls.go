@@ -508,7 +508,7 @@ func (gs *GLS) Viewport(x, y, width, height int32) {
 // checkError checks the error code of the previously called OpenGL function
 func (gls *GLS) checkError(fname string) {
 
-	if gls.CheckErrors() {
+	if gls.checkErrors {
 		ecode := gl.GetError()
 		if ecode != 0 {
 			log.Fatal("Error:%d calling:%s()", ecode, fname)
