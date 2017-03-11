@@ -167,9 +167,10 @@ We will soon insert here a list of the most important missing features.
 
 For the engine API reference, please use
 [![GoDoc](https://godoc.org/github.com/g3n/engine?status.svg)](https://godoc.org/github.com/g3n/engine).
-We intend to add a user guide in the future.
 Currently the best way to learn how to use the engine is to see the source code
 of the demos from [G3ND](https://github.com/g3n/g3nd).
+We intend to write in the future documentation topics
+to build a user guide in the [wiki](https://github.com/g3n/engine/wiki).
 
 # Contributing
 
