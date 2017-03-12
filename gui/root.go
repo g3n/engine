@@ -239,6 +239,7 @@ func (r *Root) sendPanels(x, y float32, evname string, ev interface{}) {
 		if found {
 			r.targets = append(r.targets, ipan)
 		} else {
+			ipan.SetRoot(r)
 			// If OnCursorEnter previously sent, sends OnCursorLeave with a nil event
 			if pan.cursorEnter {
 				pan.Dispatch(OnCursorLeave, nil)
