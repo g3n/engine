@@ -139,9 +139,7 @@ func (s *Splitter) onMouse(evname string, ev interface{}) {
 // onCursor receives subscribed cursor events over the spacer panel
 func (s *Splitter) onCursor(evname string, ev interface{}) {
 
-	cev := ev.(*window.CursorEvent)
-	switch evname {
-	case OnCursorEnter:
+	if evname == OnCursorEnter {
 		if s.horiz {
 			s.root.SetCursorHResize()
 		} else {
@@ -149,14 +147,15 @@ func (s *Splitter) onCursor(evname string, ev interface{}) {
 		}
 		s.mouseOver = true
 		s.update()
-	case OnCursorLeave:
+	} else if evname == OnCursorLeave {
 		s.root.SetCursorNormal()
 		s.mouseOver = false
 		s.update()
-	case OnCursor:
+	} else if evname == OnCursor {
 		if !s.pressed {
 			return
 		}
+		cev := ev.(*window.CursorEvent)
 		var delta float32
 		if s.horiz {
 			delta = cev.Xpos - s.posLast
@@ -167,8 +166,6 @@ func (s *Splitter) onCursor(evname string, ev interface{}) {
 		}
 		s.setSplit(s.pos + delta)
 		s.recalc()
-	default:
-		return
 	}
 	s.root.StopPropagation(Stop3D)
 }

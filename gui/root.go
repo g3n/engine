@@ -239,9 +239,9 @@ func (r *Root) sendPanels(x, y float32, evname string, ev interface{}) {
 		if found {
 			r.targets = append(r.targets, ipan)
 		} else {
-			// If OnCursorEnter previously sent, sends OnMouseLeave
+			// If OnCursorEnter previously sent, sends OnCursorLeave with a nil event
 			if pan.cursorEnter {
-				pan.Dispatch(OnCursorLeave, ev)
+				pan.Dispatch(OnCursorLeave, nil)
 				pan.cursorEnter = false
 			}
 			// If mouse button was pressed, sends event informing mouse down outside of the panel

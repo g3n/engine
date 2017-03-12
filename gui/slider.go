@@ -189,9 +189,7 @@ func (s *Slider) onMouse(evname string, ev interface{}) {
 // onCursor process subscribed cursor events
 func (s *Slider) onCursor(evname string, ev interface{}) {
 
-	cev := ev.(*window.CursorEvent)
-	switch evname {
-	case OnCursorEnter:
+	if evname == OnCursorEnter {
 		s.root.SetScrollFocus(s)
 		if s.horiz {
 			s.root.SetCursorHResize()
@@ -200,15 +198,16 @@ func (s *Slider) onCursor(evname string, ev interface{}) {
 		}
 		s.cursorOver = true
 		s.update()
-	case OnCursorLeave:
+	} else if evname == OnCursorLeave {
 		s.root.SetScrollFocus(nil)
 		s.root.SetCursorNormal()
 		s.cursorOver = false
 		s.update()
-	case OnCursor:
+	} else if evname == OnCursor {
 		if !s.pressed {
 			return
 		}
+		cev := ev.(*window.CursorEvent)
 		var pos float32
 		if s.horiz {
 			delta := cev.Xpos - s.posLast
@@ -222,8 +221,6 @@ func (s *Slider) onCursor(evname string, ev interface{}) {
 			pos = newpos / s.Panel.ContentHeight()
 		}
 		s.setPos(pos)
-	default:
-		return
 	}
 	s.root.StopPropagation(Stop3D)
 }
