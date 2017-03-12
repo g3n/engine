@@ -69,7 +69,7 @@ type Material struct {
 
 // Local constants
 const (
-	blanks   = "\n\t\t\n"
+	blanks   = "\r\n\t "
 	invINDEX = math.MaxUint32
 	objType  = "obj"
 	mtlType  = "mtl"
