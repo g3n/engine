@@ -151,9 +151,8 @@ func (w *Window) onMouse(evname string, ev interface{}) {
 // onCursor process subscribed cursor events over the window
 func (w *Window) onCursor(evname string, ev interface{}) {
 
-	cev := ev.(*window.CursorEvent)
-	switch evname {
-	case OnCursor:
+	if evname == OnCursor {
+		cev := ev.(*window.CursorEvent)
 		if !w.drag {
 			cx := cev.Xpos - w.pospix.X
 			cy := cev.Ypos - w.pospix.Y
@@ -215,12 +214,10 @@ func (w *Window) onCursor(evname string, ev interface{}) {
 				w.SetWidth(newWidth)
 			}
 		}
-	case OnCursorLeave:
+	} else if evname == OnCursorLeave {
 		if !w.drag {
 			w.root.SetCursorNormal()
 		}
-	default:
-		return
 	}
 	w.root.StopPropagation(StopAll)
 }
@@ -318,17 +315,16 @@ func (wt *WindowTitle) onMouse(evname string, ev interface{}) {
 // onCursor process subscribed cursor events over the window title
 func (wt *WindowTitle) onCursor(evname string, ev interface{}) {
 
-	cev := ev.(*window.CursorEvent)
-	switch evname {
-	case OnCursorEnter:
+	if evname == OnCursorEnter {
 		wt.win.root.SetCursorDrag()
-	case OnCursorLeave:
+	} else if evname == OnCursorLeave {
 		wt.win.root.SetCursorNormal()
-	case OnCursor:
+	} else if evname == OnCursor {
 		if !wt.pressed {
 			wt.win.root.StopPropagation(Stop3D)
 			return
 		}
+		cev := ev.(*window.CursorEvent)
 		dy := wt.mouseY - cev.Ypos
 		dx := wt.mouseX - cev.Xpos
 		wt.mouseX = cev.Xpos
@@ -336,8 +332,6 @@ func (wt *WindowTitle) onCursor(evname string, ev interface{}) {
 		posX := wt.win.Position().X - dx
 		posY := wt.win.Position().Y - dy
 		wt.win.SetPosition(posX, posY)
-	default:
-		return
 	}
 	wt.win.root.StopPropagation(Stop3D)
 }
