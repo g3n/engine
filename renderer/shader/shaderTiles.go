@@ -87,11 +87,11 @@ void main() {
     vec4 texCombined = texture(MatTexture[0], FragTexcoord * repeat + offset);
 
 //    vec4 texCombined = vec4(1);
-//    {{ if .MatTexturesMax }}
+//    {{ range loop .MatTexturesMax }}
 //    // Combine all texture colors and opacity
-//    for (int i = 0; i < {{.MatTexturesMax}}; i++) {
-//        vec4 texcolor = texture(MatTexture[i], FragTexcoord * MatTexRepeat[i] + MatTexOffset[i]);
-//        if (i == 0) {
+//    {
+//        vec4 texcolor = texture(MatTexture[{{.}}], FragTexcoord * MatTexRepeat[{{.}}] + MatTexOffset[{{.}}]);
+//        if ({{.}} == 0) {
 //            texCombined = texcolor;
 //        } else {
 //            texCombined = mix(texCombined, texcolor, texcolor.a);
