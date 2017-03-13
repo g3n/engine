@@ -10,10 +10,10 @@ func init() {
 
 const chunkAttributes = `
 // Vertex attributes
-in layout(location = 0) vec3  VertexPosition;
-in layout(location = 1) vec3  VertexNormal;
-in layout(location = 2) vec3  VertexColor;
-in layout(location = 3) vec2  VertexTexcoord;
-in layout(location = 4) float VertexDistance;
-in layout(location = 5) vec4  VertexTexoffsets;
+layout(location = 0) in vec3  VertexPosition;
+layout(location = 1) in vec3  VertexNormal;
+layout(location = 2) in vec3  VertexColor;
+layout(location = 3) in vec2  VertexTexcoord;
+layout(location = 4) in float VertexDistance;
+layout(location = 5) in vec4  VertexTexoffsets;
 `
