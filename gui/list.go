@@ -84,6 +84,7 @@ func (li *List) initialize(vert bool, width, height float32) {
 	li.Scroller.adjustItem = true
 	li.Scroller.Subscribe(OnMouseDown, li.onMouseEvent)
 	li.Scroller.Subscribe(OnKeyDown, li.onKeyEvent)
+	li.Scroller.Subscribe(OnKeyRepeat, li.onKeyEvent)
 
 	if vert {
 		li.keyNext = window.KeyDown

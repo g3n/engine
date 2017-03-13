@@ -84,6 +84,10 @@ func newGLFW(width, height int, title string, full bool) (*GLFW, error) {
 			w.Dispatch(OnKeyUp, &w.keyEv)
 			return
 		}
+		if action == glfw.Repeat {
+			w.Dispatch(OnKeyRepeat, &w.keyEv)
+			return
+		}
 	})
 
 	// Set char callback

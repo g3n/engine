@@ -241,6 +241,7 @@ const (
 	OnWindowSize = "win.OnWindowSize"
 	OnKeyUp      = "win.OnKeyUp"
 	OnKeyDown    = "win.OnKeyDown"
+	OnKeyRepeat  = "win.OnKeyRepeat"
 	OnChar       = "win.OnChar"
 	OnCursor     = "win.OnCursor"
 	OnMouseUp    = "win.OnMouseUp"

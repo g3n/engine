@@ -8,7 +8,7 @@ import (
 	"github.com/g3n/engine/window"
 )
 
-// Events
+// Consolidate window events plus GUI events
 const (
 	OnClick       = "gui.OnClick"       // Widget clicked by mouse or key
 	OnCursor      = window.OnCursor     // cursor (mouse) position events
@@ -19,6 +19,7 @@ const (
 	OnMouseOut    = "gui.OnMouseOut"    // mouse button pressed outside of the panel
 	OnKeyDown     = window.OnKeyDown    // key is pressed
 	OnKeyUp       = window.OnKeyUp      // key is released
+	OnKeyRepeat   = window.OnKeyRepeat  // key is pressed again by automatic repeat
 	OnChar        = window.OnChar       // key is pressed and has unicode
 	OnResize      = "gui.OnResize"      // panel size changed (no parameters)
 	OnEnable      = "gui.OnEnable"      // panel enabled state changed (no parameters)

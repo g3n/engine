@@ -51,6 +51,7 @@ func (r *Root) SubscribeWin() {
 
 	r.win.Subscribe(window.OnKeyUp, r.onKey)
 	r.win.Subscribe(window.OnKeyDown, r.onKey)
+	r.win.Subscribe(window.OnKeyRepeat, r.onKey)
 	r.win.Subscribe(window.OnChar, r.onChar)
 	r.win.Subscribe(window.OnMouseUp, r.onMouse)
 	r.win.Subscribe(window.OnMouseDown, r.onMouse)

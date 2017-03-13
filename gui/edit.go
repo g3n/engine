@@ -63,6 +63,7 @@ func NewEdit(width int, placeHolder string) *Edit {
 
 	ed.Label.initialize("", StyleDefault.Font)
 	ed.Label.Subscribe(OnKeyDown, ed.onKey)
+	ed.Label.Subscribe(OnKeyRepeat, ed.onKey)
 	ed.Label.Subscribe(OnChar, ed.onChar)
 	ed.Label.Subscribe(OnMouseDown, ed.onMouse)
 	ed.Label.Subscribe(OnCursorEnter, ed.onCursor)
