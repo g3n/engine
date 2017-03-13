@@ -56,10 +56,10 @@ void main() {
 
     // Combine all texture colors and opacity
     vec4 texCombined = vec4(1);
-    {{if .MatTexturesMax }}
-    for (int i = 0; i < {{.MatTexturesMax}}; i++) {
-        vec4 texcolor = texture(MatTexture[i], FragTexcoord * MatTexRepeat[i] + MatTexOffset[i]);
-        if (i == 0) {
+    {{ range loop .MatTexturesMax }}
+    {
+        vec4 texcolor = texture(MatTexture[{{.}}], FragTexcoord * MatTexRepeat[{{.}}] + MatTexOffset[{{.}}]);
+        if ({{.}} == 0) {
             texCombined = texcolor;
         } else {
             texCombined = mix(texCombined, texcolor, texcolor.a);

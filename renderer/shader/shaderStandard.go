@@ -87,14 +87,14 @@ out vec4 FragColor;
 void main() {
 
     vec4 texCombined = vec4(1);
-    {{if .MatTexturesMax }}
+
     // Combine all texture colors and opacity
-    for (int i = 0; i < {{.MatTexturesMax}}; i++) {
-        if (MatTexVisible[i] == false) {
-            continue;
-        }
-        vec4 texcolor = texture(MatTexture[i], FragTexcoord * MatTexRepeat[i] + MatTexOffset[i]);
-        if (i == 0) {
+    // Use Go templates to unroll the loop because non-const
+    // array indexes are not allowed until GLSL 4.00.
+    {{ range loop .MatTexturesMax }}
+    if (MatTexVisible[{{.}}] == true) {
+        vec4 texcolor = texture(MatTexture[{{.}}], FragTexcoord * MatTexRepeat[{{.}}] + MatTexOffset[{{.}}]);
+        if ({{.}} == 0) {
             texCombined = texcolor;
         } else {
             texCombined = mix(texCombined, texcolor, texcolor.a);

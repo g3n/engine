@@ -70,11 +70,11 @@ void main() {
 
     // Combine all texture colors and opacity
     vec4 texCombined = vec4(1);
-    {{if .MatTexturesMax}}
-    for (int i = 0; i < {{.MatTexturesMax}}; i++) {
+    {{ range loop .MatTexturesMax }}
+    {
         vec2 pt = gl_PointCoord - vec2(0.5);
-        vec4 texcolor = texture(MatTexture[i], (Rotation * pt + vec2(0.5)) * MatTexRepeat[i] + MatTexOffset[i]);
-        if (i == 0) {
+        vec4 texcolor = texture(MatTexture[{{.}}], (Rotation * pt + vec2(0.5)) * MatTexRepeat[{{.}}] + MatTexOffset[{{.}}]);
+        if ({{.}} == 0) {
             texCombined = texcolor;
         } else {
             texCombined = mix(texCombined, texcolor, texcolor.a);

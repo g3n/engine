@@ -7,10 +7,11 @@ package renderer
 import (
 	"bytes"
 	"fmt"
+	"text/template"
+
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/renderer/shader"
-	"text/template"
 )
 
 type ShaderSpecs struct {
@@ -83,6 +84,15 @@ func (sm *Shaman) AddChunk(name, source string) error {
 	if err != nil {
 		return err
 	}
+	tmpl.Funcs(template.FuncMap{
+		"loop": func(n int) []int {
+			s := make([]int, n)
+			for i := range s {
+				s[i] = i
+			}
+			return s
+		},
+	})
 	return nil
 }
 
@@ -99,6 +109,7 @@ func (sm *Shaman) AddShader(name, source string) error {
 	if err != nil {
 		return err
 	}
+
 	sm.shaders[name] = tmpl
 	return nil
 }
