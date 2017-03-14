@@ -47,12 +47,25 @@ func NewShaman(gs *gls.GLS) *Shaman {
 	return sm
 }
 
+// Init initializes the shander manager
 func (sm *Shaman) Init(gs *gls.GLS) {
 
 	sm.gs = gs
 	sm.chunks = template.New("_chunks_")
 	sm.shaders = make(map[string]*template.Template)
 	sm.proginfo = make(map[string]shader.ProgramInfo)
+
+	// Add "loop" function to chunks template
+	// "loop" is used inside the shader templates to unroll loops.
+	sm.chunks.Funcs(template.FuncMap{
+		"loop": func(n int) []int {
+			s := make([]int, n)
+			for i := range s {
+				s[i] = i
+			}
+			return s
+		},
+	})
 }
 
 func (sm *Shaman) AddDefaultShaders() error {
@@ -84,15 +97,6 @@ func (sm *Shaman) AddChunk(name, source string) error {
 	if err != nil {
 		return err
 	}
-	tmpl.Funcs(template.FuncMap{
-		"loop": func(n int) []int {
-			s := make([]int, n)
-			for i := range s {
-				s[i] = i
-			}
-			return s
-		},
-	})
 	return nil
 }
 
