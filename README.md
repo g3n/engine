@@ -60,9 +60,9 @@ install the packages. Make sure your GOPATH is set correctly.
 # Basic application
 
 The following code shows a basic G3N application 
-([hellog3n](https://github.com/g3n/engine/tree/master/hellog3n))
+([hellog3n](https://github.com/g3n/demos/tree/master/hellog3n))
 which shows a wireframed sphere rotating.
-You can install hellog3n using: `go get -u github.com/g3n/engine/hellog3n`
+You can install hellog3n using: `go get -u github.com/g3n/demos/hellog3n`
 
 For more complex demos please see the [G3N demo program](https://github.com/g3n/g3nd).
 
@@ -102,6 +102,11 @@ func main() {
 		panic(err)
 	}
 
+	// Sets the OpenGL viewport size the same as the window size
+	// This normally should be updated if the window is resized.
+	width, height := win.GetSize()
+	gs.Viewport(0, 0, int32(width), int32(height))
+
 	// Creates scene for 3D objects
 	scene := core.NewNode()
 
@@ -110,12 +115,12 @@ func main() {
 	scene.Add(ambLight)
 
 	// Adds a perspective camera to the scene
-	width, height := win.GetSize()
+	// The camera aspect ratio should be updated if the window is resized.
 	aspect := float32(width) / float32(height)
 	camera := camera.NewPerspective(65, aspect, 0.01, 1000)
 	camera.SetPosition(0, 0, 5)
 
-	// Add an axis helper
+	// Add an axis helper to the scene
 	axis := graphic.NewAxisHelper(2)
 	scene.Add(axis)
 
@@ -143,7 +148,7 @@ func main() {
 		// Clear buffers
 		gs.Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
 
-		// Rotates the sphere a bit around the Y axis (up)
+		// Rotates the sphere a bit around the Z axis (up)
 		sphere.AddRotationY(0.005)
 
 		// Render the scene using the specified camera
@@ -157,7 +162,7 @@ func main() {
 ```
 
 <p align="center">
-  <img style="float: right;" src="hellog3n/screenshot.png" alt="hellog3n Screenshot"/>
+  <img style="float: right;" src="../demos/hellog3n/screenshot.png" alt="hellog3n Screenshot"/>
 </p>
 
 # To Do
