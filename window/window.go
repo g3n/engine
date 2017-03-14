@@ -4,7 +4,7 @@
 
 /*
  Package window abstracts the OpenGL Window manager
- Currently only glfw is supported
+ Currently only "glfw" is supported
 */
 package window
 
@@ -18,6 +18,7 @@ import (
 //
 type IWindow interface {
 	core.IDispatcher
+	GetScreenResolution(interface{}) (width, height int)
 	SwapInterval(interval int)
 	MakeContextCurrent()
 	GetSize() (width int, height int)
@@ -304,6 +305,10 @@ type ScrollEvent struct {
 	Yoffset float32
 }
 
+// New creates and returns a new window of the specified type, width, height and title.
+// If full is true, the window will be opened in full screen and the width and height
+// parameters will be ignored.
+// Currently only "glfw" type is supported.
 func New(wtype string, width, height int, title string, full bool) (IWindow, error) {
 
 	if wtype != "glfw" {

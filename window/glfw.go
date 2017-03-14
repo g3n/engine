@@ -166,6 +166,15 @@ func newGLFW(width, height int, title string, full bool) (*GLFW, error) {
 	return w, nil
 }
 
+// GetScreenResolution returns the resolution of the primary screen in pixels.
+// The parameter is currently ignored
+func (w *GLFW) GetScreenResolution(p interface{}) (width, height int) {
+
+	mon := glfw.GetPrimaryMonitor()
+	vmode := mon.GetVideoMode()
+	return vmode.Width, vmode.Height
+}
+
 func (w *GLFW) SwapInterval(interval int) {
 
 	glfw.SwapInterval(interval)
