@@ -162,7 +162,7 @@ func main() {
 ```
 
 <p align="center">
-  <img style="float: right;" src="https://github.com/g3n/demos/hellog3n/screenshot.png" alt="hellog3n Screenshot"/>
+  <img style="float: right;" src="https://github.com/g3n/demos/blob/master/hellog3n/screenshot.png" alt="hellog3n Screenshot"/>
 </p>
 
 # To Do
