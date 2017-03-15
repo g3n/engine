@@ -245,6 +245,12 @@ func (w *GLFW) SwapBuffers() {
 	w.win.SwapBuffers()
 }
 
+func (w *GLFW) Destroy() {
+
+	w.win.Destroy()
+	w.win = nil
+}
+
 func (w *GLFW) PollEvents() {
 
 	glfw.PollEvents()

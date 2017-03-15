@@ -30,6 +30,7 @@ type IWindow interface {
 	SwapBuffers()
 	ShouldClose() bool
 	SetShouldClose(bool)
+	Destroy()
 	PollEvents()
 	GetTime() float64
 }
