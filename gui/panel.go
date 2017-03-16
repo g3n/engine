@@ -768,6 +768,25 @@ func (p *Panel) resize(width, height float32) {
 // RenderSetup is called by the Engine before drawing the object
 func (p *Panel) RenderSetup(gl *gls.GLS, rinfo *core.RenderInfo) {
 
+	// Sets model matrix
+	var mm math32.Matrix4
+	p.SetModelMatrix(gl, &mm)
+	p.modelMatrixUni.SetMatrix4(&mm)
+
+	// Transfer uniforms
+	p.borderColorUni.Transfer(gl)
+	p.paddingColorUni.Transfer(gl)
+	p.contentColorUni.Transfer(gl)
+	p.boundsUni.Transfer(gl)
+	p.borderUni.Transfer(gl)
+	p.paddingUni.Transfer(gl)
+	p.contentUni.Transfer(gl)
+	p.modelMatrixUni.Transfer(gl)
+}
+
+// SetModelMatrix calculates and sets the specified matrix with the model matrix for this panel
+func (p *Panel) SetModelMatrix(gl *gls.GLS, mm *math32.Matrix4) {
+
 	// Get the current viewport width and height
 	_, _, width, height := gl.GetViewport()
 	fwidth := float32(width)
@@ -787,20 +806,8 @@ func (p *Panel) RenderSetup(gl *gls.GLS, rinfo *core.RenderInfo) {
 	posclip.Z = p.pospix.Z
 	//log.Debug("panel posclip:%v\n", posclip)
 
-	// Sets the model matrix uniform
-	var mm math32.Matrix4
+	// Calculates the model matrix
 	var quat math32.Quaternion
 	quat.SetIdentity()
 	mm.Compose(&posclip, &quat, &scale)
-	p.modelMatrixUni.SetMatrix4(&mm)
-
-	// Transfer uniforms
-	p.borderColorUni.Transfer(gl)
-	p.paddingColorUni.Transfer(gl)
-	p.contentColorUni.Transfer(gl)
-	p.boundsUni.Transfer(gl)
-	p.borderUni.Transfer(gl)
-	p.paddingUni.Transfer(gl)
-	p.contentUni.Transfer(gl)
-	p.modelMatrixUni.Transfer(gl)
 }
