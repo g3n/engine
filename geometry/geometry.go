@@ -151,7 +151,7 @@ func (g *Geometry) VBO(attrib string) *gls.VBO {
 
 // Returns the number of items in the first VBO
 // (The number of items should be same for all VBOs)
-// An item is a complete vertex position (3 floats) for example
+// An item is a complete group of attributes in the VBO buffer
 func (g *Geometry) Items() int {
 
 	if len(g.vbos) == 0 {
@@ -161,8 +161,7 @@ func (g *Geometry) Items() int {
 	if vbo.AttribCount() == 0 {
 		return 0
 	}
-	attrib := vbo.AttribAt(0)
-	return vbo.Buffer().Size() / int(attrib.ItemSize)
+	return vbo.Buffer().Bytes() / vbo.Stride()
 }
 
 // BoundingBox computes the bounding box of the geometry if necessary

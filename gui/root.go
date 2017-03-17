@@ -253,8 +253,10 @@ func (r *Root) sendPanels(x, y float32, evname string, ev interface{}) {
 		}
 		// Checks if any of its children also contains the position
 		for _, child := range pan.Children() {
-			ipan := child.(IPanel)
-			checkPanel(ipan)
+			ipan, ok := child.(IPanel)
+			if ok {
+				checkPanel(ipan)
+			}
 		}
 	}
 
