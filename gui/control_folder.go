@@ -76,6 +76,19 @@ func (f *ControlFolder) AddGroup(text string) *ControlFolderGroup {
 	return g
 }
 
+// SetStyles set the folder styles overriding the default style
+func (f *ControlFolder) SetStyles(fs *ControlFolderStyles) {
+
+	f.styles = fs
+
+	f.Folder.styles = fs.Folder
+	f.tree.styles = fs.Tree
+
+	f.tree.update()
+	f.Folder.update()
+
+}
+
 func (g *ControlFolderGroup) AddCheckBox(text string) *CheckRadio {
 
 	cb := NewCheckBox(text)

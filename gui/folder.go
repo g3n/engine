@@ -159,7 +159,9 @@ func (f *Folder) applyStyle(s *FolderStyle) {
 		icode = 1
 	}
 	f.icon.SetText(string(s.Icons[icode]))
+	f.icon.SetColor(&s.FgColor)
 	f.label.SetBgColor(&s.BgColor)
+	f.label.SetColor(&s.FgColor)
 }
 
 func (f *Folder) recalc() {

@@ -21,27 +21,29 @@ type GLS struct {
 		Vbos     int // Number of Vertex Buffer Objects
 		Textures int // Number of Textures
 	}
-	Prog               *Program          // Current active program
-	programs           map[*Program]bool // Programs cache
-	checkErrors        bool              // Check openGL API errors flag
-	viewportX          int32
-	viewportY          int32
-	viewportWidth      int32
-	viewportHeight     int32
-	lineWidth          float32
-	sideView           int
-	depthFunc          uint32
-	depthMask          int
-	capabilities       map[int]int
-	blendEquation      uint32
-	blendSrc           uint32
-	blendDst           uint32
-	blendEquationRGB   uint32
-	blendEquationAlpha uint32
-	blendSrcRGB        uint32
-	blendSrcAlpha      uint32
-	blendDstRGB        uint32
-	blendDstAlpha      uint32
+	Prog                *Program          // Current active program
+	programs            map[*Program]bool // Programs cache
+	checkErrors         bool              // Check openGL API errors flag
+	viewportX           int32
+	viewportY           int32
+	viewportWidth       int32
+	viewportHeight      int32
+	lineWidth           float32
+	sideView            int
+	depthFunc           uint32
+	depthMask           int
+	capabilities        map[int]int
+	blendEquation       uint32
+	blendSrc            uint32
+	blendDst            uint32
+	blendEquationRGB    uint32
+	blendEquationAlpha  uint32
+	blendSrcRGB         uint32
+	blendSrcAlpha       uint32
+	blendDstRGB         uint32
+	blendDstAlpha       uint32
+	polygonOffsetFactor float32
+	polygonOffsetUnits  float32
 }
 
 const (
@@ -118,6 +120,8 @@ func (gs *GLS) Reset() {
 	gs.blendSrcAlpha = uintUndef
 	gs.blendDstRGB = uintUndef
 	gs.blendDstAlpha = uintUndef
+	gs.polygonOffsetFactor = -1
+	gs.polygonOffsetUnits = -1
 }
 
 func (gs *GLS) SetDefaultState() {
@@ -136,6 +140,9 @@ func (gs *GLS) SetDefaultState() {
 	gs.Enable(gl.VERTEX_PROGRAM_POINT_SIZE)
 	gs.Enable(gl.PROGRAM_POINT_SIZE)
 	gs.Enable(gl.MULTISAMPLE)
+	gs.Enable(gl.POLYGON_OFFSET_FILL)
+	gs.Enable(gl.POLYGON_OFFSET_LINE)
+	gs.Enable(gl.POLYGON_OFFSET_POINT)
 }
 
 func (gs *GLS) ActiveTexture(texture uint32) {
@@ -426,8 +433,13 @@ func (gs *GLS) PolygonMode(face, mode int) {
 
 func (gs *GLS) PolygonOffset(factor float32, units float32) {
 
+	if gs.polygonOffsetFactor == factor && gs.polygonOffsetUnits == units {
+		return
+	}
 	gl.PolygonOffset(factor, units)
 	gs.checkError("PolygonOffset")
+	gs.polygonOffsetFactor = factor
+	gs.polygonOffsetUnits = units
 }
 
 func (gs *GLS) Uniform1i(location int32, v0 int32) {
