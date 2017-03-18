@@ -145,20 +145,6 @@ func (f *Folder) update() {
 	f.applyStyle(f.styles.Normal)
 }
 
-func (f *Folder) SetBgColor(c *math32.Color) {
-
-	f.styles.Normal.BgColor = *c
-	f.styles.Over.BgColor = *c
-	f.update()
-}
-
-func (f *Folder) SetFgColor(c *math32.Color) {
-
-	f.styles.Normal.FgColor = *c
-	f.styles.Over.FgColor = *c
-	f.update()
-}
-
 // applyStyle applies the specified style
 func (f *Folder) applyStyle(s *FolderStyle) {
 
