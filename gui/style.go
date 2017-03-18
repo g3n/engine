@@ -86,9 +86,9 @@ func setupDefaultStyle() {
 	borderColor := math32.Color4{0, 0, 0, 1}
 	borderColorDis := math32.Color4{0.4, 0.4, 0.4, 1}
 
-	bgColor := math32.Color{0.8, 0.8, 0.8}
+	bgColor := math32.Color{0.85, 0.85, 0.85}
 	bgColor4 := math32.Color4{0, 0, 0, 0}
-	bgColorOver := math32.Color{1, 1, 1}
+	bgColorOver := math32.Color{0.9, 0.9, 0.9}
 	bgColor4Over := math32.Color4{1, 1, 1, 0.5}
 	bgColor4Sel := math32.Color4{0.6, 0.6, 0.6, 1}
 

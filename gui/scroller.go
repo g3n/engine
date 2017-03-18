@@ -12,7 +12,7 @@ import (
 
 type Scroller struct {
 	Panel                          // Embedded panel
-	vert           bool            // vertical/horizonta scroller flag
+	vert           bool            // vertical/horizontal scroller flag
 	styles         *ScrollerStyles // pointer to current styles
 	items          []IPanel        // list of panels in the scroller
 	hscroll        *ScrollBar      // horizontal scroll bar
