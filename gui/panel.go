@@ -201,38 +201,49 @@ func (p *Panel) SetTopChild(ipan IPanel) {
 	}
 }
 
-// SetTopChild sets this panel to be on the foreground
+// SetForeground sets this panel to be on the foreground
 // in relation to all its siblings.
 func (p *Panel) SetForeground() {
 
-	// internal function to calculate the total minimum Z
-	// for a panel hierarchy
-	var getTopZ func(*Panel) float32
-	getTopZ = func(pan *Panel) float32 {
-		topZ := pan.Position().Z
-		for _, iobj := range pan.Children() {
-			child := iobj.(IPanel).GetPanel()
-			cz := pan.Position().Z + getTopZ(child)
-			if cz < topZ {
-				topZ = cz
-			}
-		}
-		return topZ
+	log.Error("setForeground: %6.5f", p.Position().Z)
+	par := p.Parent().(IPanel).GetPanel()
+	for _, c := range par.Children() {
+		log.Error("setForeground child z: %6.5f", c.(IPanel).GetPanel().Position().Z)
+
+	}
+	found := par.Remove(p)
+	if found {
+		par.Add(p)
 	}
 
-	// Find the child of this panel with the minimum Z
-	par := p.Parent().(IPanel).GetPanel()
-	topZ := float32(10)
-	for _, iobj := range par.Children() {
-		child := iobj.(IPanel).GetPanel()
-		cz := getTopZ(child)
-		if cz < topZ {
-			topZ = cz
-		}
-	}
-	if p.Position().Z > topZ {
-		p.SetPositionZ(topZ + deltaZ)
-	}
+	//	// internal function to calculate the total minimum Z
+	//	// for a panel hierarchy
+	//	var getTopZ func(*Panel) float32
+	//	getTopZ = func(pan *Panel) float32 {
+	//		topZ := pan.Position().Z
+	//		for _, iobj := range pan.Children() {
+	//			child := iobj.(IPanel).GetPanel()
+	//			cz := pan.Position().Z + getTopZ(child)
+	//			if cz < topZ {
+	//				topZ = cz
+	//			}
+	//		}
+	//		return topZ
+	//	}
+	//
+	//	// Find the child of this panel with the minimum Z
+	//	par := p.Parent().(IPanel).GetPanel()
+	//	topZ := float32(10)
+	//	for _, iobj := range par.Children() {
+	//		child := iobj.(IPanel).GetPanel()
+	//		cz := getTopZ(child)
+	//		if cz < topZ {
+	//			topZ = cz
+	//		}
+	//	}
+	//	if p.Position().Z > topZ {
+	//		p.SetPositionZ(topZ + deltaZ)
+	//	}
 }
 
 // SetPosition sets this panel absolute position in pixel coordinates
