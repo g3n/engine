@@ -68,12 +68,11 @@ type Panel struct {
 	xmax            float32             // maximum absolute x this panel can use
 	ymin            float32             // minimum absolute y this panel can use
 	ymax            float32             // maximum absolute y this panel can use
-	//nextChildZ      float32             // Z coordinate of next child added
-	bounded      bool        // panel is bounded by its parent
-	enabled      bool        // enable event processing
-	cursorEnter  bool        // mouse enter dispatched
-	layout       ILayout     // current layout for children
-	layoutParams interface{} // current layout parameters used by container panel
+	bounded         bool                // panel is bounded by its parent
+	enabled         bool                // enable event processing
+	cursorEnter     bool                // mouse enter dispatched
+	layout          ILayout             // current layout for children
+	layoutParams    interface{}         // current layout parameters used by container panel
 }
 
 const (
@@ -94,7 +93,6 @@ func (p *Panel) Initialize(width, height float32) {
 
 	p.width = width
 	p.height = height
-	//p.nextChildZ = deltaZ
 
 	// Builds array with vertex positions and texture coordinates
 	positions := math32.NewArrayF32(0, 20)
@@ -199,51 +197,6 @@ func (p *Panel) SetTopChild(ipan IPanel) {
 	if found {
 		p.Add(ipan)
 	}
-}
-
-// SetForeground sets this panel to be on the foreground
-// in relation to all its siblings.
-func (p *Panel) SetForeground() {
-
-	log.Error("setForeground: %6.5f", p.Position().Z)
-	par := p.Parent().(IPanel).GetPanel()
-	for _, c := range par.Children() {
-		log.Error("setForeground child z: %6.5f", c.(IPanel).GetPanel().Position().Z)
-
-	}
-	found := par.Remove(p)
-	if found {
-		par.Add(p)
-	}
-
-	//	// internal function to calculate the total minimum Z
-	//	// for a panel hierarchy
-	//	var getTopZ func(*Panel) float32
-	//	getTopZ = func(pan *Panel) float32 {
-	//		topZ := pan.Position().Z
-	//		for _, iobj := range pan.Children() {
-	//			child := iobj.(IPanel).GetPanel()
-	//			cz := pan.Position().Z + getTopZ(child)
-	//			if cz < topZ {
-	//				topZ = cz
-	//			}
-	//		}
-	//		return topZ
-	//	}
-	//
-	//	// Find the child of this panel with the minimum Z
-	//	par := p.Parent().(IPanel).GetPanel()
-	//	topZ := float32(10)
-	//	for _, iobj := range par.Children() {
-	//		child := iobj.(IPanel).GetPanel()
-	//		cz := getTopZ(child)
-	//		if cz < topZ {
-	//			topZ = cz
-	//		}
-	//	}
-	//	if p.Position().Z > topZ {
-	//		p.SetPositionZ(topZ + deltaZ)
-	//	}
 }
 
 // SetPosition sets this panel absolute position in pixel coordinates
@@ -491,8 +444,6 @@ func (p *Panel) Add(ichild IPanel) *Panel {
 	p.Node.Add(ichild)
 	node := ichild.GetPanel()
 	node.SetParent(p)
-	//node.SetPositionZ(p.nextChildZ)
-	//p.nextChildZ += deltaZ
 	if p.layout != nil {
 		p.layout.Recalc(p)
 	}
@@ -525,7 +476,7 @@ func (p *Panel) SetBounded(bounded bool) {
 	p.bounded = bounded
 }
 
-// UpdateMatrixWorld overrides the standard Node version which is called by
+// UpdateMatrixWorld overrides the standard core.Node version which is called by
 // the Engine before rendering the frame.
 func (p *Panel) UpdateMatrixWorld() {
 
@@ -550,9 +501,11 @@ func (p *Panel) UpdateMatrixWorld() {
 	}
 }
 
+// setZ calculates the Z coordinate for each panel recursively
+// starting at the specified receiver with the specified Z coordinate.
+// The Z coordinate is set so panels added later are closed to the screen
 func (p *Panel) setZ(nextZ float32) float32 {
 
-	//log.Error("setZ:%6.5f", nextZ)
 	p.SetPositionZ(nextZ)
 	nextZ += deltaZ
 	for _, ichild := range p.Children() {
@@ -573,26 +526,6 @@ func (p *Panel) ContainsPosition(x, y float32) bool {
 	}
 	return true
 }
-
-//// CancelMouse is called by the gui root panel when a mouse event occurs
-//// outside of this panel and the panel is not in focus.
-//func (p *Panel) CancelMouse(m *Root, mev MouseEvent) {
-//
-//	if !p.enabled {
-//		return
-//	}
-//	// If OnMouseEnter previously sent, sends OnMouseLeave
-//	if p.cursorEnter {
-//		p.DispatchPrefix(OnMouseLeave, &mev)
-//		p.cursorEnter = false
-//	}
-//	// If click outside the panel
-//	if mev.Button >= 0 {
-//		if mev.Action == core.ActionPress {
-//			p.DispatchPrefix(OnMouseButtonOut, &mev)
-//		}
-//	}
-//}
 
 // SetEnabled sets the panel enabled state
 // A disabled panel do not process key or mouse events.
@@ -833,7 +766,7 @@ func (p *Panel) SetModelMatrix(gl *gls.GLS, mm *math32.Matrix4) {
 	var posclip math32.Vector3
 	posclip.X = (p.pospix.X - fwidth/2) / (fwidth / 2)
 	posclip.Y = -(p.pospix.Y - fheight/2) / (fheight / 2)
-	posclip.Z = p.pospix.Z
+	posclip.Z = p.Position().Z
 	//log.Debug("panel posclip:%v\n", posclip)
 
 	// Calculates the model matrix

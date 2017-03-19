@@ -363,7 +363,6 @@ func (li *List) highlighted() (pos int) {
 // onMouseEvent receives subscribed mouse events for the list
 func (li *List) onMouseEvent(evname string, ev interface{}) {
 
-	log.Error("List Z:%6.5f", li.Position().Z)
 	li.root.SetKeyFocus(li)
 }
 

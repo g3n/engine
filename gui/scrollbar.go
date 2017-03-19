@@ -167,7 +167,6 @@ func (sb *ScrollBar) update() {
 // onMouse receives subscribed mouse events for the scroll bar button
 func (button *scrollBarButton) onMouse(evname string, ev interface{}) {
 
-	log.Error("scrollbutton Z:%6.5f", button.Position().Z)
 	e := ev.(*window.MouseEvent)
 	if e.Button != window.MouseButtonLeft {
 		return

@@ -131,7 +131,8 @@ func (w *Window) onMouse(evname string, ev interface{}) {
 	mev := ev.(*window.MouseEvent)
 	switch evname {
 	case OnMouseDown:
-		w.SetForeground()
+		par := w.Parent().(IPanel).GetPanel()
+		par.SetTopChild(w)
 		if w.overBorder != "" {
 			w.drag = true
 			w.mouseX = mev.Xpos

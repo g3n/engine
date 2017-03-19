@@ -110,10 +110,6 @@ func (f *Folder) onMouse(evname string, ev interface{}) {
 		cont := f.contentPanel.GetPanel()
 		if !cont.Visible() {
 			cont.SetVisible(true)
-			log.Error("Folder PanelZ:%6.5f", cont.Position().Z)
-			for _, c := range cont.Children() {
-				log.Error("Folder child  PanelZ:%6.5f", c.GetNode().Position().Z)
-			}
 		} else {
 			cont.SetVisible(false)
 		}
