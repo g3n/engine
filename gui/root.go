@@ -348,7 +348,7 @@ func (p listPanelZ) Len() int      { return len(p) }
 func (p listPanelZ) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 func (p listPanelZ) Less(i, j int) bool {
 
-	iz := p[i].GetPanel().pospix.Z
-	jz := p[j].GetPanel().pospix.Z
+	iz := p[i].GetPanel().Position().Z
+	jz := p[j].GetPanel().Position().Z
 	return iz < jz
 }
