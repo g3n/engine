@@ -68,12 +68,12 @@ type Panel struct {
 	xmax            float32             // maximum absolute x this panel can use
 	ymin            float32             // minimum absolute y this panel can use
 	ymax            float32             // maximum absolute y this panel can use
-	nextChildZ      float32             // Z coordinate of next child added
-	bounded         bool                // panel is bounded by its parent
-	enabled         bool                // enable event processing
-	cursorEnter     bool                // mouse enter dispatched
-	layout          ILayout             // current layout for children
-	layoutParams    interface{}         // current layout parameters used by container panel
+	//nextChildZ      float32             // Z coordinate of next child added
+	bounded      bool        // panel is bounded by its parent
+	enabled      bool        // enable event processing
+	cursorEnter  bool        // mouse enter dispatched
+	layout       ILayout     // current layout for children
+	layoutParams interface{} // current layout parameters used by container panel
 }
 
 const (
@@ -94,7 +94,7 @@ func (p *Panel) Initialize(width, height float32) {
 
 	p.width = width
 	p.height = height
-	p.nextChildZ = deltaZ
+	//p.nextChildZ = deltaZ
 
 	// Builds array with vertex positions and texture coordinates
 	positions := math32.NewArrayF32(0, 20)
@@ -194,7 +194,11 @@ func (p *Panel) Material() *material.Material {
 // child of this one.
 func (p *Panel) SetTopChild(ipan IPanel) {
 
-	ipan.GetPanel().SetPositionZ(p.nextChildZ)
+	// Remove panel and if found appends to the end
+	found := p.Remove(ipan)
+	if found {
+		p.Add(ipan)
+	}
 }
 
 // SetTopChild sets this panel to be on the foreground
@@ -476,8 +480,8 @@ func (p *Panel) Add(ichild IPanel) *Panel {
 	p.Node.Add(ichild)
 	node := ichild.GetPanel()
 	node.SetParent(p)
-	node.SetPositionZ(p.nextChildZ)
-	p.nextChildZ += deltaZ
+	//node.SetPositionZ(p.nextChildZ)
+	//p.nextChildZ += deltaZ
 	if p.layout != nil {
 		p.layout.Recalc(p)
 	}
@@ -515,12 +519,16 @@ func (p *Panel) SetBounded(bounded bool) {
 func (p *Panel) UpdateMatrixWorld() {
 
 	par := p.Parent()
+	// Panel has no parent
 	if par == nil {
 		p.updateBounds(nil)
+		p.setZ(0)
+		// Panel has parent
 	} else {
 		par, ok := par.(*Panel)
 		if ok {
 			p.updateBounds(par)
+			// Parent is not a panel
 		} else {
 			p.updateBounds(nil)
 		}
@@ -529,6 +537,17 @@ func (p *Panel) UpdateMatrixWorld() {
 	for _, ichild := range p.Children() {
 		ichild.UpdateMatrixWorld()
 	}
+}
+
+func (p *Panel) setZ(nextZ float32) float32 {
+
+	//log.Error("setZ:%6.5f", nextZ)
+	p.SetPositionZ(nextZ)
+	nextZ += deltaZ
+	for _, ichild := range p.Children() {
+		nextZ = ichild.(IPanel).GetPanel().setZ(nextZ)
+	}
+	return nextZ
 }
 
 // ContainsPosition returns indication if this panel contains
