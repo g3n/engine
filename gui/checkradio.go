@@ -185,6 +185,7 @@ func (cb *CheckRadio) onMouse(evname string, ev interface{}) {
 			cb.Dispatch(OnClick, nil)
 		}
 	}
+	cb.root.StopPropagation(StopAll)
 }
 
 // onCursor process OnCursor* events
@@ -196,6 +197,7 @@ func (cb *CheckRadio) onCursor(evname string, ev interface{}) {
 		cb.cursorOver = false
 	}
 	cb.update()
+	cb.root.StopPropagation(StopAll)
 }
 
 // onKey receives subscribed key events

@@ -139,6 +139,7 @@ func (b *Button) onCursor(evname string, ev interface{}) {
 	default:
 		return
 	}
+	b.root.StopPropagation(StopAll)
 }
 
 // onMouseEvent process subscribed mouse events
@@ -156,7 +157,7 @@ func (b *Button) onMouse(evname string, ev interface{}) {
 	default:
 		return
 	}
-	b.root.StopPropagation(Stop3D)
+	b.root.StopPropagation(StopAll)
 }
 
 // onKey processes subscribed key events

@@ -296,9 +296,11 @@ func (r *Root) sendPanels(x, y float32, evname string, ev interface{}) {
 			}
 			// Mouse button event
 		} else {
+			log.Error("Dispatch event:%s to %T z:%v", evname, ipan, pan.Position().Z)
 			pan.Dispatch(evname, ev)
 		}
 		if (r.stopPropagation & StopGUI) != 0 {
+			log.Error("stopPropagation:%v", r.stopPropagation)
 			break
 		}
 	}
