@@ -142,6 +142,34 @@ func (p *Panel) Initialize(width, height float32) {
 	p.resize(width, height)
 }
 
+// InitializeGraphic initializes this panel with a different graphic
+func (p *Panel) InitializeGraphic(width, height float32, geom *geometry.Geometry, mat *material.Material, mode uint32) {
+
+	p.width = width
+	p.height = height
+
+	// Initialize graphic
+	p.Graphic.Init(geom, mode)
+	p.AddMaterial(p, mat, 0, 0)
+
+	// Creates and adds uniform
+	p.modelMatrixUni.Init("ModelMatrix")
+	p.borderColorUni.Init("BorderColor")
+	p.paddingColorUni.Init("PaddingColor")
+	p.contentColorUni.Init("ContentColor")
+	p.boundsUni.Init("Bounds")
+	p.borderUni.Init("Border")
+	p.paddingUni.Init("Padding")
+	p.contentUni.Init("Content")
+
+	// Set defaults
+	p.borderColorUni.Set(0, 0, 0, 1)
+	p.bounded = true
+	p.enabled = true
+
+	p.resize(width, height)
+}
+
 // GetPanel satisfies the IPanel interface and
 // returns pointer to this panel
 func (pan *Panel) GetPanel() *Panel {
@@ -744,6 +772,11 @@ func (p *Panel) RenderSetup(gl *gls.GLS, rinfo *core.RenderInfo) {
 	p.paddingUni.Transfer(gl)
 	p.contentUni.Transfer(gl)
 	p.modelMatrixUni.Transfer(gl)
+	//log.Error("panel:%p boundsUni.:%v", p, p.boundsUni)
+	//log.Error("panel:%p borderUni.:%v", p, p.borderUni)
+	//log.Error("panel:%p paddingUni:%v", p, p.paddingUni)
+	//log.Error("panel:%p contentUni:%v", p, p.contentUni)
+	//log.Error("panel:%p mm        :%v", p, p.modelMatrixUni)
 }
 
 // SetModelMatrix calculates and sets the specified matrix with the model matrix for this panel
