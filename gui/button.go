@@ -65,6 +65,7 @@ func NewButton(text string) *Button {
 	b.Panel.Subscribe(OnKeyUp, b.onKey)
 	b.Panel.Subscribe(OnMouseUp, b.onMouse)
 	b.Panel.Subscribe(OnMouseDown, b.onMouse)
+	b.Panel.Subscribe(OnCursor, b.onCursor)
 	b.Panel.Subscribe(OnCursorEnter, b.onCursor)
 	b.Panel.Subscribe(OnCursorLeave, b.onCursor)
 	b.Panel.Subscribe(OnEnable, func(name string, ev interface{}) { b.update() })
@@ -131,13 +132,10 @@ func (b *Button) onCursor(evname string, ev interface{}) {
 	case OnCursorEnter:
 		b.mouseOver = true
 		b.update()
-		b.root.StopPropagation(Stop3D)
 	case OnCursorLeave:
 		b.pressed = false
 		b.mouseOver = false
 		b.update()
-	default:
-		return
 	}
 	b.root.StopPropagation(StopAll)
 }

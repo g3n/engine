@@ -60,6 +60,7 @@ func (t *Tree) Initialize(width, height float32) {
 	t.SetStyles(&StyleDefault.Tree)
 	t.List.Subscribe(OnKeyDown, t.onKey)
 	t.List.Subscribe(OnKeyUp, t.onKey)
+	t.List.Subscribe(OnCursor, t.onCursor)
 }
 
 // SetStyles set the tree styles overriding the default style
@@ -172,6 +173,13 @@ func (t *Tree) FindChild(child IPanel) (*TreeNode, int) {
 		}
 	}
 	return nil, -1
+}
+
+// onCursor receives subscribed cursor events over the tree
+func (t *Tree) onCursor(evname string, ev interface{}) {
+
+	// Do not propagate any cursor events
+	t.root.StopPropagation(StopAll)
 }
 
 // onKey receives key down events for the embedded list

@@ -364,6 +364,7 @@ func (li *List) highlighted() (pos int) {
 func (li *List) onMouseEvent(evname string, ev interface{}) {
 
 	li.root.SetKeyFocus(li)
+	li.root.StopPropagation(StopAll)
 }
 
 // onKeyEvent receives subscribed key events for the list
@@ -478,7 +479,7 @@ func (litem *ListItem) onMouse(evname string, ev interface{}) {
 	}
 }
 
-// onCursor receives cursor enter events over the list item
+// onCursor receives subscribed cursor events over the list item
 func (litem *ListItem) onCursor(evname string, ev interface{}) {
 
 	if litem.list.dropdown {
