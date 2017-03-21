@@ -11,6 +11,7 @@ import (
 	"github.com/g3n/engine/graphic"
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
+	"math"
 )
 
 /*********************************************
@@ -563,18 +564,18 @@ func (p *Panel) updateBounds(par *Panel) {
 
 	if par == nil {
 		p.pospix = p.Position()
-		p.xmin = p.pospix.X
-		p.ymin = p.pospix.Y
-		p.xmax = p.pospix.X + p.width
-		p.ymax = p.pospix.Y + p.height
+		p.xmin = -math.MaxFloat32
+		p.ymin = -math.MaxFloat32
+		p.xmax = math.MaxFloat32
+		p.ymax = math.MaxFloat32
 		p.boundsUni.Set(0, 0, 1, 1)
 		return
 	}
 	// If this panel is bounded to its parent, its coordinates are relative
 	// to the parent internal content rectangle.
 	if p.bounded {
-		p.pospix.X = p.Position().X + par.pospix.X + float32(par.marginSizes.Left+par.borderSizes.Left+par.paddingSizes.Left)
-		p.pospix.Y = p.Position().Y + par.pospix.Y + float32(par.marginSizes.Top+par.borderSizes.Top+par.paddingSizes.Top)
+		p.pospix.X = p.Position().X + par.pospix.X + par.marginSizes.Left + par.borderSizes.Left + par.paddingSizes.Left
+		p.pospix.Y = p.Position().Y + par.pospix.Y + par.marginSizes.Top + par.borderSizes.Top + par.paddingSizes.Top
 		// Otherwise its coordinates are relative to the parent outer coordinates.
 	} else {
 		p.pospix.X = p.Position().X + par.pospix.X
@@ -587,8 +588,8 @@ func (p *Panel) updateBounds(par *Panel) {
 	p.ymax = p.pospix.Y + p.height
 	if p.bounded {
 		// Get the parent minimum X and Y absolute coordinates in pixels
-		pxmin := par.xmin + par.marginSizes.Right + par.borderSizes.Right + par.paddingSizes.Right
-		pymin := par.ymin + par.marginSizes.Bottom + par.borderSizes.Bottom + par.paddingSizes.Bottom
+		pxmin := par.xmin + par.marginSizes.Left + par.borderSizes.Left + par.paddingSizes.Left
+		pymin := par.ymin + par.marginSizes.Top + par.borderSizes.Top + par.paddingSizes.Top
 		// Get the parent maximum X and Y absolute coordinates in pixels
 		pxmax := par.xmax - (par.marginSizes.Right + par.borderSizes.Right + par.paddingSizes.Right)
 		pymax := par.ymax - (par.marginSizes.Bottom + par.borderSizes.Bottom + par.paddingSizes.Bottom)
