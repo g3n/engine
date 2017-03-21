@@ -575,12 +575,10 @@ func (p *Panel) updateBounds(par *Panel) {
 	if p.bounded {
 		p.pospix.X = p.Position().X + par.pospix.X + float32(par.marginSizes.Left+par.borderSizes.Left+par.paddingSizes.Left)
 		p.pospix.Y = p.Position().Y + par.pospix.Y + float32(par.marginSizes.Top+par.borderSizes.Top+par.paddingSizes.Top)
-		p.pospix.Z = p.Position().Z + par.pospix.Z
 		// Otherwise its coordinates are relative to the parent outer coordinates.
 	} else {
 		p.pospix.X = p.Position().X + par.pospix.X
 		p.pospix.Y = p.Position().Y + par.pospix.Y
-		p.pospix.Z = p.Position().Z + par.pospix.Z
 	}
 	// Maximum x,y coordinates for this panel
 	p.xmin = p.pospix.X
