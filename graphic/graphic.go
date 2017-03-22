@@ -43,6 +43,12 @@ type IGraphic interface {
 	RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo)
 }
 
+func NewGraphic(igeom geometry.IGeometry, mode uint32) *Graphic {
+
+	gr := new(Graphic)
+	return gr.Init(igeom, mode)
+}
+
 // Init initializes a Graphic type embedded in another type
 // with the specified geometry and OpenGL mode.
 func (gr *Graphic) Init(igeom geometry.IGeometry, mode uint32) *Graphic {
