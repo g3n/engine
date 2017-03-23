@@ -43,6 +43,9 @@ type IGraphic interface {
 	RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo)
 }
 
+// NewGraphic creates and returns a pointer to a new graphic object with
+// the specified geometry and OpenGL primitive.
+// The created graphic object, though, has not materials.
 func NewGraphic(igeom geometry.IGeometry, mode uint32) *Graphic {
 
 	gr := new(Graphic)

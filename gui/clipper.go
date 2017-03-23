@@ -6,7 +6,6 @@ package gui
 
 import (
 	"github.com/g3n/engine/core"
-	"github.com/g3n/engine/geometry"
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/graphic"
 	"github.com/g3n/engine/material"
@@ -15,42 +14,39 @@ import (
 
 // Clipper is a 2D graphic which optionally clips its children inside its boundary
 type Clipper struct {
-	graphic.Graphic                     // Embedded graphic
-	root            *Root               // pointer to root container
-	width           float32             // external width in pixels
-	height          float32             // external height in pixels
-	mat             *material.Material  // panel material
-	modelMatrixUni  gls.UniformMatrix4f // pointer to model matrix uniform
-	pospix          math32.Vector3      // absolute position in pixels
-	xmin            float32             // minimum absolute x this panel can use
-	xmax            float32             // maximum absolute x this panel can use
-	ymin            float32             // minimum absolute y this panel can use
-	ymax            float32             // maximum absolute y this panel can use
-	bounded         bool                // panel is bounded by its parent
-	enabled         bool                // enable event processing
-	cursorEnter     bool                // mouse enter dispatched
-	layout          ILayout             // current layout for children
-	layoutParams    interface{}         // current layout parameters used by container panel
+	*graphic.Graphic                     // Embedded graphic
+	root             *Root               // pointer to root container
+	width            float32             // external width in pixels
+	height           float32             // external height in pixels
+	mat              *material.Material  // panel material
+	modelMatrixUni   gls.UniformMatrix4f // pointer to model matrix uniform
+	pospix           math32.Vector3      // absolute position in pixels
+	xmin             float32             // minimum absolute x this panel can use
+	xmax             float32             // maximum absolute x this panel can use
+	ymin             float32             // minimum absolute y this panel can use
+	ymax             float32             // maximum absolute y this panel can use
+	bounded          bool                // panel is bounded by its parent
+	enabled          bool                // enable event processing
+	cursorEnter      bool                // mouse enter dispatched
+	layout           ILayout             // current layout for children
+	layoutParams     interface{}         // current layout parameters used by container panel
 }
 
 // NewClipper creates and returns a pointer to a new clipper with the
 // specified dimensions in pixels
-func NewClipper(width, height float32, geom *geometry.Geometry, mat *material.Material, mode uint32) *Clipper {
+func NewClipper(width, height float32, gr *graphic.Graphic) *Clipper {
 
 	c := new(Clipper)
-	c.Initialize(width, height, geom, mat, mode)
+	c.Initialize(width, height, gr)
 	return c
 }
 
 // Initialize initializes this panel with a different geometry, material and OpenGL primitive
-func (c *Clipper) Initialize(width, height float32, geom *geometry.Geometry, mat *material.Material, mode uint32) {
+func (c *Clipper) Initialize(width, height float32, gr *graphic.Graphic) {
 
+	c.Graphic = gr
 	c.width = width
 	c.height = height
-
-	// Initialize graphic
-	c.Graphic.Init(geom, mode)
-	c.AddMaterial(c, mat, 0, 0)
 
 	// Creates and adds uniform
 	c.modelMatrixUni.Init("ModelMatrix")
@@ -73,7 +69,7 @@ func (c *Clipper) RenderSetup(gl *gls.GLS, rinfo *core.RenderInfo) {
 	c.modelMatrixUni.Transfer(gl)
 }
 
-// SetModelMatrix calculates and sets the specified matrix with the model matrix for this panel
+// SetModelMatrix calculates and sets the specified matrix with the model matrix for this clipper
 func (c *Clipper) SetModelMatrix(gl *gls.GLS, mm *math32.Matrix4) {
 
 	// Get the current viewport width and height

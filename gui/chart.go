@@ -5,6 +5,7 @@ import (
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/geometry"
 	"github.com/g3n/engine/gls"
+	"github.com/g3n/engine/graphic"
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/renderer/shader"
@@ -205,7 +206,9 @@ func newChartScaleX(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 	mat.SetShader("shaderChart")
 
 	// Initializes the panel with this graphic
-	sx.Panel.InitializeGraphic(chart.ContentWidth(), chart.ContentHeight(), geom, mat, gls.LINES)
+	gr := graphic.NewGraphic(geom, gls.LINES)
+	gr.AddMaterial(sx, mat, 0, 0)
+	sx.Panel.InitializeGraphic(chart.ContentWidth(), chart.ContentHeight(), gr)
 
 	// Add labels after the panel is initialized
 	for i := 1; i < lines+1; i++ {
@@ -237,15 +240,13 @@ func (sx *ChartScaleX) recalc() {
 // Calculates the model matrix and transfer to OpenGL.
 func (sx *ChartScaleX) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 
-	log.Error("ChartScaleX RenderSetup")
+	log.Error("ChartScaleX RenderSetup:%p", sx)
 
-	//	// Set this model matrix the same as the chart panel
-	//	var mm math32.Matrix4
-	//	sx.chart.SetModelMatrix(gs, &mm)
-	//
-	//	// Sets and transfer the model matrix uniform
-	//	sx.modelMatrixUni.SetMatrix4(&mm)
-	//	sx.modelMatrixUni.Transfer(gs)
+	// Sets model matrix and transfer to shader
+	var mm math32.Matrix4
+	sx.SetModelMatrix(gs, &mm)
+	sx.modelMatrixUni.SetMatrix4(&mm)
+	sx.modelMatrixUni.Transfer(gs)
 }
 
 //func newChartScaleX(chart *ChartLine, lines int, color *math32.Color) *ChartScaleX {

@@ -46,34 +46,38 @@ type IPanel interface {
 	TotalHeight() float32
 }
 
+// Panel is 2D rectangular graphic which by default has a quad (2 triangles) geometry.
+// When using the default geometry, a panel has margins, borders, paddings
+// and a content area. The content area can be associated wit a texture
+// It is the building block of most GUI widgets.
 type Panel struct {
-	graphic.Graphic                     // Embedded graphic
-	root            *Root               // pointer to root container
-	width           float32             // external width in pixels
-	height          float32             // external height in pixels
-	mat             *material.Material  // panel material
-	marginSizes     BorderSizes         // external margin sizes in pixel coordinates
-	borderSizes     BorderSizes         // border sizes in pixel coordinates
-	paddingSizes    BorderSizes         // padding sizes in pixel coordinates
-	content         Rect                // current content rectangle in pixel coordinates
-	modelMatrixUni  gls.UniformMatrix4f // pointer to model matrix uniform
-	borderColorUni  gls.Uniform4f       // pointer to border color uniform
-	paddingColorUni gls.Uniform4f       // pointer to padding color uniform
-	contentColorUni gls.Uniform4f       // pointer to content color uniform
-	boundsUni       gls.Uniform4f       // pointer to bounds uniform (texture coordinates)
-	borderUni       gls.Uniform4f       // pointer to border uniform (texture coordinates)
-	paddingUni      gls.Uniform4f       // pointer to padding uniform (texture coordinates)
-	contentUni      gls.Uniform4f       // pointer to content uniform (texture coordinates)
-	pospix          math32.Vector3      // absolute position in pixels
-	xmin            float32             // minimum absolute x this panel can use
-	xmax            float32             // maximum absolute x this panel can use
-	ymin            float32             // minimum absolute y this panel can use
-	ymax            float32             // maximum absolute y this panel can use
-	bounded         bool                // panel is bounded by its parent
-	enabled         bool                // enable event processing
-	cursorEnter     bool                // mouse enter dispatched
-	layout          ILayout             // current layout for children
-	layoutParams    interface{}         // current layout parameters used by container panel
+	*graphic.Graphic                     // Embedded graphic
+	root             *Root               // pointer to root container
+	width            float32             // external width in pixels
+	height           float32             // external height in pixels
+	mat              *material.Material  // panel material
+	marginSizes      BorderSizes         // external margin sizes in pixel coordinates
+	borderSizes      BorderSizes         // border sizes in pixel coordinates
+	paddingSizes     BorderSizes         // padding sizes in pixel coordinates
+	content          Rect                // current content rectangle in pixel coordinates
+	modelMatrixUni   gls.UniformMatrix4f // pointer to model matrix uniform
+	borderColorUni   gls.Uniform4f       // pointer to border color uniform
+	paddingColorUni  gls.Uniform4f       // pointer to padding color uniform
+	contentColorUni  gls.Uniform4f       // pointer to content color uniform
+	boundsUni        gls.Uniform4f       // pointer to bounds uniform (texture coordinates)
+	borderUni        gls.Uniform4f       // pointer to border uniform (texture coordinates)
+	paddingUni       gls.Uniform4f       // pointer to padding uniform (texture coordinates)
+	contentUni       gls.Uniform4f       // pointer to content uniform (texture coordinates)
+	pospix           math32.Vector3      // absolute position in pixels
+	xmin             float32             // minimum absolute x this panel can use
+	xmax             float32             // maximum absolute x this panel can use
+	ymin             float32             // minimum absolute y this panel can use
+	ymax             float32             // maximum absolute y this panel can use
+	bounded          bool                // panel is bounded by its parent
+	enabled          bool                // enable event processing
+	cursorEnter      bool                // mouse enter dispatched
+	layout           ILayout             // current layout for children
+	layoutParams     interface{}         // current layout parameters used by container panel
 }
 
 const (
@@ -81,7 +85,7 @@ const (
 )
 
 // NewPanel creates and returns a pointer to a new panel with the
-// specified dimensions in pixels
+// specified dimensions in pixels and a default quad geometry
 func NewPanel(width, height float32) *Panel {
 
 	p := new(Panel)
@@ -121,7 +125,7 @@ func (p *Panel) Initialize(width, height float32) {
 	p.mat.SetShader("shaderPanel")
 
 	// Initialize graphic
-	p.Graphic.Init(geom, gls.TRIANGLES)
+	p.Graphic = graphic.NewGraphic(geom, gls.TRIANGLES)
 	p.AddMaterial(p, p.mat, 0, 0)
 
 	// Creates and adds uniform
@@ -138,19 +142,15 @@ func (p *Panel) Initialize(width, height float32) {
 	p.borderColorUni.Set(0, 0, 0, 1)
 	p.bounded = true
 	p.enabled = true
-
 	p.resize(width, height)
 }
 
 // InitializeGraphic initializes this panel with a different graphic
-func (p *Panel) InitializeGraphic(width, height float32, geom *geometry.Geometry, mat *material.Material, mode uint32) {
+func (p *Panel) InitializeGraphic(width, height float32, gr *graphic.Graphic) {
 
+	p.Graphic = gr
 	p.width = width
 	p.height = height
-
-	// Initialize graphic
-	p.Graphic.Init(geom, mode)
-	p.AddMaterial(p, mat, 0, 0)
 
 	// Creates and adds uniform
 	p.modelMatrixUni.Init("ModelMatrix")
@@ -166,7 +166,6 @@ func (p *Panel) InitializeGraphic(width, height float32, geom *geometry.Geometry
 	p.borderColorUni.Set(0, 0, 0, 1)
 	p.bounded = true
 	p.enabled = true
-
 	p.resize(width, height)
 }
 
