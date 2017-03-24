@@ -587,6 +587,11 @@ func (p *Panel) SetLayoutParams(params interface{}) {
 
 // NDC2Pix converts the specified NDC coordinates (-1,1) to relative pixel coordinates
 // for this panel content area.
+// 0,0      1,0        0,0       w,0
+// +--------+          +---------+
+// |        | -------> |         |
+// +--------+          +---------+
+// 0,-1     1,-1       0,h       w,h
 func (p *Panel) NDC2Pix(nx, ny float32) (x, y float32) {
 
 	w := p.ContentWidth()
@@ -596,6 +601,11 @@ func (p *Panel) NDC2Pix(nx, ny float32) (x, y float32) {
 
 // Pix2NDC converts the specified relative pixel coordinates to NDC coordinates for this panel
 // content area
+// 0,0       w,0       0,0      1,0
+// +---------+         +---------+
+// |         | ------> |         |
+// +---------+         +---------+
+// 0,h       w,h       0,-1     1,-1
 func (p *Panel) Pix2NDC(px, py float32) (nx, ny float32) {
 
 	w := p.ContentWidth()

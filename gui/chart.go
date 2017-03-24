@@ -22,8 +22,8 @@ func init() {
 type ChartLine struct {
 	Panel                // Embedded panel
 	title   *Label       // Optional title label
-	baseX   float32      // NDC x coordinate for y axis
-	baseY   float32      // NDC y coordinate for x axis
+	left    float32      // Left margin in pixels
+	bottom  float32      // Bottom margin in pixels
 	scaleX  *ChartScaleX // X scale panel
 	scaleY  *ChartScaleY // Y scale panel
 	offsetX int          // Initial offset in data buffers
@@ -42,8 +42,8 @@ func NewChartLine(width, height float32) *ChartLine {
 
 	cl := new(ChartLine)
 	cl.Panel.Initialize(width, height)
-	cl.baseX = 0.1
-	cl.baseY = -0.9
+	cl.left = 30
+	cl.bottom = 20
 	cl.offsetX = 0
 	cl.countX = 10
 	cl.firstX = 0.0
@@ -208,31 +208,21 @@ func newChartScaleX(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 	sx.format = "%v"
 	sx.model = NewLabel(" ")
 
-	// Generates scale lines using Normalized Device Coordinates and
-	// considering that the parent panel model coordinates are:
-	// 0,0,0           1,0,0
-	// +---------------+
-	// |               |
-	// |               |
-	// +---------------+
-	// 0,-1,0          1,-1,0
+	// Appends bottom horizontal line
+	bx, by := chart.Pix2NDC(chart.left, chart.ContentHeight()-chart.bottom)
 	positions := math32.NewArrayF32(0, 0)
-	// Appends scaleX bottom horizontal base line
 	positions.Append(
-		chart.baseX, chart.baseY, 0, color.R, color.G, color.B, // line start vertex and color
-		1, chart.baseY, 0, color.R, color.G, color.B, // line end vertex and color
+		bx, by, 0, color.R, color.G, color.B,
+		1, by, 0, color.R, color.G, color.B,
 	)
-	// Appends scale X vertical lines
-	startidx := 0
-	if chart.scaleY != nil {
-		startidx++
-	}
-	step := 1 / (float32(lines) + 1)
-	for i := startidx; i < lines; i++ {
-		nx := chart.baseX + float32(i)*step
+
+	// Appends vertical lines
+	step := (1 - bx) / float32(lines)
+	for i := 0; i < lines; i++ {
+		nx := bx + float32(i)*step
 		positions.Append(
-			nx, 0, 0, color.R, color.G, color.B, // line start vertex and color
-			nx, chart.baseY, 0, color.R, color.G, color.B, // line end vertex and color
+			nx, 0, 0, color.R, color.G, color.B,
+			nx, by, 0, color.R, color.G, color.B,
 		)
 	}
 
@@ -256,10 +246,9 @@ func newChartScaleX(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 
 	// Add labels after the panel is initialized
 	for i := 0; i < lines; i++ {
-		nx := chart.baseX + float32(i)*step
+		nx := bx + float32(i)*step
 		l := NewLabel(fmt.Sprintf(sx.format, float32(i)))
-		px, py := sx.NDC2Pix(nx, chart.baseY)
-		//log.Error("label x:%v y:%v", px, py)
+		px, py := sx.NDC2Pix(nx, by)
 		l.SetPosition(px, py)
 		sx.Add(l)
 		sx.labels = append(sx.labels, l)
@@ -271,14 +260,24 @@ func newChartScaleX(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 
 func (sx *ChartScaleX) updateLabels() {
 
-	step := 1 / (float32(sx.lines) + 1)
+	step := (sx.chart.ContentWidth() - sx.chart.left) / float32(sx.lines)
 	for i := 0; i < len(sx.labels); i++ {
-		nx := sx.chart.baseX + float32(i)*step
-		px, py := sx.NDC2Pix(nx, sx.chart.baseY)
-		log.Error("label x:%v y:%v", px, py)
+		px := sx.chart.left + float32(i)*step
+		py := sx.Height() - sx.chart.bottom
+		//log.Error("label x:%v y:%v", px, py)
 		l := sx.labels[i]
 		l.SetPosition(px, py)
 	}
+
+	//	bx, by := sx.chart.Pix2NDC(sx.chart.left, sx.chart.ContentHeight()-sx.chart.bottom)
+	//	step := 1 / (float32(sx.lines) + 1)
+	//	for i := 0; i < len(sx.labels); i++ {
+	//		nx := bx + float32(i)*step
+	//		px, py := sx.NDC2Pix(nx, by)
+	//		log.Error("label x:%v y:%v", px, py)
+	//		l := sx.labels[i]
+	//		l.SetPosition(px, py)
+	//	}
 }
 
 func (sx *ChartScaleX) setLabelsText(x []float32) {
@@ -332,30 +331,21 @@ func newChartScaleY(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 	sy.format = "%v"
 	sy.model = NewLabel(" ")
 
-	// Generates scale lines using Normalized Device Coordinates and
-	// considering that the parent panel model coordinates are:
-	// 0,0,0    1,0,0
-	// +--------+
-	// |        |
-	// +--------+
-	// 0,-1,0   1,-1,0
-	positions := math32.NewArrayF32(0, 0)
 	// Appends scaleY left vertical line
+	positions := math32.NewArrayF32(0, 0)
+	bx, by := chart.Pix2NDC(chart.left, chart.ContentHeight()-chart.bottom)
 	positions.Append(
-		chart.baseX, chart.baseY, 0, color.R, color.G, color.B, // line start vertex and color
-		chart.baseX, 0, 0, color.R, color.G, color.B, // line end vertex and color
+		bx, by, 0, color.R, color.G, color.B,
+		bx, 0, 0, color.R, color.G, color.B,
 	)
-	// Appends scale horizontall lines
-	startidx := 0
-	if chart.scaleX != nil {
-		startidx++
-	}
-	step := 1 / (float32(lines) + 1)
-	for i := startidx; i < lines; i++ {
-		ny := chart.baseY + float32(i)*step
+
+	// Appends horizontal lines
+	step := -by / float32(lines)
+	for i := 0; i < lines; i++ {
+		ny := by + float32(i)*step
 		positions.Append(
-			chart.baseX, ny, 0, color.R, color.G, color.B, // line start vertex and color
-			1, ny, 0, color.R, color.G, color.B, // line end vertex and color
+			bx, ny, 0, color.R, color.G, color.B,
+			1, ny, 0, color.R, color.G, color.B,
 		)
 	}
 
@@ -379,7 +369,7 @@ func newChartScaleY(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 
 	// Add labels after the panel is initialized
 	for i := 0; i < lines; i++ {
-		ny := chart.baseY + float32(i)*step
+		ny := by + float32(i)*step
 		l := NewLabel(fmt.Sprintf(sy.format, float32(i)))
 		px, py := sy.NDC2Pix(0, ny)
 		py -= sy.model.Height() / 2
@@ -394,9 +384,10 @@ func newChartScaleY(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 
 func (sy *ChartScaleY) updateLabels() {
 
+	_, by := sy.chart.Pix2NDC(sy.chart.left, sy.chart.ContentHeight()-sy.chart.bottom)
 	step := 1 / (float32(sy.lines) + 1)
 	for i := 0; i < len(sy.labels); i++ {
-		ny := sy.chart.baseY + float32(i)*step
+		ny := by + float32(i)*step
 		px, py := sy.NDC2Pix(0, ny)
 		py -= sy.model.Height() / 2
 		log.Error("label x:%v y:%v", px, py)
@@ -496,15 +487,16 @@ func (lg *LineGraph) setGeometry() {
 
 func (lg *LineGraph) recalc() {
 
-	px, _ := lg.chart.NDC2Pix(lg.chart.baseX, 0)
+	px := lg.chart.left
+	py := float32(0)
+	w := lg.chart.ContentWidth() - lg.chart.left
+	h := lg.chart.ContentHeight() - lg.chart.bottom
 	if lg.chart.title != nil {
-		th := lg.chart.title.Height()
-		lg.SetPosition(px, th)
-		lg.SetHeight(lg.chart.ContentHeight() - th)
-	} else {
-		lg.SetPosition(px, 0)
-		lg.SetHeight(lg.chart.ContentHeight())
+		py += lg.chart.title.Height()
+		h -= lg.chart.title.Height()
 	}
+	lg.SetPosition(px, py)
+	lg.SetSize(w, h)
 }
 
 //
