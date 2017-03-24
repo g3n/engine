@@ -18,7 +18,11 @@ func init() {
 	shader.AddProgram("shaderChart", "shaderChartVertex", "shaderChartFrag")
 }
 
+//
+//
 // ChartLine implements a panel which can contain several line charts
+//
+//
 type ChartLine struct {
 	Panel                // Embedded panel
 	title   *Label       // Optional title label
@@ -187,15 +191,18 @@ func (cl *ChartLine) recalc() {
 	}
 }
 
+//
 // ChartScaleX is a panel with GL_LINES geometry which draws the chart X horizontal scale axis,
 // vertical lines and line labels.
+//
 type ChartScaleX struct {
-	Panel             // Embedded panel
-	chart  *ChartLine // Container chart
-	lines  int        // Number of vertical lines
-	format string     // Labels format string
-	model  *Label     // Model label to calculate height/width
-	labels []*Label   // Array of scale labels
+	Panel                // Embedded panel
+	chart  *ChartLine    // Container chart
+	lines  int           // Number of vertical lines
+	format string        // Labels format string
+	model  *Label        // Model label to calculate height/width
+	labels []*Label      // Array of scale labels
+	mat    chartMaterial // Chart material
 }
 
 // newChartScaleX creates and returns a pointer to a new ChartScaleX for the specified
@@ -211,37 +218,23 @@ func newChartScaleX(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 	// Appends bottom horizontal line
 	bx, by := chart.Pix2NDC(chart.left, chart.ContentHeight()-chart.bottom)
 	positions := math32.NewArrayF32(0, 0)
-	positions.Append(
-		bx, by, 0, color.R, color.G, color.B,
-		1, by, 0, color.R, color.G, color.B,
-	)
+	positions.Append(bx, by, 0, 1, by, 0)
 
 	// Appends vertical lines
 	step := (1 - bx) / float32(lines)
 	for i := 0; i < lines; i++ {
 		nx := bx + float32(i)*step
-		positions.Append(
-			nx, 0, 0, color.R, color.G, color.B,
-			nx, by, 0, color.R, color.G, color.B,
-		)
+		positions.Append(nx, 0, 0, nx, by, 0)
 	}
 
-	// Creates geometry using one interlaced VBO
+	// Creates geometry and adds VBO
 	geom := geometry.NewGeometry()
-	geom.AddVBO(gls.NewVBO().
-		AddAttrib("VertexPosition", 3).
-		AddAttrib("VertexColor", 3).
-		SetBuffer(positions),
-	)
+	geom.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(positions))
 
-	// Creates material
-	mat := material.NewMaterial()
-	mat.SetLineWidth(1.0)
-	mat.SetShader("shaderChart")
-
-	// Initializes the panel with this graphic
+	// Initializes the panel graphic
 	gr := graphic.NewGraphic(geom, gls.LINES)
-	gr.AddMaterial(sx, mat, 0, 0)
+	sx.mat.Init(color)
+	gr.AddMaterial(sx, &sx.mat, 0, 0)
 	sx.Panel.InitializeGraphic(chart.ContentWidth(), chart.ContentHeight(), gr)
 
 	// Add labels after the panel is initialized
@@ -268,16 +261,6 @@ func (sx *ChartScaleX) updateLabels() {
 		l := sx.labels[i]
 		l.SetPosition(px, py)
 	}
-
-	//	bx, by := sx.chart.Pix2NDC(sx.chart.left, sx.chart.ContentHeight()-sx.chart.bottom)
-	//	step := 1 / (float32(sx.lines) + 1)
-	//	for i := 0; i < len(sx.labels); i++ {
-	//		nx := bx + float32(i)*step
-	//		px, py := sx.NDC2Pix(nx, by)
-	//		log.Error("label x:%v y:%v", px, py)
-	//		l := sx.labels[i]
-	//		l.SetPosition(px, py)
-	//	}
 }
 
 func (sx *ChartScaleX) setLabelsText(x []float32) {
@@ -302,7 +285,7 @@ func (sx *ChartScaleX) recalc() {
 // Calculates the model matrix and transfer to OpenGL.
 func (sx *ChartScaleX) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 
-	//log.Error("ChartScaleX RenderSetup:%p", sx)
+	//log.Error("ChartScaleX RenderSetup:%v", sx.pospix)
 	// Sets model matrix and transfer to shader
 	var mm math32.Matrix4
 	sx.SetModelMatrix(gs, &mm)
@@ -310,15 +293,18 @@ func (sx *ChartScaleX) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 	sx.modelMatrixUni.Transfer(gs)
 }
 
+//
 // ChartScaleY is a panel with LINE geometry which draws the chart Y vertical scale axis,
 // horizontal and labels.
+//
 type ChartScaleY struct {
-	Panel             // Embedded panel
-	chart  *ChartLine // Container chart
-	lines  int        // Number of horizontal lines
-	format string     // Labels format string
-	model  *Label     // Model label to calculate height/width
-	labels []*Label   // Array of scale labels
+	Panel                // Embedded panel
+	chart  *ChartLine    // Container chart
+	lines  int           // Number of horizontal lines
+	format string        // Labels format string
+	model  *Label        // Model label to calculate height/width
+	labels []*Label      // Array of scale labels
+	mat    chartMaterial // Chart material
 }
 
 // newChartScaleY creates and returns a pointer to a new ChartScaleY for the specified
@@ -331,40 +317,26 @@ func newChartScaleY(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 	sy.format = "%v"
 	sy.model = NewLabel(" ")
 
-	// Appends scaleY left vertical line
+	// Appends left vertical line
 	positions := math32.NewArrayF32(0, 0)
 	bx, by := chart.Pix2NDC(chart.left, chart.ContentHeight()-chart.bottom)
-	positions.Append(
-		bx, by, 0, color.R, color.G, color.B,
-		bx, 0, 0, color.R, color.G, color.B,
-	)
+	positions.Append(bx, by, 0, bx, 0, 0)
 
 	// Appends horizontal lines
 	step := -by / float32(lines)
 	for i := 0; i < lines; i++ {
 		ny := by + float32(i)*step
-		positions.Append(
-			bx, ny, 0, color.R, color.G, color.B,
-			1, ny, 0, color.R, color.G, color.B,
-		)
+		positions.Append(bx, ny, 0, 1, ny, 0)
 	}
 
-	// Creates geometry using one interlaced VBO
+	// Creates geometry and adds VBO
 	geom := geometry.NewGeometry()
-	geom.AddVBO(gls.NewVBO().
-		AddAttrib("VertexPosition", 3).
-		AddAttrib("VertexColor", 3).
-		SetBuffer(positions),
-	)
-
-	// Creates material
-	mat := material.NewMaterial()
-	mat.SetLineWidth(1.0)
-	mat.SetShader("shaderChart")
+	geom.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(positions))
 
 	// Initializes the panel with this graphic
 	gr := graphic.NewGraphic(geom, gls.LINES)
-	gr.AddMaterial(sy, mat, 0, 0)
+	sy.mat.Init(color)
+	gr.AddMaterial(sy, &sy.mat, 0, 0)
 	sy.Panel.InitializeGraphic(chart.ContentWidth(), chart.ContentHeight(), gr)
 
 	// Add labels after the panel is initialized
@@ -414,10 +386,11 @@ func (sy *ChartScaleY) recalc() {
 // LineGraph
 //
 type LineGraph struct {
-	Panel              // Embedded panel
-	chart *ChartLine   // Container chart
-	color math32.Color // Line color
-	y     []float32    // Data y
+	Panel               // Embedded panel
+	chart *ChartLine    // Container chart
+	color math32.Color  // Line color
+	y     []float32     // Data y
+	mat   chartMaterial // Chart material
 }
 
 func newLineGraph(chart *ChartLine, color *math32.Color, y []float32) *LineGraph {
@@ -457,30 +430,22 @@ func (lg *LineGraph) setGeometry() {
 		}
 		px := float32(i) * step
 		if !origin {
-			positions.Append(px, -1, 0, lg.color.R, lg.color.G, lg.color.B)
+			positions.Append(px, -1, 0)
 			origin = true
 		}
 		vy := lg.y[x]
 		py := -1 + (vy / rangeY)
-		positions.Append(px, py, 0, lg.color.R, lg.color.G, lg.color.B)
+		positions.Append(px, py, 0)
 	}
 
 	// Creates geometry using one interlaced VBO
 	geom := geometry.NewGeometry()
-	geom.AddVBO(gls.NewVBO().
-		AddAttrib("VertexPosition", 3).
-		AddAttrib("VertexColor", 3).
-		SetBuffer(positions),
-	)
-
-	// Creates material
-	mat := material.NewMaterial()
-	mat.SetLineWidth(1.0)
-	mat.SetShader("shaderChart")
+	geom.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(positions))
 
 	// Initializes the panel with this graphic
 	gr := graphic.NewGraphic(geom, gls.LINE_STRIP)
-	gr.AddMaterial(lg, mat, 0, 0)
+	lg.mat.Init(&lg.color)
+	gr.AddMaterial(lg, &lg.mat, 0, 0)
 	lg.Panel.InitializeGraphic(lg.chart.ContentWidth(), lg.chart.ContentHeight(), gr)
 
 }
@@ -500,6 +465,34 @@ func (lg *LineGraph) recalc() {
 }
 
 //
+//
+// Chart material (for lines)
+//
+//
+type chartMaterial struct {
+	material.Material                // Embedded material
+	color             *gls.Uniform3f // Emissive color uniform
+}
+
+func (cm *chartMaterial) Init(color *math32.Color) {
+
+	cm.Material.Init()
+	cm.SetShader("shaderChart")
+
+	// Creates uniforms and adds to material
+	cm.color = gls.NewUniform3f("MatColor")
+
+	// Set initial values
+	cm.color.SetColor(color)
+}
+
+func (cm *chartMaterial) RenderSetup(gs *gls.GLS) {
+
+	cm.Material.RenderSetup(gs)
+	cm.color.Transfer(gs)
+}
+
+//
 // Vertex Shader template
 //
 const shaderChartVertex = `
@@ -510,13 +503,14 @@ const shaderChartVertex = `
 
 // Input uniforms
 uniform mat4 ModelMatrix;
+uniform vec3 MatColor;
 
 // Outputs for fragment shader
 out vec3 Color;
 
 void main() {
 
-    Color = VertexColor;
+    Color = MatColor;
 
     // Set position
     vec4 pos = vec4(VertexPosition.xyz, 1);
