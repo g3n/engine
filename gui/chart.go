@@ -48,8 +48,15 @@ func NewChartLine(width, height float32) *ChartLine {
 	cl.countX = 10
 	cl.firstX = 0.0
 	cl.stepX = 1.0
+	cl.autoY = false
 	return cl
 }
+
+//func (cl *ChartLine) SetMargins(left, bottom float32) {
+//
+//	cl.baseX, cl.baseY = cl.Pix2NDC(left, bottom)
+//	cl.recalc()
+//}
 
 func (cl *ChartLine) SetTitle(title *Label) {
 
@@ -121,11 +128,22 @@ func (cl *ChartLine) SetRangeX(offset int, count int, first float32, step float3
 
 func (cl *ChartLine) SetRangeY(min float32, max float32) {
 
+	cl.minY = min
+	cl.maxY = max
+}
+
+// AddLine adds a line graph to the chart
+func (cl *ChartLine) AddGraph(color *math32.Color, data []float32) *LineGraph {
+
+	graph := newLineGraph(cl, color, data)
+	cl.graphs = append(cl.graphs, graph)
+	cl.Add(graph)
+	return graph
 }
 
 func (cl *ChartLine) calcRangeY() {
 
-	if cl.autoY {
+	if !cl.autoY {
 		return
 	}
 
@@ -153,6 +171,7 @@ func (cl *ChartLine) calcRangeY() {
 // recalc recalculates the positions of the inner panels
 func (cl *ChartLine) recalc() {
 
+	// Center title position
 	if cl.title != nil {
 		xpos := (cl.ContentWidth() - cl.title.width) / 2
 		cl.title.SetPositionX(xpos)
@@ -163,15 +182,10 @@ func (cl *ChartLine) recalc() {
 	if cl.scaleY != nil {
 		cl.scaleY.recalc()
 	}
+	for i := 0; i < len(cl.graphs); i++ {
+		cl.graphs[i].recalc()
+	}
 }
-
-//// AddLine adds a line graph to the chart
-//func (cl *ChartLine) AddGraph(name, title string, color *math32.Color, data []float32) {
-//
-//	graph := newLineGraph(&cl.Panel, name, title, color, data)
-//	cl.graphs = append(cl.graphs, graph)
-//	cl.Node.Add(graph)
-//}
 
 // ChartScaleX is a panel with GL_LINES geometry which draws the chart X horizontal scale axis,
 // vertical lines and line labels.
@@ -244,7 +258,7 @@ func newChartScaleX(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 	for i := 0; i < lines; i++ {
 		nx := chart.baseX + float32(i)*step
 		l := NewLabel(fmt.Sprintf(sx.format, float32(i)))
-		px, py := ndc2pix(&sx.Panel, nx, chart.baseY)
+		px, py := sx.NDC2Pix(nx, chart.baseY)
 		//log.Error("label x:%v y:%v", px, py)
 		l.SetPosition(px, py)
 		sx.Add(l)
@@ -260,7 +274,7 @@ func (sx *ChartScaleX) updateLabels() {
 	step := 1 / (float32(sx.lines) + 1)
 	for i := 0; i < len(sx.labels); i++ {
 		nx := sx.chart.baseX + float32(i)*step
-		px, py := ndc2pix(&sx.Panel, nx, sx.chart.baseY)
+		px, py := sx.NDC2Pix(nx, sx.chart.baseY)
 		log.Error("label x:%v y:%v", px, py)
 		l := sx.labels[i]
 		l.SetPosition(px, py)
@@ -367,7 +381,7 @@ func newChartScaleY(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 	for i := 0; i < lines; i++ {
 		ny := chart.baseY + float32(i)*step
 		l := NewLabel(fmt.Sprintf(sy.format, float32(i)))
-		px, py := ndc2pix(&sy.Panel, 0, ny)
+		px, py := sy.NDC2Pix(0, ny)
 		py -= sy.model.Height() / 2
 		//log.Error("label x:%v y:%v", px, py)
 		l.SetPosition(px, py)
@@ -383,7 +397,7 @@ func (sy *ChartScaleY) updateLabels() {
 	step := 1 / (float32(sy.lines) + 1)
 	for i := 0; i < len(sy.labels); i++ {
 		ny := sy.chart.baseY + float32(i)*step
-		px, py := ndc2pix(&sy.Panel, 0, ny)
+		px, py := sy.NDC2Pix(0, ny)
 		py -= sy.model.Height() / 2
 		log.Error("label x:%v y:%v", px, py)
 		l := sy.labels[i]
@@ -405,14 +419,6 @@ func (sy *ChartScaleY) recalc() {
 	}
 }
 
-// Converts panel ndc coordinates to relative pixels inside panel
-func ndc2pix(p *Panel, nx, ny float32) (px, py float32) {
-
-	w := p.ContentWidth()
-	h := p.ContentHeight()
-	return w * nx, -h * ny
-}
-
 //
 // LineGraph
 //
@@ -425,6 +431,7 @@ type LineGraph struct {
 
 func newLineGraph(chart *ChartLine, color *math32.Color, y []float32) *LineGraph {
 
+	log.Error("newLineGraph")
 	lg := new(LineGraph)
 	lg.chart = chart
 	lg.color = *color
@@ -445,6 +452,7 @@ func (lg *LineGraph) SetData(x, y []float32) {
 func (lg *LineGraph) setGeometry() {
 
 	lg.chart.calcRangeY()
+	log.Error("minY:%v maxY:%v", lg.chart.minY, lg.chart.maxY)
 
 	// Creates array for vertices and colors
 	positions := math32.NewArrayF32(0, 0)
@@ -456,17 +464,13 @@ func (lg *LineGraph) setGeometry() {
 		if x >= len(lg.y) {
 			break
 		}
-		// Get Y value and checks if it is inside the range
-		vy := lg.y[x]
-		if vy < lg.chart.minY || vy > lg.chart.maxY {
-			continue
-		}
 		px := float32(i) * step
 		if !origin {
 			positions.Append(px, -1, 0, lg.color.R, lg.color.G, lg.color.B)
 			origin = true
 		}
-		py := vy / rangeY
+		vy := lg.y[x]
+		py := -1 + (vy / rangeY)
 		positions.Append(px, py, 0, lg.color.R, lg.color.G, lg.color.B)
 	}
 
@@ -478,6 +482,29 @@ func (lg *LineGraph) setGeometry() {
 		SetBuffer(positions),
 	)
 
+	// Creates material
+	mat := material.NewMaterial()
+	mat.SetLineWidth(1.0)
+	mat.SetShader("shaderChart")
+
+	// Initializes the panel with this graphic
+	gr := graphic.NewGraphic(geom, gls.LINE_STRIP)
+	gr.AddMaterial(lg, mat, 0, 0)
+	lg.Panel.InitializeGraphic(lg.chart.ContentWidth(), lg.chart.ContentHeight(), gr)
+
+}
+
+func (lg *LineGraph) recalc() {
+
+	px, _ := lg.chart.NDC2Pix(lg.chart.baseX, 0)
+	if lg.chart.title != nil {
+		th := lg.chart.title.Height()
+		lg.SetPosition(px, th)
+		lg.SetHeight(lg.chart.ContentHeight() - th)
+	} else {
+		lg.SetPosition(px, 0)
+		lg.SetHeight(lg.chart.ContentHeight())
+	}
 }
 
 //

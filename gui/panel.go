@@ -585,6 +585,24 @@ func (p *Panel) SetLayoutParams(params interface{}) {
 	p.layoutParams = params
 }
 
+// NDC2Pix converts the specified NDC coordinates (-1,1) to relative pixel coordinates
+// for this panel content area.
+func (p *Panel) NDC2Pix(nx, ny float32) (x, y float32) {
+
+	w := p.ContentWidth()
+	h := p.ContentHeight()
+	return w * nx, -h * ny
+}
+
+// Pix2NDC converts the specified relative pixel coordinates to NDC coordinates for this panel
+// content area
+func (p *Panel) Pix2NDC(px, py float32) (nx, ny float32) {
+
+	w := p.ContentWidth()
+	h := p.ContentHeight()
+	return px / w, -py / h
+}
+
 // updateBounds is called by UpdateMatrixWorld() and calculates this panel
 // bounds considering the bounds of its parent
 func (p *Panel) updateBounds(par *Panel) {
