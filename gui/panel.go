@@ -69,6 +69,9 @@ type Panel struct {
 	paddingUni       gls.Uniform4f       // pointer to padding uniform (texture coordinates)
 	contentUni       gls.Uniform4f       // pointer to content uniform (texture coordinates)
 	pospix           math32.Vector3      // absolute position in pixels
+	posclip          math32.Vector3      // position in clip (NDC) coordinates
+	wclip            float32             // width in clip coordinates
+	hclip            float32             // height in clip coordinates
 	xmin             float32             // minimum absolute x this panel can use
 	xmax             float32             // maximum absolute x this panel can use
 	ymin             float32             // minimum absolute y this panel can use
@@ -815,21 +818,20 @@ func (p *Panel) SetModelMatrix(gl *gls.GLS, mm *math32.Matrix4) {
 	fheight := float32(height)
 
 	// Scale the quad for the viewport so it has fixed dimensions in pixels.
-	fw := float32(p.width) / fwidth
-	fh := float32(p.height) / fheight
+	p.wclip = 2 * float32(p.width) / fwidth
+	p.hclip = 2 * float32(p.height) / fheight
 	var scale math32.Vector3
-	scale.Set(2*fw, 2*fh, 1)
+	scale.Set(p.wclip, p.hclip, 1)
 
 	// Convert absolute position in pixel coordinates from the top/left to
 	// standard OpenGL clip coordinates of the quad center
-	var posclip math32.Vector3
-	posclip.X = (p.pospix.X - fwidth/2) / (fwidth / 2)
-	posclip.Y = -(p.pospix.Y - fheight/2) / (fheight / 2)
-	posclip.Z = p.Position().Z
+	p.posclip.X = (p.pospix.X - fwidth/2) / (fwidth / 2)
+	p.posclip.Y = -(p.pospix.Y - fheight/2) / (fheight / 2)
+	p.posclip.Z = p.Position().Z
 	//log.Debug("panel posclip:%v\n", posclip)
 
 	// Calculates the model matrix
 	var quat math32.Quaternion
 	quat.SetIdentity()
-	mm.Compose(&posclip, &quat, &scale)
+	mm.Compose(&p.posclip, &quat, &scale)
 }

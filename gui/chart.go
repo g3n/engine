@@ -191,7 +191,22 @@ func (cl *ChartLine) AddGraph(color *math32.Color, data []float32) *LineGraph {
 	graph := newLineGraph(cl, color, data)
 	cl.graphs = append(cl.graphs, graph)
 	cl.Add(graph)
+	cl.recalc()
 	return graph
+}
+
+func (cl *ChartLine) RemoveGraph(g *LineGraph) {
+
+	cl.Remove(g)
+	g.Dispose()
+	for pos, current := range cl.graphs {
+		if current == g {
+			copy(cl.graphs[pos:], cl.graphs[pos+1:])
+			cl.graphs[len(cl.graphs)-1] = nil
+			cl.graphs = cl.graphs[:len(cl.graphs)-1]
+			break
+		}
+	}
 }
 
 func (cl *ChartLine) calcRangeY() {
@@ -256,7 +271,15 @@ func (cl *ChartLine) recalc() {
 
 	// Recalc graphs
 	for i := 0; i < len(cl.graphs); i++ {
-		cl.graphs[i].recalc()
+		g := cl.graphs[i]
+		g.recalc()
+		cl.SetTopChild(g)
+	}
+
+	// Sets the title at the top
+	if cl.title != nil {
+		log.Error("TITLE TOP")
+		cl.SetTopChild(cl.title)
 	}
 }
 
@@ -267,10 +290,11 @@ func (cl *ChartLine) recalc() {
 //
 //
 type ChartScaleX struct {
-	Panel               // Embedded panel
-	chart *ChartLine    // Container chart
-	lines int           // Number of vertical lines
-	mat   chartMaterial // Chart material
+	Panel                // Embedded panel
+	chart  *ChartLine    // Container chart
+	lines  int           // Number of vertical lines
+	bounds gls.Uniform4f // Bound uniform in OpenGL window coordinates
+	mat    chartMaterial // Chart material
 }
 
 // newChartScaleX creates and returns a pointer to a new ChartScaleX for the specified
@@ -280,6 +304,7 @@ func newChartScaleX(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 	sx := new(ChartScaleX)
 	sx.chart = chart
 	sx.lines = lines
+	sx.bounds.Init("Bounds")
 
 	// Appends bottom horizontal line
 	positions := math32.NewArrayF32(0, 0)
@@ -322,6 +347,7 @@ func (sx *ChartScaleX) recalc() {
 }
 
 // RenderSetup is called by the renderer before drawing this graphic
+// It overrides the original panel RenderSetup
 // Calculates the model matrix and transfer to OpenGL.
 func (sx *ChartScaleX) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 
@@ -331,6 +357,11 @@ func (sx *ChartScaleX) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 	sx.SetModelMatrix(gs, &mm)
 	sx.modelMatrixUni.SetMatrix4(&mm)
 	sx.modelMatrixUni.Transfer(gs)
+
+	// Sets bounds in OpenGL window coordinates and transfer to shader
+	_, _, _, height := gs.GetViewport()
+	sx.bounds.Set(sx.pospix.X, float32(height)-sx.pospix.Y, sx.width, sx.height)
+	sx.bounds.Transfer(gs)
 }
 
 //
@@ -338,10 +369,11 @@ func (sx *ChartScaleX) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 // horizontal and labels.
 //
 type ChartScaleY struct {
-	Panel               // Embedded panel
-	chart *ChartLine    // Container chart
-	lines int           // Number of horizontal lines
-	mat   chartMaterial // Chart material
+	Panel                // Embedded panel
+	chart  *ChartLine    // Container chart
+	lines  int           // Number of horizontal lines
+	bounds gls.Uniform4f // Bound uniform in OpenGL window coordinates
+	mat    chartMaterial // Chart material
 }
 
 // newChartScaleY creates and returns a pointer to a new ChartScaleY for the specified
@@ -351,6 +383,7 @@ func newChartScaleY(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 	sy := new(ChartScaleY)
 	sy.chart = chart
 	sy.lines = lines
+	sy.bounds.Init("Bounds")
 
 	// Appends left vertical line
 	positions := math32.NewArrayF32(0, 0)
@@ -388,23 +421,43 @@ func (sy *ChartScaleY) recalc() {
 	sy.SetSize(sy.chart.ContentWidth()-sy.chart.left, sy.chart.ContentHeight()-py-sy.chart.bottom)
 }
 
+// RenderSetup is called by the renderer before drawing this graphic
+// It overrides the original panel RenderSetup
+// Calculates the model matrix and transfer to OpenGL.
+func (sy *ChartScaleY) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
+
+	//log.Error("ChartScaleY RenderSetup:%v", sy.pospix)
+	// Sets model matrix and transfer to shader
+	var mm math32.Matrix4
+	sy.SetModelMatrix(gs, &mm)
+	sy.modelMatrixUni.SetMatrix4(&mm)
+	sy.modelMatrixUni.Transfer(gs)
+
+	// Sets bounds in OpenGL window coordinates and transfer to shader
+	_, _, _, height := gs.GetViewport()
+	sy.bounds.Set(sy.pospix.X, float32(height)-sy.pospix.Y, sy.width, sy.height)
+	sy.bounds.Transfer(gs)
+}
+
 //
 //
 // LineGraph
 //
 //
 type LineGraph struct {
-	Panel               // Embedded panel
-	chart *ChartLine    // Container chart
-	color math32.Color  // Line color
-	y     []float32     // Data y
-	mat   chartMaterial // Chart material
+	Panel                // Embedded panel
+	chart  *ChartLine    // Container chart
+	color  math32.Color  // Line color
+	y      []float32     // Data y
+	bounds gls.Uniform4f // Bound uniform in OpenGL window coordinates
+	mat    chartMaterial // Chart material
 }
 
 func newLineGraph(chart *ChartLine, color *math32.Color, y []float32) *LineGraph {
 
 	log.Error("newLineGraph")
 	lg := new(LineGraph)
+	lg.bounds.Init("Bounds")
 	lg.chart = chart
 	lg.color = *color
 	lg.y = y
@@ -419,6 +472,11 @@ func (lg *LineGraph) SetColor(color *math32.Color) {
 func (lg *LineGraph) SetData(x, y []float32) {
 
 	lg.y = y
+}
+
+func (lg *LineGraph) SetLineWidth(width float32) {
+
+	lg.mat.SetLineWidth(width)
 }
 
 func (lg *LineGraph) setGeometry() {
@@ -443,6 +501,9 @@ func (lg *LineGraph) setGeometry() {
 		}
 		vy := lg.y[x]
 		py := -1 + (vy / rangeY)
+		if py > 0 {
+			log.Error("PY:%v", py)
+		}
 		positions.Append(px, py, 0)
 	}
 
@@ -470,6 +531,24 @@ func (lg *LineGraph) recalc() {
 	}
 	lg.SetPosition(px, py)
 	lg.SetSize(w, h)
+}
+
+// RenderSetup is called by the renderer before drawing this graphic
+// It overrides the original panel RenderSetup
+// Calculates the model matrix and transfer to OpenGL.
+func (lg *LineGraph) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
+
+	//log.Error("LineGraph RenderSetup:%v with/height: %v/%v", lg.posclip, lg.wclip, lg.hclip)
+	// Sets model matrix and transfer to shader
+	var mm math32.Matrix4
+	lg.SetModelMatrix(gs, &mm)
+	lg.modelMatrixUni.SetMatrix4(&mm)
+	lg.modelMatrixUni.Transfer(gs)
+
+	// Sets bounds in OpenGL window coordinates and transfer to shader
+	_, _, _, height := gs.GetViewport()
+	lg.bounds.Set(lg.pospix.X, float32(height)-lg.pospix.Y, lg.width, lg.height)
+	lg.bounds.Transfer(gs)
 }
 
 //
@@ -522,7 +601,8 @@ void main() {
 
     // Set position
     vec4 pos = vec4(VertexPosition.xyz, 1);
-    gl_Position = ModelMatrix * pos;
+	vec4 posclip = ModelMatrix * pos;
+    gl_Position = posclip;
 }
 `
 
@@ -532,10 +612,28 @@ void main() {
 const shaderChartFrag = `
 #version {{.Version}}
 
+// Input uniforms from vertex shader
 in vec3 Color;
+
+// Input uniforms
+uniform vec4 Bounds;
+
+// Output
 out vec4 FragColor;
 
 void main() {
+
+    // Discard fragment outside of the received bounds in OpenGL window pixel coordinates
+    // Bounds[0] - x
+    // Bounds[1] - y
+    // Bounds[2] - width
+    // Bounds[3] - height
+    if (gl_FragCoord.x < Bounds[0] || gl_FragCoord.x > Bounds[0] + Bounds[2]) {
+        discard;
+    }
+    if (gl_FragCoord.y > Bounds[1] || gl_FragCoord.y < Bounds[1] - Bounds[3]) {
+        discard;
+    }
 
     FragColor = vec4(Color, 1.0);
 }
