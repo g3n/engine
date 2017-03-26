@@ -37,6 +37,10 @@ type ChartLine struct {
 	minY    float32      // Minimum Y value
 	maxY    float32      //
 	autoY   bool         // Auto range flag for Y values
+	formatX string       // String format for scale X labels
+	formatY string       // String format for scale Y labels
+	labelsX []*Label     // Array of scale X labels
+	labelsY []*Label     // Array of scale Y labels
 	graphs  []*LineGraph // Array of line graphs
 }
 
@@ -53,6 +57,8 @@ func NewChartLine(width, height float32) *ChartLine {
 	cl.firstX = 0.0
 	cl.stepX = 1.0
 	cl.autoY = false
+	cl.formatX = "%v"
+	cl.formatY = "%v"
 	return cl
 }
 
@@ -62,6 +68,7 @@ func NewChartLine(width, height float32) *ChartLine {
 //	cl.recalc()
 //}
 
+// SetTitle sets the chart title
 func (cl *ChartLine) SetTitle(title *Label) {
 
 	if cl.title != nil {
@@ -79,11 +86,21 @@ func (cl *ChartLine) SetTitle(title *Label) {
 func (cl *ChartLine) SetScaleX(lines int, color *math32.Color) {
 
 	if cl.scaleX != nil {
-		cl.Remove(cl.scaleX)
-		cl.scaleX.Dispose()
+		cl.ClearScaleX()
 	}
+
+	// Add scale lines
 	cl.scaleX = newChartScaleX(cl, lines, color)
 	cl.Add(cl.scaleX)
+
+	// Add scale labels
+	// The positions of the labels will be set by 'recalc()'
+	for i := 0; i < lines; i++ {
+		l := NewLabel(fmt.Sprintf(cl.formatX, float32(i)))
+		cl.Add(l)
+		cl.labelsX = append(cl.labelsX, l)
+	}
+	cl.recalc()
 }
 
 // ClearScaleX removes the chart x scale if it was previously set
@@ -92,19 +109,40 @@ func (cl *ChartLine) ClearScaleX() {
 	if cl.scaleX == nil {
 		return
 	}
+
+	// Remove and dispose scale lines
 	cl.Remove(cl.scaleX)
 	cl.scaleX.Dispose()
+
+	// Remove and dispose scale labels
+	for i := 0; i < len(cl.labelsX); i++ {
+		label := cl.labelsX[i]
+		cl.Remove(label)
+		label.Dispose()
+	}
+	cl.labelsX = cl.labelsX[0:0]
+	cl.scaleX = nil
 }
 
 // SetScaleY sets the line chart y scale number of lines and color
 func (cl *ChartLine) SetScaleY(lines int, color *math32.Color) {
 
 	if cl.scaleY != nil {
-		cl.Remove(cl.scaleY)
-		cl.scaleY.Dispose()
+		cl.ClearScaleY()
 	}
+
+	// Add scale lines
 	cl.scaleY = newChartScaleY(cl, lines, color)
 	cl.Add(cl.scaleY)
+
+	// Add scale labels
+	// The position of the labels will be set by 'recalc()'
+	for i := 0; i < lines; i++ {
+		l := NewLabel(fmt.Sprintf(cl.formatY, float32(i)))
+		cl.Add(l)
+		cl.labelsY = append(cl.labelsY, l)
+	}
+	cl.recalc()
 }
 
 // ClearScaleY removes the chart x scale if it was previously set
@@ -113,8 +151,19 @@ func (cl *ChartLine) ClearScaleY() {
 	if cl.scaleY == nil {
 		return
 	}
+
+	// Remove and dispose scale lines
 	cl.Remove(cl.scaleY)
 	cl.scaleY.Dispose()
+
+	// Remove and dispose scale labels
+	for i := 0; i < len(cl.labelsY); i++ {
+		label := cl.labelsY[i]
+		cl.Remove(label)
+		label.Dispose()
+	}
+	cl.labelsY = cl.labelsY[0:0]
+	cl.scaleY = nil
 }
 
 // SetRangeX sets the interval of the data to be shown:
@@ -176,33 +225,52 @@ func (cl *ChartLine) calcRangeY() {
 func (cl *ChartLine) recalc() {
 
 	// Center title position
+	th := float32(0)
 	if cl.title != nil {
 		xpos := (cl.ContentWidth() - cl.title.width) / 2
 		cl.title.SetPositionX(xpos)
+		th = cl.title.height
 	}
+
+	// Recalc scale X and its labels
 	if cl.scaleX != nil {
 		cl.scaleX.recalc()
+		step := (cl.ContentWidth() - cl.left) / float32(len(cl.labelsX))
+		for i := 0; i < len(cl.labelsX); i++ {
+			label := cl.labelsX[i]
+			px := cl.left + float32(i)*step
+			label.SetPosition(px, cl.ContentHeight()-cl.bottom)
+		}
 	}
+
+	// Recalc scale Y and its labels
 	if cl.scaleY != nil {
 		cl.scaleY.recalc()
+		step := (cl.ContentHeight() - cl.bottom - th) / float32(len(cl.labelsY))
+		for i := 0; i < len(cl.labelsY); i++ {
+			label := cl.labelsY[i]
+			py := cl.ContentHeight() - cl.bottom - float32(i)*step
+			label.SetPosition(0, py-label.Height()/2)
+		}
 	}
+
+	// Recalc graphs
 	for i := 0; i < len(cl.graphs); i++ {
 		cl.graphs[i].recalc()
 	}
 }
 
 //
+//
 // ChartScaleX is a panel with GL_LINES geometry which draws the chart X horizontal scale axis,
 // vertical lines and line labels.
 //
+//
 type ChartScaleX struct {
-	Panel                // Embedded panel
-	chart  *ChartLine    // Container chart
-	lines  int           // Number of vertical lines
-	format string        // Labels format string
-	model  *Label        // Model label to calculate height/width
-	labels []*Label      // Array of scale labels
-	mat    chartMaterial // Chart material
+	Panel               // Embedded panel
+	chart *ChartLine    // Container chart
+	lines int           // Number of vertical lines
+	mat   chartMaterial // Chart material
 }
 
 // newChartScaleX creates and returns a pointer to a new ChartScaleX for the specified
@@ -212,19 +280,16 @@ func newChartScaleX(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 	sx := new(ChartScaleX)
 	sx.chart = chart
 	sx.lines = lines
-	sx.format = "%v"
-	sx.model = NewLabel(" ")
 
 	// Appends bottom horizontal line
-	bx, by := chart.Pix2NDC(chart.left, chart.ContentHeight()-chart.bottom)
 	positions := math32.NewArrayF32(0, 0)
-	positions.Append(bx, by, 0, 1, by, 0)
+	positions.Append(0, -1, 0, 1, -1, 0)
 
 	// Appends vertical lines
-	step := (1 - bx) / float32(lines)
+	step := 1 / float32(lines)
 	for i := 0; i < lines; i++ {
-		nx := bx + float32(i)*step
-		positions.Append(nx, 0, 0, nx, by, 0)
+		nx := float32(i) * step
+		positions.Append(nx, 0, 0, nx, -1, 0)
 	}
 
 	// Creates geometry and adds VBO
@@ -237,48 +302,23 @@ func newChartScaleX(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 	gr.AddMaterial(sx, &sx.mat, 0, 0)
 	sx.Panel.InitializeGraphic(chart.ContentWidth(), chart.ContentHeight(), gr)
 
-	// Add labels after the panel is initialized
-	for i := 0; i < lines; i++ {
-		nx := bx + float32(i)*step
-		l := NewLabel(fmt.Sprintf(sx.format, float32(i)))
-		px, py := sx.NDC2Pix(nx, by)
-		l.SetPosition(px, py)
-		sx.Add(l)
-		sx.labels = append(sx.labels, l)
-	}
 	sx.recalc()
-
 	return sx
-}
-
-func (sx *ChartScaleX) updateLabels() {
-
-	step := (sx.chart.ContentWidth() - sx.chart.left) / float32(sx.lines)
-	for i := 0; i < len(sx.labels); i++ {
-		px := sx.chart.left + float32(i)*step
-		py := sx.Height() - sx.chart.bottom
-		//log.Error("label x:%v y:%v", px, py)
-		l := sx.labels[i]
-		l.SetPosition(px, py)
-	}
 }
 
 func (sx *ChartScaleX) setLabelsText(x []float32) {
 
 }
 
+// recalc recalculates the position and size of this scale inside its parent
 func (sx *ChartScaleX) recalc() {
 
+	py := float32(0)
 	if sx.chart.title != nil {
-		th := sx.chart.title.Height()
-		sx.SetPosition(0, th)
-		sx.SetHeight(sx.chart.ContentHeight() - th)
-		sx.updateLabels()
-	} else {
-		sx.SetPosition(0, 0)
-		sx.SetHeight(sx.chart.ContentHeight())
-		sx.updateLabels()
+		py = sx.chart.title.Height()
 	}
+	sx.SetPosition(sx.chart.left, py)
+	sx.SetSize(sx.chart.ContentWidth()-sx.chart.left, sx.chart.ContentHeight()-py-sx.chart.bottom)
 }
 
 // RenderSetup is called by the renderer before drawing this graphic
@@ -298,13 +338,10 @@ func (sx *ChartScaleX) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 // horizontal and labels.
 //
 type ChartScaleY struct {
-	Panel                // Embedded panel
-	chart  *ChartLine    // Container chart
-	lines  int           // Number of horizontal lines
-	format string        // Labels format string
-	model  *Label        // Model label to calculate height/width
-	labels []*Label      // Array of scale labels
-	mat    chartMaterial // Chart material
+	Panel               // Embedded panel
+	chart *ChartLine    // Container chart
+	lines int           // Number of horizontal lines
+	mat   chartMaterial // Chart material
 }
 
 // newChartScaleY creates and returns a pointer to a new ChartScaleY for the specified
@@ -314,19 +351,16 @@ func newChartScaleY(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 	sy := new(ChartScaleY)
 	sy.chart = chart
 	sy.lines = lines
-	sy.format = "%v"
-	sy.model = NewLabel(" ")
 
 	// Appends left vertical line
 	positions := math32.NewArrayF32(0, 0)
-	bx, by := chart.Pix2NDC(chart.left, chart.ContentHeight()-chart.bottom)
-	positions.Append(bx, by, 0, bx, 0, 0)
+	positions.Append(0, 0, 0, 0, -1, 0)
 
 	// Appends horizontal lines
-	step := -by / float32(lines)
+	step := 1 / float32(lines)
 	for i := 0; i < lines; i++ {
-		ny := by + float32(i)*step
-		positions.Append(bx, ny, 0, 1, ny, 0)
+		ny := -1 + float32(i)*step
+		positions.Append(0, ny, 0, 1, ny, 0)
 	}
 
 	// Creates geometry and adds VBO
@@ -339,51 +373,25 @@ func newChartScaleY(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 	gr.AddMaterial(sy, &sy.mat, 0, 0)
 	sy.Panel.InitializeGraphic(chart.ContentWidth(), chart.ContentHeight(), gr)
 
-	// Add labels after the panel is initialized
-	for i := 0; i < lines; i++ {
-		ny := by + float32(i)*step
-		l := NewLabel(fmt.Sprintf(sy.format, float32(i)))
-		px, py := sy.NDC2Pix(0, ny)
-		py -= sy.model.Height() / 2
-		//log.Error("label x:%v y:%v", px, py)
-		l.SetPosition(px, py)
-		sy.Add(l)
-		sy.labels = append(sy.labels, l)
-	}
 	sy.recalc()
 	return sy
 }
 
-func (sy *ChartScaleY) updateLabels() {
-
-	_, by := sy.chart.Pix2NDC(sy.chart.left, sy.chart.ContentHeight()-sy.chart.bottom)
-	step := 1 / (float32(sy.lines) + 1)
-	for i := 0; i < len(sy.labels); i++ {
-		ny := by + float32(i)*step
-		px, py := sy.NDC2Pix(0, ny)
-		py -= sy.model.Height() / 2
-		log.Error("label x:%v y:%v", px, py)
-		l := sy.labels[i]
-		l.SetPosition(px, py)
-	}
-}
-
+// recalc recalculates the position and size of this scale inside its parent
 func (sy *ChartScaleY) recalc() {
 
+	py := float32(0)
 	if sy.chart.title != nil {
-		th := sy.chart.title.Height()
-		sy.SetPosition(0, th)
-		sy.SetHeight(sy.chart.ContentHeight() - th)
-		sy.updateLabels()
-	} else {
-		sy.SetPosition(0, 0)
-		sy.SetHeight(sy.chart.ContentHeight())
-		sy.updateLabels()
+		py = sy.chart.title.Height()
 	}
+	sy.SetPosition(sy.chart.left, py)
+	sy.SetSize(sy.chart.ContentWidth()-sy.chart.left, sy.chart.ContentHeight()-py-sy.chart.bottom)
 }
 
 //
+//
 // LineGraph
+//
 //
 type LineGraph struct {
 	Panel               // Embedded panel
