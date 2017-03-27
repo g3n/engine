@@ -28,6 +28,7 @@ type ChartLine struct {
 	title   *Label       // Optional title label
 	left    float32      // Left margin in pixels
 	bottom  float32      // Bottom margin in pixels
+	top     float32      // Top margin in pixels
 	scaleX  *ChartScaleX // X scale panel
 	scaleY  *ChartScaleY // Y scale panel
 	startX  int          // Initial x offset in data buffers
@@ -56,6 +57,7 @@ func NewChartLine(width, height float32) *ChartLine {
 	cl.Panel.Initialize(width, height)
 	cl.left = 34
 	cl.bottom = 20
+	cl.top = 10
 	cl.startX = 0
 	cl.countX = 10
 	cl.firstX = 0.0
@@ -88,17 +90,19 @@ func (cl *ChartLine) SetTitle(title *Label) {
 	cl.recalc()
 }
 
+// SetFormatX sets the string format of the X scale labels
 func (cl *ChartLine) SetFormatX(format string) {
 
 	cl.formatX = format
 }
 
+// SetFormatY sets the string format of the Y scale labels
 func (cl *ChartLine) SetFormatY(format string) {
 
 	cl.formatY = format
 }
 
-// SetScaleX sets the line chart x scale number of lines and color
+// SetScaleX sets the X scale number of lines and color
 func (cl *ChartLine) SetScaleX(lines int, color *math32.Color) {
 
 	if cl.scaleX != nil {
@@ -121,7 +125,7 @@ func (cl *ChartLine) SetScaleX(lines int, color *math32.Color) {
 	cl.recalc()
 }
 
-// ClearScaleX removes the chart x scale if it was previously set
+// ClearScaleX removes the X scale if it was previously set
 func (cl *ChartLine) ClearScaleX() {
 
 	if cl.scaleX == nil {
@@ -142,11 +146,15 @@ func (cl *ChartLine) ClearScaleX() {
 	cl.scaleX = nil
 }
 
-// SetScaleY sets the line chart y scale number of lines and color
+// SetScaleY sets the Y scale number of lines and color
 func (cl *ChartLine) SetScaleY(lines int, color *math32.Color) {
 
 	if cl.scaleY != nil {
 		cl.ClearScaleY()
+	}
+
+	if lines < 2 {
+		lines = 2
 	}
 
 	// Add scale lines
@@ -155,9 +163,8 @@ func (cl *ChartLine) SetScaleY(lines int, color *math32.Color) {
 
 	// Add scale labels
 	// The position of the labels will be set by 'recalc()'
-
 	value := cl.minY
-	step := (cl.maxY - cl.minY) / float32(lines)
+	step := (cl.maxY - cl.minY) / float32(lines-1)
 	for i := 0; i < lines; i++ {
 		l := NewLabel(fmt.Sprintf(cl.formatY, value))
 		cl.Add(l)
@@ -167,7 +174,7 @@ func (cl *ChartLine) SetScaleY(lines int, color *math32.Color) {
 	cl.recalc()
 }
 
-// ClearScaleY removes the chart x scale if it was previously set
+// ClearScaleY removes the Y scale if it was previously set
 func (cl *ChartLine) ClearScaleY() {
 
 	if cl.scaleY == nil {
@@ -271,26 +278,43 @@ func (cl *ChartLine) updateLabelsX() {
 	if cl.scaleX == nil {
 		return
 	}
+	pstep := (cl.ContentWidth() - cl.left) / float32(len(cl.labelsX))
 	value := cl.firstX + float32(cl.startX)*cl.stepX
 	for i := 0; i < len(cl.labelsX); i++ {
 		label := cl.labelsX[i]
 		label.SetText(fmt.Sprintf(cl.formatX, value))
+		px := cl.left + float32(i)*pstep
+		label.SetPosition(px, cl.ContentHeight()-cl.bottom)
 		value += cl.stepX
 	}
 }
 
-// updateLabelsY updates the Y scale labels text
+// updateLabelsY updates the Y scale labels text and positions
 func (cl *ChartLine) updateLabelsY() {
 
 	if cl.scaleY == nil {
 		return
 	}
-	step := (cl.maxY - cl.minY) / float32(len(cl.labelsY))
+
+	th := float32(0)
+	if cl.title != nil {
+		th = cl.title.height
+	}
+
+	nlines := cl.scaleY.lines
+	vstep := (cl.maxY - cl.minY) / float32(nlines-1)
+	pstep := (cl.ContentHeight() - th - cl.top - cl.bottom) / float32(nlines-1)
 	value := cl.minY
-	for i := 0; i < len(cl.labelsY); i++ {
+	for i := 0; i < nlines; i++ {
 		label := cl.labelsY[i]
 		label.SetText(fmt.Sprintf(cl.formatY, value))
-		value += step
+		px := cl.left - 2 - label.Width()
+		if px < 0 {
+			px = 0
+		}
+		py := cl.ContentHeight() - cl.bottom - float32(i)*pstep
+		label.SetPosition(px, py-label.Height()/2)
+		value += vstep
 	}
 }
 
@@ -325,33 +349,21 @@ func (cl *ChartLine) calcRangeY() {
 func (cl *ChartLine) recalc() {
 
 	// Center title position
-	th := float32(0)
 	if cl.title != nil {
 		xpos := (cl.ContentWidth() - cl.title.width) / 2
 		cl.title.SetPositionX(xpos)
-		th = cl.title.height
 	}
 
 	// Recalc scale X and its labels
 	if cl.scaleX != nil {
 		cl.scaleX.recalc()
-		step := (cl.ContentWidth() - cl.left) / float32(len(cl.labelsX))
-		for i := 0; i < len(cl.labelsX); i++ {
-			label := cl.labelsX[i]
-			px := cl.left + float32(i)*step
-			label.SetPosition(px, cl.ContentHeight()-cl.bottom)
-		}
+		cl.updateLabelsX()
 	}
 
 	// Recalc scale Y and its labels
 	if cl.scaleY != nil {
 		cl.scaleY.recalc()
-		step := (cl.ContentHeight() - cl.bottom - th) / float32(len(cl.labelsY))
-		for i := 0; i < len(cl.labelsY); i++ {
-			label := cl.labelsY[i]
-			py := cl.ContentHeight() - cl.bottom - float32(i)*step
-			label.SetPosition(0, py-label.Height()/2)
-		}
+		cl.updateLabelsY()
 	}
 
 	// Recalc graphs
@@ -359,11 +371,6 @@ func (cl *ChartLine) recalc() {
 		g := cl.graphs[i]
 		g.recalc()
 		cl.SetTopChild(g)
-	}
-
-	// Sets the title at the top
-	if cl.title != nil {
-		cl.SetTopChild(cl.title)
 	}
 }
 
@@ -425,9 +432,9 @@ func (sx *ChartScaleX) setLabelsText(x []float32) {
 // recalc recalculates the position and size of this scale inside its parent
 func (sx *ChartScaleX) recalc() {
 
-	py := float32(0)
+	py := sx.chart.top
 	if sx.chart.title != nil {
-		py = sx.chart.title.Height()
+		py += sx.chart.title.Height()
 	}
 	sx.SetPosition(sx.chart.left, py)
 	sx.SetSize(sx.chart.ContentWidth()-sx.chart.left, sx.chart.ContentHeight()-py-sx.chart.bottom)
@@ -452,8 +459,10 @@ func (sx *ChartScaleX) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 }
 
 //
+//
 // ChartScaleY is a panel with LINE geometry which draws the chart Y vertical scale axis,
 // horizontal and labels.
+//
 //
 type ChartScaleY struct {
 	Panel                // Embedded panel
@@ -467,6 +476,9 @@ type ChartScaleY struct {
 // chart, number of lines and color
 func newChartScaleY(chart *ChartLine, lines int, color *math32.Color) *ChartScaleY {
 
+	if lines < 2 {
+		lines = 2
+	}
 	sy := new(ChartScaleY)
 	sy.chart = chart
 	sy.lines = lines
@@ -477,11 +489,14 @@ func newChartScaleY(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 	positions.Append(0+deltaLine, 0, 0, 0+deltaLine, -1, 0)
 
 	// Appends horizontal lines
-	step := 1 / float32(lines)
+	step := 1 / float32(lines-1)
 	for i := 0; i < lines; i++ {
 		ny := -1 + float32(i)*step
 		if i == 0 {
 			ny += deltaLine
+		}
+		if i == lines-1 {
+			ny -= deltaLine
 		}
 		positions.Append(0, ny, 0, 1, ny, 0)
 	}
@@ -503,9 +518,9 @@ func newChartScaleY(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 // recalc recalculates the position and size of this scale inside its parent
 func (sy *ChartScaleY) recalc() {
 
-	py := float32(0)
+	py := sy.chart.top
 	if sy.chart.title != nil {
-		py = sy.chart.title.Height()
+		py += sy.chart.title.Height()
 	}
 	sy.SetPosition(sy.chart.left, py)
 	sy.SetSize(sy.chart.ContentWidth()-sy.chart.left, sy.chart.ContentHeight()-py-sy.chart.bottom)
@@ -607,14 +622,13 @@ func (lg *LineGraph) updateData() {
 
 func (lg *LineGraph) recalc() {
 
-	px := lg.chart.left
-	py := float32(0)
-	w := lg.chart.ContentWidth() - lg.chart.left
-	h := lg.chart.ContentHeight() - lg.chart.bottom
+	py := lg.chart.top
 	if lg.chart.title != nil {
 		py += lg.chart.title.Height()
-		h -= lg.chart.title.Height()
 	}
+	px := lg.chart.left
+	w := lg.chart.ContentWidth() - lg.chart.left
+	h := lg.chart.ContentHeight() - py - lg.chart.bottom
 	lg.SetPosition(px, py)
 	lg.SetSize(w, h)
 }

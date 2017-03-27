@@ -128,6 +128,7 @@ func (cb *CheckRadio) SetValue(state bool) *CheckRadio {
 	}
 	cb.state = state
 	cb.update()
+	cb.Dispatch(OnChange, nil)
 	return cb
 }
 
