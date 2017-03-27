@@ -81,6 +81,7 @@ func (vbo *VBO) AttribCount() int {
 func (vbo *VBO) SetBuffer(buffer math32.ArrayF32) *VBO {
 
 	vbo.buffer = buffer
+	vbo.update = true
 	return vbo
 }
 

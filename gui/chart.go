@@ -30,12 +30,12 @@ type ChartLine struct {
 	bottom  float32      // Bottom margin in pixels
 	scaleX  *ChartScaleX // X scale panel
 	scaleY  *ChartScaleY // Y scale panel
-	offsetX int          // Initial offset in data buffers
-	countX  int          // Count of data buffer points starting from offsetX
-	firstX  float32      // Value of first data point to show
+	startX  int          // Initial x offset in data buffers
+	countX  int          // Count of data buffer points starting from startX
+	firstX  float32      // Label of first data point to show
 	stepX   float32      // Step to add to firstX for next data point
 	minY    float32      // Minimum Y value
-	maxY    float32      //
+	maxY    float32      // Maximum Y value
 	autoY   bool         // Auto range flag for Y values
 	formatX string       // String format for scale X labels
 	formatY string       // String format for scale Y labels
@@ -44,18 +44,24 @@ type ChartLine struct {
 	graphs  []*LineGraph // Array of line graphs
 }
 
+const (
+	deltaLine = 0.001 // Delta in NDC for lines over the boundary
+)
+
 // NewChartLine creates and returns a new line chart panel with
 // the specified dimensions in pixels.
 func NewChartLine(width, height float32) *ChartLine {
 
 	cl := new(ChartLine)
 	cl.Panel.Initialize(width, height)
-	cl.left = 30
+	cl.left = 34
 	cl.bottom = 20
-	cl.offsetX = 0
+	cl.startX = 0
 	cl.countX = 10
 	cl.firstX = 0.0
 	cl.stepX = 1.0
+	cl.minY = 0.0
+	cl.maxY = 10.0
 	cl.autoY = false
 	cl.formatX = "%v"
 	cl.formatY = "%v"
@@ -82,6 +88,16 @@ func (cl *ChartLine) SetTitle(title *Label) {
 	cl.recalc()
 }
 
+func (cl *ChartLine) SetFormatX(format string) {
+
+	cl.formatX = format
+}
+
+func (cl *ChartLine) SetFormatY(format string) {
+
+	cl.formatY = format
+}
+
 // SetScaleX sets the line chart x scale number of lines and color
 func (cl *ChartLine) SetScaleX(lines int, color *math32.Color) {
 
@@ -95,10 +111,12 @@ func (cl *ChartLine) SetScaleX(lines int, color *math32.Color) {
 
 	// Add scale labels
 	// The positions of the labels will be set by 'recalc()'
+	value := cl.firstX + float32(cl.startX)*cl.stepX
 	for i := 0; i < lines; i++ {
-		l := NewLabel(fmt.Sprintf(cl.formatX, float32(i)))
+		l := NewLabel(fmt.Sprintf(cl.formatX, value))
 		cl.Add(l)
 		cl.labelsX = append(cl.labelsX, l)
+		value += cl.stepX
 	}
 	cl.recalc()
 }
@@ -137,10 +155,14 @@ func (cl *ChartLine) SetScaleY(lines int, color *math32.Color) {
 
 	// Add scale labels
 	// The position of the labels will be set by 'recalc()'
+
+	value := cl.minY
+	step := (cl.maxY - cl.minY) / float32(lines)
 	for i := 0; i < lines; i++ {
-		l := NewLabel(fmt.Sprintf(cl.formatY, float32(i)))
+		l := NewLabel(fmt.Sprintf(cl.formatY, value))
 		cl.Add(l)
 		cl.labelsY = append(cl.labelsY, l)
+		value += step
 	}
 	cl.recalc()
 }
@@ -166,23 +188,57 @@ func (cl *ChartLine) ClearScaleY() {
 	cl.scaleY = nil
 }
 
-// SetRangeX sets the interval of the data to be shown:
-// offset is the start position in the Y data array.
+// SetRangeX sets the interval of the data to be shown
+// start is the start position in the Y data array.
 // count is the number of data points to show, starting from the specified offset.
-// first is the label for the first X point
-// step is the value added to first for the next data point
-func (cl *ChartLine) SetRangeX(offset int, count int, first float32, step float32) {
+func (cl *ChartLine) SetRangeX(start int, count int) {
 
-	cl.offsetX = offset
+	cl.startX = start
 	cl.countX = count
+	cl.updateLabelsX()
+	// Update graphs
+	for i := 0; i < len(cl.graphs); i++ {
+		g := cl.graphs[i]
+		g.updateData()
+	}
+}
+
+// SetLabelX sets the value for the labels of the x scale
+// first is the value for the first data point
+// step is the value to be added for the next data point
+func (cl *ChartLine) SetLabelX(first float32, step float32) {
+
 	cl.firstX = first
 	cl.stepX = step
+	cl.updateLabelsX()
+	// Update graphs
+	for i := 0; i < len(cl.graphs); i++ {
+		g := cl.graphs[i]
+		g.updateData()
+	}
 }
 
 func (cl *ChartLine) SetRangeY(min float32, max float32) {
 
 	cl.minY = min
 	cl.maxY = max
+	cl.updateLabelsY()
+	// Update graphs
+	for i := 0; i < len(cl.graphs); i++ {
+		g := cl.graphs[i]
+		g.updateData()
+	}
+}
+
+func (cl *ChartLine) SetRangeYauto(auto bool) {
+
+	cl.autoY = auto
+	cl.updateLabelsY()
+	// Update graphs
+	for i := 0; i < len(cl.graphs); i++ {
+		g := cl.graphs[i]
+		g.updateData()
+	}
 }
 
 // AddLine adds a line graph to the chart
@@ -209,6 +265,35 @@ func (cl *ChartLine) RemoveGraph(g *LineGraph) {
 	}
 }
 
+// updateLabelsX updates the X scale labels text
+func (cl *ChartLine) updateLabelsX() {
+
+	if cl.scaleX == nil {
+		return
+	}
+	value := cl.firstX + float32(cl.startX)*cl.stepX
+	for i := 0; i < len(cl.labelsX); i++ {
+		label := cl.labelsX[i]
+		label.SetText(fmt.Sprintf(cl.formatX, value))
+		value += cl.stepX
+	}
+}
+
+// updateLabelsY updates the Y scale labels text
+func (cl *ChartLine) updateLabelsY() {
+
+	if cl.scaleY == nil {
+		return
+	}
+	step := (cl.maxY - cl.minY) / float32(len(cl.labelsY))
+	value := cl.minY
+	for i := 0; i < len(cl.labelsY); i++ {
+		label := cl.labelsY[i]
+		label.SetText(fmt.Sprintf(cl.formatY, value))
+		value += step
+	}
+}
+
 func (cl *ChartLine) calcRangeY() {
 
 	if !cl.autoY {
@@ -220,10 +305,10 @@ func (cl *ChartLine) calcRangeY() {
 	for g := 0; g < len(cl.graphs); g++ {
 		graph := cl.graphs[g]
 		for x := 0; x < cl.countX; x++ {
-			if x+cl.offsetX >= len(graph.y) {
+			if x+cl.startX >= len(graph.data) {
 				break
 			}
-			vy := graph.y[x+cl.offsetX]
+			vy := graph.data[x+cl.startX]
 			if vy < minY {
 				minY = vy
 			}
@@ -278,7 +363,6 @@ func (cl *ChartLine) recalc() {
 
 	// Sets the title at the top
 	if cl.title != nil {
-		log.Error("TITLE TOP")
 		cl.SetTopChild(cl.title)
 	}
 }
@@ -308,12 +392,15 @@ func newChartScaleX(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 
 	// Appends bottom horizontal line
 	positions := math32.NewArrayF32(0, 0)
-	positions.Append(0, -1, 0, 1, -1, 0)
+	positions.Append(0, -1+deltaLine, 0, 1, -1+deltaLine, 0)
 
 	// Appends vertical lines
 	step := 1 / float32(lines)
 	for i := 0; i < lines; i++ {
 		nx := float32(i) * step
+		if i == 0 {
+			nx += deltaLine
+		}
 		positions.Append(nx, 0, 0, nx, -1, 0)
 	}
 
@@ -387,12 +474,15 @@ func newChartScaleY(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 
 	// Appends left vertical line
 	positions := math32.NewArrayF32(0, 0)
-	positions.Append(0, 0, 0, 0, -1, 0)
+	positions.Append(0+deltaLine, 0, 0, 0+deltaLine, -1, 0)
 
 	// Appends horizontal lines
 	step := 1 / float32(lines)
 	for i := 0; i < lines; i++ {
 		ny := -1 + float32(i)*step
+		if i == 0 {
+			ny += deltaLine
+		}
 		positions.Append(0, ny, 0, 1, ny, 0)
 	}
 
@@ -445,71 +535,30 @@ func (sy *ChartScaleY) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 //
 //
 type LineGraph struct {
-	Panel                // Embedded panel
-	chart  *ChartLine    // Container chart
-	color  math32.Color  // Line color
-	y      []float32     // Data y
-	bounds gls.Uniform4f // Bound uniform in OpenGL window coordinates
-	mat    chartMaterial // Chart material
+	Panel                   // Embedded panel
+	chart     *ChartLine    // Container chart
+	color     math32.Color  // Line color
+	data      []float32     // Data y
+	bounds    gls.Uniform4f // Bound uniform in OpenGL window coordinates
+	mat       chartMaterial // Chart material
+	vbo       *gls.VBO
+	positions math32.ArrayF32
 }
 
 func newLineGraph(chart *ChartLine, color *math32.Color, y []float32) *LineGraph {
 
-	log.Error("newLineGraph")
 	lg := new(LineGraph)
 	lg.bounds.Init("Bounds")
 	lg.chart = chart
 	lg.color = *color
-	lg.y = y
-	lg.setGeometry()
-	return lg
-}
+	lg.data = y
 
-func (lg *LineGraph) SetColor(color *math32.Color) {
-
-}
-
-func (lg *LineGraph) SetData(x, y []float32) {
-
-	lg.y = y
-}
-
-func (lg *LineGraph) SetLineWidth(width float32) {
-
-	lg.mat.SetLineWidth(width)
-}
-
-func (lg *LineGraph) setGeometry() {
-
-	lg.chart.calcRangeY()
-	log.Error("minY:%v maxY:%v", lg.chart.minY, lg.chart.maxY)
-
-	// Creates array for vertices and colors
-	positions := math32.NewArrayF32(0, 0)
-	origin := false
-	step := 1.0 / float32(lg.chart.countX-1)
-	rangeY := lg.chart.maxY - lg.chart.minY
-	for i := 0; i < lg.chart.countX; i++ {
-		x := i + lg.chart.offsetX
-		if x >= len(lg.y) {
-			break
-		}
-		px := float32(i) * step
-		if !origin {
-			positions.Append(px, -1, 0)
-			origin = true
-		}
-		vy := lg.y[x]
-		py := -1 + (vy / rangeY)
-		if py > 0 {
-			log.Error("PY:%v", py)
-		}
-		positions.Append(px, py, 0)
-	}
-
-	// Creates geometry using one interlaced VBO
+	// Creates geometry and adds VBO with positions
 	geom := geometry.NewGeometry()
-	geom.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(positions))
+	lg.vbo = gls.NewVBO().AddAttrib("VertexPosition", 3)
+	lg.positions = math32.NewArrayF32(0, 0)
+	lg.vbo.SetBuffer(lg.positions)
+	geom.AddVBO(lg.vbo)
 
 	// Initializes the panel with this graphic
 	gr := graphic.NewGraphic(geom, gls.LINE_STRIP)
@@ -517,6 +566,43 @@ func (lg *LineGraph) setGeometry() {
 	gr.AddMaterial(lg, &lg.mat, 0, 0)
 	lg.Panel.InitializeGraphic(lg.chart.ContentWidth(), lg.chart.ContentHeight(), gr)
 
+	lg.SetData(y)
+	return lg
+}
+
+func (lg *LineGraph) SetColor(color *math32.Color) {
+
+}
+
+func (lg *LineGraph) SetData(data []float32) {
+
+	lg.data = data
+	lg.updateData()
+}
+
+func (lg *LineGraph) SetLineWidth(width float32) {
+
+	lg.mat.SetLineWidth(width)
+}
+
+func (lg *LineGraph) updateData() {
+
+	lg.chart.calcRangeY()
+
+	positions := math32.NewArrayF32(0, 0)
+	step := 1.0 / float32(lg.chart.countX-1)
+	rangeY := lg.chart.maxY - lg.chart.minY
+	for i := 0; i < lg.chart.countX; i++ {
+		x := i + lg.chart.startX
+		if x >= len(lg.data) {
+			break
+		}
+		px := float32(i) * step
+		vy := lg.data[x]
+		py := -1 + ((vy - lg.chart.minY) / rangeY)
+		positions.Append(px, py, 0)
+	}
+	lg.vbo.SetBuffer(positions)
 }
 
 func (lg *LineGraph) recalc() {
