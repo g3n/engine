@@ -24,25 +24,24 @@ func init() {
 //
 //
 type ChartLine struct {
-	Panel                // Embedded panel
-	title   *Label       // Optional title label
-	left    float32      // Left margin in pixels
-	bottom  float32      // Bottom margin in pixels
-	top     float32      // Top margin in pixels
-	scaleX  *ChartScaleX // X scale panel
-	scaleY  *ChartScaleY // Y scale panel
-	startX  int          // Initial x offset in data buffers
-	countX  int          // Count of data buffer points starting from startX
-	firstX  float32      // Label of first data point to show
-	stepX   float32      // Step to add to firstX for next data point
-	minY    float32      // Minimum Y value
-	maxY    float32      // Maximum Y value
-	autoY   bool         // Auto range flag for Y values
-	formatX string       // String format for scale X labels
-	formatY string       // String format for scale Y labels
-	labelsX []*Label     // Array of scale X labels
-	labelsY []*Label     // Array of scale Y labels
-	graphs  []*LineGraph // Array of line graphs
+	Panel                   // Embedded panel
+	left       float32      // Left margin in pixels
+	bottom     float32      // Bottom margin in pixels
+	top        float32      // Top margin in pixels
+	firstX     float32      // Value for the first x label
+	stepX      float32      // Step for the next x label
+	countStepX float32      // Number of values per x step
+	minY       float32      // Minimum Y value
+	maxY       float32      // Maximum Y value
+	autoY      bool         // Auto range flag for Y values
+	formatX    string       // String format for scale X labels
+	formatY    string       // String format for scale Y labels
+	title      *Label       // Optional title label
+	scaleX     *ChartScaleX // X scale panel
+	scaleY     *ChartScaleY // Y scale panel
+	labelsX    []*Label     // Array of scale X labels
+	labelsY    []*Label     // Array of scale Y labels
+	graphs     []*LineGraph // Array of line graphs
 }
 
 const (
@@ -58,11 +57,10 @@ func NewChartLine(width, height float32) *ChartLine {
 	cl.left = 34
 	cl.bottom = 20
 	cl.top = 10
-	cl.startX = 0
-	cl.countX = 10
-	cl.firstX = 0.0
-	cl.stepX = 1.0
-	cl.minY = 0.0
+	cl.firstX = 0
+	cl.stepX = 1
+	cl.countStepX = 0
+	cl.minY = -10.0
 	cl.maxY = 10.0
 	cl.autoY = false
 	cl.formatX = "%v"
@@ -94,12 +92,14 @@ func (cl *ChartLine) SetTitle(title *Label) {
 func (cl *ChartLine) SetFormatX(format string) {
 
 	cl.formatX = format
+	cl.updateLabelsX()
 }
 
 // SetFormatY sets the string format of the Y scale labels
 func (cl *ChartLine) SetFormatY(format string) {
 
 	cl.formatY = format
+	cl.updateLabelsY()
 }
 
 // SetScaleX sets the X scale number of lines and color
@@ -115,7 +115,7 @@ func (cl *ChartLine) SetScaleX(lines int, color *math32.Color) {
 
 	// Add scale labels
 	// The positions of the labels will be set by 'recalc()'
-	value := cl.firstX + float32(cl.startX)*cl.stepX
+	value := cl.firstX
 	for i := 0; i < lines; i++ {
 		l := NewLabel(fmt.Sprintf(cl.formatX, value))
 		cl.Add(l)
@@ -195,13 +195,15 @@ func (cl *ChartLine) ClearScaleY() {
 	cl.scaleY = nil
 }
 
-// SetRangeX sets the interval of the data to be shown
-// start is the start position in the Y data array.
-// count is the number of data points to show, starting from the specified offset.
-func (cl *ChartLine) SetRangeX(start int, count int) {
+// SetRangeX sets the X scale labels and range per step
+// firstX is the value of first label of the x scale
+// stepX is the step to be added to get the next x scale label
+// countStepX is the number of elements of the data buffer for each line step
+func (cl *ChartLine) SetRangeX(firstX float32, stepX float32, countStepX float32) {
 
-	cl.startX = start
-	cl.countX = count
+	cl.firstX = firstX
+	cl.stepX = stepX
+	cl.countStepX = countStepX
 	cl.updateLabelsX()
 	// Update graphs
 	for i := 0; i < len(cl.graphs); i++ {
@@ -210,23 +212,12 @@ func (cl *ChartLine) SetRangeX(start int, count int) {
 	}
 }
 
-// SetLabelX sets the value for the labels of the x scale
-// first is the value for the first data point
-// step is the value to be added for the next data point
-func (cl *ChartLine) SetLabelX(first float32, step float32) {
-
-	cl.firstX = first
-	cl.stepX = step
-	cl.updateLabelsX()
-	// Update graphs
-	for i := 0; i < len(cl.graphs); i++ {
-		g := cl.graphs[i]
-		g.updateData()
-	}
-}
-
+// SetRangeY sets the minimum and maximum values of the y scale
 func (cl *ChartLine) SetRangeY(min float32, max float32) {
 
+	if cl.autoY {
+		return
+	}
 	cl.minY = min
 	cl.maxY = max
 	cl.updateLabelsY()
@@ -237,15 +228,26 @@ func (cl *ChartLine) SetRangeY(min float32, max float32) {
 	}
 }
 
+// SetRangeYauto sets the state of the auto
 func (cl *ChartLine) SetRangeYauto(auto bool) {
 
 	cl.autoY = auto
+	if !auto {
+		return
+	}
+	cl.calcRangeY()
 	cl.updateLabelsY()
 	// Update graphs
 	for i := 0; i < len(cl.graphs); i++ {
 		g := cl.graphs[i]
 		g.updateData()
 	}
+}
+
+// Returns the current y range
+func (cl *ChartLine) RangeY() (minY, maxY float32) {
+
+	return cl.minY, cl.maxY
 }
 
 // AddLine adds a line graph to the chart
@@ -258,6 +260,7 @@ func (cl *ChartLine) AddGraph(color *math32.Color, data []float32) *LineGraph {
 	return graph
 }
 
+// RemoveGraph removes and disposes of the specified graph from the chart
 func (cl *ChartLine) RemoveGraph(g *LineGraph) {
 
 	cl.Remove(g)
@@ -270,6 +273,16 @@ func (cl *ChartLine) RemoveGraph(g *LineGraph) {
 			break
 		}
 	}
+	if !cl.autoY {
+		return
+	}
+	cl.calcRangeY()
+	cl.updateLabelsY()
+	// Update graphs
+	for i := 0; i < len(cl.graphs); i++ {
+		g := cl.graphs[i]
+		g.updateData()
+	}
 }
 
 // updateLabelsX updates the X scale labels text
@@ -279,7 +292,7 @@ func (cl *ChartLine) updateLabelsX() {
 		return
 	}
 	pstep := (cl.ContentWidth() - cl.left) / float32(len(cl.labelsX))
-	value := cl.firstX + float32(cl.startX)*cl.stepX
+	value := cl.firstX
 	for i := 0; i < len(cl.labelsX); i++ {
 		label := cl.labelsX[i]
 		label.SetText(fmt.Sprintf(cl.formatX, value))
@@ -318,21 +331,15 @@ func (cl *ChartLine) updateLabelsY() {
 	}
 }
 
+// calcRangeY calculates the minimum and maximum y values for all graphs
 func (cl *ChartLine) calcRangeY() {
-
-	if !cl.autoY {
-		return
-	}
 
 	minY := float32(math.MaxFloat32)
 	maxY := -float32(math.MaxFloat32)
 	for g := 0; g < len(cl.graphs); g++ {
 		graph := cl.graphs[g]
-		for x := 0; x < cl.countX; x++ {
-			if x+cl.startX >= len(graph.data) {
-				break
-			}
-			vy := graph.data[x+cl.startX]
+		for x := 0; x < len(graph.data); x++ {
+			vy := graph.data[x]
 			if vy < minY {
 				minY = vy
 			}
@@ -352,6 +359,11 @@ func (cl *ChartLine) recalc() {
 	if cl.title != nil {
 		xpos := (cl.ContentWidth() - cl.title.width) / 2
 		cl.title.SetPositionX(xpos)
+	}
+
+	if cl.autoY {
+		log.Error("calcRangeY()")
+		cl.calcRangeY()
 	}
 
 	// Recalc scale X and its labels
@@ -423,10 +435,6 @@ func newChartScaleX(chart *ChartLine, lines int, color *math32.Color) *ChartScal
 
 	sx.recalc()
 	return sx
-}
-
-func (sx *ChartScaleX) setLabelsText(x []float32) {
-
 }
 
 // recalc recalculates the position and size of this scale inside its parent
@@ -585,16 +593,20 @@ func newLineGraph(chart *ChartLine, color *math32.Color, y []float32) *LineGraph
 	return lg
 }
 
+// SetColor sets the color of the graph
 func (lg *LineGraph) SetColor(color *math32.Color) {
 
+	lg.mat.color.SetColor(color)
 }
 
+// SetData sets the graph data
 func (lg *LineGraph) SetData(data []float32) {
 
 	lg.data = data
 	lg.updateData()
 }
 
+// SetLineWidth sets the graph line width
 func (lg *LineGraph) SetLineWidth(width float32) {
 
 	lg.mat.SetLineWidth(width)
@@ -602,18 +614,17 @@ func (lg *LineGraph) SetLineWidth(width float32) {
 
 func (lg *LineGraph) updateData() {
 
-	lg.chart.calcRangeY()
+	lines := 1
+	if lg.chart.scaleX != nil {
+		lines = lg.chart.scaleX.lines
+	}
+	step := 1.0 / (float32(lines) * lg.chart.countStepX)
 
 	positions := math32.NewArrayF32(0, 0)
-	step := 1.0 / float32(lg.chart.countX-1)
 	rangeY := lg.chart.maxY - lg.chart.minY
-	for i := 0; i < lg.chart.countX; i++ {
-		x := i + lg.chart.startX
-		if x >= len(lg.data) {
-			break
-		}
+	for i := 0; i < len(lg.data); i++ {
 		px := float32(i) * step
-		vy := lg.data[x]
+		vy := lg.data[i]
 		py := -1 + ((vy - lg.chart.minY) / rangeY)
 		positions.Append(px, py, 0)
 	}
