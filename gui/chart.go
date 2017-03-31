@@ -204,12 +204,7 @@ func (cl *ChartLine) SetRangeX(firstX float32, stepX float32, countStepX float32
 	cl.firstX = firstX
 	cl.stepX = stepX
 	cl.countStepX = countStepX
-	cl.updateLabelsX()
-	// Update graphs
-	for i := 0; i < len(cl.graphs); i++ {
-		g := cl.graphs[i]
-		g.updateData()
-	}
+	cl.updateGraphs()
 }
 
 // SetRangeY sets the minimum and maximum values of the y scale
@@ -220,12 +215,7 @@ func (cl *ChartLine) SetRangeY(min float32, max float32) {
 	}
 	cl.minY = min
 	cl.maxY = max
-	cl.updateLabelsY()
-	// Update graphs
-	for i := 0; i < len(cl.graphs); i++ {
-		g := cl.graphs[i]
-		g.updateData()
-	}
+	cl.updateGraphs()
 }
 
 // SetRangeYauto sets the state of the auto
@@ -235,13 +225,7 @@ func (cl *ChartLine) SetRangeYauto(auto bool) {
 	if !auto {
 		return
 	}
-	cl.calcRangeY()
-	cl.updateLabelsY()
-	// Update graphs
-	for i := 0; i < len(cl.graphs); i++ {
-		g := cl.graphs[i]
-		g.updateData()
-	}
+	cl.updateGraphs()
 }
 
 // Returns the current y range
@@ -257,6 +241,7 @@ func (cl *ChartLine) AddGraph(color *math32.Color, data []float32) *LineGraph {
 	cl.graphs = append(cl.graphs, graph)
 	cl.Add(graph)
 	cl.recalc()
+	cl.updateGraphs()
 	return graph
 }
 
@@ -276,13 +261,7 @@ func (cl *ChartLine) RemoveGraph(g *LineGraph) {
 	if !cl.autoY {
 		return
 	}
-	cl.calcRangeY()
-	cl.updateLabelsY()
-	// Update graphs
-	for i := 0; i < len(cl.graphs); i++ {
-		g := cl.graphs[i]
-		g.updateData()
-	}
+	cl.updateGraphs()
 }
 
 // updateLabelsX updates the X scale labels text
@@ -334,6 +313,9 @@ func (cl *ChartLine) updateLabelsY() {
 // calcRangeY calculates the minimum and maximum y values for all graphs
 func (cl *ChartLine) calcRangeY() {
 
+	if !cl.autoY || len(cl.graphs) == 0 {
+		return
+	}
 	minY := float32(math.MaxFloat32)
 	maxY := -float32(math.MaxFloat32)
 	for g := 0; g < len(cl.graphs); g++ {
@@ -352,6 +334,19 @@ func (cl *ChartLine) calcRangeY() {
 	cl.maxY = maxY
 }
 
+// updateGraphs should be called when the range the scales change or
+// any graph data changes
+func (cl *ChartLine) updateGraphs() {
+
+	cl.calcRangeY()
+	cl.updateLabelsX()
+	cl.updateLabelsY()
+	for i := 0; i < len(cl.graphs); i++ {
+		g := cl.graphs[i]
+		g.updateData()
+	}
+}
+
 // recalc recalculates the positions of the inner panels
 func (cl *ChartLine) recalc() {
 
@@ -359,11 +354,6 @@ func (cl *ChartLine) recalc() {
 	if cl.title != nil {
 		xpos := (cl.ContentWidth() - cl.title.width) / 2
 		cl.title.SetPositionX(xpos)
-	}
-
-	if cl.autoY {
-		log.Error("calcRangeY()")
-		cl.calcRangeY()
 	}
 
 	// Recalc scale X and its labels
