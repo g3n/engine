@@ -75,24 +75,29 @@ func NewChart(width, height float32) *Chart {
 	return ch
 }
 
-// SetTitle sets the chart title
-func (ch *Chart) SetTitle(title string) {
+// SetTitle sets the chart title text and font size.
+// To remove the title pass an empty string
+func (ch *Chart) SetTitle(title string, size float64) {
 
-	if ch.title != nil {
-		ch.Remove(ch.title)
-		ch.title = nil
+	// Remove title
+	if title == "" {
+		if ch.title != nil {
+			ch.Remove(ch.title)
+			ch.title.Dispose()
+			ch.title = nil
+			ch.recalc()
+		}
+		return
 	}
-	if title != "" {
+
+	// Sets title
+	if ch.title == nil {
 		ch.title = NewLabel(title)
 		ch.Add(ch.title)
 	}
+	ch.title.SetText(title)
+	ch.title.SetFontSize(size)
 	ch.recalc()
-}
-
-// Title returns the pointer to the title label or nil
-func (ch *Chart) Title() *Label {
-
-	return ch.title
 }
 
 // SetMarginY sets the y scale margin
