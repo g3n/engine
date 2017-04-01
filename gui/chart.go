@@ -42,8 +42,8 @@ type Chart struct {
 	fontSizeX  float64      // X scale label font size
 	fontSizeY  float64      // Y scale label font size
 	title      *Label       // Optional title label
-	scaleX     *ChartScaleX // X scale panel
-	scaleY     *ChartScaleY // Y scale panel
+	scaleX     *chartScaleX // X scale panel
+	scaleY     *chartScaleY // Y scale panel
 	labelsX    []*Label     // Array of scale X labels
 	labelsY    []*Label     // Array of scale Y labels
 	graphs     []*Graph     // Array of line graphs
@@ -418,12 +418,10 @@ func (ch *Chart) recalc() {
 }
 
 //
-//
-// ChartScaleX is a panel with GL_LINES geometry which draws the chart X horizontal scale axis,
+// chartScaleX is a panel with GL_LINES geometry which draws the chart X horizontal scale axis,
 // vertical lines and line labels.
 //
-//
-type ChartScaleX struct {
+type chartScaleX struct {
 	Panel                // Embedded panel
 	chart  *Chart        // Container chart
 	lines  int           // Number of vertical lines
@@ -431,11 +429,11 @@ type ChartScaleX struct {
 	mat    chartMaterial // Chart material
 }
 
-// newChartScaleX creates and returns a pointer to a new ChartScaleX for the specified
+// newChartScaleX creates and returns a pointer to a new chartScaleX for the specified
 // chart, number of lines and color
-func newChartScaleX(chart *Chart, lines int, color *math32.Color) *ChartScaleX {
+func newChartScaleX(chart *Chart, lines int, color *math32.Color) *chartScaleX {
 
-	sx := new(ChartScaleX)
+	sx := new(chartScaleX)
 	sx.chart = chart
 	sx.lines = lines
 	sx.bounds.Init("Bounds")
@@ -469,7 +467,7 @@ func newChartScaleX(chart *Chart, lines int, color *math32.Color) *ChartScaleX {
 }
 
 // recalc recalculates the position and size of this scale inside its parent
-func (sx *ChartScaleX) recalc() {
+func (sx *chartScaleX) recalc() {
 
 	py := sx.chart.top
 	if sx.chart.title != nil {
@@ -482,7 +480,7 @@ func (sx *ChartScaleX) recalc() {
 // RenderSetup is called by the renderer before drawing this graphic
 // It overrides the original panel RenderSetup
 // Calculates the model matrix and transfer to OpenGL.
-func (sx *ChartScaleX) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
+func (sx *chartScaleX) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 
 	// Sets model matrix and transfer to shader
 	var mm math32.Matrix4
@@ -497,12 +495,10 @@ func (sx *ChartScaleX) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 }
 
 //
-//
 // ChartScaleY is a panel with LINE geometry which draws the chart Y vertical scale axis,
 // horizontal and labels.
 //
-//
-type ChartScaleY struct {
+type chartScaleY struct {
 	Panel                // Embedded panel
 	chart  *Chart        // Container chart
 	lines  int           // Number of horizontal lines
@@ -510,14 +506,14 @@ type ChartScaleY struct {
 	mat    chartMaterial // Chart material
 }
 
-// newChartScaleY creates and returns a pointer to a new ChartScaleY for the specified
+// newChartScaleY creates and returns a pointer to a new chartScaleY for the specified
 // chart, number of lines and color
-func newChartScaleY(chart *Chart, lines int, color *math32.Color) *ChartScaleY {
+func newChartScaleY(chart *Chart, lines int, color *math32.Color) *chartScaleY {
 
 	if lines < 2 {
 		lines = 2
 	}
-	sy := new(ChartScaleY)
+	sy := new(chartScaleY)
 	sy.chart = chart
 	sy.lines = lines
 	sy.bounds.Init("Bounds")
@@ -554,7 +550,7 @@ func newChartScaleY(chart *Chart, lines int, color *math32.Color) *ChartScaleY {
 }
 
 // recalc recalculates the position and size of this scale inside its parent
-func (sy *ChartScaleY) recalc() {
+func (sy *chartScaleY) recalc() {
 
 	py := sy.chart.top
 	if sy.chart.title != nil {
@@ -567,7 +563,7 @@ func (sy *ChartScaleY) recalc() {
 // RenderSetup is called by the renderer before drawing this graphic
 // It overrides the original panel RenderSetup
 // Calculates the model matrix and transfer to OpenGL.
-func (sy *ChartScaleY) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
+func (sy *chartScaleY) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 
 	// Sets model matrix and transfer to shader
 	var mm math32.Matrix4
@@ -582,9 +578,7 @@ func (sy *ChartScaleY) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 }
 
 //
-//
 // Graph
-//
 //
 type Graph struct {
 	Panel                   // Embedded panel
@@ -597,13 +591,14 @@ type Graph struct {
 	positions math32.ArrayF32
 }
 
-func newGraph(chart *Chart, color *math32.Color, y []float32) *Graph {
+// newGraph creates and returns a pointer to a new graph for the specified chart
+func newGraph(chart *Chart, color *math32.Color, data []float32) *Graph {
 
 	lg := new(Graph)
 	lg.bounds.Init("Bounds")
 	lg.chart = chart
 	lg.color = *color
-	lg.data = y
+	lg.data = data
 
 	// Creates geometry and adds VBO with positions
 	geom := geometry.NewGeometry()
@@ -618,7 +613,7 @@ func newGraph(chart *Chart, color *math32.Color, y []float32) *Graph {
 	gr.AddMaterial(lg, &lg.mat, 0, 0)
 	lg.Panel.InitializeGraphic(lg.chart.ContentWidth(), lg.chart.ContentHeight(), gr)
 
-	lg.SetData(y)
+	lg.SetData(data)
 	return lg
 }
 
@@ -693,9 +688,7 @@ func (lg *Graph) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 }
 
 //
-//
-// Chart material (for lines)
-//
+// Chart material
 //
 type chartMaterial struct {
 	material.Material                // Embedded material
