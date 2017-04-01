@@ -1,3 +1,7 @@
+// Copyright 2016 The G3N Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package gui
 
 import (
@@ -19,11 +23,10 @@ func init() {
 }
 
 //
+// Chart implements a panel which can contain a title, an x scale,
+// an y scale and several graphs
 //
-// ChartLine implements a panel which can contain several line charts
-//
-//
-type ChartLine struct {
+type Chart struct {
 	Panel                   // Embedded panel
 	left       float32      // Left margin in pixels
 	bottom     float32      // Bottom margin in pixels
@@ -36,121 +39,158 @@ type ChartLine struct {
 	autoY      bool         // Auto range flag for Y values
 	formatX    string       // String format for scale X labels
 	formatY    string       // String format for scale Y labels
+	fontSizeX  float64      // X scale label font size
+	fontSizeY  float64      // Y scale label font size
 	title      *Label       // Optional title label
 	scaleX     *ChartScaleX // X scale panel
 	scaleY     *ChartScaleY // Y scale panel
 	labelsX    []*Label     // Array of scale X labels
 	labelsY    []*Label     // Array of scale Y labels
-	graphs     []*LineGraph // Array of line graphs
+	graphs     []*Graph     // Array of line graphs
 }
 
 const (
 	deltaLine = 0.001 // Delta in NDC for lines over the boundary
 )
 
-// NewChartLine creates and returns a new line chart panel with
+// NewChart creates and returns a new chart panel with
 // the specified dimensions in pixels.
-func NewChartLine(width, height float32) *ChartLine {
+func NewChart(width, height float32) *Chart {
 
-	cl := new(ChartLine)
-	cl.Panel.Initialize(width, height)
-	cl.left = 34
-	cl.bottom = 20
-	cl.top = 10
-	cl.firstX = 0
-	cl.stepX = 1
-	cl.countStepX = 0
-	cl.minY = -10.0
-	cl.maxY = 10.0
-	cl.autoY = false
-	cl.formatX = "%v"
-	cl.formatY = "%v"
-	return cl
+	ch := new(Chart)
+	ch.Panel.Initialize(width, height)
+	ch.left = 40
+	ch.bottom = 20
+	ch.top = 10
+	ch.firstX = 0
+	ch.stepX = 1
+	ch.countStepX = 1
+	ch.minY = -10.0
+	ch.maxY = 10.0
+	ch.autoY = false
+	ch.formatX = "%v"
+	ch.formatY = "%v"
+	ch.fontSizeX = 14
+	ch.fontSizeY = 14
+	return ch
 }
 
-//func (cl *ChartLine) SetMargins(left, bottom float32) {
-//
-//	cl.baseX, cl.baseY = cl.Pix2NDC(left, bottom)
-//	cl.recalc()
-//}
-
 // SetTitle sets the chart title
-func (cl *ChartLine) SetTitle(title *Label) {
+func (ch *Chart) SetTitle(title string) {
 
-	if cl.title != nil {
-		cl.Remove(cl.title)
-		cl.title = nil
+	if ch.title != nil {
+		ch.Remove(ch.title)
+		ch.title = nil
 	}
-	if title != nil {
-		cl.Add(title)
-		cl.title = title
+	if title != "" {
+		ch.title = NewLabel(title)
+		ch.Add(ch.title)
 	}
-	cl.recalc()
+	ch.recalc()
+}
+
+// Title returns the pointer to the title label or nil
+func (ch *Chart) Title() *Label {
+
+	return ch.title
+}
+
+// SetMarginY sets the y scale margin
+func (ch *Chart) SetMarginY(left float32) {
+
+	ch.left = left
+	ch.recalc()
+}
+
+// SetMarginX sets the x scale margin
+func (ch *Chart) SetMarginX(bottom float32) {
+
+	ch.bottom = bottom
+	ch.recalc()
 }
 
 // SetFormatX sets the string format of the X scale labels
-func (cl *ChartLine) SetFormatX(format string) {
+func (ch *Chart) SetFormatX(format string) {
 
-	cl.formatX = format
-	cl.updateLabelsX()
+	ch.formatX = format
+	ch.updateLabelsX()
 }
 
 // SetFormatY sets the string format of the Y scale labels
-func (cl *ChartLine) SetFormatY(format string) {
+func (ch *Chart) SetFormatY(format string) {
 
-	cl.formatY = format
-	cl.updateLabelsY()
+	ch.formatY = format
+	ch.updateLabelsY()
 }
 
-// SetScaleX sets the X scale number of lines and color
-func (cl *ChartLine) SetScaleX(lines int, color *math32.Color) {
+// SetFontSizeX sets the font size for the x scale labels
+func (ch *Chart) SetFontSizeX(size float64) {
 
-	if cl.scaleX != nil {
-		cl.ClearScaleX()
+	ch.fontSizeX = size
+	for i := 0; i < len(ch.labelsX); i++ {
+		ch.labelsX[i].SetFontSize(ch.fontSizeX)
+	}
+}
+
+// SetFontSizeY sets the font size for the y scale labels
+func (ch *Chart) SetFontSizeY(size float64) {
+
+	ch.fontSizeY = size
+	for i := 0; i < len(ch.labelsY); i++ {
+		ch.labelsY[i].SetFontSize(ch.fontSizeY)
+	}
+}
+
+// SetScaleX sets the X scale number of lines, lines color and label font size
+func (ch *Chart) SetScaleX(lines int, color *math32.Color) {
+
+	if ch.scaleX != nil {
+		ch.ClearScaleX()
 	}
 
 	// Add scale lines
-	cl.scaleX = newChartScaleX(cl, lines, color)
-	cl.Add(cl.scaleX)
+	ch.scaleX = newChartScaleX(ch, lines, color)
+	ch.Add(ch.scaleX)
 
 	// Add scale labels
 	// The positions of the labels will be set by 'recalc()'
-	value := cl.firstX
+	value := ch.firstX
 	for i := 0; i < lines; i++ {
-		l := NewLabel(fmt.Sprintf(cl.formatX, value))
-		cl.Add(l)
-		cl.labelsX = append(cl.labelsX, l)
-		value += cl.stepX
+		l := NewLabel(fmt.Sprintf(ch.formatX, value))
+		l.SetFontSize(ch.fontSizeX)
+		ch.Add(l)
+		ch.labelsX = append(ch.labelsX, l)
+		value += ch.stepX
 	}
-	cl.recalc()
+	ch.recalc()
 }
 
 // ClearScaleX removes the X scale if it was previously set
-func (cl *ChartLine) ClearScaleX() {
+func (ch *Chart) ClearScaleX() {
 
-	if cl.scaleX == nil {
+	if ch.scaleX == nil {
 		return
 	}
 
 	// Remove and dispose scale lines
-	cl.Remove(cl.scaleX)
-	cl.scaleX.Dispose()
+	ch.Remove(ch.scaleX)
+	ch.scaleX.Dispose()
 
 	// Remove and dispose scale labels
-	for i := 0; i < len(cl.labelsX); i++ {
-		label := cl.labelsX[i]
-		cl.Remove(label)
+	for i := 0; i < len(ch.labelsX); i++ {
+		label := ch.labelsX[i]
+		ch.Remove(label)
 		label.Dispose()
 	}
-	cl.labelsX = cl.labelsX[0:0]
-	cl.scaleX = nil
+	ch.labelsX = ch.labelsX[0:0]
+	ch.scaleX = nil
 }
 
 // SetScaleY sets the Y scale number of lines and color
-func (cl *ChartLine) SetScaleY(lines int, color *math32.Color) {
+func (ch *Chart) SetScaleY(lines int, color *math32.Color) {
 
-	if cl.scaleY != nil {
-		cl.ClearScaleY()
+	if ch.scaleY != nil {
+		ch.ClearScaleY()
 	}
 
 	if lines < 2 {
@@ -158,168 +198,169 @@ func (cl *ChartLine) SetScaleY(lines int, color *math32.Color) {
 	}
 
 	// Add scale lines
-	cl.scaleY = newChartScaleY(cl, lines, color)
-	cl.Add(cl.scaleY)
+	ch.scaleY = newChartScaleY(ch, lines, color)
+	ch.Add(ch.scaleY)
 
 	// Add scale labels
 	// The position of the labels will be set by 'recalc()'
-	value := cl.minY
-	step := (cl.maxY - cl.minY) / float32(lines-1)
+	value := ch.minY
+	step := (ch.maxY - ch.minY) / float32(lines-1)
 	for i := 0; i < lines; i++ {
-		l := NewLabel(fmt.Sprintf(cl.formatY, value))
-		cl.Add(l)
-		cl.labelsY = append(cl.labelsY, l)
+		l := NewLabel(fmt.Sprintf(ch.formatY, value))
+		l.SetFontSize(ch.fontSizeY)
+		ch.Add(l)
+		ch.labelsY = append(ch.labelsY, l)
 		value += step
 	}
-	cl.recalc()
+	ch.recalc()
 }
 
 // ClearScaleY removes the Y scale if it was previously set
-func (cl *ChartLine) ClearScaleY() {
+func (ch *Chart) ClearScaleY() {
 
-	if cl.scaleY == nil {
+	if ch.scaleY == nil {
 		return
 	}
 
 	// Remove and dispose scale lines
-	cl.Remove(cl.scaleY)
-	cl.scaleY.Dispose()
+	ch.Remove(ch.scaleY)
+	ch.scaleY.Dispose()
 
 	// Remove and dispose scale labels
-	for i := 0; i < len(cl.labelsY); i++ {
-		label := cl.labelsY[i]
-		cl.Remove(label)
+	for i := 0; i < len(ch.labelsY); i++ {
+		label := ch.labelsY[i]
+		ch.Remove(label)
 		label.Dispose()
 	}
-	cl.labelsY = cl.labelsY[0:0]
-	cl.scaleY = nil
+	ch.labelsY = ch.labelsY[0:0]
+	ch.scaleY = nil
 }
 
 // SetRangeX sets the X scale labels and range per step
 // firstX is the value of first label of the x scale
 // stepX is the step to be added to get the next x scale label
 // countStepX is the number of elements of the data buffer for each line step
-func (cl *ChartLine) SetRangeX(firstX float32, stepX float32, countStepX float32) {
+func (ch *Chart) SetRangeX(firstX float32, stepX float32, countStepX float32) {
 
-	cl.firstX = firstX
-	cl.stepX = stepX
-	cl.countStepX = countStepX
-	cl.updateGraphs()
+	ch.firstX = firstX
+	ch.stepX = stepX
+	ch.countStepX = countStepX
+	ch.updateGraphs()
 }
 
 // SetRangeY sets the minimum and maximum values of the y scale
-func (cl *ChartLine) SetRangeY(min float32, max float32) {
+func (ch *Chart) SetRangeY(min float32, max float32) {
 
-	if cl.autoY {
+	if ch.autoY {
 		return
 	}
-	cl.minY = min
-	cl.maxY = max
-	cl.updateGraphs()
+	ch.minY = min
+	ch.maxY = max
+	ch.updateGraphs()
 }
 
 // SetRangeYauto sets the state of the auto
-func (cl *ChartLine) SetRangeYauto(auto bool) {
+func (ch *Chart) SetRangeYauto(auto bool) {
 
-	cl.autoY = auto
+	ch.autoY = auto
 	if !auto {
 		return
 	}
-	cl.updateGraphs()
+	ch.updateGraphs()
 }
 
 // Returns the current y range
-func (cl *ChartLine) RangeY() (minY, maxY float32) {
+func (ch *Chart) RangeY() (minY, maxY float32) {
 
-	return cl.minY, cl.maxY
+	return ch.minY, ch.maxY
 }
 
-// AddLine adds a line graph to the chart
-func (cl *ChartLine) AddGraph(color *math32.Color, data []float32) *LineGraph {
+// AddLineGraph adds a line graph to the chart
+func (ch *Chart) AddLineGraph(color *math32.Color, data []float32) *Graph {
 
-	graph := newLineGraph(cl, color, data)
-	cl.graphs = append(cl.graphs, graph)
-	cl.Add(graph)
-	cl.recalc()
-	cl.updateGraphs()
+	graph := newGraph(ch, color, data)
+	ch.graphs = append(ch.graphs, graph)
+	ch.Add(graph)
+	ch.recalc()
+	ch.updateGraphs()
 	return graph
 }
 
 // RemoveGraph removes and disposes of the specified graph from the chart
-func (cl *ChartLine) RemoveGraph(g *LineGraph) {
+func (ch *Chart) RemoveGraph(g *Graph) {
 
-	cl.Remove(g)
+	ch.Remove(g)
 	g.Dispose()
-	for pos, current := range cl.graphs {
+	for pos, current := range ch.graphs {
 		if current == g {
-			copy(cl.graphs[pos:], cl.graphs[pos+1:])
-			cl.graphs[len(cl.graphs)-1] = nil
-			cl.graphs = cl.graphs[:len(cl.graphs)-1]
+			copy(ch.graphs[pos:], ch.graphs[pos+1:])
+			ch.graphs[len(ch.graphs)-1] = nil
+			ch.graphs = ch.graphs[:len(ch.graphs)-1]
 			break
 		}
 	}
-	if !cl.autoY {
+	if !ch.autoY {
 		return
 	}
-	cl.updateGraphs()
+	ch.updateGraphs()
 }
 
 // updateLabelsX updates the X scale labels text
-func (cl *ChartLine) updateLabelsX() {
+func (ch *Chart) updateLabelsX() {
 
-	if cl.scaleX == nil {
+	if ch.scaleX == nil {
 		return
 	}
-	pstep := (cl.ContentWidth() - cl.left) / float32(len(cl.labelsX))
-	value := cl.firstX
-	for i := 0; i < len(cl.labelsX); i++ {
-		label := cl.labelsX[i]
-		label.SetText(fmt.Sprintf(cl.formatX, value))
-		px := cl.left + float32(i)*pstep
-		label.SetPosition(px, cl.ContentHeight()-cl.bottom)
-		value += cl.stepX
+	pstep := (ch.ContentWidth() - ch.left) / float32(len(ch.labelsX))
+	value := ch.firstX
+	for i := 0; i < len(ch.labelsX); i++ {
+		label := ch.labelsX[i]
+		label.SetText(fmt.Sprintf(ch.formatX, value))
+		px := ch.left + float32(i)*pstep
+		label.SetPosition(px, ch.ContentHeight()-ch.bottom)
+		value += ch.stepX
 	}
 }
 
 // updateLabelsY updates the Y scale labels text and positions
-func (cl *ChartLine) updateLabelsY() {
+func (ch *Chart) updateLabelsY() {
 
-	if cl.scaleY == nil {
+	if ch.scaleY == nil {
 		return
 	}
 
 	th := float32(0)
-	if cl.title != nil {
-		th = cl.title.height
+	if ch.title != nil {
+		th = ch.title.height
 	}
 
-	nlines := cl.scaleY.lines
-	vstep := (cl.maxY - cl.minY) / float32(nlines-1)
-	pstep := (cl.ContentHeight() - th - cl.top - cl.bottom) / float32(nlines-1)
-	value := cl.minY
+	nlines := ch.scaleY.lines
+	vstep := (ch.maxY - ch.minY) / float32(nlines-1)
+	pstep := (ch.ContentHeight() - th - ch.top - ch.bottom) / float32(nlines-1)
+	value := ch.minY
 	for i := 0; i < nlines; i++ {
-		label := cl.labelsY[i]
-		label.SetText(fmt.Sprintf(cl.formatY, value))
-		px := cl.left - 2 - label.Width()
+		label := ch.labelsY[i]
+		label.SetText(fmt.Sprintf(ch.formatY, value))
+		px := ch.left - 4 - label.Width()
 		if px < 0 {
 			px = 0
 		}
-		py := cl.ContentHeight() - cl.bottom - float32(i)*pstep
+		py := ch.ContentHeight() - ch.bottom - float32(i)*pstep
 		label.SetPosition(px, py-label.Height()/2)
 		value += vstep
 	}
 }
 
 // calcRangeY calculates the minimum and maximum y values for all graphs
-func (cl *ChartLine) calcRangeY() {
+func (ch *Chart) calcRangeY() {
 
-	if !cl.autoY || len(cl.graphs) == 0 {
+	if !ch.autoY || len(ch.graphs) == 0 {
 		return
 	}
 	minY := float32(math.MaxFloat32)
 	maxY := -float32(math.MaxFloat32)
-	for g := 0; g < len(cl.graphs); g++ {
-		graph := cl.graphs[g]
+	for g := 0; g < len(ch.graphs); g++ {
+		graph := ch.graphs[g]
 		for x := 0; x < len(graph.data); x++ {
 			vy := graph.data[x]
 			if vy < minY {
@@ -330,49 +371,49 @@ func (cl *ChartLine) calcRangeY() {
 			}
 		}
 	}
-	cl.minY = minY
-	cl.maxY = maxY
+	ch.minY = minY
+	ch.maxY = maxY
 }
 
 // updateGraphs should be called when the range the scales change or
 // any graph data changes
-func (cl *ChartLine) updateGraphs() {
+func (ch *Chart) updateGraphs() {
 
-	cl.calcRangeY()
-	cl.updateLabelsX()
-	cl.updateLabelsY()
-	for i := 0; i < len(cl.graphs); i++ {
-		g := cl.graphs[i]
+	ch.calcRangeY()
+	ch.updateLabelsX()
+	ch.updateLabelsY()
+	for i := 0; i < len(ch.graphs); i++ {
+		g := ch.graphs[i]
 		g.updateData()
 	}
 }
 
 // recalc recalculates the positions of the inner panels
-func (cl *ChartLine) recalc() {
+func (ch *Chart) recalc() {
 
 	// Center title position
-	if cl.title != nil {
-		xpos := (cl.ContentWidth() - cl.title.width) / 2
-		cl.title.SetPositionX(xpos)
+	if ch.title != nil {
+		xpos := (ch.ContentWidth() - ch.title.width) / 2
+		ch.title.SetPositionX(xpos)
 	}
 
 	// Recalc scale X and its labels
-	if cl.scaleX != nil {
-		cl.scaleX.recalc()
-		cl.updateLabelsX()
+	if ch.scaleX != nil {
+		ch.scaleX.recalc()
+		ch.updateLabelsX()
 	}
 
 	// Recalc scale Y and its labels
-	if cl.scaleY != nil {
-		cl.scaleY.recalc()
-		cl.updateLabelsY()
+	if ch.scaleY != nil {
+		ch.scaleY.recalc()
+		ch.updateLabelsY()
 	}
 
 	// Recalc graphs
-	for i := 0; i < len(cl.graphs); i++ {
-		g := cl.graphs[i]
+	for i := 0; i < len(ch.graphs); i++ {
+		g := ch.graphs[i]
 		g.recalc()
-		cl.SetTopChild(g)
+		ch.SetTopChild(g)
 	}
 }
 
@@ -384,7 +425,7 @@ func (cl *ChartLine) recalc() {
 //
 type ChartScaleX struct {
 	Panel                // Embedded panel
-	chart  *ChartLine    // Container chart
+	chart  *Chart        // Container chart
 	lines  int           // Number of vertical lines
 	bounds gls.Uniform4f // Bound uniform in OpenGL window coordinates
 	mat    chartMaterial // Chart material
@@ -392,7 +433,7 @@ type ChartScaleX struct {
 
 // newChartScaleX creates and returns a pointer to a new ChartScaleX for the specified
 // chart, number of lines and color
-func newChartScaleX(chart *ChartLine, lines int, color *math32.Color) *ChartScaleX {
+func newChartScaleX(chart *Chart, lines int, color *math32.Color) *ChartScaleX {
 
 	sx := new(ChartScaleX)
 	sx.chart = chart
@@ -443,7 +484,6 @@ func (sx *ChartScaleX) recalc() {
 // Calculates the model matrix and transfer to OpenGL.
 func (sx *ChartScaleX) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 
-	//log.Error("ChartScaleX RenderSetup:%v", sx.pospix)
 	// Sets model matrix and transfer to shader
 	var mm math32.Matrix4
 	sx.SetModelMatrix(gs, &mm)
@@ -464,7 +504,7 @@ func (sx *ChartScaleX) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 //
 type ChartScaleY struct {
 	Panel                // Embedded panel
-	chart  *ChartLine    // Container chart
+	chart  *Chart        // Container chart
 	lines  int           // Number of horizontal lines
 	bounds gls.Uniform4f // Bound uniform in OpenGL window coordinates
 	mat    chartMaterial // Chart material
@@ -472,7 +512,7 @@ type ChartScaleY struct {
 
 // newChartScaleY creates and returns a pointer to a new ChartScaleY for the specified
 // chart, number of lines and color
-func newChartScaleY(chart *ChartLine, lines int, color *math32.Color) *ChartScaleY {
+func newChartScaleY(chart *Chart, lines int, color *math32.Color) *ChartScaleY {
 
 	if lines < 2 {
 		lines = 2
@@ -529,7 +569,6 @@ func (sy *ChartScaleY) recalc() {
 // Calculates the model matrix and transfer to OpenGL.
 func (sy *ChartScaleY) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 
-	//log.Error("ChartScaleY RenderSetup:%v", sy.pospix)
 	// Sets model matrix and transfer to shader
 	var mm math32.Matrix4
 	sy.SetModelMatrix(gs, &mm)
@@ -544,12 +583,12 @@ func (sy *ChartScaleY) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 
 //
 //
-// LineGraph
+// Graph
 //
 //
-type LineGraph struct {
+type Graph struct {
 	Panel                   // Embedded panel
-	chart     *ChartLine    // Container chart
+	chart     *Chart        // Container chart
 	color     math32.Color  // Line color
 	data      []float32     // Data y
 	bounds    gls.Uniform4f // Bound uniform in OpenGL window coordinates
@@ -558,9 +597,9 @@ type LineGraph struct {
 	positions math32.ArrayF32
 }
 
-func newLineGraph(chart *ChartLine, color *math32.Color, y []float32) *LineGraph {
+func newGraph(chart *Chart, color *math32.Color, y []float32) *Graph {
 
-	lg := new(LineGraph)
+	lg := new(Graph)
 	lg.bounds.Init("Bounds")
 	lg.chart = chart
 	lg.color = *color
@@ -584,25 +623,26 @@ func newLineGraph(chart *ChartLine, color *math32.Color, y []float32) *LineGraph
 }
 
 // SetColor sets the color of the graph
-func (lg *LineGraph) SetColor(color *math32.Color) {
+func (lg *Graph) SetColor(color *math32.Color) {
 
 	lg.mat.color.SetColor(color)
 }
 
 // SetData sets the graph data
-func (lg *LineGraph) SetData(data []float32) {
+func (lg *Graph) SetData(data []float32) {
 
 	lg.data = data
 	lg.updateData()
 }
 
 // SetLineWidth sets the graph line width
-func (lg *LineGraph) SetLineWidth(width float32) {
+func (lg *Graph) SetLineWidth(width float32) {
 
 	lg.mat.SetLineWidth(width)
 }
 
-func (lg *LineGraph) updateData() {
+// updateData regenerates the lines for the current data
+func (lg *Graph) updateData() {
 
 	lines := 1
 	if lg.chart.scaleX != nil {
@@ -621,7 +661,8 @@ func (lg *LineGraph) updateData() {
 	lg.vbo.SetBuffer(positions)
 }
 
-func (lg *LineGraph) recalc() {
+// recalc recalculates the position and width of the this panel
+func (lg *Graph) recalc() {
 
 	py := lg.chart.top
 	if lg.chart.title != nil {
@@ -637,9 +678,8 @@ func (lg *LineGraph) recalc() {
 // RenderSetup is called by the renderer before drawing this graphic
 // It overrides the original panel RenderSetup
 // Calculates the model matrix and transfer to OpenGL.
-func (lg *LineGraph) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
+func (lg *Graph) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 
-	//log.Error("LineGraph RenderSetup:%v with/height: %v/%v", lg.posclip, lg.wclip, lg.hclip)
 	// Sets model matrix and transfer to shader
 	var mm math32.Matrix4
 	lg.SetModelMatrix(gs, &mm)
