@@ -320,6 +320,14 @@ func GetStats() Stats {
 	return stats
 }
 
+func checkCtxError(dev *Device) {
+
+	err := CtxGetError(dev)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func CreateContext(dev *Device, attrlist []int) (*Context, error) {
 
 	var plist unsafe.Pointer
@@ -419,7 +427,11 @@ func CtxGetEnumValue(dev *Device, enumName string) uint32 {
 
 func CtxGetString(dev *Device, param uint) string {
 
-	cstr := C._alcGetString(dev.cdev, C.ALCenum(param))
+	var cdev *C.ALCdevice = nil
+	if dev != nil {
+		cdev = dev.cdev
+	}
+	cstr := C._alcGetString(cdev, C.ALCenum(param))
 	return C.GoString((*C.char)(cstr))
 }
 
@@ -453,16 +465,19 @@ func CaptureCloseDevice(dev *Device) error {
 func CaptureStart(dev *Device) {
 
 	C._alcCaptureStart(dev.cdev)
+	checkCtxError(dev)
 }
 
 func CaptureStop(dev *Device) {
 
 	C._alcCaptureStop(dev.cdev)
+	checkCtxError(dev)
 }
 
-func CaptureSamples(dev *Device, buffer []byte) {
+func CaptureSamples(dev *Device, buffer []byte, nsamples uint) {
 
-	C._alcCaptureSamples(dev.cdev, unsafe.Pointer(&buffer[0]), C.ALCsizei(len(buffer)))
+	C._alcCaptureSamples(dev.cdev, unsafe.Pointer(&buffer[0]), C.ALCsizei(nsamples))
+	checkCtxError(dev)
 }
 
 func Enable(capability uint) {
