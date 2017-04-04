@@ -4,12 +4,25 @@
 
 package gui
 
+import (
+	"github.com/g3n/engine/math32"
+)
+
 type MenuBar struct {
 }
 
 type Menu struct {
 	Panel             // embedded panel
 	items []*MenuItem // menu items
+}
+
+// Menu style
+type MenuStyle struct {
+	Border      BorderSizes
+	Paddings    BorderSizes
+	BorderColor math32.Color4
+	BgColor     math32.Color4
+	FgColor     math32.Color4
 }
 
 type MenuItem struct {
@@ -28,6 +41,9 @@ type MenuItem struct {
 func NewMenu() *Menu {
 
 	m := new(Menu)
+
+	// Initializes the panel
+	m.Panel.Initialize(0, 0)
 	m.items = make([]*MenuItem, 0)
 	return m
 }
