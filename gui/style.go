@@ -35,6 +35,7 @@ type Style struct {
 	Folder        FolderStyles
 	Tree          TreeStyles
 	ControlFolder ControlFolderStyles
+	Menu          MenuStyles
 }
 
 const (
@@ -407,44 +408,6 @@ func setupDefaultStyle() {
 		},
 	}
 
-	//	StyleDefault.ListItem = ListItemStyles{
-	//		Normal: ListItemStyle{
-	//			Border:      BorderSizes{1, 0, 1, 0},
-	//			Paddings:    BorderSizes{0, 0, 0, 2},
-	//			BorderColor: math32.Color4{0, 0, 0, 0},
-	//			BgColor:     bgColor4,
-	//			FgColor:     fgColor,
-	//		},
-	//		Over: ListItemStyle{
-	//			Border:      BorderSizes{1, 0, 1, 0},
-	//			Paddings:    BorderSizes{0, 0, 0, 2},
-	//			BorderColor: math32.Color4{0, 0, 0, 0},
-	//			BgColor:     bgColor4Over,
-	//			FgColor:     fgColor,
-	//		},
-	//		Selected: ListItemStyle{
-	//			Border:      BorderSizes{1, 0, 1, 0},
-	//			Paddings:    BorderSizes{0, 0, 0, 2},
-	//			BorderColor: math32.Color4{0, 0, 0, 0},
-	//			BgColor:     bgColor4Sel,
-	//			FgColor:     fgColorSel,
-	//		},
-	//		Highlighted: ListItemStyle{
-	//			Border:      BorderSizes{1, 0, 1, 0},
-	//			Paddings:    BorderSizes{0, 0, 0, 2},
-	//			BorderColor: math32.Color4{0, 0, 0, 1},
-	//			BgColor:     bgColor4Over,
-	//			FgColor:     fgColor,
-	//		},
-	//		SelHigh: ListItemStyle{
-	//			Border:      BorderSizes{1, 0, 1, 0},
-	//			Paddings:    BorderSizes{0, 0, 0, 2},
-	//			BorderColor: math32.Color4{0, 0, 0, 1},
-	//			BgColor:     bgColor4Sel,
-	//			FgColor:     fgColorSel,
-	//		},
-	//	}
-	//
 	StyleDefault.DropDown = DropDownStyles{
 		Normal: &DropDownStyle{
 			Border:      BorderSizes{1, 1, 1, 1},
@@ -707,4 +670,67 @@ func setupDefaultStyle() {
 		},
 	}
 
+	// Menu styles
+	StyleDefault.Menu = MenuStyles{
+		Body: &MenuBodyStyles{
+			Normal: MenuBodyStyle{
+				Border:      BorderSizes{1, 1, 1, 1},
+				Paddings:    BorderSizes{2, 2, 2, 2},
+				BorderColor: borderColor,
+				BgColor:     bgColor,
+				FgColor:     fgColor,
+			},
+			Over: MenuBodyStyle{
+				Border:      BorderSizes{1, 1, 1, 1},
+				Paddings:    BorderSizes{2, 2, 2, 2},
+				BorderColor: borderColor,
+				BgColor:     bgColorOver,
+				FgColor:     fgColor,
+			},
+			Focus: MenuBodyStyle{
+				Border:      BorderSizes{1, 1, 1, 1},
+				Paddings:    BorderSizes{2, 2, 2, 2},
+				BorderColor: borderColor,
+				BgColor:     bgColorOver,
+				FgColor:     fgColor,
+			},
+			Disabled: MenuBodyStyle{
+				Border:      BorderSizes{1, 1, 1, 1},
+				Paddings:    BorderSizes{2, 2, 2, 2},
+				BorderColor: borderColor,
+				BgColor:     bgColor,
+				FgColor:     fgColor,
+			},
+		},
+		Item: &MenuItemStyles{
+			Normal: MenuItemStyle{
+				Border:      BorderSizes{1, 1, 1, 1},
+				Paddings:    BorderSizes{2, 2, 2, 2},
+				BorderColor: borderColor,
+				BgColor:     bgColor,
+				FgColor:     fgColor,
+			},
+			Over: MenuItemStyle{
+				Border:      BorderSizes{0, 0, 0, 0},
+				Paddings:    BorderSizes{2, 2, 2, 2},
+				BorderColor: borderColor,
+				BgColor:     math32.Color{0.6, 0.6, 0.6},
+				FgColor:     fgColor,
+			},
+			Disabled: MenuItemStyle{
+				Border:      BorderSizes{0, 0, 0, 0},
+				Paddings:    BorderSizes{2, 2, 2, 2},
+				BorderColor: borderColor,
+				BgColor:     bgColor,
+				FgColor:     fgColor,
+			},
+			Separator: MenuItemStyle{
+				Border:      BorderSizes{0, 0, 1, 0},
+				Paddings:    BorderSizes{2, 0, 0, 0},
+				BorderColor: math32.Color4{0.6, 0.6, 0.6, 1},
+				BgColor:     bgColor,
+				FgColor:     fgColor,
+			},
+		},
+	}
 }
