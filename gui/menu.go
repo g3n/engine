@@ -18,7 +18,7 @@ type Menu struct {
 	styles *MenuStyles // pointer to current styles
 	items  []*MenuItem // menu items
 	active bool        // menu active state
-	mitem  *MenuItem   // parent menu item for sub menus
+	mitem  *MenuItem   // parent menu item for sub menu
 }
 
 // MenuBodyStyle describes the style of the menu body
@@ -54,7 +54,7 @@ type MenuItem struct {
 	shortcut    *Label             // optional shorcut text label
 	ricon       *Label             // optional right internal icon label for submenu
 	icode       int                // icon code (if icon is set)
-	subm        *Menu              // optional pointer to sub menu
+	submenu     *Menu              // pointer to optional associated sub menu
 	keyModifier window.ModifierKey // shortcut key modifier
 	keyCode     window.Key         // shortcut key code
 	disabled    bool               // item disabled state
@@ -189,14 +189,14 @@ func (m *Menu) AddMenu(text string, subm *Menu) *MenuItem {
 	mi := newMenuItem(text, m.styles.Item)
 	m.Panel.Add(mi)
 	m.items = append(m.items, mi)
-	mi.subm = subm
-	mi.subm.SetVisible(false)
-	mi.subm.SetBounded(false)
-	mi.subm.mitem = mi
+	mi.submenu = subm
+	mi.submenu.SetVisible(false)
+	mi.submenu.SetBounded(false)
+	mi.submenu.mitem = mi
 	mi.menu = m
 	mi.ricon = NewIconLabel(string(assets.ChevronRight))
 	mi.Panel.Add(mi.ricon)
-	mi.Panel.Add(mi.subm)
+	mi.Panel.Add(mi.submenu)
 	mi.update()
 	m.recalc()
 	return nil
@@ -210,13 +210,14 @@ func (m *Menu) RemoveItem(mi *MenuItem) {
 // onCursor process subscribed cursor events
 func (m *Menu) onCursor(evname string, ev interface{}) {
 
-	log.Error("evname:%s / %v", evname, ev)
+	//log.Error("evname:%s / %v", evname, ev)
 	if evname == OnCursorEnter {
 		m.root.SetKeyFocus(m)
 		m.active = true
 	} else if evname == OnCursorLeave {
-		m.root.SetKeyFocus(nil)
 		m.active = false
+		// If this is a sub menu and the parent menu item is not selected
+		// hides this sub menu
 		if m.mitem != nil && !m.mitem.selected {
 			m.SetVisible(false)
 		}
@@ -227,29 +228,44 @@ func (m *Menu) onCursor(evname string, ev interface{}) {
 // onKey process subscribed key events
 func (m *Menu) onKey(evname string, ev interface{}) {
 
-	prevsel := m.selectedItem()
-	var sel int
+	sel := m.selectedItem()
 	kev := ev.(*window.KeyEvent)
 	switch kev.Keycode {
+	// Select next enabled menu item
 	case window.KeyDown:
-		sel = m.nextItem(prevsel)
-		m.setSelected(sel)
+		next := m.nextItem(sel)
+		m.setSelectedPos(next)
+	// Select previous enabled menu item
 	case window.KeyUp:
-		sel = m.prevItem(prevsel)
-		m.setSelected(sel)
+		prev := m.prevItem(sel)
+		m.setSelectedPos(prev)
+	// Return to previous menu
+	case window.KeyLeft:
+		if m.mitem != nil {
+			m.setSelectedPos(-1)
+			m.mitem.menu.setSelectedItem(m.mitem)
+			m.root.SetKeyFocus(m.mitem.menu)
+		}
+	// Enter into sub menu
+	case window.KeyRight:
+		mi := m.items[sel]
+		if mi.submenu != nil {
+			m.root.SetKeyFocus(mi.submenu)
+			mi.submenu.setSelectedPos(0)
+		}
 	case window.KeyEnter:
 	default:
 		return
 	}
 }
 
-// setSelected sets the menu item at the specified index as selected
+// setSelectedPos sets the menu item at the specified position as selected
 // and all others as not selected.
-func (m *Menu) setSelected(idx int) {
+func (m *Menu) setSelectedPos(pos int) {
 
 	for i := 0; i < len(m.items); i++ {
 		mi := m.items[i]
-		if i == idx {
+		if i == pos {
 			mi.selected = true
 		} else {
 			mi.selected = false
@@ -258,7 +274,20 @@ func (m *Menu) setSelected(idx int) {
 	}
 }
 
-// selectedItem returns the index of the current selected menu item
+func (m *Menu) setSelectedItem(mitem *MenuItem) {
+
+	for i := 0; i < len(m.items); i++ {
+		mi := m.items[i]
+		if mi == mitem {
+			mi.selected = true
+		} else {
+			mi.selected = false
+		}
+		mi.update()
+	}
+}
+
+// selectedItem returns the position of the current selected menu item
 // Returns -1 if no item selected
 func (m *Menu) selectedItem() int {
 
@@ -271,7 +300,7 @@ func (m *Menu) selectedItem() int {
 	return -1
 }
 
-// nextItem returns the index of the next enabled option from the
+// nextItem returns the position of the next enabled option from the
 // specified position
 func (m *Menu) nextItem(pos int) int {
 
@@ -287,7 +316,7 @@ func (m *Menu) nextItem(pos int) int {
 	return res
 }
 
-// prevItem returns the index of previous enabled menu item from
+// prevItem returns the position of previous enabled menu item from
 // the specified position
 func (m *Menu) prevItem(pos int) int {
 
@@ -463,11 +492,12 @@ func (mi *MenuItem) onCursor(evname string, ev interface{}) {
 
 	switch evname {
 	case OnCursorEnter:
-		mi.selected = true
-		mi.update()
+		mi.menu.setSelectedItem(mi)
 	case OnCursorLeave:
-		mi.selected = false
-		mi.update()
+		if mi.submenu != nil && mi.submenu.active {
+			return
+		}
+		mi.menu.setSelectedItem(nil)
 	}
 }
 
@@ -485,15 +515,17 @@ func (mi *MenuItem) update() {
 	}
 	if mi.selected {
 		mi.applyStyle(&mi.styles.Over)
-		if mi.subm != nil {
+		if mi.submenu != nil {
 			mi.menu.SetTopChild(mi)
-			mi.subm.SetVisible(true)
-			mi.subm.SetPosition(mi.Width()-4, 0)
+			mi.submenu.SetVisible(true)
+			mi.submenu.SetPosition(mi.Width()-4, 0)
 		}
 		return
 	}
-	if mi.subm != nil && !mi.subm.active {
-		mi.subm.SetVisible(false)
+	// If this menu item has a sub menu and the sub menu is not active,
+	// hides the sub menu
+	if mi.submenu != nil && !mi.submenu.active {
+		mi.submenu.SetVisible(false)
 	}
 	mi.applyStyle(&mi.styles.Normal)
 }

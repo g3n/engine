@@ -173,6 +173,7 @@ func (r *Root) onKey(evname string, ev interface{}) {
 	}
 	// Dispatch window.KeyEvent to focused panel subscribers
 	r.stopPropagation = 0
+	r.keyFocus.SetRoot(r)
 	r.keyFocus.GetPanel().Dispatch(evname, ev)
 	// If requested, stop propagation of event outside the root gui
 	if (r.stopPropagation & Stop3D) != 0 {
