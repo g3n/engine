@@ -33,7 +33,7 @@ type MenuBodyStyles struct {
 	Disabled MenuBodyStyle
 }
 
-// MenuStyles describes all styles of the menu (body and item)
+// MenuStyles describes all styles of the menu body and menu item
 type MenuStyles struct {
 	Body *MenuBodyStyles // Menu body styles
 	Item *MenuItemStyles // Menu item styles
@@ -44,7 +44,6 @@ type MenuItem struct {
 	Panel                     // embedded panel
 	styles    *MenuItemStyles // pointer to current styles
 	label     *Label          // optional internal label (nil for separators)
-	image     *Image          // optional left internal image
 	licon     *Label          // optional left internal icon label
 	ricon     *Label          // optional right internal icon label for submenu
 	icode     int             // icon code (if icon is set)
@@ -56,11 +55,12 @@ type MenuItem struct {
 
 // MenuItemStyle describes the style of a menu item
 type MenuItemStyle struct {
-	Border      BorderSizes
-	Paddings    BorderSizes
-	BorderColor math32.Color4
-	BgColor     math32.Color
-	FgColor     math32.Color
+	Border       BorderSizes
+	Paddings     BorderSizes
+	BorderColor  math32.Color4
+	BgColor      math32.Color
+	FgColor      math32.Color
+	IconPaddings BorderSizes
 }
 
 // MenuItemStyles describes all the menu item styles
@@ -132,14 +132,27 @@ func (m *Menu) applyStyle(mbs *MenuBodyStyle) {
 // and the content width and height of the menu
 func (m *Menu) recalc() {
 
-	// Find maximum item width
-	maxw := float32(0)
+	// Find the maximum icon and label widths
+	minWidth := float32(0)
+	iconWidth := float32(0)
+	labelWidth := float32(0)
 	for i := 0; i < len(m.Children()); i++ {
-		minw := m.Children()[i].(*MenuItem).minWidth()
-		if minw > maxw {
-			maxw = minw
+		mi := m.Children()[i].(*MenuItem)
+		minWidth = mi.MinWidth()
+		// Separator
+		if mi.label == nil {
+			continue
+		}
+		// Left icon width
+		if mi.licon != nil && mi.licon.width > iconWidth {
+			iconWidth = mi.licon.width
+		}
+		// Label width
+		if mi.label.width > labelWidth {
+			labelWidth = mi.label.width
 		}
 	}
+	width := minWidth + iconWidth + labelWidth
 
 	// Sets the position and width of the menu items
 	// The height is defined by the menu item itself
@@ -148,12 +161,12 @@ func (m *Menu) recalc() {
 	for i := 0; i < len(m.Children()); i++ {
 		mi := m.Children()[i].(*MenuItem)
 		mi.SetPosition(px, py)
-		py += mi.height
-		mi.SetWidth(maxw)
-		log.Error("width:%v", maxw)
-		mi.recalc()
+		mh := mi.minHeight()
+		py += mh
+		mi.SetSize(width, mh)
+		mi.recalc(iconWidth)
 	}
-	m.SetContentSize(maxw, py)
+	m.SetContentSize(width, py)
 }
 
 // newMenuItem creates and returns a pointer to a new menu item
@@ -165,11 +178,11 @@ func newMenuItem(text string, styles *MenuItemStyles) *MenuItem {
 	mi.styles = styles
 	if text != "" {
 		mi.label = NewLabel(text)
+		//mi.label.SetBorders(1, 1, 1, 1)
 		mi.Panel.Add(mi.label)
 		mi.Panel.Subscribe(OnCursorEnter, mi.onCursor)
 		mi.Panel.Subscribe(OnCursorLeave, mi.onCursor)
 	}
-	mi.recalc()
 	mi.update()
 	return mi
 }
@@ -178,6 +191,9 @@ func newMenuItem(text string, styles *MenuItemStyles) *MenuItem {
 // If an image was previously set it is replaced by this icon
 func (mi *MenuItem) SetIcon(icode int) *MenuItem {
 
+	mi.licon = NewIconLabel(string(icode))
+	mi.Panel.Add(mi.licon)
+	mi.update()
 	return mi
 }
 
@@ -246,40 +262,23 @@ func (mi *MenuItem) applyStyle(mis *MenuItemStyle) {
 	mi.SetBordersColor4(&mis.BorderColor)
 	mi.SetPaddingsFrom(&mis.Paddings)
 	mi.SetColor(&mis.BgColor)
+	if mi.licon != nil {
+		mi.licon.SetPaddingsFrom(&mis.IconPaddings)
+	}
 }
 
 // recalc recalculates the positions of this menu item internal panels
-// and the total height of the menu item.
-func (mi *MenuItem) recalc() {
+func (mi *MenuItem) recalc(iconWidth float32) {
 
 	// Separator
 	if mi.label == nil {
-		mi.SetHeight(4)
 		return
 	}
-	h := mi.label.height
-	w := mi.label.width
-	mi.SetContentSize(w, h)
-	log.Error("menuitem size: %v/%v", w, h)
-}
-
-// minWidth returns the minimum width of this menu item
-func (mi *MenuItem) minWidth() float32 {
-
-	mw := mi.MinWidth()
 	if mi.licon != nil {
-		mw += mi.licon.width
+		py := (mi.label.height - mi.licon.height) / 2
+		mi.licon.SetPosition(0, py)
 	}
-	if mi.image != nil {
-		mw += mi.image.width
-	}
-	if mi.label != nil {
-		mw += mi.label.width
-	}
-	if mi.ricon != nil {
-		mw += mi.ricon.width
-	}
-	return mw
+	mi.label.SetPosition(iconWidth, 0)
 }
 
 // minHeight returns the minimum height of this menu item
