@@ -705,7 +705,7 @@ func setupDefaultStyle() {
 		Item: &MenuItemStyles{
 			Normal: MenuItemStyle{
 				Border:           BorderSizes{0, 0, 0, 0},
-				Paddings:         BorderSizes{2, 2, 2, 2},
+				Paddings:         BorderSizes{2, 4, 2, 2},
 				BorderColor:      borderColor,
 				BgColor:          bgColor,
 				FgColor:          fgColor,
@@ -715,7 +715,7 @@ func setupDefaultStyle() {
 			},
 			Over: MenuItemStyle{
 				Border:           BorderSizes{0, 0, 0, 0},
-				Paddings:         BorderSizes{2, 2, 2, 2},
+				Paddings:         BorderSizes{2, 4, 2, 2},
 				BorderColor:      borderColor,
 				BgColor:          math32.Color{0.6, 0.6, 0.6},
 				FgColor:          fgColor,
@@ -725,7 +725,7 @@ func setupDefaultStyle() {
 			},
 			Disabled: MenuItemStyle{
 				Border:           BorderSizes{0, 0, 0, 0},
-				Paddings:         BorderSizes{2, 2, 2, 2},
+				Paddings:         BorderSizes{2, 4, 2, 2},
 				BorderColor:      borderColor,
 				BgColor:          bgColor,
 				FgColor:          fgColorDis,
@@ -734,7 +734,7 @@ func setupDefaultStyle() {
 				RiconPaddings:    BorderSizes{2, 0, 0, 4},
 			},
 			Separator: MenuItemStyle{
-				Border:      BorderSizes{2, 0, 2, 0},
+				Border:      BorderSizes{2, 2, 2, 2},
 				Paddings:    BorderSizes{0, 0, 0, 0},
 				BorderColor: math32.Color4{0, 0, 0, 0},
 				BgColor:     math32.Color{0.6, 0.6, 0.6},

@@ -10,15 +10,14 @@ import (
 	"github.com/g3n/engine/window"
 )
 
-type MenuBar struct {
-}
-
 type Menu struct {
-	Panel              // embedded panel
-	styles *MenuStyles // pointer to current styles
-	items  []*MenuItem // menu items
-	active bool        // menu active state
-	mitem  *MenuItem   // parent menu item for sub menu
+	Panel                // embedded panel
+	styles   *MenuStyles // pointer to current styles
+	bar      bool        // true for menu bar
+	items    []*MenuItem // menu items
+	active   bool        // menu active state
+	autoOpen bool        // open sub menus when mouse over if true
+	mitem    *MenuItem   // parent menu item for sub menu
 }
 
 // MenuBodyStyle describes the style of the menu body
@@ -48,7 +47,7 @@ type MenuStyles struct {
 type MenuItem struct {
 	Panel                          // embedded panel
 	styles      *MenuItemStyles    // pointer to current styles
-	menu        *Menu              // pointer to container menu
+	menu        *Menu              // pointer to parent menu
 	licon       *Label             // optional left icon label
 	label       *Label             // optional text label (nil for separators)
 	shortcut    *Label             // optional shorcut text label
@@ -144,6 +143,13 @@ var mapKeyText = map[window.Key]string{
 	window.KeyF12:        "F12",
 }
 
+func NewMenuBar() *Menu {
+
+	m := NewMenu()
+	m.bar = true
+	return m
+}
+
 // NewMenu creates and returns a pointer to a new empty menu
 func NewMenu() *Menu {
 
@@ -154,6 +160,7 @@ func NewMenu() *Menu {
 	m.Panel.Subscribe(OnCursorEnter, m.onCursor)
 	m.Panel.Subscribe(OnCursorLeave, m.onCursor)
 	m.Panel.Subscribe(OnKeyDown, m.onKey)
+	m.Panel.Subscribe(OnMouseOut, m.onMouse)
 	m.update()
 	return m
 }
@@ -193,6 +200,7 @@ func (m *Menu) AddMenu(text string, subm *Menu) *MenuItem {
 	mi.submenu.SetVisible(false)
 	mi.submenu.SetBounded(false)
 	mi.submenu.mitem = mi
+	mi.submenu.autoOpen = true
 	mi.menu = m
 	mi.ricon = NewIconLabel(string(assets.ChevronRight))
 	mi.Panel.Add(mi.ricon)
@@ -210,7 +218,6 @@ func (m *Menu) RemoveItem(mi *MenuItem) {
 // onCursor process subscribed cursor events
 func (m *Menu) onCursor(evname string, ev interface{}) {
 
-	//log.Error("evname:%s / %v", evname, ev)
 	if evname == OnCursorEnter {
 		m.root.SetKeyFocus(m)
 		m.active = true
@@ -218,9 +225,9 @@ func (m *Menu) onCursor(evname string, ev interface{}) {
 		m.active = false
 		// If this is a sub menu and the parent menu item is not selected
 		// hides this sub menu
-		if m.mitem != nil && !m.mitem.selected {
-			m.SetVisible(false)
-		}
+		//if m.mitem != nil && !m.mitem.selected {
+		//	m.SetVisible(false)
+		//}
 	}
 	m.root.StopPropagation(StopAll)
 }
@@ -259,6 +266,17 @@ func (m *Menu) onKey(evname string, ev interface{}) {
 	case window.KeyEnter:
 	default:
 		return
+	}
+}
+
+// onMouse process subscribed mouse events for the menu
+func (m *Menu) onMouse(evname string, ev interface{}) {
+
+	if evname == OnMouseOut {
+		if m.bar {
+			m.autoOpen = false
+			m.setSelectedPos(-1)
+		}
 	}
 }
 
@@ -364,6 +382,11 @@ func (m *Menu) applyStyle(mbs *MenuBodyStyle) {
 // and the content width and height of the menu
 func (m *Menu) recalc() {
 
+	if m.bar {
+		m.recalcBar()
+		return
+	}
+
 	// Find the maximum icon and label widths
 	minWidth := float32(0)
 	iconWidth := float32(0)
@@ -411,6 +434,30 @@ func (m *Menu) recalc() {
 	m.SetContentSize(width, py)
 }
 
+// recalcBar recalculates the positions of this MenuBar internal items
+// and the content width and height of the menu
+func (m *Menu) recalcBar() {
+
+	height := float32(0)
+	for i := 0; i < len(m.items); i++ {
+		mi := m.items[i]
+		if mi.minHeight() > height {
+			height = mi.minHeight()
+		}
+	}
+
+	px := float32(0)
+	for i := 0; i < len(m.items); i++ {
+		mi := m.items[i]
+		mi.SetPosition(px, 0)
+		width := float32(0)
+		width = mi.minWidth()
+		mi.SetSize(width, height)
+		px += mi.Width()
+	}
+	m.SetContentSize(px, height)
+}
+
 // newMenuItem creates and returns a pointer to a new menu item
 // with the specified text.
 func newMenuItem(text string, styles *MenuItemStyles) *MenuItem {
@@ -423,6 +470,8 @@ func newMenuItem(text string, styles *MenuItemStyles) *MenuItem {
 		mi.Panel.Add(mi.label)
 		mi.Panel.Subscribe(OnCursorEnter, mi.onCursor)
 		mi.Panel.Subscribe(OnCursorLeave, mi.onCursor)
+		mi.Panel.Subscribe(OnMouseUp, mi.onMouse)
+		mi.Panel.Subscribe(OnMouseDown, mi.onMouse)
 	}
 	mi.update()
 	return mi
@@ -440,14 +489,19 @@ func (mi *MenuItem) SetIcon(icode int) *MenuItem {
 
 // SetImage sets the left image of this menu item
 // If an icon was previously set it is replaced by this image
-func (mi *MenuItem) SetImage(img *Image) *MenuItem {
+func (mi *MenuItem) SetImage(img *Image) {
 
-	return mi
 }
 
 // SetText sets the text of this menu item
 func (mi *MenuItem) SetText(text string) *MenuItem {
 
+	if mi.label == nil {
+		return mi
+	}
+	mi.label.SetText(text)
+	mi.update()
+	mi.menu.recalc()
 	return mi
 }
 
@@ -501,16 +555,47 @@ func (mi *MenuItem) SetEnabled(enabled bool) *MenuItem {
 	return mi
 }
 
+// onCursor processes subscribed cursor events over the menu item
 func (mi *MenuItem) onCursor(evname string, ev interface{}) {
 
 	switch evname {
 	case OnCursorEnter:
 		mi.menu.setSelectedItem(mi)
 	case OnCursorLeave:
-		if mi.submenu != nil && mi.submenu.active {
-			return
+		//if mi.submenu != nil && mi.submenu.active {
+		//	return
+		//}
+		//mi.menu.setSelectedItem(nil)
+	}
+}
+
+// onMouse processes subscribed mouse events over the menu item
+func (mi *MenuItem) onMouse(evname string, ev interface{}) {
+
+	switch evname {
+	case OnMouseDown:
+		// MenuBar option
+		if mi.menu.bar {
+			mi.menu.autoOpen = !mi.menu.autoOpen
+			if mi.submenu != nil && mi.submenu.Visible() {
+				mi.submenu.SetVisible(false)
+				return
+			}
+			mi.update()
+			//if mi.submenu != nil {
+			//	if !mi.submenu.Visible() {
+			//		mi.submenu.SetVisible(true)
+			//		mi.submenu.SetPosition(0, mi.Height()-2)
+			//	} else {
+			//		mi.submenu.SetVisible(false)
+			//	}
+			//} else {
+			//	// Dispatch on click
+			//}
+		} else {
+
 		}
-		mi.menu.setSelectedItem(nil)
+	case OnMouseUp:
 	}
 }
 
@@ -522,22 +607,28 @@ func (mi *MenuItem) update() {
 		mi.applyStyle(&mi.styles.Separator)
 		return
 	}
+	// Disabled item
 	if mi.disabled {
 		mi.applyStyle(&mi.styles.Disabled)
 		return
 	}
+	// Selected item
 	if mi.selected {
 		mi.applyStyle(&mi.styles.Over)
-		if mi.submenu != nil {
+		if mi.submenu != nil && mi.menu.autoOpen {
 			mi.menu.SetTopChild(mi)
 			mi.submenu.SetVisible(true)
-			mi.submenu.SetPosition(mi.Width()-4, 0)
+			if mi.menu != nil && mi.menu.bar {
+				mi.submenu.SetPosition(0, mi.Height()-2)
+			} else {
+				mi.submenu.SetPosition(mi.Width()-2, 0)
+			}
 		}
 		return
 	}
 	// If this menu item has a sub menu and the sub menu is not active,
 	// hides the sub menu
-	if mi.submenu != nil && !mi.submenu.active {
+	if mi.submenu != nil {
 		mi.submenu.SetVisible(false)
 	}
 	mi.applyStyle(&mi.styles.Normal)
@@ -593,4 +684,15 @@ func (mi *MenuItem) minHeight() float32 {
 	}
 	mh += mi.label.height
 	return mh
+}
+
+// minWidth returns the minimum width of this menu item
+func (mi *MenuItem) minWidth() float32 {
+
+	mw := mi.MinWidth()
+	if mi.label == nil {
+		return mw + 1
+	}
+	mw += mi.label.width
+	return mw
 }
