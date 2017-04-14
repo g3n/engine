@@ -58,7 +58,7 @@ const (
 	Key6            = Key(glfw.Key6)
 	Key7            = Key(glfw.Key7)
 	Key8            = Key(glfw.Key8)
-	Key9            = Key(glfw.Key8)
+	Key9            = Key(glfw.Key9)
 	KeySemicolon    = Key(glfw.KeySemicolon)
 	KeyEqual        = Key(glfw.KeyEqual)
 	KeyA            = Key(glfw.KeyA)

@@ -95,7 +95,7 @@ func setupDefaultStyle() {
 
 	fgColor := math32.Color{0, 0, 0}
 	fgColorSel := math32.Color{0, 0, 0}
-	fgColorDis := math32.Color{0.3, 0.3, 0.3}
+	fgColorDis := math32.Color{0.4, 0.4, 0.4}
 
 	// Button styles
 	StyleDefault.Button = ButtonStyles{
@@ -704,34 +704,40 @@ func setupDefaultStyle() {
 		},
 		Item: &MenuItemStyles{
 			Normal: MenuItemStyle{
-				Border:       BorderSizes{0, 0, 0, 0},
-				Paddings:     BorderSizes{2, 2, 2, 2},
-				BorderColor:  borderColor,
-				BgColor:      bgColor,
-				FgColor:      fgColor,
-				IconPaddings: BorderSizes{0, 2, 0, 2},
+				Border:           BorderSizes{0, 0, 0, 0},
+				Paddings:         BorderSizes{2, 2, 2, 2},
+				BorderColor:      borderColor,
+				BgColor:          bgColor,
+				FgColor:          fgColor,
+				IconPaddings:     BorderSizes{0, 6, 0, 4},
+				ShortcutPaddings: BorderSizes{0, 0, 0, 10},
+				RiconPaddings:    BorderSizes{2, 0, 0, 4},
 			},
 			Over: MenuItemStyle{
-				Border:       BorderSizes{0, 0, 0, 0},
-				Paddings:     BorderSizes{2, 2, 2, 2},
-				BorderColor:  borderColor,
-				BgColor:      math32.Color{0.6, 0.6, 0.6},
-				FgColor:      fgColor,
-				IconPaddings: BorderSizes{0, 2, 0, 2},
+				Border:           BorderSizes{0, 0, 0, 0},
+				Paddings:         BorderSizes{2, 2, 2, 2},
+				BorderColor:      borderColor,
+				BgColor:          math32.Color{0.6, 0.6, 0.6},
+				FgColor:          fgColor,
+				IconPaddings:     BorderSizes{0, 6, 0, 4},
+				ShortcutPaddings: BorderSizes{0, 0, 0, 10},
+				RiconPaddings:    BorderSizes{2, 0, 0, 4},
 			},
 			Disabled: MenuItemStyle{
-				Border:       BorderSizes{0, 0, 0, 0},
-				Paddings:     BorderSizes{2, 2, 2, 2},
-				BorderColor:  borderColor,
-				BgColor:      bgColor,
-				FgColor:      fgColor,
-				IconPaddings: BorderSizes{0, 2, 0, 2},
+				Border:           BorderSizes{0, 0, 0, 0},
+				Paddings:         BorderSizes{2, 2, 2, 2},
+				BorderColor:      borderColor,
+				BgColor:          bgColor,
+				FgColor:          fgColorDis,
+				IconPaddings:     BorderSizes{0, 6, 0, 4},
+				ShortcutPaddings: BorderSizes{0, 0, 0, 10},
+				RiconPaddings:    BorderSizes{2, 0, 0, 4},
 			},
 			Separator: MenuItemStyle{
-				Border:      BorderSizes{0, 0, 1, 0},
-				Paddings:    BorderSizes{2, 0, 0, 0},
-				BorderColor: math32.Color4{0.6, 0.6, 0.6, 1},
-				BgColor:     bgColor,
+				Border:      BorderSizes{2, 0, 2, 0},
+				Paddings:    BorderSizes{0, 0, 0, 0},
+				BorderColor: math32.Color4{0, 0, 0, 0},
+				BgColor:     math32.Color{0.6, 0.6, 0.6},
 				FgColor:     fgColor,
 			},
 		},
