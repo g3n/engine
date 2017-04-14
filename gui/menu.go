@@ -228,7 +228,7 @@ func (m *Menu) onCursor(evname string, ev interface{}) {
 // onKey process subscribed key events
 func (m *Menu) onKey(evname string, ev interface{}) {
 
-	sel := m.selectedItem()
+	sel := m.selectedPos()
 	kev := ev.(*window.KeyEvent)
 	switch kev.Keycode {
 	// Select next enabled menu item
@@ -242,12 +242,15 @@ func (m *Menu) onKey(evname string, ev interface{}) {
 	// Return to previous menu
 	case window.KeyLeft:
 		if m.mitem != nil {
-			m.setSelectedPos(-1)
+			m.active = false
 			m.mitem.menu.setSelectedItem(m.mitem)
 			m.root.SetKeyFocus(m.mitem.menu)
 		}
 	// Enter into sub menu
 	case window.KeyRight:
+		if sel < 0 {
+			return
+		}
 		mi := m.items[sel]
 		if mi.submenu != nil {
 			m.root.SetKeyFocus(mi.submenu)
@@ -270,10 +273,16 @@ func (m *Menu) setSelectedPos(pos int) {
 		} else {
 			mi.selected = false
 		}
+		// If menu item has a sub menu, unselects the sub menu options recursively
+		if mi.submenu != nil {
+			mi.submenu.setSelectedPos(-1)
+		}
 		mi.update()
 	}
 }
 
+// setSelectedItem sets the specified menu item as selected
+// and all others as not selected
 func (m *Menu) setSelectedItem(mitem *MenuItem) {
 
 	for i := 0; i < len(m.items); i++ {
@@ -283,13 +292,17 @@ func (m *Menu) setSelectedItem(mitem *MenuItem) {
 		} else {
 			mi.selected = false
 		}
+		// If menu item has a sub menu, unselects the sub menu options recursively
+		if mi.submenu != nil {
+			mi.submenu.setSelectedItem(nil)
+		}
 		mi.update()
 	}
 }
 
-// selectedItem returns the position of the current selected menu item
+// selectedPos returns the position of the current selected menu item
 // Returns -1 if no item selected
-func (m *Menu) selectedItem() int {
+func (m *Menu) selectedPos() int {
 
 	for i := 0; i < len(m.items); i++ {
 		mi := m.items[i]
