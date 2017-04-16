@@ -180,10 +180,13 @@ func (pan *Panel) GetPanel() *Panel {
 }
 
 // SetRoot satisfies the IPanel interface
-// and sets the pointer to this panel root container
-func (pan *Panel) SetRoot(root *Root) {
+func (p *Panel) SetRoot(root *Root) {
 
-	pan.root = root
+	p.root = root
+	for i := 0; i < len(p.Children()); i++ {
+		cpan := p.Children()[i].(IPanel).GetPanel()
+		cpan.SetRoot(root)
+	}
 }
 
 // LostKeyFocus satisfies the IPanel interface and is called by gui root

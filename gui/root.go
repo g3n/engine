@@ -66,6 +66,7 @@ func (r *Root) Add(ipan IPanel) {
 
 	r.Panel.Add(ipan)
 	ipan.GetNode().SetParent(r)
+	log.Error("Root Add:%p", ipan)
 }
 
 // SetKeyFocus sets the panel which will receive all keyboard events

@@ -44,20 +44,20 @@ type MenuStyles struct {
 
 // MenuItem is an option of a Menu
 type MenuItem struct {
-	Panel                          // embedded panel
-	styles      *MenuItemStyles    // pointer to current styles
-	menu        *Menu              // pointer to parent menu
-	licon       *Label             // optional left icon label
-	label       *Label             // optional text label (nil for separators)
-	shortcut    *Label             // optional shorcut text label
-	ricon       *Label             // optional right internal icon label for submenu
-	id          string             // optional text id
-	icode       int                // icon code (if icon is set)
-	submenu     *Menu              // pointer to optional associated sub menu
-	keyModifier window.ModifierKey // shortcut key modifier
-	keyCode     window.Key         // shortcut key code
-	disabled    bool               // item disabled state
-	selected    bool               // selection state
+	Panel                       // embedded panel
+	styles   *MenuItemStyles    // pointer to current styles
+	menu     *Menu              // pointer to parent menu
+	licon    *Label             // optional left icon label
+	label    *Label             // optional text label (nil for separators)
+	shortcut *Label             // optional shorcut text label
+	ricon    *Label             // optional right internal icon label for submenu
+	id       string             // optional text id
+	icode    int                // icon code (if icon is set)
+	submenu  *Menu              // pointer to optional associated sub menu
+	keyMods  window.ModifierKey // shortcut key modifier
+	keyCode  window.Key         // shortcut key code
+	disabled bool               // item disabled state
+	selected bool               // selection state
 }
 
 // MenuItemStyle describes the style of a menu item
@@ -305,14 +305,13 @@ func (m *Menu) onKey(evname string, ev interface{}) {
 		}
 	// Enter -> Select menu option
 	case window.KeyEnter:
-		rm := mi.rootMenu()
-		if rm.bar {
-			rm.autoOpen = false
-			rm.setSelectedPos(-1)
-		}
-		mi.dispatchAll(OnClick, mi)
+		mi.activate()
+	// Check for menu items shortcuts
 	default:
-		return
+		found := mi.rootMenu().checkKey(kev)
+		if found != nil {
+			found.activate()
+		}
 	}
 }
 
@@ -326,6 +325,25 @@ func (m *Menu) onMouse(evname string, ev interface{}) {
 	//		m.setSelectedPos(-1)
 	//	}
 	//}
+}
+
+// checkKey checks if this menu and any of its children contains
+// a menu item with specified key shortcut
+func (m *Menu) checkKey(kev *window.KeyEvent) *MenuItem {
+
+	for i := 0; i < len(m.items); i++ {
+		mi := m.items[i]
+		if mi.keyCode == kev.Keycode && mi.keyMods == kev.Mods {
+			return mi
+		}
+		if mi.submenu != nil {
+			found := mi.submenu.checkKey(kev)
+			if found != nil {
+				return found
+			}
+		}
+	}
+	return nil
 }
 
 // setSelectedPos sets the menu item at the specified position as selected
@@ -558,19 +576,19 @@ func (mi *MenuItem) SetShortcut(mod window.ModifierKey, key window.Key) *MenuIte
 	if mapKeyText[key] == "" {
 		panic("Invalid menu shortcut key")
 	}
-	mi.keyModifier = mod
+	mi.keyMods = mod
 	mi.keyCode = key
 	text := ""
-	if mi.keyModifier&window.ModShift != 0 {
+	if mi.keyMods&window.ModShift != 0 {
 		text = mapKeyModifier[window.ModShift]
 	}
-	if mi.keyModifier&window.ModControl != 0 {
+	if mi.keyMods&window.ModControl != 0 {
 		if text != "" {
 			text += "+"
 		}
 		text += mapKeyModifier[window.ModControl]
 	}
-	if mi.keyModifier&window.ModAlt != 0 {
+	if mi.keyMods&window.ModAlt != 0 {
 		if text != "" {
 			text += "+"
 		}
@@ -662,11 +680,20 @@ func (mi *MenuItem) onMouse(evname string, ev interface{}) {
 		if mi.submenu != nil {
 			return
 		}
-		rm := mi.rootMenu()
-		rm.setSelectedPos(-1)
-		mi.root.SetKeyFocus(rm)
-		mi.dispatchAll(OnClick, mi)
+		mi.activate()
 	}
+}
+
+// activate activates this menu item dispatching OnClick events
+func (mi *MenuItem) activate() {
+
+	rm := mi.rootMenu()
+	if rm.bar {
+		rm.autoOpen = false
+	}
+	rm.setSelectedPos(-1)
+	mi.root.SetKeyFocus(rm)
+	mi.dispatchAll(OnClick, mi)
 }
 
 // rootMenu returns the root menu for this menu item
@@ -680,7 +707,7 @@ func (mi *MenuItem) rootMenu() *Menu {
 }
 
 // dispatchAll dispatch the specified event for this menu item
-// and all its parents.to all parents
+// and all its parents
 func (mi *MenuItem) dispatchAll(evname string, ev interface{}) {
 
 	mi.Dispatch(evname, ev)
