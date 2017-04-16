@@ -15,7 +15,6 @@ type Menu struct {
 	styles   *MenuStyles // pointer to current styles
 	bar      bool        // true for menu bar
 	items    []*MenuItem // menu items
-	active   bool        // menu active state
 	autoOpen bool        // open sub menus when mouse over if true
 	mitem    *MenuItem   // parent menu item for sub menu
 }
@@ -52,6 +51,7 @@ type MenuItem struct {
 	label       *Label             // optional text label (nil for separators)
 	shortcut    *Label             // optional shorcut text label
 	ricon       *Label             // optional right internal icon label for submenu
+	id          string             // optional text id
 	icode       int                // icon code (if icon is set)
 	submenu     *Menu              // pointer to optional associated sub menu
 	keyModifier window.ModifierKey // shortcut key modifier
@@ -143,6 +143,7 @@ var mapKeyText = map[window.Key]string{
 	window.KeyF12:        "F12",
 }
 
+// NewMenuBar creates and returns a pointer to a new empty menu bar
 func NewMenuBar() *Menu {
 
 	m := NewMenu()
@@ -150,7 +151,7 @@ func NewMenuBar() *Menu {
 	return m
 }
 
-// NewMenu creates and returns a pointer to a new empty menu
+// NewMenu creates and returns a pointer to a new empty vertical menu
 func NewMenu() *Menu {
 
 	m := new(Menu)
@@ -207,7 +208,7 @@ func (m *Menu) AddMenu(text string, subm *Menu) *MenuItem {
 	mi.Panel.Add(mi.submenu)
 	mi.update()
 	m.recalc()
-	return nil
+	return mi
 }
 
 // RemoveItem removes the specified menu item from this menu
@@ -220,14 +221,6 @@ func (m *Menu) onCursor(evname string, ev interface{}) {
 
 	if evname == OnCursorEnter {
 		m.root.SetKeyFocus(m)
-		m.active = true
-	} else if evname == OnCursorLeave {
-		m.active = false
-		// If this is a sub menu and the parent menu item is not selected
-		// hides this sub menu
-		//if m.mitem != nil && !m.mitem.selected {
-		//	m.SetVisible(false)
-		//}
 	}
 	m.root.StopPropagation(StopAll)
 }
@@ -236,34 +229,88 @@ func (m *Menu) onCursor(evname string, ev interface{}) {
 func (m *Menu) onKey(evname string, ev interface{}) {
 
 	sel := m.selectedPos()
+	if sel < 0 {
+		return
+	}
+	mi := m.items[sel]
 	kev := ev.(*window.KeyEvent)
 	switch kev.Keycode {
 	// Select next enabled menu item
 	case window.KeyDown:
-		next := m.nextItem(sel)
-		m.setSelectedPos(next)
-	// Select previous enabled menu item
-	case window.KeyUp:
-		prev := m.prevItem(sel)
-		m.setSelectedPos(prev)
-	// Return to previous menu
-	case window.KeyLeft:
-		if m.mitem != nil {
-			m.active = false
-			m.mitem.menu.setSelectedItem(m.mitem)
-			m.root.SetKeyFocus(m.mitem.menu)
-		}
-	// Enter into sub menu
-	case window.KeyRight:
-		if sel < 0 {
+		// Select next enabled menu item
+		if m.bar {
+			// If selected item is not a sub menu, ignore
+			if mi.submenu == nil {
+				return
+			}
+			// Sets autoOpen and selects sub menu
+			m.autoOpen = true
+			mi.update()
+			m.root.SetKeyFocus(mi.submenu)
+			mi.submenu.setSelectedPos(0)
 			return
 		}
+		// Select next enabled menu item for vertical menu
+		next := m.nextItem(sel)
+		m.setSelectedPos(next)
+	// Up -> Previous item for vertical menus
+	case window.KeyUp:
+		if m.bar {
+			return
+		}
+		prev := m.prevItem(sel)
+		m.setSelectedPos(prev)
+	// Left -> Previous menu item for menu bar
+	case window.KeyLeft:
+		// For menu bar, select previous menu item
+		if m.bar {
+			prev := m.prevItem(sel)
+			m.setSelectedPos(prev)
+			return
+		}
+		// If menu has parent menu item
+		if m.mitem != nil {
+			if m.mitem.menu.bar {
+				sel := m.mitem.menu.selectedPos()
+				prev := m.mitem.menu.prevItem(sel)
+				m.mitem.menu.setSelectedPos(prev)
+			} else {
+				m.mitem.menu.setSelectedItem(m.mitem)
+			}
+			m.root.SetKeyFocus(m.mitem.menu)
+			return
+		}
+
+	// Right -> Next menu bar item || Next sub menu
+	case window.KeyRight:
 		mi := m.items[sel]
+		// For menu bar, select next menu item
+		if m.bar {
+			next := m.nextItem(sel)
+			m.setSelectedPos(next)
+			return
+		}
+		// Enter into sub menu
 		if mi.submenu != nil {
 			m.root.SetKeyFocus(mi.submenu)
 			mi.submenu.setSelectedPos(0)
+			return
 		}
+		// If parent menu of this menu item is bar menu
+		if m.mitem != nil && m.mitem.menu.bar {
+			sel := m.mitem.menu.selectedPos()
+			next := m.mitem.menu.nextItem(sel)
+			m.mitem.menu.setSelectedPos(next)
+			m.root.SetKeyFocus(m.mitem.menu)
+		}
+	// Enter -> Select menu option
 	case window.KeyEnter:
+		rm := mi.rootMenu()
+		if rm.bar {
+			rm.autoOpen = false
+			rm.setSelectedPos(-1)
+		}
+		mi.dispatchAll(OnClick, mi)
 	default:
 		return
 	}
@@ -272,12 +319,13 @@ func (m *Menu) onKey(evname string, ev interface{}) {
 // onMouse process subscribed mouse events for the menu
 func (m *Menu) onMouse(evname string, ev interface{}) {
 
-	if evname == OnMouseOut {
-		if m.bar {
-			m.autoOpen = false
-			m.setSelectedPos(-1)
-		}
-	}
+	log.Error("Menu onMouse:%s", evname)
+	//if evname == OnMouseOut {
+	//	if m.bar {
+	//		m.autoOpen = false
+	//		m.setSelectedPos(-1)
+	//	}
+	//}
 }
 
 // setSelectedPos sets the menu item at the specified position as selected
@@ -470,7 +518,6 @@ func newMenuItem(text string, styles *MenuItemStyles) *MenuItem {
 		mi.Panel.Add(mi.label)
 		mi.Panel.Subscribe(OnCursorEnter, mi.onCursor)
 		mi.Panel.Subscribe(OnCursorLeave, mi.onCursor)
-		mi.Panel.Subscribe(OnMouseUp, mi.onMouse)
 		mi.Panel.Subscribe(OnMouseDown, mi.onMouse)
 	}
 	mi.update()
@@ -555,6 +602,38 @@ func (mi *MenuItem) SetEnabled(enabled bool) *MenuItem {
 	return mi
 }
 
+// SetId sets this menu item string id which can be used to identify
+// the selected menu option.
+func (mi *MenuItem) SetId(id string) *MenuItem {
+
+	mi.id = id
+	return mi
+}
+
+// Id returns this menu item current id
+func (mi *MenuItem) Id() string {
+
+	return mi.id
+}
+
+// IdPath returns a slice with the path of menu items ids to this menu item
+func (mi *MenuItem) IdPath() []string {
+
+	// Builds lists of menu items ids
+	path := []string{mi.id}
+	menu := mi.menu
+	for menu.mitem != nil {
+		path = append(path, menu.mitem.id)
+		menu = menu.mitem.menu
+	}
+	// Reverse and returns id list
+	res := make([]string, 0, len(path))
+	for i := len(path) - 1; i >= 0; i-- {
+		res = append(res, path[i])
+	}
+	return res
+}
+
 // onCursor processes subscribed cursor events over the menu item
 func (mi *MenuItem) onCursor(evname string, ev interface{}) {
 
@@ -562,10 +641,6 @@ func (mi *MenuItem) onCursor(evname string, ev interface{}) {
 	case OnCursorEnter:
 		mi.menu.setSelectedItem(mi)
 	case OnCursorLeave:
-		//if mi.submenu != nil && mi.submenu.active {
-		//	return
-		//}
-		//mi.menu.setSelectedItem(nil)
 	}
 }
 
@@ -579,23 +654,43 @@ func (mi *MenuItem) onMouse(evname string, ev interface{}) {
 			mi.menu.autoOpen = !mi.menu.autoOpen
 			if mi.submenu != nil && mi.submenu.Visible() {
 				mi.submenu.SetVisible(false)
-				return
+				mi.root.SetKeyFocus(mi.menu)
+			} else {
+				mi.update()
 			}
-			mi.update()
-			//if mi.submenu != nil {
-			//	if !mi.submenu.Visible() {
-			//		mi.submenu.SetVisible(true)
-			//		mi.submenu.SetPosition(0, mi.Height()-2)
-			//	} else {
-			//		mi.submenu.SetVisible(false)
-			//	}
-			//} else {
-			//	// Dispatch on click
-			//}
-		} else {
-
 		}
-	case OnMouseUp:
+		if mi.submenu != nil {
+			return
+		}
+		rm := mi.rootMenu()
+		rm.setSelectedPos(-1)
+		mi.root.SetKeyFocus(rm)
+		mi.dispatchAll(OnClick, mi)
+	}
+}
+
+// rootMenu returns the root menu for this menu item
+func (mi *MenuItem) rootMenu() *Menu {
+
+	root := mi.menu
+	for root.mitem != nil {
+		root = root.mitem.menu
+	}
+	return root
+}
+
+// dispatchAll dispatch the specified event for this menu item
+// and all its parents.to all parents
+func (mi *MenuItem) dispatchAll(evname string, ev interface{}) {
+
+	mi.Dispatch(evname, ev)
+	pmenu := mi.menu
+	for {
+		pmenu.Dispatch(evname, ev)
+		if pmenu.mitem == nil {
+			break
+		}
+		pmenu = pmenu.mitem.menu
 	}
 }
 
