@@ -35,6 +35,7 @@ func NewRoot(gs *gls.GLS, win window.IWindow) *Root {
 	r := new(Root)
 	r.gs = gs
 	r.win = win
+	r.root = r
 	r.Panel.Initialize(0, 0)
 	r.TimerManager.Initialize()
 	// for optimization, sets this root panel as not renderable as in most cases
@@ -66,7 +67,7 @@ func (r *Root) Add(ipan IPanel) {
 
 	r.Panel.Add(ipan)
 	ipan.GetNode().SetParent(r)
-	log.Error("Root Add:%p", ipan)
+	ipan.SetRoot(r)
 }
 
 // SetKeyFocus sets the panel which will receive all keyboard events
@@ -174,7 +175,6 @@ func (r *Root) onKey(evname string, ev interface{}) {
 	}
 	// Dispatch window.KeyEvent to focused panel subscribers
 	r.stopPropagation = 0
-	r.keyFocus.SetRoot(r)
 	r.keyFocus.GetPanel().Dispatch(evname, ev)
 	// If requested, stop propagation of event outside the root gui
 	if (r.stopPropagation & Stop3D) != 0 {
@@ -242,7 +242,6 @@ func (r *Root) sendPanels(x, y float32, evname string, ev interface{}) {
 		if found {
 			r.targets = append(r.targets, ipan)
 		} else {
-			ipan.SetRoot(r)
 			// If OnCursorEnter previously sent, sends OnCursorLeave with a nil event
 			if pan.cursorEnter {
 				pan.Dispatch(OnCursorLeave, nil)
@@ -287,7 +286,6 @@ func (r *Root) sendPanels(x, y float32, evname string, ev interface{}) {
 
 	// Send events to panels
 	for _, ipan := range r.targets {
-		ipan.SetRoot(r)
 		pan := ipan.GetPanel()
 		// Cursor position event
 		if evname == OnCursor {

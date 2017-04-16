@@ -228,15 +228,16 @@ func (m *Menu) onCursor(evname string, ev interface{}) {
 // onKey process subscribed key events
 func (m *Menu) onKey(evname string, ev interface{}) {
 
+	log.Error("Menu onKey:%s", evname)
 	sel := m.selectedPos()
-	if sel < 0 {
-		return
-	}
-	mi := m.items[sel]
 	kev := ev.(*window.KeyEvent)
 	switch kev.Keycode {
 	// Select next enabled menu item
 	case window.KeyDown:
+		if sel < 0 {
+			return
+		}
+		mi := m.items[sel]
 		// Select next enabled menu item
 		if m.bar {
 			// If selected item is not a sub menu, ignore
@@ -255,6 +256,9 @@ func (m *Menu) onKey(evname string, ev interface{}) {
 		m.setSelectedPos(next)
 	// Up -> Previous item for vertical menus
 	case window.KeyUp:
+		if sel < 0 {
+			return
+		}
 		if m.bar {
 			return
 		}
@@ -262,6 +266,9 @@ func (m *Menu) onKey(evname string, ev interface{}) {
 		m.setSelectedPos(prev)
 	// Left -> Previous menu item for menu bar
 	case window.KeyLeft:
+		if sel < 0 {
+			return
+		}
 		// For menu bar, select previous menu item
 		if m.bar {
 			prev := m.prevItem(sel)
@@ -283,6 +290,9 @@ func (m *Menu) onKey(evname string, ev interface{}) {
 
 	// Right -> Next menu bar item || Next sub menu
 	case window.KeyRight:
+		if sel < 0 {
+			return
+		}
 		mi := m.items[sel]
 		// For menu bar, select next menu item
 		if m.bar {
@@ -305,13 +315,32 @@ func (m *Menu) onKey(evname string, ev interface{}) {
 		}
 	// Enter -> Select menu option
 	case window.KeyEnter:
+		if sel < 0 {
+			return
+		}
+		mi := m.items[sel]
 		mi.activate()
 	// Check for menu items shortcuts
 	default:
-		found := mi.rootMenu().checkKey(kev)
-		if found != nil {
-			found.activate()
+		var root *Menu
+		if sel < 0 {
+			root = m
+		} else {
+			mi := m.items[sel]
+			root = mi.rootMenu()
 		}
+		found := root.checkKey(kev)
+		if found == nil {
+			return
+		}
+		if found.submenu == nil {
+			found.activate()
+			return
+		}
+		if found.menu.bar {
+			found.menu.autoOpen = true
+		}
+		found.menu.setSelectedItem(found)
 	}
 }
 
@@ -571,13 +600,20 @@ func (mi *MenuItem) SetText(text string) *MenuItem {
 }
 
 // SetShortcut sets the keyboard shortcut of this menu item
-func (mi *MenuItem) SetShortcut(mod window.ModifierKey, key window.Key) *MenuItem {
+func (mi *MenuItem) SetShortcut(mods window.ModifierKey, key window.Key) *MenuItem {
 
 	if mapKeyText[key] == "" {
 		panic("Invalid menu shortcut key")
 	}
-	mi.keyMods = mod
+	mi.keyMods = mods
 	mi.keyCode = key
+
+	// If parent menu is a menu bar, nothing more to do
+	if mi.menu.bar {
+		return mi
+	}
+
+	// Builds shortcut text
 	text := ""
 	if mi.keyMods&window.ModShift != 0 {
 		text = mapKeyModifier[window.ModShift]
@@ -599,6 +635,7 @@ func (mi *MenuItem) SetShortcut(mod window.ModifierKey, key window.Key) *MenuIte
 	}
 	text += mapKeyText[key]
 
+	// Creates and adds shortcut label
 	mi.shortcut = NewLabel(text)
 	mi.Panel.Add(mi.shortcut)
 	mi.update()

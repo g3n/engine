@@ -180,6 +180,7 @@ func (pan *Panel) GetPanel() *Panel {
 }
 
 // SetRoot satisfies the IPanel interface
+// Sets the pointer to the root panel for this panel and all its children
 func (p *Panel) SetRoot(root *Root) {
 
 	p.root = root
@@ -218,6 +219,12 @@ func (p *Panel) SetHighlighted2(state bool) {
 func (p *Panel) Material() *material.Material {
 
 	return p.mat
+}
+
+// Root returns the pointer for this panel root panel
+func (p *Panel) Root() *Root {
+
+	return p.root
 }
 
 // SetTopChild sets the Z coordinate of the specified panel to
@@ -478,6 +485,7 @@ func (p *Panel) Add(ichild IPanel) *Panel {
 	p.Node.Add(ichild)
 	node := ichild.GetPanel()
 	node.SetParent(p)
+	ichild.SetRoot(p.root)
 	if p.layout != nil {
 		p.layout.Recalc(p)
 	}
