@@ -205,7 +205,7 @@ func (m *Menu) AddMenu(text string, subm *Menu) *MenuItem {
 	mi.submenu.autoOpen = true
 	mi.menu = m
 	if !m.bar {
-		mi.ricon = NewIconLabel(string(assets.ChevronRight))
+		mi.ricon = NewIconLabel(string(assets.PlayArrow))
 		mi.Panel.Add(mi.ricon)
 	}
 	mi.Panel.Add(mi.submenu)
