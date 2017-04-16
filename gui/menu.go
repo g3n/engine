@@ -8,6 +8,7 @@ import (
 	"github.com/g3n/engine/gui/assets"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
+	"time"
 )
 
 type Menu struct {
@@ -148,6 +149,7 @@ func NewMenuBar() *Menu {
 
 	m := NewMenu()
 	m.bar = true
+	m.Panel.Subscribe(OnMouseOut, m.onMouse)
 	return m
 }
 
@@ -161,7 +163,6 @@ func NewMenu() *Menu {
 	m.Panel.Subscribe(OnCursorEnter, m.onCursor)
 	m.Panel.Subscribe(OnCursorLeave, m.onCursor)
 	m.Panel.Subscribe(OnKeyDown, m.onKey)
-	m.Panel.Subscribe(OnMouseOut, m.onMouse)
 	m.update()
 	return m
 }
@@ -228,7 +229,6 @@ func (m *Menu) onCursor(evname string, ev interface{}) {
 // onKey process subscribed key events
 func (m *Menu) onKey(evname string, ev interface{}) {
 
-	log.Error("Menu onKey:%s", evname)
 	sel := m.selectedPos()
 	kev := ev.(*window.KeyEvent)
 	switch kev.Keycode {
@@ -347,17 +347,16 @@ func (m *Menu) onKey(evname string, ev interface{}) {
 // onMouse process subscribed mouse events for the menu
 func (m *Menu) onMouse(evname string, ev interface{}) {
 
-	log.Error("Menu onMouse:%s", evname)
-	//if evname == OnMouseOut {
-	//	if m.bar {
-	//		m.autoOpen = false
-	//		m.setSelectedPos(-1)
-	//	}
-	//}
+	// Clear menu bar after some time, to give time for menu items
+	// to receive onMouse events.
+	m.Root().SetTimeout(1*time.Millisecond, nil, func(arg interface{}) {
+		m.autoOpen = false
+		m.setSelectedPos(-1)
+	})
 }
 
 // checkKey checks if this menu and any of its children contains
-// a menu item with specified key shortcut
+// a menu item with the specified key shortcut
 func (m *Menu) checkKey(kev *window.KeyEvent) *MenuItem {
 
 	for i := 0; i < len(m.items); i++ {
