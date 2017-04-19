@@ -163,6 +163,7 @@ func NewMenu() *Menu {
 	m.Panel.Subscribe(OnCursorEnter, m.onCursor)
 	m.Panel.Subscribe(OnCursorLeave, m.onCursor)
 	m.Panel.Subscribe(OnKeyDown, m.onKey)
+	m.Panel.Subscribe(OnResize, m.onResize)
 	m.update()
 	return m
 }
@@ -357,6 +358,14 @@ func (m *Menu) onMouse(evname string, ev interface{}) {
 	})
 }
 
+// onResize process menu onResize events
+func (m *Menu) onResize(evname string, ev interface{}) {
+
+	if m.bar {
+		m.recalcBar(false)
+	}
+}
+
 // checkKey checks if this menu and any of its children contains
 // a menu item with the specified key shortcut
 func (m *Menu) checkKey(kev *window.KeyEvent) *MenuItem {
@@ -479,7 +488,7 @@ func (m *Menu) applyStyle(mbs *MenuBodyStyle) {
 func (m *Menu) recalc() {
 
 	if m.bar {
-		m.recalcBar()
+		m.recalcBar(true)
 		return
 	}
 
@@ -531,9 +540,10 @@ func (m *Menu) recalc() {
 }
 
 // recalcBar recalculates the positions of this MenuBar internal items
-// and the content width and height of the menu
-func (m *Menu) recalcBar() {
+// If setSize is true it also sets the size of the menu bar
+func (m *Menu) recalcBar(setSize bool) {
 
+	// Calculate the maximum item height
 	height := float32(0)
 	for i := 0; i < len(m.items); i++ {
 		mi := m.items[i]
@@ -542,16 +552,27 @@ func (m *Menu) recalcBar() {
 		}
 	}
 
+	// Calculates the y position of the items to center inside the menu panel
+	py := (m.ContentHeight() - height) / 2
+	if py < 0 {
+		py = 0
+	}
+
+	// Sets the position of each item
 	px := float32(0)
 	for i := 0; i < len(m.items); i++ {
 		mi := m.items[i]
-		mi.SetPosition(px, 0)
+		mi.SetPosition(px, py)
 		width := float32(0)
 		width = mi.minWidth()
 		mi.SetSize(width, height)
 		px += mi.Width()
 	}
-	m.SetContentSize(px, height)
+
+	// Sets the size of this menu if requested
+	if setSize {
+		m.SetContentSize(px, height)
+	}
 }
 
 // newMenuItem creates and returns a pointer to a new menu item
