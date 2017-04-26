@@ -156,12 +156,12 @@ func newGLFW(width, height int, title string, full bool) (*GLFW, error) {
 	})
 
 	// Preallocate standard cursors
-	w.arrowCursor = glfw.CreateStandardCursor(int(glfw.ArrowCursor))
-	w.ibeamCursor = glfw.CreateStandardCursor(int(glfw.IBeamCursor))
-	w.crosshairCursor = glfw.CreateStandardCursor(int(glfw.CrosshairCursor))
-	w.handCursor = glfw.CreateStandardCursor(int(glfw.HandCursor))
-	w.hresizeCursor = glfw.CreateStandardCursor(int(glfw.HResizeCursor))
-	w.vresizeCursor = glfw.CreateStandardCursor(int(glfw.VResizeCursor))
+	w.arrowCursor = glfw.CreateStandardCursor(glfw.ArrowCursor)
+	w.ibeamCursor = glfw.CreateStandardCursor(glfw.IBeamCursor)
+	w.crosshairCursor = glfw.CreateStandardCursor(glfw.CrosshairCursor)
+	w.handCursor = glfw.CreateStandardCursor(glfw.HandCursor)
+	w.hresizeCursor = glfw.CreateStandardCursor(glfw.HResizeCursor)
+	w.vresizeCursor = glfw.CreateStandardCursor(glfw.VResizeCursor)
 
 	return w, nil
 }
