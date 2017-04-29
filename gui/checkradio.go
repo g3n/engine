@@ -104,7 +104,7 @@ func newCheckRadio(check bool, text string) *CheckRadio {
 // SetRoot overrides the IPanel.SetRoot method
 func (cb *CheckRadio) SetRoot(root *Root) {
 
-	if cb.root == root {
+	if cb.root == root || root == nil {
 		return
 	}
 	cb.root = root
