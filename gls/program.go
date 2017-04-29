@@ -498,10 +498,10 @@ func CompileShader(stype uint32, source string) (uint32, error) {
 		return shader, fmt.Errorf("%s", slog)
 	}
 
-	// Even if the shader compiled OK, if the log has data,
-	// return error to see warnings
+	// If the shader compiled OK but the log has data,
+	// logs this data instead of returning error
 	if len(slog) > 2 {
-		return shader, fmt.Errorf("%s", slog)
+		log.Warn("%s", slog)
 	}
 	return shader, nil
 }
