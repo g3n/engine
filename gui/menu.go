@@ -597,6 +597,13 @@ func newMenuItem(text string, styles *MenuItemStyles) *MenuItem {
 // If an image was previously set it is replaced by this icon
 func (mi *MenuItem) SetIcon(icode int) *MenuItem {
 
+	// Remove and dispose previous icon
+	if mi.licon != nil {
+		mi.Panel.Remove(mi.licon)
+		mi.Dispose()
+		mi.licon = nil
+	}
+	// Sets the new icon
 	mi.licon = NewIconLabel(string(icode))
 	mi.Panel.Add(mi.licon)
 	mi.update()
