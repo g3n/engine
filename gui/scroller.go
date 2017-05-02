@@ -68,9 +68,12 @@ func newScroller(vert bool, width, height float32) *Scroller {
 func (s *Scroller) Clear() {
 
 	s.Panel.DisposeChildren(true)
+	s.first = 0
 	s.hscroll = nil
 	s.vscroll = nil
 	s.items = s.items[0:0]
+	s.update()
+	s.recalc()
 }
 
 // Len return the number of items in the scroller
