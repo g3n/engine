@@ -289,20 +289,32 @@ func (dec *Decoder) parseObjLine(line string) error {
 		return nil
 	}
 	switch ltype {
+	// Material library
 	case "mtllib":
 		return dec.parseMatlib(fields[1:])
+	// Object name
 	case "o":
 		return dec.parseObject(fields[1:])
+	// Group names. We are considering "group" the same as "object"
+	// This may not be right
+	case "g":
+		return dec.parseObject(fields[1:])
+	// Vertex coordinate
 	case "v":
 		return dec.parseVertex(fields[1:])
+	// Vertex normal coordinate
 	case "vn":
 		return dec.parseNormal(fields[1:])
+	// Vertex texture coordinate
 	case "vt":
 		return dec.parseTex(fields[1:])
+	// Face vertex
 	case "f":
 		return dec.parseFace(fields[1:])
+	// Use material
 	case "usemtl":
 		return dec.parseUsemtl(fields[1:])
+	// Smooth
 	case "s":
 		return dec.parseSmooth(fields[1:])
 	default:
@@ -393,6 +405,11 @@ func (dec *Decoder) parseTex(fields []string) error {
 // f v1[/vt1][/vn1] v2[/vt2][/vn2] v3[/vt3][/vn3] ...
 func (dec *Decoder) parseFace(fields []string) error {
 
+	// If current object has no material, appends last material if defined
+	if len(dec.objCurrent.materials) == 0 && dec.matCurrent != nil {
+		dec.objCurrent.materials = append(dec.objCurrent.materials, dec.matCurrent.Name)
+	}
+
 	if len(fields) < 3 {
 		return dec.formatError("Face line with less 3 fields")
 	}
@@ -405,44 +422,73 @@ func (dec *Decoder) parseFace(fields []string) error {
 	face.Normals = make([]int, len(fields))
 	face.Material = dec.matCurrent.Name
 	face.Smooth = dec.smoothCurrent
+
 	for pos, f := range fields {
+
 		// Separate the current field in its components: v vt vn
 		vfields := strings.Split(f, "/")
 		if len(vfields) < 1 {
 			return dec.formatError("Face field with no parts")
 		}
+
 		// Get the index of this vertex position (must always exist)
-		val, err := strconv.ParseUint(vfields[0], 10, 32)
+		val, err := strconv.ParseInt(vfields[0], 10, 32)
 		if err != nil {
 			return err
 		}
-		if val < 1 {
-			return dec.formatError("Face vertex position index value less than 1")
+
+		// Positive index is an absolute vertex index
+		if val > 0 {
+			face.Vertices[pos] = int(val - 1)
+			// Negative vertex index is relative to the last parsed vertex
+		} else if val < 0 {
+			current := (len(dec.Vertices) / 3) - 1
+			face.Vertices[pos] = current + int(val) + 1
+			// Vertex index could never be 0
+		} else {
+			return dec.formatError("Face vertex index value equal to 0")
 		}
-		face.Vertices[pos] = int(val - 1)
+
 		// Get the index of this vertex UV coordinate (optional)
 		if len(vfields) > 1 && len(vfields[1]) > 0 {
-			val, err := strconv.ParseUint(vfields[1], 10, 32)
+			val, err := strconv.ParseInt(vfields[1], 10, 32)
 			if err != nil {
 				return err
 			}
-			if val < 1 {
-				return dec.formatError("Face uv index value less than 1")
+
+			// Positive index is an absolute UV index
+			if val > 0 {
+				face.Uvs[pos] = int(val - 1)
+				// Negative vertex index is relative to the last parsed uv
+			} else if val < 0 {
+				current := (len(dec.Uvs) / 2) - 1
+				face.Uvs[pos] = current + int(val) + 1
+				// UV index could never be 0
+			} else {
+				return dec.formatError("Face uv index value equal to 0")
 			}
-			face.Uvs[pos] = int(val - 1)
 		} else {
 			face.Uvs[pos] = invINDEX
 		}
+
 		// Get the index of this vertex normal (optional)
 		if len(vfields) >= 3 {
-			val, err = strconv.ParseUint(vfields[2], 10, 32)
+			val, err = strconv.ParseInt(vfields[2], 10, 32)
 			if err != nil {
 				return err
 			}
-			if val < 1 {
-				return dec.formatError("Face normal index value less than 1")
+
+			// Positive index is an absolute normal index
+			if val > 0 {
+				face.Normals[pos] = int(val - 1)
+				// Negative vertex index is relative to the last parsed normal
+			} else if val < 0 {
+				current := (len(dec.Normals) / 3) - 1
+				face.Normals[pos] = current + int(val) + 1
+				// Normal index could never be 0
+			} else {
+				return dec.formatError("Face normal index value equal to 0")
 			}
-			face.Normals[pos] = int(val - 1)
 		} else {
 			face.Normals[pos] = invINDEX
 		}
