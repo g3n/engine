@@ -543,17 +543,26 @@ func (p *Panel) UpdateMatrixWorld() {
 	}
 }
 
-// setZ calculates the Z coordinate for each panel recursively
-// starting at the specified receiver with the specified Z coordinate.
+// setZ sets the Z coordinate for this panel and its children recursively
+// starting at the specified nextZ coordinate.
 // The Z coordinate is set so panels added later are closed to the screen
+// For unbounded panels it is used the unbounded panel coordinate to
+// set the Z coordinate of its children.
 func (p *Panel) setZ(nextZ float32) float32 {
 
-	p.SetPositionZ(nextZ)
-	nextZ += deltaZ
-	for _, ichild := range p.Children() {
-		nextZ = ichild.(IPanel).GetPanel().setZ(nextZ)
+	z := nextZ
+	if !p.bounded {
+		z = p.Position().Z
 	}
-	return nextZ
+	p.SetPositionZ(z)
+	z += deltaZ
+	for _, ichild := range p.Children() {
+		z = ichild.(IPanel).GetPanel().setZ(z)
+	}
+	if !p.bounded {
+		return z - p.Position().Z
+	}
+	return z
 }
 
 // ContainsPosition returns indication if this panel contains

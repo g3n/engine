@@ -40,6 +40,8 @@ type DropDownStyles struct {
 	Disabled *DropDownStyle
 }
 
+const dropDownZ = -0.5
+
 // NewDropDown creates and returns a pointer to a new drop down widget with the specified width.
 func NewDropDown(width float32, item *ImageLabel) *DropDown {
 
@@ -65,6 +67,7 @@ func NewDropDown(width float32, item *ImageLabel) *DropDown {
 	/// Create list
 	dd.list = NewVList(0, 0)
 	dd.list.bounded = false
+	dd.list.SetPositionZ(dropDownZ)
 	dd.list.dropdown = true
 	dd.list.SetVisible(false)
 
