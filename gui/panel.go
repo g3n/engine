@@ -522,20 +522,15 @@ func (p *Panel) SetBounded(bounded bool) {
 // the Engine before rendering the frame.
 func (p *Panel) UpdateMatrixWorld() {
 
+	// Panel has no parent should be the root panel
 	par := p.Parent()
-	// Panel has no parent
 	if par == nil {
 		p.updateBounds(nil)
 		p.setZ(0)
 		// Panel has parent
 	} else {
-		par, ok := par.(*Panel)
-		if ok {
-			p.updateBounds(par)
-			// Parent is not a panel
-		} else {
-			p.updateBounds(nil)
-		}
+		parpan := par.(*Panel)
+		p.updateBounds(parpan)
 	}
 	// Update this panel children
 	for _, ichild := range p.Children() {
@@ -560,7 +555,7 @@ func (p *Panel) setZ(nextZ float32) float32 {
 		z = ichild.(IPanel).GetPanel().setZ(z)
 	}
 	if !p.bounded {
-		return z - p.Position().Z
+		return nextZ
 	}
 	return z
 }
@@ -640,6 +635,7 @@ func (p *Panel) Pix2NDC(px, py float32) (nx, ny float32) {
 // bounds considering the bounds of its parent
 func (p *Panel) updateBounds(par *Panel) {
 
+	// If no parent, it is the root panel
 	if par == nil {
 		p.pospix = p.Position()
 		p.xmin = -math.MaxFloat32
@@ -665,12 +661,23 @@ func (p *Panel) updateBounds(par *Panel) {
 	p.xmax = p.pospix.X + p.width
 	p.ymax = p.pospix.Y + p.height
 	if p.bounded {
-		// Get the parent minimum X and Y absolute coordinates in pixels
-		pxmin := par.xmin + par.marginSizes.Left + par.borderSizes.Left + par.paddingSizes.Left
-		pymin := par.ymin + par.marginSizes.Top + par.borderSizes.Top + par.paddingSizes.Top
-		// Get the parent maximum X and Y absolute coordinates in pixels
-		pxmax := par.xmax - (par.marginSizes.Right + par.borderSizes.Right + par.paddingSizes.Right)
-		pymax := par.ymax - (par.marginSizes.Bottom + par.borderSizes.Bottom + par.paddingSizes.Bottom)
+		// Get the parent content area minimum and maximum absolute coordinates in pixels
+		pxmin := par.pospix.X + par.marginSizes.Left + par.borderSizes.Left + par.paddingSizes.Left
+		if pxmin < par.xmin {
+			pxmin = par.xmin
+		}
+		pymin := par.pospix.Y + par.marginSizes.Top + par.borderSizes.Top + par.paddingSizes.Top
+		if pymin < par.ymin {
+			pymin = par.ymin
+		}
+		pxmax := par.pospix.X + par.width - (par.marginSizes.Right + par.borderSizes.Right + par.paddingSizes.Right)
+		if pxmax > par.xmax {
+			pxmax = par.xmax
+		}
+		pymax := par.pospix.Y + par.height - (par.marginSizes.Bottom + par.borderSizes.Bottom + par.paddingSizes.Bottom)
+		if pymax > par.ymax {
+			pymax = par.ymax
+		}
 		// Update this panel minimum x and y coordinates.
 		if p.xmin < pxmin {
 			p.xmin = pxmin
@@ -848,7 +855,6 @@ func (p *Panel) SetModelMatrix(gl *gls.GLS, mm *math32.Matrix4) {
 	p.posclip.X = (p.pospix.X - fwidth/2) / (fwidth / 2)
 	p.posclip.Y = -(p.pospix.Y - fheight/2) / (fheight / 2)
 	p.posclip.Z = p.Position().Z
-	//log.Debug("panel posclip:%v\n", posclip)
 
 	// Calculates the model matrix
 	var quat math32.Quaternion

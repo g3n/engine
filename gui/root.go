@@ -66,7 +66,6 @@ func (r *Root) SubscribeWin() {
 func (r *Root) Add(ipan IPanel) {
 
 	r.Panel.Add(ipan)
-	ipan.GetNode().SetParent(r)
 	ipan.SetRoot(r)
 }
 
