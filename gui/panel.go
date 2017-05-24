@@ -84,7 +84,8 @@ type Panel struct {
 }
 
 const (
-	deltaZ = -0.00001
+	deltaZ    = -0.00001      // delta Z for bounded panels
+	deltaZunb = deltaZ * 1000 // delta Z for unbounded panels
 )
 
 // NewPanel creates and returns a pointer to a new panel with the
@@ -485,7 +486,10 @@ func (p *Panel) Add(ichild IPanel) *Panel {
 	p.Node.Add(ichild)
 	node := ichild.GetPanel()
 	node.SetParent(p)
-	ichild.SetRoot(p.root)
+	if p.root != nil {
+		ichild.SetRoot(p.root)
+		p.root.setChildrenZ()
+	}
 	if p.layout != nil {
 		p.layout.Recalc(p)
 	}
@@ -526,7 +530,6 @@ func (p *Panel) UpdateMatrixWorld() {
 	par := p.Parent()
 	if par == nil {
 		p.updateBounds(nil)
-		p.setZ(0)
 		// Panel has parent
 	} else {
 		parpan := par.(*Panel)
@@ -536,28 +539,6 @@ func (p *Panel) UpdateMatrixWorld() {
 	for _, ichild := range p.Children() {
 		ichild.UpdateMatrixWorld()
 	}
-}
-
-// setZ sets the Z coordinate for this panel and its children recursively
-// starting at the specified nextZ coordinate.
-// The Z coordinate is set so panels added later are closed to the screen
-// For unbounded panels it is used the unbounded panel coordinate to
-// set the Z coordinate of its children.
-func (p *Panel) setZ(nextZ float32) float32 {
-
-	z := nextZ
-	if !p.bounded {
-		z = p.Position().Z
-	}
-	p.SetPositionZ(z)
-	z += deltaZ
-	for _, ichild := range p.Children() {
-		z = ichild.(IPanel).GetPanel().setZ(z)
-	}
-	if !p.bounded {
-		return nextZ
-	}
-	return z
 }
 
 // ContainsPosition returns indication if this panel contains
@@ -629,6 +610,33 @@ func (p *Panel) Pix2NDC(px, py float32) (nx, ny float32) {
 	w := p.ContentWidth()
 	h := p.ContentHeight()
 	return px / w, -py / h
+}
+
+// setZ sets the Z coordinate for this panel and its children recursively
+// starting at the specified z and zunb coordinates.
+// The z coordinate is used for bound panels and zunb for unbounded panels.
+// The z coordinate is set so panels added later are closer to the screen.
+// All unbounded panels and its children are closer than any of the bounded panels.
+func (p *Panel) setZ(z, zunb float32) (float32, float32) {
+
+	// Bounded panel
+	if p.bounded {
+		p.SetPositionZ(z)
+		z += deltaZ
+		for _, ichild := range p.Children() {
+			z, zunb = ichild.(IPanel).GetPanel().setZ(z, zunb)
+		}
+		return z, zunb
+		// Unbounded panel
+	} else {
+		p.SetPositionZ(zunb)
+		zchild := zunb + deltaZ
+		zunb += deltaZunb
+		for _, ichild := range p.Children() {
+			_, zunb = ichild.(IPanel).GetPanel().setZ(zchild, zunb)
+		}
+		return z, zunb
+	}
 }
 
 // updateBounds is called by UpdateMatrixWorld() and calculates this panel

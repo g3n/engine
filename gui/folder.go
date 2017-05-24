@@ -35,8 +35,6 @@ type FolderStyles struct {
 	Disabled *FolderStyle
 }
 
-const folderZ = -0.6
-
 // NewFolder creates and returns a pointer to a new folder widget
 // with the specified text and initial width
 func NewFolder(text string, width float32, contentPanel IPanel) *Folder {
@@ -66,7 +64,6 @@ func (f *Folder) Initialize(text string, width float32, contentPanel IPanel) {
 	f.contentPanel = contentPanel
 	contentPanel.GetPanel().bounded = false
 	contentPanel.GetPanel().SetVisible(false)
-	contentPanel.GetPanel().SetPositionZ(folderZ)
 	f.Panel.Add(f.contentPanel)
 
 	// Set event callbacks

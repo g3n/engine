@@ -63,10 +63,15 @@ func (r *Root) SubscribeWin() {
 }
 
 // Add adds the specified panel to the root container list of children
+// Overrides the Panel version because it needs to set the root panel field
 func (r *Root) Add(ipan IPanel) {
 
+	// Sets the root panel field of the child
+	ipan.GetPanel().root = r
+	// Add this panel to the root panel children.
+	// This will also set the root panel for all the child children
+	// and the z coordinates of all the panel tree graph.
 	r.Panel.Add(ipan)
-	ipan.SetRoot(r)
 }
 
 // SetKeyFocus sets the panel which will receive all keyboard events
@@ -163,6 +168,15 @@ func (r *Root) SetCursorHResize() {
 func (r *Root) SetCursorVResize() {
 
 	r.win.SetStandardCursor(window.VResizeCursor)
+}
+
+// setChildrenZ sets the z coordinates of all children of this root panel
+func (r *Root) setChildrenZ() {
+
+	if r == nil {
+		return
+	}
+	r.setZ(0, deltaZunb)
 }
 
 // onKey is called when key events are received
