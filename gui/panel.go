@@ -488,7 +488,7 @@ func (p *Panel) Add(ichild IPanel) *Panel {
 	node.SetParent(p)
 	if p.root != nil {
 		ichild.SetRoot(p.root)
-		p.root.setChildrenZ()
+		p.root.setZ(0, deltaZunb)
 	}
 	if p.layout != nil {
 		p.layout.Recalc(p)
