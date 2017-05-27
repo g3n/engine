@@ -221,6 +221,7 @@ func (dd *DropDown) copySelected() {
 
 	dd.selItem = dd.list.Selected()[0].(*ImageLabel)
 	dd.litem.CopyFields(dd.selItem)
+	dd.litem.SetWidth(dd.selItem.Width())
 	dd.recalc()
 	dd.Dispatch(OnChange, nil)
 }
