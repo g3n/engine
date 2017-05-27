@@ -295,6 +295,12 @@ func (p *Panel) SetContentAspectHeight(height float32) {
 	p.SetContentSize(width, height)
 }
 
+// Size returns this panel current external width and height in pixels
+func (p *Panel) Size() (float32, float32) {
+
+	return p.width, p.height
+}
+
 // Width returns the current panel external width in pixels
 func (p *Panel) Width() float32 {
 

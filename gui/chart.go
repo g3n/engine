@@ -72,6 +72,7 @@ func NewChart(width, height float32) *Chart {
 	ch.formatY = "%v"
 	ch.fontSizeX = 14
 	ch.fontSizeY = 14
+	ch.Subscribe(OnResize, ch.onResize)
 	return ch
 }
 
@@ -391,6 +392,12 @@ func (ch *Chart) updateGraphs() {
 		g := ch.graphs[i]
 		g.updateData()
 	}
+}
+
+// onResize process OnResize events for this chart
+func (ch *Chart) onResize(evname string, ev interface{}) {
+
+	ch.recalc()
 }
 
 // recalc recalculates the positions of the inner panels
