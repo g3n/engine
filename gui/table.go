@@ -19,21 +19,22 @@ type Table struct {
 	cols         []TableColumn           // array of columns descriptors
 	colmap       map[string]*TableColumn // maps column id to column descriptor
 	firstRow     int                     // index of the first row of data to show
-	rows         []tableRow              // array of table rows
+	rows         []*tableRow             // array of table rows
 	headerHeight float32
 }
 
 // TableColumn describes a table column
 type TableColumn struct {
-	Id     string  // column id used to reference the column
-	Name   string  // column name shown in the header
-	Width  float32 // column preferable width in pixels
-	Hidden bool    // hidden flag
-	Format string  // format string for numbers and strings
-	Align  int     // cell align
-	order  int     // show order
-	header *Panel  // header panel
-	label  *Label  // header label
+	Id        string  // Column id used to reference the column. Must be unique
+	Name      string  // Column name shown in the header
+	Width     float32 // Column preferable width in pixels
+	Hidden    bool    // Hidden flag
+	Format    string  // Format string for numbers and strings
+	Alignment Align   // Cell content alignment: AlignNone|AlignLeft|AlignCenter|AlignRight
+	Expand    int     // Width expansion factor
+	order     int     // show order
+	header    *Panel  // header panel
+	label     *Label  // header label
 }
 
 // TableHeaderStyle describes the style of the table header
@@ -67,8 +68,9 @@ type TableStyles struct {
 }
 
 type tableRow struct {
-	height float32      // row height
-	cells  []*tableCell // array of row cells
+	height   float32      // row height
+	selected bool         // row selected flag
+	cells    []*tableCell // array of row cells
 }
 
 type tableCell struct {
@@ -121,6 +123,9 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 	}
 	t.recalcHeader()
 
+	t.Subscribe(OnResize, func(evname string, ev interface{}) {
+		t.recalc()
+	})
 	return t, nil
 }
 
@@ -135,14 +140,13 @@ func (t *Table) SetRows(rows []map[string]interface{}) {
 	if len(rows) > len(t.rows) {
 		count := len(rows) - len(t.rows)
 		for ri := 0; ri < count; ri++ {
-			var trow tableRow
+			trow := new(tableRow)
 			trow.cells = make([]*tableCell, 0)
-			for coli := 0; coli < len(t.cols); coli++ {
+			for ci := 0; ci < len(t.cols); ci++ {
 				cell := new(tableCell)
-				cell.Initialize(10, 10)
+				cell.Initialize(0, 0)
 				cell.label.initialize("", StyleDefault.Font)
 				cell.Add(&cell.label)
-				cell.SetBorders(1, 1, 1, 1)
 				trow.cells = append(trow.cells, cell)
 				t.Panel.Add(cell)
 			}
@@ -157,12 +161,13 @@ func (t *Table) SetRows(rows []map[string]interface{}) {
 	t.recalc()
 }
 
+// SetRow sets the value of all the cells of the specified row from
+// the specified map indexed by column id.
 func (t *Table) SetRow(row int, values map[string]interface{}) {
 
 	if row < 0 || row >= len(t.rows) {
 		panic("Invalid row index")
 	}
-
 	for ci := 0; ci < len(t.cols); ci++ {
 		c := t.cols[ci]
 		cv := values[c.Id]
@@ -173,6 +178,7 @@ func (t *Table) SetRow(row int, values map[string]interface{}) {
 	}
 }
 
+// SetCell sets the value of the cell specified by its row and column id
 func (t *Table) SetCell(row int, colid string, value interface{}) {
 
 	if row < 0 || row >= len(t.rows) {
@@ -198,6 +204,10 @@ func (t *Table) SetColFormat(id, format string) error {
 	return nil
 }
 
+func (t *Table) AddRow(values map[string]interface{}) {
+
+}
+
 // recalcHeader recalculates and sets the position and size of the header panels
 func (t *Table) recalcHeader() {
 
@@ -212,13 +222,20 @@ func (t *Table) recalcHeader() {
 	}
 }
 
-// recalc calculates the positions...
+// recalc calculates the visibility, positions and sizes of all row cells.
+// should be called in the following situations:
+// - the table is resized
+// - row is added, inserted or removed
+// - column alignment and expansion changed
+// - column visibility is changed
+// - horizontal or vertical scroll position changed
 func (t *Table) recalc() {
 
 	// Assumes that the TableColum array is sorted in show order
 	py := t.headerHeight
 	for ri := t.firstRow; ri < len(t.rows); ri++ {
 		row := t.rows[ri]
+		t.updateRowStyle(ri)
 		px := float32(0)
 		// Get maximum height for row
 		for ci := 0; ci < len(t.cols); ci++ {
@@ -244,23 +261,41 @@ func (t *Table) recalc() {
 			cell := row.cells[c.order]
 			cell.SetPosition(px, py)
 			cell.SetSize(c.header.Width(), row.height)
-			log.Error("Cell(%v,%v)(%p) size:%v/%v pos:%v/%v", ri, c.Id, &cell, cell.Width(), cell.Height(), cell.Position().X, cell.Position().Y)
-			px += cell.Width()
+			//log.Error("Cell(%v,%v)(%p) size:%v/%v pos:%v/%v", ri, c.Id, &cell, cell.Width(), cell.Height(), cell.Position().X, cell.Position().Y)
+			px += c.header.Width()
 		}
 		py += row.height
+		if py > t.Height() {
+			break
+		}
 	}
 }
 
-// colAtOrder returns the TableColumn at the specified view order.
-// Returns nil if not found
-func (t *Table) colAtOrder(order int) *TableColumn {
+func (t *Table) sortCols() {
 
-	for ci := 0; ci < len(t.cols); ci++ {
-		if t.cols[ci].order == order {
-			return &t.cols[ci]
-		}
+}
+
+// updateRowStyle applies the correct style for the specified row
+func (t *Table) updateRowStyle(ri int) {
+
+	row := t.rows[ri]
+	if row.selected {
+		t.applyRowStyle(row, &t.styles.Row.Selected)
+		return
 	}
-	return nil
+	t.applyRowStyle(row, &t.styles.Row.Normal)
+}
+
+// applyRowStyle applies the specified style to all cells for the specified table row
+func (t *Table) applyRowStyle(row *tableRow, trs *TableRowStyle) {
+
+	for i := 0; i < len(row.cells); i++ {
+		cell := row.cells[i]
+		cell.SetBordersFrom(&trs.Border)
+		cell.SetBordersColor4(&trs.BorderColor)
+		cell.SetPaddingsFrom(&trs.Paddings)
+		cell.SetColor(&trs.BgColor)
+	}
 }
 
 // applyStyle applies the specified menu body style
