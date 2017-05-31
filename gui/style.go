@@ -36,6 +36,7 @@ type Style struct {
 	Tree          TreeStyles
 	ControlFolder ControlFolderStyles
 	Menu          MenuStyles
+	Table         TableStyles
 }
 
 const (
@@ -742,4 +743,16 @@ func setupDefaultStyle() {
 			},
 		},
 	}
+
+	// Table styles
+	StyleDefault.Table = TableStyles{
+		Header: &TableHeaderStyle{
+			Border:      BorderSizes{0, 1, 1, 0},
+			Paddings:    BorderSizes{2, 2, 2, 2},
+			BorderColor: borderColor,
+			BgColor:     bgColor,
+			FgColor:     fgColor,
+		},
+	}
+
 }
