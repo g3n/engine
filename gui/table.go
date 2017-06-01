@@ -18,9 +18,12 @@ type Table struct {
 	styles       *TableStyles            // pointer to current styles
 	cols         []TableColumn           // array of columns descriptors
 	colmap       map[string]*TableColumn // maps column id to column descriptor
-	firstRow     int                     // index of the first row of data to show
+	firstRow     int                     // index of the first visible row
+	lastRow      int                     // index of the last visible row
 	rows         []*tableRow             // array of table rows
-	headerHeight float32
+	headerHeight float32                 // header height
+	vscroll      *ScrollBar              // vertical scroll bar
+	showHeader   bool
 }
 
 // TableColumn describes a table column
@@ -86,6 +89,7 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 	t := new(Table)
 	t.Panel.Initialize(width, height)
 	t.styles = &StyleDefault.Table
+	t.showHeader = true
 
 	// Checks columns descriptors
 	t.colmap = make(map[string]*TableColumn)
@@ -129,33 +133,49 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 	return t, nil
 }
 
+// ShowHeaders shows or hides the table header
+func (t *Table) ShowHeader(show bool) {
+
+	if t.showHeader == show {
+		return
+	}
+	t.showHeader = show
+	for i := 0; i < len(t.cols); i++ {
+		c := &t.cols[i]
+		c.header.SetVisible(t.showHeader)
+	}
+	t.recalc()
+}
+
+// Len returns the total number of rows of the table
+func (t *Table) Len() int {
+
+	return len(t.rows)
+}
+
 // SetRows clears all current rows of the table and
 // sets new rows from the specifying parameter.
 // Each row is a map keyed by the colum id.
 // The map value currently can be a string or any number type
 // If a row column is not found it is ignored
-func (t *Table) SetRows(rows []map[string]interface{}) {
+func (t *Table) SetRows(values []map[string]interface{}) {
 
-	// Create rows if necessary
-	if len(rows) > len(t.rows) {
-		count := len(rows) - len(t.rows)
-		for ri := 0; ri < count; ri++ {
-			trow := new(tableRow)
-			trow.cells = make([]*tableCell, 0)
-			for ci := 0; ci < len(t.cols); ci++ {
-				cell := new(tableCell)
-				cell.Initialize(0, 0)
-				cell.label.initialize("", StyleDefault.Font)
-				cell.Add(&cell.label)
-				trow.cells = append(trow.cells, cell)
-				t.Panel.Add(cell)
-			}
-			t.rows = append(t.rows, trow)
+	// Add missing rows
+	if len(values) > len(t.rows) {
+		count := len(values) - len(t.rows)
+		for row := 0; row < count; row++ {
+			t.insertRow(len(t.rows), nil)
+		}
+		// Remove remaining rows
+	} else if len(values) < len(t.rows) {
+		for row := len(values); row < len(t.rows); row++ {
+			t.removeRow(row)
 		}
 	}
 
-	for ri := 0; ri < len(rows); ri++ {
-		t.SetRow(ri, rows[ri])
+	// Set rows values
+	for row := 0; row < len(values); row++ {
+		t.SetRow(row, values[row])
 	}
 	t.firstRow = 0
 	t.recalc()
@@ -204,8 +224,87 @@ func (t *Table) SetColFormat(id, format string) error {
 	return nil
 }
 
+// InsertRow inserts the specified values in a new row at the specified index
+func (t *Table) InsertRow(row int, values map[string]interface{}) {
+
+	t.insertRow(row, values)
+	t.recalc()
+}
+
+// RemoveRow removes from the specified row from the table
+func (t *Table) RemoveRow(row int) {
+
+	t.removeRow(row)
+	t.recalc()
+}
+
+// insertRow is the internal version of InsertRow which does not call recalc()
+func (t *Table) insertRow(row int, values map[string]interface{}) {
+
+	// Checks row index
+	if row < 0 || row > len(t.rows) {
+		panic("Invalid row index")
+	}
+
+	// Creates tableRow
+	trow := new(tableRow)
+	trow.cells = make([]*tableCell, 0)
+	for ci := 0; ci < len(t.cols); ci++ {
+		cell := new(tableCell)
+		cell.Initialize(0, 0)
+		cell.label.initialize("", StyleDefault.Font)
+		cell.Add(&cell.label)
+		trow.cells = append(trow.cells, cell)
+		t.Panel.Add(cell)
+	}
+
+	// Inserts tableRow in the table rows at the specified index
+	t.rows = append(t.rows, nil)
+	copy(t.rows[row+1:], t.rows[row:])
+	t.rows[row] = trow
+
+	// Sets the new row values from the specified map
+	if values != nil {
+		t.SetRow(row, values)
+	}
+}
+
+// removeRow removes from the table the row specified its index
+func (t *Table) removeRow(row int) {
+
+	// Checks row index
+	if row < 0 || row >= len(t.rows) {
+		panic("Invalid row index")
+	}
+
+	// Get row to be removed
+	trow := t.rows[row]
+
+	// Remove row from table
+	copy(t.rows[row:], t.rows[row+1:])
+	t.rows[len(t.rows)-1] = nil
+	t.rows = t.rows[:len(t.rows)-1]
+
+	// Dispose the row cell panels and its children
+	for i := 0; i < len(trow.cells); i++ {
+		cell := trow.cells[i]
+		cell.DisposeChildren(true)
+		cell.Dispose()
+	}
+
+	// Adjusts table first visible row if necessary
+	//if t.firstRow == row {
+	//	t.firstRow--
+	//	if t.firstRow < 0 {
+	//		t.firstRow = 0
+	//	}
+	//}
+}
+
+// AddRow adds a new row at the end of the table with the specified values
 func (t *Table) AddRow(values map[string]interface{}) {
 
+	t.InsertRow(len(t.rows), values)
 }
 
 // recalcHeader recalculates and sets the position and size of the header panels
@@ -231,12 +330,20 @@ func (t *Table) recalcHeader() {
 // - horizontal or vertical scroll position changed
 func (t *Table) recalc() {
 
-	// Assumes that the TableColum array is sorted in show order
-	py := t.headerHeight
+	// Get initial Y coordinate and total height of the table
+	starty := t.headerHeight
+	if !t.showHeader {
+		starty = 0
+	}
+	theight := t.ContentHeight()
+
+	// Calculates all visible rows heights and determines if it
+	// is necessary to show the scrollbar or not.
+	scroll := false
+	py := starty
 	for ri := t.firstRow; ri < len(t.rows); ri++ {
-		row := t.rows[ri]
+		trow := t.rows[ri]
 		t.updateRowStyle(ri)
-		px := float32(0)
 		// Get maximum height for row
 		for ci := 0; ci < len(t.cols); ci++ {
 			// If column is hidden, ignore
@@ -244,12 +351,28 @@ func (t *Table) recalc() {
 			if c.Hidden {
 				continue
 			}
-			cell := row.cells[c.order]
+			cell := trow.cells[c.order]
 			cellHeight := cell.MinHeight() + cell.label.Height()
-			if cellHeight > row.height {
-				row.height = cellHeight
+			if cellHeight > trow.height {
+				trow.height = cellHeight
 			}
 		}
+		py += trow.height
+		log.Error("row:%v py:%v row height:%v theight:%v", ri, py, trow.height, theight)
+		if py > theight {
+			scroll = true
+			t.lastRow = ri
+			break
+		}
+	}
+	t.setVScrollBar(scroll)
+
+	// Assumes that the TableColum array is sorted in show order
+	py = starty
+	for ri := t.firstRow; ri < len(t.rows); ri++ {
+		trow := t.rows[ri]
+		t.updateRowStyle(ri)
+		px := float32(0)
 		// Sets position and size of row cells
 		for ci := 0; ci < len(t.cols); ci++ {
 			// If column is hidden, ignore
@@ -258,14 +381,14 @@ func (t *Table) recalc() {
 				continue
 			}
 			// Sets cell position and size
-			cell := row.cells[c.order]
+			cell := trow.cells[c.order]
 			cell.SetPosition(px, py)
-			cell.SetSize(c.header.Width(), row.height)
+			cell.SetSize(c.header.Width(), trow.height)
 			//log.Error("Cell(%v,%v)(%p) size:%v/%v pos:%v/%v", ri, c.Id, &cell, cell.Width(), cell.Height(), cell.Position().X, cell.Position().Y)
 			px += c.header.Width()
 		}
-		py += row.height
-		if py > t.Height() {
+		py += trow.height
+		if py > theight {
 			break
 		}
 	}
@@ -273,6 +396,39 @@ func (t *Table) recalc() {
 
 func (t *Table) sortCols() {
 
+}
+
+// setVScrollBar sets the visibility state of the vertical scrollbar
+func (t *Table) setVScrollBar(state bool) {
+
+	// Visible
+	if state {
+		var scrollWidth float32 = 20
+		// Creates scroll bar if necessary
+		if t.vscroll == nil {
+			t.vscroll = NewVScrollBar(0, 0)
+			t.vscroll.SetBorders(0, 0, 0, 1)
+			//t.vscroll.Subscribe(OnChange, s.onScrollBarEvent)
+			t.Panel.Add(t.vscroll)
+		}
+		// Initial y coordinate and height
+		py := float32(0)
+		height := t.ContentHeight()
+		if t.showHeader {
+			py = t.headerHeight
+			height -= py
+		}
+		t.vscroll.SetSize(scrollWidth, height)
+		t.vscroll.SetPositionX(t.ContentWidth() - scrollWidth)
+		t.vscroll.SetPositionY(py)
+		t.vscroll.recalc()
+		t.vscroll.SetVisible(true)
+		// Not visible
+	} else {
+		if t.vscroll != nil {
+			t.vscroll.SetVisible(false)
+		}
+	}
 }
 
 // updateRowStyle applies the correct style for the specified row
