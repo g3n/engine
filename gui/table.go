@@ -6,8 +6,10 @@ package gui
 
 import (
 	"fmt"
-	"github.com/g3n/engine/math32"
 	"math"
+
+	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/window"
 )
 
 //
@@ -71,12 +73,23 @@ type TableStyles struct {
 	Row    *TableRowStyles
 }
 
+// TableClickEvent describes a mouse click event over a table
+type TableClickEvent struct {
+	X      float32 // Table content area X coordinate
+	Y      float32 // Table content area Y coordinate
+	Header bool    // True if header was clicked
+	Row    int     // Index of table row (may be -1)
+	Col    string  // Id of table column (may be empty)
+}
+
+// tableRow is panel which contains an entire table row of cells
 type tableRow struct {
-	height   float32      // row height
+	Panel                 // embedded panel
 	selected bool         // row selected flag
 	cells    []*tableCell // array of row cells
 }
 
+// tableCell is a panel which contains one cell (a label)
 type tableCell struct {
 	Panel             // embedded panel
 	label Label       // cell label
@@ -128,7 +141,10 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 	}
 	t.recalcHeader()
 
-	t.Subscribe(OnResize, func(evname string, ev interface{}) {
+	// Subscribe to events
+	t.Panel.Subscribe(OnMouseUp, t.onMouse)
+	t.Panel.Subscribe(OnMouseDown, t.onMouse)
+	t.Panel.Subscribe(OnResize, func(evname string, ev interface{}) {
 		t.recalc()
 	})
 	return t, nil
@@ -145,6 +161,22 @@ func (t *Table) ShowHeader(show bool) {
 		c := &t.cols[i]
 		c.header.SetVisible(t.showHeader)
 	}
+	t.recalc()
+}
+
+// ShowColumn sets the visibility of the column with the specified id
+// If the column id does not exit the function panics.
+func (t *Table) ShowColumn(col string, show bool) {
+
+	c := t.colmap[col]
+	if c == nil {
+		panic("Invalid column id")
+	}
+	if c.Hidden == !show {
+		return
+	}
+	c.Hidden = show
+	t.recalcHeader()
 	t.recalc()
 }
 
@@ -197,7 +229,7 @@ func (t *Table) SetRow(row int, values map[string]interface{}) {
 		}
 		t.SetCell(row, c.Id, values[c.Id])
 	}
-	t.recalcRowHeight(row)
+	t.recalcRow(t.rows[row])
 }
 
 // SetCell sets the value of the cell specified by its row and column id
@@ -236,6 +268,10 @@ func (t *Table) InsertRow(row int, values map[string]interface{}) {
 // RemoveRow removes from the specified row from the table
 func (t *Table) RemoveRow(row int) {
 
+	// Checks row index
+	if row < 0 || row >= len(t.rows) {
+		panic("Invalid row index")
+	}
 	t.removeRow(row)
 	t.recalc()
 }
@@ -248,17 +284,20 @@ func (t *Table) insertRow(row int, values map[string]interface{}) {
 		panic("Invalid row index")
 	}
 
-	// Creates tableRow
+	// Creates tableRow panel
 	trow := new(tableRow)
+	trow.Initialize(0, 0)
 	trow.cells = make([]*tableCell, 0)
 	for ci := 0; ci < len(t.cols); ci++ {
+		// Creates tableRow cell panel
 		cell := new(tableCell)
 		cell.Initialize(0, 0)
 		cell.label.initialize("", StyleDefault.Font)
 		cell.Add(&cell.label)
 		trow.cells = append(trow.cells, cell)
-		t.Panel.Add(cell)
+		trow.Panel.Add(cell)
 	}
+	t.Panel.Add(trow)
 
 	// Inserts tableRow in the table rows at the specified index
 	t.rows = append(t.rows, nil)
@@ -270,16 +309,11 @@ func (t *Table) insertRow(row int, values map[string]interface{}) {
 	if values != nil {
 		t.SetRow(row, values)
 	}
-	t.recalcRowHeight(row)
+	t.recalcRow(trow)
 }
 
 // removeRow removes from the table the row specified its index
 func (t *Table) removeRow(row int) {
-
-	// Checks row index
-	if row < 0 || row >= len(t.rows) {
-		panic("Invalid row index")
-	}
 
 	// Get row to be removed
 	trow := t.rows[row]
@@ -309,6 +343,70 @@ func (t *Table) removeRow(row int) {
 func (t *Table) AddRow(values map[string]interface{}) {
 
 	t.InsertRow(len(t.rows), values)
+}
+
+// onMouseEvent process subscribed mouse events
+func (t *Table) onMouse(evname string, ev interface{}) {
+
+	e := ev.(*window.MouseEvent)
+	switch evname {
+	case OnMouseDown:
+		tce := t.findClick(e)
+		log.Error("Click:%+v", tce)
+	case OnMouseUp:
+	default:
+		return
+	}
+	t.root.StopPropagation(StopAll)
+}
+
+// findClick finds where in the table the specified mouse click event
+// occurred updating the specified TableClickEvent with the click coordinates.
+func (t *Table) findClick(e *window.MouseEvent) TableClickEvent {
+
+	x, y := t.ContentCoords(e.Xpos, e.Ypos)
+	tce := TableClickEvent{X: x, Y: y, Row: -1}
+	// Find column id
+	colx := float32(0)
+	for ci := 0; ci < len(t.cols); ci++ {
+		c := t.cols[ci]
+		if c.Hidden {
+			continue
+		}
+		colx += c.header.Width()
+		if x < colx {
+			tce.Col = c.Id
+			break
+		}
+	}
+	// If column not found the user clicked at the right of rows
+	if tce.Col == "" {
+		return tce
+	}
+	// Checks if is in header
+	if t.showHeader && y < t.headerHeight {
+		tce.Header = true
+		return tce
+	}
+
+	// Find row clicked
+	rowy := float32(0)
+	if t.showHeader {
+		rowy = t.headerHeight
+	}
+	theight := t.ContentHeight()
+	for ri := t.firstRow; ri < len(t.rows); ri++ {
+		trow := t.rows[ri]
+		rowy += trow.height
+		if rowy > theight {
+			break
+		}
+		if y < rowy {
+			tce.Row = ri
+			break
+		}
+	}
+	return tce
 }
 
 // recalcHeader recalculates and sets the position and size of the header panels
@@ -359,56 +457,26 @@ func (t *Table) recalc() {
 	py = starty
 	for ri := 0; ri < len(t.rows); ri++ {
 		trow := t.rows[ri]
-		if ri < t.firstRow {
-			t.setRowVisible(ri, false)
+		// If row is before first row or its y coordinate is greater the table height,
+		// sets it invisible
+		if ri < t.firstRow || py > theight {
+			trow.SetVisible(false)
 			continue
 		}
-		t.setRowVisible(ri, true)
-
-		px := float32(0)
-		// Sets position and size of row cells
-		for ci := 0; ci < len(t.cols); ci++ {
-			// If column is hidden, ignore
-			c := t.cols[ci]
-			if c.Hidden {
-				continue
-			}
-			// Sets cell position and size
-			cell := trow.cells[c.order]
-			cell.SetPosition(px, py)
-			cell.SetSize(c.header.Width(), trow.height)
-			//log.Error("Cell(%v,%v)(%p) size:%v/%v pos:%v/%v", ri, c.Id, &cell, cell.Width(), cell.Height(), cell.Position().X, cell.Position().Y)
-			px += c.header.Width()
-		}
-		log.Error("recalc() row:%v py:%v trowheight:%v theight:%v", ri, py, trow.height, theight)
+		// Set row y position and visible
+		trow.SetPosition(0, py)
+		trow.SetVisible(true)
+		//log.Error("ri:%v py:%v theight:%v", ri, py, theight)
 		py += trow.height
-		if py > theight {
-			t.setRowVisible(ri, false)
-		}
 	}
 }
 
-func (t *Table) setRowVisible(ri int, vis bool) {
+// recalcRow recalculates the positions and sizes of all cells of the specified row
+// Should be called when the row is created and column visibility or order is changed.
+func (t *Table) recalcRow(trow *tableRow) {
 
-	trow := t.rows[ri]
-	for ci := 0; ci < len(trow.cells); ci++ {
-		// If column is hidden, ignore
-		c := t.cols[ci]
-		if c.Hidden {
-			continue
-		}
-		cell := trow.cells[c.order]
-		cell.SetVisible(vis)
-	}
-}
-
-// recalcRowHeight recalculates the height of the specified row
-// Should be called when a new row is inserted or an existing row is updated
-// The row cells styles should be previously set
-func (t *Table) recalcRowHeight(ri int) {
-
-	trow := t.rows[ri]
-	trow.height = 0
+	// Calculates and sets row height
+	maxheight := float32(0)
 	for ci := 0; ci < len(t.cols); ci++ {
 		// If column is hidden, ignore
 		c := t.cols[ci]
@@ -417,11 +485,27 @@ func (t *Table) recalcRowHeight(ri int) {
 		}
 		cell := trow.cells[c.order]
 		cellHeight := cell.MinHeight() + cell.label.Height()
-		if cellHeight > trow.height {
-			trow.height = cellHeight
+		if cellHeight > maxheight {
+			maxheight = cellHeight
 		}
 	}
-	log.Error("RowHeight(%v):", trow.height)
+	trow.SetContentHeight(maxheight)
+
+	// Sets row cells sizes and positions and sets row width
+	px := float32(0)
+	for ci := 0; ci < len(t.cols); ci++ {
+		// If column is hidden, ignore
+		c := t.cols[ci]
+		if c.Hidden {
+			continue
+		}
+		// Sets cell position and size
+		cell := trow.cells[c.order]
+		cell.SetPosition(px, 0)
+		cell.SetSize(c.header.Width(), trow.ContentHeight())
+		px += c.header.Width()
+	}
+	trow.SetContentWidth(px)
 }
 
 func (t *Table) sortCols() {
@@ -467,7 +551,7 @@ func (t *Table) onVScrollBarEvent(evname string, ev interface{}) {
 	pos := t.vscroll.Value()
 	maxFirst := t.calcMaxFirst()
 	first := int(math.Floor((float64(maxFirst) * pos) + 0.5))
-	log.Error("maxFirst:%v first:%v", maxFirst, first)
+	//log.Error("maxFirst:%v first:%v", maxFirst, first)
 	if first == t.firstRow {
 		return
 	}
@@ -479,6 +563,7 @@ func (t *Table) onVScrollBarEvent(evname string, ev interface{}) {
 
 // calcMaxFirst calculates the maximum index of the first visible row
 // such as the remaing rows fits completely inside the table
+// It is used when scrolling the table vertically
 func (t *Table) calcMaxFirst() int {
 
 	// Get table height for rows considering if header is shown or not

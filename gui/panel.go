@@ -590,6 +590,21 @@ func (p *Panel) SetLayoutParams(params interface{}) {
 	p.layoutParams = params
 }
 
+// ContentCoords converts the specified window absolute coordinates in pixels
+// (as informed by OnMouse event) to this panel internal content area pixel coordinates
+func (p *Panel) ContentCoords(wx, wy float32) (float32, float32) {
+
+	cx := wx - p.pospix.X -
+		p.paddingSizes.Left -
+		p.borderSizes.Left -
+		p.marginSizes.Left
+	cy := wy - p.pospix.Y -
+		p.paddingSizes.Top -
+		p.borderSizes.Top -
+		p.marginSizes.Top
+	return cx, cy
+}
+
 // NDC2Pix converts the specified NDC coordinates (-1,1) to relative pixel coordinates
 // for this panel content area.
 // 0,0      1,0        0,0       w,0
