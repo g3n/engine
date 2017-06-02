@@ -7,6 +7,7 @@ package gui
 import (
 	"fmt"
 	"github.com/g3n/engine/math32"
+	"math"
 )
 
 //
@@ -408,7 +409,7 @@ func (t *Table) setVScrollBar(state bool) {
 		if t.vscroll == nil {
 			t.vscroll = NewVScrollBar(0, 0)
 			t.vscroll.SetBorders(0, 0, 0, 1)
-			//t.vscroll.Subscribe(OnChange, s.onScrollBarEvent)
+			t.vscroll.Subscribe(OnChange, t.onVScrollBarEvent)
 			t.Panel.Add(t.vscroll)
 		}
 		// Initial y coordinate and height
@@ -429,6 +430,21 @@ func (t *Table) setVScrollBar(state bool) {
 			t.vscroll.SetVisible(false)
 		}
 	}
+}
+
+func (t *Table) onVScrollBarEvent(evname string, ev interface{}) {
+
+	pos := t.vscroll.Value()
+	maxFirst := len(t.rows) - (t.lastRow - t.firstRow + 1)
+	first := int(math.Floor((float64(maxFirst) * pos) + 0.5))
+	if first == t.firstRow {
+		return
+	}
+	log.Error("maxFirst:%v firstRow:%v", maxFirst, first)
+	//s.scrollBarEvent = true
+	t.firstRow = first
+	t.recalc()
+
 }
 
 // updateRowStyle applies the correct style for the specified row
