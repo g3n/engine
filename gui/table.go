@@ -197,6 +197,7 @@ func (t *Table) SetRow(row int, values map[string]interface{}) {
 		}
 		t.SetCell(row, c.Id, values[c.Id])
 	}
+	t.recalcRowHeight(row)
 }
 
 // SetCell sets the value of the cell specified by its row and column id
@@ -263,11 +264,13 @@ func (t *Table) insertRow(row int, values map[string]interface{}) {
 	t.rows = append(t.rows, nil)
 	copy(t.rows[row+1:], t.rows[row:])
 	t.rows[row] = trow
+	t.updateRowStyle(row)
 
 	// Sets the new row values from the specified map
 	if values != nil {
 		t.SetRow(row, values)
 	}
+	t.recalcRowHeight(row)
 }
 
 // removeRow removes from the table the row specified its index
@@ -331,35 +334,19 @@ func (t *Table) recalcHeader() {
 // - horizontal or vertical scroll position changed
 func (t *Table) recalc() {
 
-	// Get initial Y coordinate and total height of the table
+	// Get initial Y coordinate and total height of the table for rows
 	starty := t.headerHeight
 	if !t.showHeader {
 		starty = 0
 	}
 	theight := t.ContentHeight()
 
-	// Calculates all visible rows heights and determines if it
-	// is necessary to show the scrollbar or not.
+	// Determines if it is necessary to show the scrollbar or not.
 	scroll := false
 	py := starty
-	for ri := t.firstRow; ri < len(t.rows); ri++ {
+	for ri := 0; ri < len(t.rows); ri++ {
 		trow := t.rows[ri]
-		t.updateRowStyle(ri)
-		// Get maximum height for row
-		for ci := 0; ci < len(t.cols); ci++ {
-			// If column is hidden, ignore
-			c := t.cols[ci]
-			if c.Hidden {
-				continue
-			}
-			cell := trow.cells[c.order]
-			cellHeight := cell.MinHeight() + cell.label.Height()
-			if cellHeight > trow.height {
-				trow.height = cellHeight
-			}
-		}
 		py += trow.height
-		log.Error("row:%v py:%v row height:%v theight:%v", ri, py, trow.height, theight)
 		if py > theight {
 			scroll = true
 			t.lastRow = ri
@@ -368,11 +355,16 @@ func (t *Table) recalc() {
 	}
 	t.setVScrollBar(scroll)
 
-	// Assumes that the TableColum array is sorted in show order
+	// Sets the position and sizes of all cells of the visible rows
 	py = starty
-	for ri := t.firstRow; ri < len(t.rows); ri++ {
+	for ri := 0; ri < len(t.rows); ri++ {
 		trow := t.rows[ri]
-		t.updateRowStyle(ri)
+		if ri < t.firstRow {
+			t.setRowVisible(ri, false)
+			continue
+		}
+		t.setRowVisible(ri, true)
+
 		px := float32(0)
 		// Sets position and size of row cells
 		for ci := 0; ci < len(t.cols); ci++ {
@@ -388,11 +380,48 @@ func (t *Table) recalc() {
 			//log.Error("Cell(%v,%v)(%p) size:%v/%v pos:%v/%v", ri, c.Id, &cell, cell.Width(), cell.Height(), cell.Position().X, cell.Position().Y)
 			px += c.header.Width()
 		}
+		log.Error("recalc() row:%v py:%v trowheight:%v theight:%v", ri, py, trow.height, theight)
 		py += trow.height
 		if py > theight {
-			break
+			t.setRowVisible(ri, false)
 		}
 	}
+}
+
+func (t *Table) setRowVisible(ri int, vis bool) {
+
+	trow := t.rows[ri]
+	for ci := 0; ci < len(trow.cells); ci++ {
+		// If column is hidden, ignore
+		c := t.cols[ci]
+		if c.Hidden {
+			continue
+		}
+		cell := trow.cells[c.order]
+		cell.SetVisible(vis)
+	}
+}
+
+// recalcRowHeight recalculates the height of the specified row
+// Should be called when a new row is inserted or an existing row is updated
+// The row cells styles should be previously set
+func (t *Table) recalcRowHeight(ri int) {
+
+	trow := t.rows[ri]
+	trow.height = 0
+	for ci := 0; ci < len(t.cols); ci++ {
+		// If column is hidden, ignore
+		c := t.cols[ci]
+		if c.Hidden {
+			continue
+		}
+		cell := trow.cells[c.order]
+		cellHeight := cell.MinHeight() + cell.label.Height()
+		if cellHeight > trow.height {
+			trow.height = cellHeight
+		}
+	}
+	log.Error("RowHeight(%v):", trow.height)
 }
 
 func (t *Table) sortCols() {
@@ -432,19 +461,49 @@ func (t *Table) setVScrollBar(state bool) {
 	}
 }
 
+// onVScrollBarEvent is called when a vertical scroll bar event is received
 func (t *Table) onVScrollBarEvent(evname string, ev interface{}) {
 
 	pos := t.vscroll.Value()
-	maxFirst := len(t.rows) - (t.lastRow - t.firstRow + 1)
+	maxFirst := t.calcMaxFirst()
 	first := int(math.Floor((float64(maxFirst) * pos) + 0.5))
+	log.Error("maxFirst:%v first:%v", maxFirst, first)
 	if first == t.firstRow {
 		return
 	}
-	log.Error("maxFirst:%v firstRow:%v", maxFirst, first)
 	//s.scrollBarEvent = true
 	t.firstRow = first
 	t.recalc()
 
+}
+
+// calcMaxFirst calculates the maximum index of the first visible row
+// such as the remaing rows fits completely inside the table
+func (t *Table) calcMaxFirst() int {
+
+	// Get table height for rows considering if header is shown or not
+	total := t.ContentHeight()
+	if t.showHeader {
+		total -= t.headerHeight
+	}
+
+	ri := len(t.rows) - 1
+	if ri < 0 {
+		return 0
+	}
+	height := float32(0)
+	for {
+		trow := t.rows[ri]
+		height += trow.height
+		if height > total {
+			break
+		}
+		ri--
+		if ri < 0 {
+			break
+		}
+	}
+	return ri + 1
 }
 
 // updateRowStyle applies the correct style for the specified row
