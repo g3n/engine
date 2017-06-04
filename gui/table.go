@@ -12,6 +12,10 @@ import (
 	"github.com/g3n/engine/window"
 )
 
+const (
+	OnTableClick = "onTableClick"
+)
+
 //
 // Table implements a panel which can contains child panels
 // organized in rows and columns.
@@ -26,7 +30,7 @@ type Table struct {
 	rows         []*tableRow             // array of table rows
 	headerHeight float32                 // header height
 	vscroll      *ScrollBar              // vertical scroll bar
-	showHeader   bool
+	showHeader   bool                    // header visibility flag
 }
 
 // TableColumn describes a table column
@@ -74,12 +78,14 @@ type TableStyles struct {
 }
 
 // TableClickEvent describes a mouse click event over a table
+// It contains the original mouse event plus additional information
 type TableClickEvent struct {
-	X      float32 // Table content area X coordinate
-	Y      float32 // Table content area Y coordinate
-	Header bool    // True if header was clicked
-	Row    int     // Index of table row (may be -1)
-	Col    string  // Id of table column (may be empty)
+	window.MouseEvent         // Embedded window mouse event
+	X                 float32 // Table content area X coordinate
+	Y                 float32 // Table content area Y coordinate
+	Header            bool    // True if header was clicked
+	Row               int     // Index of table row (may be -1)
+	Col               string  // Id of table column (may be empty)
 }
 
 // tableRow is panel which contains an entire table row of cells
@@ -144,13 +150,15 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 	// Subscribe to events
 	t.Panel.Subscribe(OnMouseUp, t.onMouse)
 	t.Panel.Subscribe(OnMouseDown, t.onMouse)
+	t.Panel.Subscribe(OnKeyDown, t.onKeyEvent)
+	t.Panel.Subscribe(OnKeyRepeat, t.onKeyEvent)
 	t.Panel.Subscribe(OnResize, func(evname string, ev interface{}) {
 		t.recalc()
 	})
 	return t, nil
 }
 
-// ShowHeaders shows or hides the table header
+// ShowHeader shows or hides the table header
 func (t *Table) ShowHeader(show bool) {
 
 	if t.showHeader == show {
@@ -175,13 +183,43 @@ func (t *Table) ShowColumn(col string, show bool) {
 	if c.Hidden == !show {
 		return
 	}
-	c.Hidden = show
+	c.Hidden = !show
 	t.recalcHeader()
+	// Recalculates all rows
+	for ri := 0; ri < len(t.rows); ri++ {
+		trow := t.rows[ri]
+		t.recalcRow(trow)
+	}
 	t.recalc()
 }
 
-// Len returns the total number of rows of the table
-func (t *Table) Len() int {
+// ShowAllColumns shows all the table columns
+func (t *Table) ShowAllColumns() {
+
+	recalc := false
+	for ci := 0; ci < len(t.cols); ci++ {
+		c := t.cols[ci]
+		if c.Hidden {
+			c.Hidden = false
+			recalc = true
+		}
+	}
+	log.Error("ShowAllColumns:%v", recalc)
+	if !recalc {
+		return
+	}
+	log.Error("ShowAllColumns:%v DO", recalc)
+	t.recalcHeader()
+	// Recalculates all rows
+	for ri := 0; ri < len(t.rows); ri++ {
+		trow := t.rows[ri]
+		t.recalcRow(trow)
+	}
+	t.recalc()
+}
+
+// RowCount returns the current number of rows in the table
+func (t *Table) RowCount() int {
 
 	return len(t.rows)
 }
@@ -276,6 +314,18 @@ func (t *Table) RemoveRow(row int) {
 	t.recalc()
 }
 
+// SelectedRow returns the index of the currently selected row
+// or -1 if no row selected
+func (t *Table) SelectedRow() int {
+
+	for ri := 0; ri < len(t.rows); ri++ {
+		if t.rows[ri].selected {
+			return ri
+		}
+	}
+	return -1
+}
+
 // insertRow is the internal version of InsertRow which does not call recalc()
 func (t *Table) insertRow(row int, values map[string]interface{}) {
 
@@ -310,6 +360,52 @@ func (t *Table) insertRow(row int, values map[string]interface{}) {
 		t.SetRow(row, values)
 	}
 	t.recalcRow(trow)
+}
+
+// ScrollDown scrolls the table the specified number of rows down if possible
+func (t *Table) scrollDown(n int, selFirst bool) {
+
+	// Calculates number of rows to scroll down
+	maxFirst := t.calcMaxFirst()
+	maxScroll := maxFirst - t.firstRow
+	if maxScroll <= 0 {
+		return
+	}
+	if n > maxScroll {
+		n = maxScroll
+	}
+
+	t.firstRow += n
+	// Update scroll bar if visible
+	if t.vscroll != nil && t.vscroll.Visible() {
+		t.vscroll.SetValue(float32(t.firstRow) / float32(maxFirst))
+	}
+	if selFirst {
+		t.selectRow(t.firstRow)
+	}
+	t.recalc()
+	return
+}
+
+// ScrollUp scrolls the table the specified number of rows up if possible
+func (t *Table) scrollUp(n int, selLast bool) {
+
+	// Calculates number of rows to scroll up
+	if t.firstRow == 0 {
+		return
+	}
+	if n > t.firstRow {
+		n = t.firstRow
+	}
+	t.firstRow -= n
+	// Update scroll bar if visible
+	if t.vscroll != nil && t.vscroll.Visible() {
+		t.vscroll.SetValue(float32(t.firstRow) / float32(t.calcMaxFirst()))
+	}
+	if selLast {
+		t.selectRow(t.lastRow - n)
+	}
+	t.recalc()
 }
 
 // removeRow removes from the table the row specified its index
@@ -349,10 +445,19 @@ func (t *Table) AddRow(values map[string]interface{}) {
 func (t *Table) onMouse(evname string, ev interface{}) {
 
 	e := ev.(*window.MouseEvent)
+	t.root.SetKeyFocus(t)
 	switch evname {
 	case OnMouseDown:
-		tce := t.findClick(e)
-		log.Error("Click:%+v", tce)
+		// Creates and dispatch TableClickEvent
+		var tce TableClickEvent
+		tce.MouseEvent = *e
+		t.findClick(&tce)
+		t.Dispatch(OnTableClick, tce)
+		// Select left clicked row
+		if tce.Button == window.MouseButtonLeft && tce.Row >= 0 {
+			t.selectRow(tce.Row)
+			t.recalc()
+		}
 	case OnMouseUp:
 	default:
 		return
@@ -360,12 +465,30 @@ func (t *Table) onMouse(evname string, ev interface{}) {
 	t.root.StopPropagation(StopAll)
 }
 
+// onKeyEvent receives subscribed key events for the list
+func (t *Table) onKeyEvent(evname string, ev interface{}) {
+
+	kev := ev.(*window.KeyEvent)
+	switch kev.Keycode {
+	case window.KeyUp:
+		t.selPrev()
+	case window.KeyDown:
+		t.selNext()
+	case window.KeyPageUp:
+		t.prevPage()
+	case window.KeyPageDown:
+		t.nextPage()
+	}
+}
+
 // findClick finds where in the table the specified mouse click event
 // occurred updating the specified TableClickEvent with the click coordinates.
-func (t *Table) findClick(e *window.MouseEvent) TableClickEvent {
+func (t *Table) findClick(ev *TableClickEvent) {
 
-	x, y := t.ContentCoords(e.Xpos, e.Ypos)
-	tce := TableClickEvent{X: x, Y: y, Row: -1}
+	x, y := t.ContentCoords(ev.Xpos, ev.Ypos)
+	ev.X = x
+	ev.Y = y
+	ev.Row = -1
 	// Find column id
 	colx := float32(0)
 	for ci := 0; ci < len(t.cols); ci++ {
@@ -375,18 +498,17 @@ func (t *Table) findClick(e *window.MouseEvent) TableClickEvent {
 		}
 		colx += c.header.Width()
 		if x < colx {
-			tce.Col = c.Id
+			ev.Col = c.Id
 			break
 		}
 	}
 	// If column not found the user clicked at the right of rows
-	if tce.Col == "" {
-		return tce
+	if ev.Col == "" {
+		return
 	}
 	// Checks if is in header
 	if t.showHeader && y < t.headerHeight {
-		tce.Header = true
-		return tce
+		ev.Header = true
 	}
 
 	// Find row clicked
@@ -402,11 +524,101 @@ func (t *Table) findClick(e *window.MouseEvent) TableClickEvent {
 			break
 		}
 		if y < rowy {
-			tce.Row = ri
+			ev.Row = ri
 			break
 		}
 	}
-	return tce
+}
+
+// selNext selects the next row if possible
+func (t *Table) selNext() {
+
+	// If selected row is last, nothing to do
+	sel := t.SelectedRow()
+	if sel == len(t.rows)-1 {
+		return
+	}
+	// If no selected row, selects first visible row
+	if sel < 0 {
+		t.selectRow(t.firstRow)
+		t.recalc()
+		return
+	}
+	// Selects next row
+	next := sel + 1
+	t.selectRow(next)
+
+	// Scroll down if necessary
+	if next > t.lastRow {
+		t.scrollDown(1, false)
+	} else {
+		t.recalc()
+	}
+}
+
+// selPrev selects the previous row if possible
+func (t *Table) selPrev() {
+
+	// If selected row is first, nothing to do
+	sel := t.SelectedRow()
+	if sel == 0 {
+		return
+	}
+	// If no selected row, selects last visible row
+	if sel < 0 {
+		t.selectRow(t.lastRow)
+		t.recalc()
+		return
+	}
+	// Selects previous row and selects previous
+	prev := sel - 1
+	t.selectRow(prev)
+
+	// Scroll up if necessary
+	if prev < t.firstRow && t.firstRow > 0 {
+		t.scrollUp(1, false)
+	} else {
+		t.recalc()
+	}
+}
+
+// nextPage increments the first visible row to show next page of rows
+func (t *Table) nextPage() {
+
+	if t.lastRow == len(t.rows)-1 {
+		return
+	}
+	plen := t.lastRow - t.firstRow
+	if plen <= 0 {
+		return
+	}
+	t.scrollDown(plen, true)
+}
+
+// prevPage advances the first visible row
+func (t *Table) prevPage() {
+
+	if t.firstRow == 0 {
+		return
+	}
+	plen := t.lastRow - t.firstRow
+	if plen <= 0 {
+		return
+	}
+	t.scrollUp(plen, true)
+}
+
+// selectRow sets the specified row as selected and unselects all other rows
+func (t *Table) selectRow(ri int) {
+
+	for i := 0; i < len(t.rows); i++ {
+		trow := t.rows[i]
+		if i == ri {
+			trow.selected = true
+		} else {
+			trow.selected = false
+		}
+	}
 }
 
 // recalcHeader recalculates and sets the position and size of the header panels
@@ -416,9 +628,11 @@ func (t *Table) recalcHeader() {
 	for i := 0; i < len(t.cols); i++ {
 		c := t.cols[i]
 		if c.Hidden {
+			c.header.SetVisible(false)
 			continue
 		}
 		c.header.SetPosition(posx, 0)
+		c.header.SetVisible(true)
 		posx += c.header.Width()
 	}
 }
@@ -447,7 +661,6 @@ func (t *Table) recalc() {
 		py += trow.height
 		if py > theight {
 			scroll = true
-			t.lastRow = ri
 			break
 		}
 	}
@@ -466,6 +679,11 @@ func (t *Table) recalc() {
 		// Set row y position and visible
 		trow.SetPosition(0, py)
 		trow.SetVisible(true)
+		t.updateRowStyle(ri)
+		// Set the last completely visible row index
+		if py+trow.Height() <= theight {
+			t.lastRow = ri
+		}
 		//log.Error("ri:%v py:%v theight:%v", ri, py, theight)
 		py += trow.height
 	}
@@ -496,12 +714,15 @@ func (t *Table) recalcRow(trow *tableRow) {
 	for ci := 0; ci < len(t.cols); ci++ {
 		// If column is hidden, ignore
 		c := t.cols[ci]
+		cell := trow.cells[c.order]
 		if c.Hidden {
+			cell.SetVisible(false)
+			log.Error("HIDDEN COLUMNS")
 			continue
 		}
 		// Sets cell position and size
-		cell := trow.cells[c.order]
 		cell.SetPosition(px, 0)
+		cell.SetVisible(true)
 		cell.SetSize(c.header.Width(), trow.ContentHeight())
 		px += c.header.Width()
 	}
@@ -551,14 +772,11 @@ func (t *Table) onVScrollBarEvent(evname string, ev interface{}) {
 	pos := t.vscroll.Value()
 	maxFirst := t.calcMaxFirst()
 	first := int(math.Floor((float64(maxFirst) * pos) + 0.5))
-	//log.Error("maxFirst:%v first:%v", maxFirst, first)
 	if first == t.firstRow {
 		return
 	}
-	//s.scrollBarEvent = true
 	t.firstRow = first
 	t.recalc()
-
 }
 
 // calcMaxFirst calculates the maximum index of the first visible row
