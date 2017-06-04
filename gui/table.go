@@ -23,7 +23,7 @@ const (
 type Table struct {
 	Panel                                // Embedded panel
 	styles       *TableStyles            // pointer to current styles
-	cols         []TableColumn           // array of columns descriptors
+	cols         []*TableColumn          // array of columns descriptors
 	colmap       map[string]*TableColumn // maps column id to column descriptor
 	firstRow     int                     // index of the first visible row
 	lastRow      int                     // index of the last visible row
@@ -113,26 +113,30 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 
 	// Checks columns descriptors
 	t.colmap = make(map[string]*TableColumn)
-	t.cols = make([]TableColumn, len(cols))
-	copy(t.cols, cols)
-	for i := 0; i < len(t.cols); i++ {
-		c := &t.cols[i]
+	t.cols = make([]*TableColumn, 0)
+	for i := 0; i < len(cols); i++ {
+		// Make a copy of the column descriptor argument and saves its pointer
+		c := cols[i]
+		t.cols = append(t.cols, &c)
+		// Column id must not be empty
+		if c.Id == "" {
+			return nil, fmt.Errorf("Column with empty id")
+		}
+		// Column id must be unique
+		if t.colmap[c.Id] != nil {
+			return nil, fmt.Errorf("Column with duplicate id")
+		}
+		// Sets default format and order
 		if c.Format == "" {
 			c.Format = "%v"
 		}
 		c.order = i
-		if c.Id == "" {
-			return nil, fmt.Errorf("Column with empty id")
-		}
-		if t.colmap[c.Id] != nil {
-			return nil, fmt.Errorf("Column with duplicate id")
-		}
-		t.colmap[c.Id] = c
+		t.colmap[c.Id] = &c
 	}
 
 	// Create header panels
 	for i := 0; i < len(t.cols); i++ {
-		c := &t.cols[i]
+		c := t.cols[i]
 		c.header = NewPanel(0, 0)
 		t.applyHeaderStyle(c.header)
 		c.label = NewLabel(c.Name)
@@ -166,7 +170,7 @@ func (t *Table) ShowHeader(show bool) {
 	}
 	t.showHeader = show
 	for i := 0; i < len(t.cols); i++ {
-		c := &t.cols[i]
+		c := t.cols[i]
 		c.header.SetVisible(t.showHeader)
 	}
 	t.recalc()
@@ -204,11 +208,9 @@ func (t *Table) ShowAllColumns() {
 			recalc = true
 		}
 	}
-	log.Error("ShowAllColumns:%v", recalc)
 	if !recalc {
 		return
 	}
-	log.Error("ShowAllColumns:%v DO", recalc)
 	t.recalcHeader()
 	// Recalculates all rows
 	for ri := 0; ri < len(t.rows); ri++ {
@@ -294,6 +296,12 @@ func (t *Table) SetColFormat(id, format string) error {
 	}
 	c.Format = format
 	return nil
+}
+
+// AddRow adds a new row at the end of the table with the specified values
+func (t *Table) AddRow(values map[string]interface{}) {
+
+	t.InsertRow(len(t.rows), values)
 }
 
 // InsertRow inserts the specified values in a new row at the specified index
@@ -433,12 +441,6 @@ func (t *Table) removeRow(row int) {
 	//		t.firstRow = 0
 	//	}
 	//}
-}
-
-// AddRow adds a new row at the end of the table with the specified values
-func (t *Table) AddRow(values map[string]interface{}) {
-
-	t.InsertRow(len(t.rows), values)
 }
 
 // onMouseEvent process subscribed mouse events
@@ -717,7 +719,6 @@ func (t *Table) recalcRow(trow *tableRow) {
 		cell := trow.cells[c.order]
 		if c.Hidden {
 			cell.SetVisible(false)
-			log.Error("HIDDEN COLUMNS")
 			continue
 		}
 		// Sets cell position and size
