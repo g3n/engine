@@ -25,19 +25,15 @@ const (
 // organized in rows and columns.
 //
 type Table struct {
-	Panel                                // Embedded panel
-	styles       *TableStyles            // pointer to current styles
-	cols         []*TableColumn          // array of columns descriptors
-	colmap       map[string]*TableColumn // maps column id to column descriptor
-	firstRow     int                     // index of the first visible row
-	lastRow      int                     // index of the last visible row
-	rows         []*tableRow             // array of table rows
-	headerHeight float32                 // header height
-	vscroll      *ScrollBar              // vertical scroll bar
-	showHeader   bool                    // header visibility flag
-	statusPanel  Panel                   // optional bottom status panel
-	statusLabel  *Label                  // status label
-
+	Panel                    // Embedded panel
+	styles      *TableStyles // pointer to current styles
+	header      tableHeader  // table headers
+	firstRow    int          // index of the first visible row
+	lastRow     int          // index of the last visible row
+	rows        []*tableRow  // array of table rows
+	vscroll     *ScrollBar   // vertical scroll bar
+	statusPanel Panel        // optional bottom status panel
+	statusLabel *Label       // status label
 }
 
 // TableColumn describes a table column
@@ -50,8 +46,6 @@ type TableColumn struct {
 	Alignment Align   // Cell content alignment: AlignNone|AlignLeft|AlignCenter|AlignRight
 	Expand    int     // Width expansion factor
 	order     int     // show order
-	header    *Panel  // header panel
-	label     *Label  // header label
 }
 
 // TableHeaderStyle describes the style of the table header
@@ -105,6 +99,25 @@ type TableClickEvent struct {
 	Col               string  // Id of table column (may be empty)
 }
 
+// tableHeader is panel which contains the individual header panels for each column
+type tableHeader struct {
+	Panel                            // embedded panel
+	cmap  map[string]*tableColHeader // maps column id with its panel/descriptor
+	cols  []*tableColHeader          // array of individual column headers/descriptors
+}
+
+// tableColHeader is panel for a column header
+type tableColHeader struct {
+	Panel          // header panel
+	label  *Label  // header label
+	id     string  // column id
+	width  float32 // initial column width
+	format string  // column format string
+	align  Align   // column alignment
+	expand int     // column expand factor
+	order  int     // row columns order
+}
+
 // tableRow is panel which contains an entire table row of cells
 type tableRow struct {
 	Panel                 // embedded panel
@@ -126,47 +139,77 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 	t := new(Table)
 	t.Panel.Initialize(width, height)
 	t.styles = &StyleDefault.Table
-	t.showHeader = true
 
-	// Checks columns descriptors
-	t.colmap = make(map[string]*TableColumn)
-	t.cols = make([]*TableColumn, 0)
-	for i := 0; i < len(cols); i++ {
-		// Make a copy of the column descriptor argument and saves its pointer
-		c := cols[i]
-		t.cols = append(t.cols, &c)
+	// Initialize table header
+	t.header.Initialize(0, 0)
+	t.header.cmap = make(map[string]*tableColHeader)
+	t.header.cols = make([]*tableColHeader, 0)
+
+	// Create column header panels
+	for ci := 0; ci < len(cols); ci++ {
+		cdesc := cols[ci]
 		// Column id must not be empty
-		if c.Id == "" {
+		if cdesc.Id == "" {
 			return nil, fmt.Errorf("Column with empty id")
 		}
 		// Column id must be unique
-		if t.colmap[c.Id] != nil {
+		if t.header.cmap[cdesc.Id] != nil {
 			return nil, fmt.Errorf("Column with duplicate id")
 		}
+		// Creates a column header
+		c := new(tableColHeader)
+		c.Initialize(0, 0)
+		t.applyHeaderStyle(c)
+		c.label = NewLabel(cdesc.Name)
+		c.Add(c.label)
+		c.id = cdesc.Id
+		c.width = cdesc.Width
+		c.align = cdesc.Alignment
+		c.format = cdesc.Format
+		c.expand = cdesc.Expand
 		// Sets default format and order
-		if c.Format == "" {
-			c.Format = "%v"
+		if c.format == "" {
+			c.format = "%v"
 		}
-		c.order = i
-		t.colmap[c.Id] = &c
-	}
-
-	// Create header panels
-	for i := 0; i < len(t.cols); i++ {
-		c := t.cols[i]
-		c.header = NewPanel(0, 0)
-		t.applyHeaderStyle(c.header)
-		c.label = NewLabel(c.Name)
-		c.header.Add(c.label)
-		width := c.Width
-		if width < c.label.Width()+c.header.MinWidth() {
-			width = c.label.Width() + c.header.MinWidth()
+		c.order = ci
+		c.SetVisible(!cdesc.Hidden)
+		t.header.cmap[c.id] = c
+		// Sets column header width and height
+		width := cdesc.Width
+		if width < c.label.Width()+c.MinWidth() {
+			width = c.label.Width() + c.MinWidth()
 		}
-		c.header.SetContentSize(width, c.label.Height())
-		t.headerHeight = c.header.Height()
-		t.Panel.Add(c.header)
+		c.SetContentSize(width, c.label.Height())
+		// Adds the column header to the header panel
+		t.header.cols = append(t.header.cols, c)
+		t.header.Panel.Add(c)
 	}
+	t.Panel.Add(&t.header)
 	t.recalcHeader()
+
+	//// Create column header panels
+	//t.header.Initialize(0, 0)
+	//t.header.cols = make([]*tableColHeader, 0)
+	//for i := 0; i < len(t.cols); i++ {
+	//	c := t.cols[i]
+	//	// Creates a column header
+	//	ch := new(tableColHeader)
+	//	ch.Initialize(0, 0)
+	//	ch.label = NewLabel(c.Name)
+	//	ch.Add(ch.label)
+	//	t.applyHeaderStyle(ch)
+	//	// Sets column header width and height
+	//	width := c.Width
+	//	if width < ch.label.Width()+ch.MinWidth() {
+	//		width = ch.label.Width() + ch.MinWidth()
+	//	}
+	//	ch.SetContentSize(width, ch.label.Height())
+	//	// Adds the column header to the header panel
+	//	t.header.cols = append(t.header.cols, ch)
+	//	t.header.Panel.Add(ch)
+	//}
+	//t.Panel.Add(&t.header)
+	//t.recalcHeader()
 
 	// Creates status panel
 	t.statusPanel.Initialize(0, 0)
@@ -191,14 +234,10 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 // ShowHeader shows or hides the table header
 func (t *Table) ShowHeader(show bool) {
 
-	if t.showHeader == show {
+	if t.header.Visible() == show {
 		return
 	}
-	t.showHeader = show
-	for i := 0; i < len(t.cols); i++ {
-		c := t.cols[i]
-		c.header.SetVisible(t.showHeader)
-	}
+	t.header.SetVisible(show)
 	t.recalc()
 }
 
@@ -206,14 +245,14 @@ func (t *Table) ShowHeader(show bool) {
 // If the column id does not exit the function panics.
 func (t *Table) ShowColumn(col string, show bool) {
 
-	c := t.colmap[col]
+	c := t.header.cmap[col]
 	if c == nil {
 		panic("Invalid column id")
 	}
-	if c.Hidden == !show {
+	if c.Visible() == show {
 		return
 	}
-	c.Hidden = !show
+	c.SetVisible(show)
 	t.recalcHeader()
 	// Recalculates all rows
 	for ri := 0; ri < len(t.rows); ri++ {
@@ -227,10 +266,10 @@ func (t *Table) ShowColumn(col string, show bool) {
 func (t *Table) ShowAllColumns() {
 
 	recalc := false
-	for ci := 0; ci < len(t.cols); ci++ {
-		c := t.cols[ci]
-		if c.Hidden {
-			c.Hidden = false
+	for ci := 0; ci < len(t.header.cols); ci++ {
+		c := t.header.cols[ci]
+		if !c.Visible() {
+			c.SetVisible(true)
 			recalc = true
 		}
 	}
@@ -287,13 +326,13 @@ func (t *Table) SetRow(row int, values map[string]interface{}) {
 	if row < 0 || row >= len(t.rows) {
 		panic("Invalid row index")
 	}
-	for ci := 0; ci < len(t.cols); ci++ {
-		c := t.cols[ci]
-		cv := values[c.Id]
+	for ci := 0; ci < len(t.header.cols); ci++ {
+		c := t.header.cols[ci]
+		cv := values[c.id]
 		if cv == nil {
 			continue
 		}
-		t.SetCell(row, c.Id, values[c.Id])
+		t.SetCell(row, c.id, values[c.id])
 	}
 	t.recalcRow(t.rows[row])
 }
@@ -304,23 +343,23 @@ func (t *Table) SetCell(row int, colid string, value interface{}) {
 	if row < 0 || row >= len(t.rows) {
 		panic("Invalid row index")
 	}
-	c := t.colmap[colid]
+	c := t.header.cmap[colid]
 	if c == nil {
 		return
 	}
 	cell := t.rows[row].cells[c.order]
-	cell.label.SetText(fmt.Sprintf(c.Format, value))
+	cell.label.SetText(fmt.Sprintf(c.format, value))
 }
 
 // SetColFormat sets the formatting string (Printf) for the specified column
 // Update must be called to update the table.
 func (t *Table) SetColFormat(id, format string) error {
 
-	c := t.colmap[id]
+	c := t.header.cmap[id]
 	if c == nil {
 		return fmt.Errorf("No column with id:%s", id)
 	}
-	c.Format = format
+	c.format = format
 	return nil
 }
 
@@ -392,7 +431,7 @@ func (t *Table) insertRow(row int, values map[string]interface{}) {
 	trow := new(tableRow)
 	trow.Initialize(0, 0)
 	trow.cells = make([]*tableCell, 0)
-	for ci := 0; ci < len(t.cols); ci++ {
+	for ci := 0; ci < len(t.header.cols); ci++ {
 		// Creates tableRow cell panel
 		cell := new(tableCell)
 		cell.Initialize(0, 0)
@@ -539,14 +578,14 @@ func (t *Table) findClick(ev *TableClickEvent) {
 	ev.Row = -1
 	// Find column id
 	colx := float32(0)
-	for ci := 0; ci < len(t.cols); ci++ {
-		c := t.cols[ci]
-		if c.Hidden {
+	for ci := 0; ci < len(t.header.cols); ci++ {
+		c := t.header.cols[ci]
+		if !c.Visible() {
 			continue
 		}
-		colx += c.header.Width()
+		colx += t.header.cols[ci].Width()
 		if x < colx {
-			ev.Col = c.Id
+			ev.Col = c.id
 			break
 		}
 	}
@@ -555,14 +594,14 @@ func (t *Table) findClick(ev *TableClickEvent) {
 		return
 	}
 	// Checks if is in header
-	if t.showHeader && y < t.headerHeight {
+	if t.header.Visible() && y < t.header.Height() {
 		ev.Header = true
 	}
 
 	// Find row clicked
 	rowy := float32(0)
-	if t.showHeader {
-		rowy = t.headerHeight
+	if t.header.Visible() {
+		rowy = t.header.Height()
 	}
 	theight := t.ContentHeight()
 	for ri := t.firstRow; ri < len(t.rows); ri++ {
@@ -674,16 +713,20 @@ func (t *Table) selectRow(ri int) {
 func (t *Table) recalcHeader() {
 
 	posx := float32(0)
-	for i := 0; i < len(t.cols); i++ {
-		c := t.cols[i]
-		if c.Hidden {
-			c.header.SetVisible(false)
+	height := float32(0)
+	for ci := 0; ci < len(t.header.cols); ci++ {
+		c := t.header.cols[ci]
+		if !c.Visible() {
 			continue
 		}
-		c.header.SetPosition(posx, 0)
-		c.header.SetVisible(true)
-		posx += c.header.Width()
+		if c.Height() > height {
+			height = c.Height()
+		}
+		c.SetPosition(posx, 0)
+		c.SetVisible(true)
+		posx += c.Width()
 	}
+	t.header.SetContentSize(posx, height)
 }
 
 // recalcStatus recalculates and sets the position and size of the status panel and its label
@@ -753,10 +796,10 @@ func (t *Table) recalcRow(trow *tableRow) {
 
 	// Calculates and sets row height
 	maxheight := float32(0)
-	for ci := 0; ci < len(t.cols); ci++ {
+	for ci := 0; ci < len(t.header.cols); ci++ {
 		// If column is hidden, ignore
-		c := t.cols[ci]
-		if c.Hidden {
+		c := t.header.cols[ci]
+		if !c.Visible() {
 			continue
 		}
 		cell := trow.cells[c.order]
@@ -769,19 +812,21 @@ func (t *Table) recalcRow(trow *tableRow) {
 
 	// Sets row cells sizes and positions and sets row width
 	px := float32(0)
-	for ci := 0; ci < len(t.cols); ci++ {
+	for ci := 0; ci < len(t.header.cols); ci++ {
 		// If column is hidden, ignore
-		c := t.cols[ci]
+		c := t.header.cols[ci]
 		cell := trow.cells[c.order]
-		if c.Hidden {
+		if !c.Visible() {
 			cell.SetVisible(false)
 			continue
 		}
 		// Sets cell position and size
 		cell.SetPosition(px, 0)
 		cell.SetVisible(true)
-		cell.SetSize(c.header.Width(), trow.ContentHeight())
-		px += c.header.Width()
+		cell.SetSize(c.Width(), trow.ContentHeight())
+		// Sets the cell label position inside the cell
+
+		px += c.Width()
 	}
 	trow.SetContentWidth(px)
 }
@@ -796,9 +841,9 @@ func (t *Table) rowsHeight() (float32, float32) {
 
 	start := float32(0)
 	height := t.ContentHeight()
-	if t.showHeader {
-		height -= t.headerHeight
-		start += t.headerHeight
+	if t.header.Visible() {
+		height -= t.header.Height()
+		start += t.header.Height()
 	}
 	if t.statusPanel.Visible() {
 		height -= t.statusPanel.Height()
@@ -886,14 +931,14 @@ func (t *Table) updateRowStyle(ri int) {
 	t.applyRowStyle(row, &t.styles.Row.Normal)
 }
 
-// applyHeaderStyle applies the specified menu body style
-func (t *Table) applyHeaderStyle(hp *Panel) {
+// applyHeaderStyle applies style to the specified table header
+func (t *Table) applyHeaderStyle(h *tableColHeader) {
 
 	s := t.styles.Header
-	hp.SetBordersFrom(&s.Border)
-	hp.SetBordersColor4(&s.BorderColor)
-	hp.SetPaddingsFrom(&s.Paddings)
-	hp.SetColor(&s.BgColor)
+	h.SetBordersFrom(&s.Border)
+	h.SetBordersColor4(&s.BorderColor)
+	h.SetPaddingsFrom(&s.Paddings)
+	h.SetColor(&s.BgColor)
 }
 
 // applyRowStyle applies the specified style to all cells for the specified table row
