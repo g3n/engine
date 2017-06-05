@@ -31,6 +31,9 @@ type Table struct {
 	headerHeight float32                 // header height
 	vscroll      *ScrollBar              // vertical scroll bar
 	showHeader   bool                    // header visibility flag
+	statusPanel  Panel                   // optional bottom status panel
+	statusLabel  *Label                  // status label
+
 }
 
 // TableColumn describes a table column
@@ -71,10 +74,20 @@ type TableRowStyles struct {
 	Selected TableRowStyle
 }
 
+// TableStatusStyle describes the style of the table status lineow
+type TableStatusStyle struct {
+	Border      BorderSizes
+	Paddings    BorderSizes
+	BorderColor math32.Color4
+	BgColor     math32.Color
+	FgColor     math32.Color
+}
+
 // TableStyles describes all styles of the table header and rows
 type TableStyles struct {
 	Header *TableHeaderStyle
 	Row    *TableRowStyles
+	Status *TableStatusStyle
 }
 
 // TableClickEvent describes a mouse click event over a table
@@ -150,6 +163,15 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 		t.Panel.Add(c.header)
 	}
 	t.recalcHeader()
+
+	// Creates status panel
+	t.statusPanel.Initialize(0, 0)
+	t.statusPanel.SetVisible(false)
+	t.statusLabel = NewLabel("")
+	t.applyStatusStyle()
+	t.statusPanel.Add(t.statusLabel)
+	t.Panel.Add(&t.statusPanel)
+	t.recalcStatus()
 
 	// Subscribe to events
 	t.Panel.Subscribe(OnMouseUp, t.onMouse)
@@ -332,6 +354,24 @@ func (t *Table) SelectedRow() int {
 		}
 	}
 	return -1
+}
+
+// ShowStatus sets the visibility of the status lines at the bottom of the table
+func (t *Table) ShowStatus(show bool) {
+
+	if t.statusPanel.Visible() == show {
+		return
+	}
+	t.statusPanel.SetVisible(show)
+	t.recalcStatus()
+	t.recalc()
+}
+
+// SetStatusText sets the text of status line at the bottom of the table
+// It does not change its current visibility
+func (t *Table) SetStatusText(text string) {
+
+	t.statusLabel.SetText(text)
 }
 
 // insertRow is the internal version of InsertRow which does not call recalc()
@@ -639,6 +679,18 @@ func (t *Table) recalcHeader() {
 	}
 }
 
+// recalcStatus recalculates and sets the position and size of the status panel and its label
+func (t *Table) recalcStatus() {
+
+	if !t.statusPanel.Visible() {
+		return
+	}
+	t.statusPanel.SetContentHeight(t.statusLabel.Height())
+	py := t.ContentHeight() - t.statusPanel.Height()
+	t.statusPanel.SetPosition(0, py)
+	t.statusPanel.SetWidth(t.ContentWidth())
+}
+
 // recalc calculates the visibility, positions and sizes of all row cells.
 // should be called in the following situations:
 // - the table is resized
@@ -648,12 +700,8 @@ func (t *Table) recalcHeader() {
 // - horizontal or vertical scroll position changed
 func (t *Table) recalc() {
 
-	// Get initial Y coordinate and total height of the table for rows
-	starty := t.headerHeight
-	if !t.showHeader {
-		starty = 0
-	}
-	theight := t.ContentHeight()
+	// Get available row height for rows
+	starty, theight := t.rowsHeight()
 
 	// Determines if it is necessary to show the scrollbar or not.
 	scroll := false
@@ -661,7 +709,7 @@ func (t *Table) recalc() {
 	for ri := 0; ri < len(t.rows); ri++ {
 		trow := t.rows[ri]
 		py += trow.height
-		if py > theight {
+		if py > starty+theight {
 			scroll = true
 			break
 		}
@@ -674,7 +722,7 @@ func (t *Table) recalc() {
 		trow := t.rows[ri]
 		// If row is before first row or its y coordinate is greater the table height,
 		// sets it invisible
-		if ri < t.firstRow || py > theight {
+		if ri < t.firstRow || py > starty+theight {
 			trow.SetVisible(false)
 			continue
 		}
@@ -683,12 +731,13 @@ func (t *Table) recalc() {
 		trow.SetVisible(true)
 		t.updateRowStyle(ri)
 		// Set the last completely visible row index
-		if py+trow.Height() <= theight {
+		if py+trow.Height() <= starty+theight {
 			t.lastRow = ri
 		}
 		//log.Error("ri:%v py:%v theight:%v", ri, py, theight)
 		py += trow.height
 	}
+	t.SetTopChild(&t.statusPanel)
 }
 
 // recalcRow recalculates the positions and sizes of all cells of the specified row
@@ -734,6 +783,25 @@ func (t *Table) sortCols() {
 
 }
 
+// rowsHeight returns the available start y coordinate and height in the table for rows,
+// considering the visibility of the header and status panels.
+func (t *Table) rowsHeight() (float32, float32) {
+
+	start := float32(0)
+	height := t.ContentHeight()
+	if t.showHeader {
+		height -= t.headerHeight
+		start += t.headerHeight
+	}
+	if t.statusPanel.Visible() {
+		height -= t.statusPanel.Height()
+	}
+	if height < 0 {
+		return 0, 0
+	}
+	return start, height
+}
+
 // setVScrollBar sets the visibility state of the vertical scrollbar
 func (t *Table) setVScrollBar(state bool) {
 
@@ -747,13 +815,8 @@ func (t *Table) setVScrollBar(state bool) {
 			t.vscroll.Subscribe(OnChange, t.onVScrollBarEvent)
 			t.Panel.Add(t.vscroll)
 		}
-		// Initial y coordinate and height
-		py := float32(0)
-		height := t.ContentHeight()
-		if t.showHeader {
-			py = t.headerHeight
-			height -= py
-		}
+		// Sets the scroll bar size and positions
+		py, height := t.rowsHeight()
 		t.vscroll.SetSize(scrollWidth, height)
 		t.vscroll.SetPositionX(t.ContentWidth() - scrollWidth)
 		t.vscroll.SetPositionY(py)
@@ -785,12 +848,7 @@ func (t *Table) onVScrollBarEvent(evname string, ev interface{}) {
 // It is used when scrolling the table vertically
 func (t *Table) calcMaxFirst() int {
 
-	// Get table height for rows considering if header is shown or not
-	total := t.ContentHeight()
-	if t.showHeader {
-		total -= t.headerHeight
-	}
-
+	_, total := t.rowsHeight()
 	ri := len(t.rows) - 1
 	if ri < 0 {
 		return 0
@@ -821,6 +879,16 @@ func (t *Table) updateRowStyle(ri int) {
 	t.applyRowStyle(row, &t.styles.Row.Normal)
 }
 
+// applyHeaderStyle applies the specified menu body style
+func (t *Table) applyHeaderStyle(hp *Panel) {
+
+	s := t.styles.Header
+	hp.SetBordersFrom(&s.Border)
+	hp.SetBordersColor4(&s.BorderColor)
+	hp.SetPaddingsFrom(&s.Paddings)
+	hp.SetColor(&s.BgColor)
+}
+
 // applyRowStyle applies the specified style to all cells for the specified table row
 func (t *Table) applyRowStyle(row *tableRow, trs *TableRowStyle) {
 
@@ -833,12 +901,12 @@ func (t *Table) applyRowStyle(row *tableRow, trs *TableRowStyle) {
 	}
 }
 
-// applyStyle applies the specified menu body style
-func (t *Table) applyHeaderStyle(hp *Panel) {
+// applyStatusStyle applies the status style
+func (t *Table) applyStatusStyle() {
 
-	s := t.styles.Header
-	hp.SetBordersFrom(&s.Border)
-	hp.SetBordersColor4(&s.BorderColor)
-	hp.SetPaddingsFrom(&s.Paddings)
-	hp.SetColor(&s.BgColor)
+	s := t.styles.Status
+	t.statusPanel.SetBordersFrom(&s.Border)
+	t.statusPanel.SetBordersColor4(&s.BorderColor)
+	t.statusPanel.SetPaddingsFrom(&s.Paddings)
+	t.statusPanel.SetColor(&s.BgColor)
 }

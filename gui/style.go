@@ -769,6 +769,12 @@ func setupDefaultStyle() {
 				FgColor:     fgColor,
 			},
 		},
+		Status: &TableStatusStyle{
+			Border:      BorderSizes{1, 0, 0, 0},
+			Paddings:    BorderSizes{2, 2, 2, 2},
+			BorderColor: borderColor,
+			BgColor:     math32.Color{0.9, 0.9, 0.9},
+			FgColor:     fgColor,
+		},
 	}
-
 }
