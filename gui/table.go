@@ -187,30 +187,6 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 	t.Panel.Add(&t.header)
 	t.recalcHeader()
 
-	//// Create column header panels
-	//t.header.Initialize(0, 0)
-	//t.header.cols = make([]*tableColHeader, 0)
-	//for i := 0; i < len(t.cols); i++ {
-	//	c := t.cols[i]
-	//	// Creates a column header
-	//	ch := new(tableColHeader)
-	//	ch.Initialize(0, 0)
-	//	ch.label = NewLabel(c.Name)
-	//	ch.Add(ch.label)
-	//	t.applyHeaderStyle(ch)
-	//	// Sets column header width and height
-	//	width := c.Width
-	//	if width < ch.label.Width()+ch.MinWidth() {
-	//		width = ch.label.Width() + ch.MinWidth()
-	//	}
-	//	ch.SetContentSize(width, ch.label.Height())
-	//	// Adds the column header to the header panel
-	//	t.header.cols = append(t.header.cols, ch)
-	//	t.header.Panel.Add(ch)
-	//}
-	//t.Panel.Add(&t.header)
-	//t.recalcHeader()
-
 	// Creates status panel
 	t.statusPanel.Initialize(0, 0)
 	t.statusPanel.SetVisible(false)
@@ -825,7 +801,22 @@ func (t *Table) recalcRow(trow *tableRow) {
 		cell.SetVisible(true)
 		cell.SetSize(c.Width(), trow.ContentHeight())
 		// Sets the cell label position inside the cell
-
+		ccw := cell.ContentWidth()
+		lw := cell.label.Width()
+		space := ccw - lw
+		lx := float32(0)
+		switch c.align {
+		case AlignLeft:
+		case AlignRight:
+			if space > 0 {
+				lx = ccw - space
+			}
+		case AlignCenter:
+			if space > 0 {
+				lx = space / 2
+			}
+		}
+		cell.label.SetPosition(lx, 0)
 		px += c.Width()
 	}
 	trow.SetContentWidth(px)
