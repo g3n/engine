@@ -13,7 +13,11 @@ import (
 )
 
 const (
+	// Event generated when the table is right or left clicked
+	// Parameter is TableClickEvent
 	OnTableClick = "onTableClick"
+	// Event generated when the table row count changes (no parameters)
+	OnTableRowCount = "onTableRowCount"
 )
 
 //
@@ -331,6 +335,7 @@ func (t *Table) InsertRow(row int, values map[string]interface{}) {
 
 	t.insertRow(row, values)
 	t.recalc()
+	t.Dispatch(OnTableRowCount, nil)
 }
 
 // RemoveRow removes from the specified row from the table
@@ -342,6 +347,7 @@ func (t *Table) RemoveRow(row int) {
 	}
 	t.removeRow(row)
 	t.recalc()
+	t.Dispatch(OnTableRowCount, nil)
 }
 
 // SelectedRow returns the index of the currently selected row
@@ -657,6 +663,7 @@ func (t *Table) selectRow(ri int) {
 		trow := t.rows[i]
 		if i == ri {
 			trow.selected = true
+			t.Dispatch(OnChange, nil)
 		} else {
 			trow.selected = false
 		}
