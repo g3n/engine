@@ -84,8 +84,8 @@ type Panel struct {
 }
 
 const (
-	deltaZ    = -0.00001      // delta Z for bounded panels
-	deltaZunb = deltaZ * 1000 // delta Z for unbounded panels
+	deltaZ    = -0.000001      // delta Z for bounded panels
+	deltaZunb = deltaZ * 10000 // delta Z for unbounded panels
 )
 
 // NewPanel creates and returns a pointer to a new panel with the

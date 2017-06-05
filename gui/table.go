@@ -13,10 +13,10 @@ import (
 )
 
 const (
-	// Event generated when the table is right or left clicked
+	// Name of the event generated when the table is right or left clicked
 	// Parameter is TableClickEvent
 	OnTableClick = "onTableClick"
-	// Event generated when the table row count changes (no parameters)
+	// Name of the event generated when the table row count changes (no parameters)
 	OnTableRowCount = "onTableRowCount"
 )
 
@@ -40,12 +40,12 @@ type Table struct {
 type TableColumn struct {
 	Id         string          // Column id used to reference the column. Must be unique
 	Name       string          // Column name shown in the header
-	Width      float32         // Column preferable width in pixels
+	Width      float32         // Inital column width in pixels
 	Hidden     bool            // Hidden flag
 	Align      Align           // Cell content alignment: AlignLeft|AlignCenter|AlignRight
-	Format     string          // Format string for numbers and strings
+	Format     string          // Format string for formatting the columns' cells
 	FormatFunc TableFormatFunc // Format function (overrides Format string)
-	Expand     int             // Width expansion factor
+	Expand     int             // Column width expansion factor (0 no expansion)
 	order      int             // show order
 }
 
@@ -58,7 +58,7 @@ type TableCell struct {
 	Value interface{} // Cell value
 }
 
-// TableFormatFunc is type type for formatting functions
+// TableFormatFunc is the type for formatting functions
 type TableFormatFunc func(cell TableCell) string
 
 // TableHeaderStyle describes the style of the table header
@@ -373,6 +373,23 @@ func (t *Table) RemoveRow(row int) {
 		panic("Invalid row index")
 	}
 	t.removeRow(row)
+	maxFirst := t.calcMaxFirst()
+	if t.firstRow > maxFirst {
+		t.firstRow = maxFirst
+	}
+	t.recalc()
+	t.Dispatch(OnTableRowCount, nil)
+}
+
+// Clear removes all rows from the table
+func (t *Table) Clear() {
+
+	for ri := 0; ri < len(t.rows); ri++ {
+		trow := t.rows[ri]
+		trow.DisposeChildren(true)
+		trow.Dispose()
+	}
+	t.rows = nil
 	t.recalc()
 	t.Dispatch(OnTableRowCount, nil)
 }
@@ -515,10 +532,6 @@ func (t *Table) scrollDown(n int, selFirst bool) {
 	}
 
 	t.firstRow += n
-	// Update scroll bar if visible
-	if t.vscroll != nil && t.vscroll.Visible() {
-		t.vscroll.SetValue(float32(t.firstRow) / float32(maxFirst))
-	}
 	if selFirst {
 		t.selectRow(t.firstRow)
 	}
@@ -537,10 +550,6 @@ func (t *Table) scrollUp(n int, selLast bool) {
 		n = t.firstRow
 	}
 	t.firstRow -= n
-	// Update scroll bar if visible
-	if t.vscroll != nil && t.vscroll.Visible() {
-		t.vscroll.SetValue(float32(t.firstRow) / float32(t.calcMaxFirst()))
-	}
 	if selLast {
 		t.selectRow(t.lastRow - n)
 	}
@@ -558,12 +567,8 @@ func (t *Table) removeRow(row int) {
 	t.rows[len(t.rows)-1] = nil
 	t.rows = t.rows[:len(t.rows)-1]
 
-	// Dispose the row cell panels and its children
-	for i := 0; i < len(trow.cells); i++ {
-		cell := trow.cells[i]
-		cell.DisposeChildren(true)
-		cell.Dispose()
-	}
+	trow.DisposeChildren(true)
+	trow.Dispose()
 
 	// Adjusts table first visible row if necessary
 	//if t.firstRow == row {
@@ -602,15 +607,18 @@ func (t *Table) onMouse(evname string, ev interface{}) {
 func (t *Table) onKeyEvent(evname string, ev interface{}) {
 
 	kev := ev.(*window.KeyEvent)
-	switch kev.Keycode {
-	case window.KeyUp:
+	if kev.Keycode == window.KeyUp && kev.Mods == 0 {
 		t.selPrev()
-	case window.KeyDown:
+	} else if kev.Keycode == window.KeyDown && kev.Mods == 0 {
 		t.selNext()
-	case window.KeyPageUp:
+	} else if kev.Keycode == window.KeyPageUp && kev.Mods == 0 {
 		t.prevPage()
-	case window.KeyPageDown:
+	} else if kev.Keycode == window.KeyPageDown && kev.Mods == 0 {
 		t.nextPage()
+	} else if kev.Keycode == window.KeyPageUp && kev.Mods == window.ModControl {
+		t.firstPage()
+	} else if kev.Keycode == window.KeyPageDown && kev.Mods == window.ModControl {
+		t.lastPage()
 	}
 }
 
@@ -722,10 +730,15 @@ func (t *Table) selPrev() {
 	}
 }
 
-// nextPage increments the first visible row to show next page of rows
+// nextPage shows the next page of rows and selects its first row
 func (t *Table) nextPage() {
 
+	if len(t.rows) == 0 {
+		return
+	}
 	if t.lastRow == len(t.rows)-1 {
+		t.selectRow(t.lastRow)
+		t.recalc()
 		return
 	}
 	plen := t.lastRow - t.firstRow
@@ -735,10 +748,12 @@ func (t *Table) nextPage() {
 	t.scrollDown(plen, true)
 }
 
-// prevPage advances the first visible row
+// prevPage shows the previous page of rows and selects its last row
 func (t *Table) prevPage() {
 
 	if t.firstRow == 0 {
+		t.selectRow(0)
+		t.recalc()
 		return
 	}
 	plen := t.lastRow - t.firstRow
@@ -746,6 +761,29 @@ func (t *Table) prevPage() {
 		return
 	}
 	t.scrollUp(plen, true)
+}
+
+// firstPage shows the first page of rows and selects the first row
+func (t *Table) firstPage() {
+
+	if len(t.rows) == 0 {
+		return
+	}
+	t.firstRow = 0
+	t.selectRow(0)
+	t.recalc()
+}
+
+// lastPage shows the last page of rows and selects the last row
+func (t *Table) lastPage() {
+
+	if len(t.rows) == 0 {
+		return
+	}
+	maxFirst := t.calcMaxFirst()
+	t.firstRow = maxFirst
+	t.selectRow(len(t.rows) - 1)
+	t.recalc()
 }
 
 // selectRow sets the specified row as selected and unselects all other rows
@@ -818,6 +856,7 @@ func (t *Table) recalc() {
 		}
 	}
 	t.setVScrollBar(scroll)
+	t.updateVscrollBar()
 
 	// Sets the position and sizes of all cells of the visible rows
 	py = starty
@@ -840,6 +879,7 @@ func (t *Table) recalc() {
 		//log.Error("ri:%v py:%v theight:%v", ri, py, theight)
 		py += trow.height
 	}
+	// Status panel must be on top of all the row panels
 	t.SetTopChild(&t.statusPanel)
 }
 
@@ -967,6 +1007,15 @@ func (t *Table) onVScrollBarEvent(evname string, ev interface{}) {
 	}
 	t.firstRow = first
 	t.recalc()
+}
+
+// updateVscrollBar updates the position of the vertical scroll bar button
+func (t *Table) updateVscrollBar() {
+
+	maxFirst := t.calcMaxFirst()
+	if t.vscroll != nil && t.vscroll.Visible() {
+		t.vscroll.SetValue(float32(t.firstRow) / float32(maxFirst))
+	}
 }
 
 // calcMaxFirst calculates the maximum index of the first visible row
