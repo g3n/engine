@@ -25,15 +25,16 @@ const (
 // organized in rows and columns.
 //
 type Table struct {
-	Panel                    // Embedded panel
-	styles      *TableStyles // pointer to current styles
-	header      tableHeader  // table headers
-	firstRow    int          // index of the first visible row
-	lastRow     int          // index of the last visible row
-	rows        []*tableRow  // array of table rows
-	vscroll     *ScrollBar   // vertical scroll bar
-	statusPanel Panel        // optional bottom status panel
-	statusLabel *Label       // status label
+	Panel                       // Embedded panel
+	styles         *TableStyles // pointer to current styles
+	header         tableHeader  // table headers
+	firstRow       int          // index of the first visible row
+	lastRow        int          // index of the last visible row
+	rows           []*tableRow  // array of table rows
+	vscroll        *ScrollBar   // vertical scroll bar
+	statusPanel    Panel        // optional bottom status panel
+	statusLabel    *Label       // status label
+	scrollBarEvent bool         // do not update the scrollbar value in recalc() if true
 }
 
 // TableColumn describes a table column
@@ -212,6 +213,9 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 	t.recalcStatus()
 
 	// Subscribe to events
+	t.Panel.Subscribe(OnCursorEnter, t.onCursor)
+	t.Panel.Subscribe(OnCursorLeave, t.onCursor)
+	t.Panel.Subscribe(OnScroll, t.onScroll)
 	t.Panel.Subscribe(OnMouseUp, t.onMouse)
 	t.Panel.Subscribe(OnMouseDown, t.onMouse)
 	t.Panel.Subscribe(OnKeyDown, t.onKeyEvent)
@@ -351,6 +355,36 @@ func (t *Table) SetColFormat(id, format string) error {
 	return nil
 }
 
+// SetColOrders switches the order of sets the exhibition order of the specified column
+// and changes t
+func (t *Table) SetColOrder(id string, order int) {
+
+	c := t.header.cmap[id]
+	if c == nil {
+		panic(fmt.Sprintf("No column with id:%s", id))
+	}
+	if order < 0 || order > len(t.header.cols) {
+		panic("Invalid column id")
+	}
+	if c.order == order {
+		return
+	}
+	var found *tableColHeader
+	for ci := 0; ci < len(t.header.cols); ci++ {
+		c2 := t.header.cols[ci]
+		if c2.order == order {
+			found = c2
+			break
+		}
+	}
+	if found == nil {
+		panic("Order corrupt ?")
+	}
+	found.order = c.order
+	c.order = order
+	// Sort headers by orderx
+}
+
 // AddRow adds a new row at the end of the table with the specified values
 func (t *Table) AddRow(values map[string]interface{}) {
 
@@ -390,6 +424,7 @@ func (t *Table) Clear() {
 		trow.Dispose()
 	}
 	t.rows = nil
+	t.firstRow = 0
 	t.recalc()
 	t.Dispatch(OnTableRowCount, nil)
 }
@@ -519,7 +554,7 @@ func (t *Table) insertRow(row int, values map[string]interface{}) {
 }
 
 // ScrollDown scrolls the table the specified number of rows down if possible
-func (t *Table) scrollDown(n int, selFirst bool) {
+func (t *Table) scrollDown(n int) {
 
 	// Calculates number of rows to scroll down
 	maxFirst := t.calcMaxFirst()
@@ -532,7 +567,7 @@ func (t *Table) scrollDown(n int, selFirst bool) {
 	}
 
 	t.firstRow += n
-	if selFirst {
+	if t.SelectedRow() < t.firstRow {
 		t.selectRow(t.firstRow)
 	}
 	t.recalc()
@@ -540,7 +575,7 @@ func (t *Table) scrollDown(n int, selFirst bool) {
 }
 
 // ScrollUp scrolls the table the specified number of rows up if possible
-func (t *Table) scrollUp(n int, selLast bool) {
+func (t *Table) scrollUp(n int) {
 
 	// Calculates number of rows to scroll up
 	if t.firstRow == 0 {
@@ -550,8 +585,9 @@ func (t *Table) scrollUp(n int, selLast bool) {
 		n = t.firstRow
 	}
 	t.firstRow -= n
-	if selLast {
-		t.selectRow(t.lastRow - n)
+	lastRow := t.lastRow - n
+	if t.SelectedRow() > lastRow {
+		t.selectRow(lastRow)
 	}
 	t.recalc()
 }
@@ -577,6 +613,18 @@ func (t *Table) removeRow(row int) {
 	//		t.firstRow = 0
 	//	}
 	//}
+}
+
+// onCursor process subscribed cursor events
+func (t *Table) onCursor(evname string, ev interface{}) {
+
+	switch evname {
+	case OnCursorEnter:
+		t.root.SetScrollFocus(t)
+	case OnCursorLeave:
+		t.root.SetScrollFocus(nil)
+	}
+	t.root.StopPropagation(Stop3D)
 }
 
 // onMouseEvent process subscribed mouse events
@@ -627,6 +675,18 @@ func (t *Table) onResize(evname string, ev interface{}) {
 
 	t.recalc()
 	t.recalcStatus()
+}
+
+// onScroll receives subscribed scroll events for this table
+func (t *Table) onScroll(evname string, ev interface{}) {
+
+	sev := ev.(*window.ScrollEvent)
+	if sev.Yoffset > 0 {
+		t.scrollUp(1)
+	} else if sev.Yoffset < 0 {
+		t.scrollDown(1)
+	}
+	t.root.StopPropagation(Stop3D)
 }
 
 // findClick finds where in the table the specified mouse click event
@@ -698,7 +758,7 @@ func (t *Table) selNext() {
 
 	// Scroll down if necessary
 	if next > t.lastRow {
-		t.scrollDown(1, false)
+		t.scrollDown(1)
 	} else {
 		t.recalc()
 	}
@@ -724,7 +784,7 @@ func (t *Table) selPrev() {
 
 	// Scroll up if necessary
 	if prev < t.firstRow && t.firstRow > 0 {
-		t.scrollUp(1, false)
+		t.scrollUp(1)
 	} else {
 		t.recalc()
 	}
@@ -745,7 +805,7 @@ func (t *Table) nextPage() {
 	if plen <= 0 {
 		return
 	}
-	t.scrollDown(plen, true)
+	t.scrollDown(plen)
 }
 
 // prevPage shows the previous page of rows and selects its last row
@@ -760,7 +820,7 @@ func (t *Table) prevPage() {
 	if plen <= 0 {
 		return
 	}
-	t.scrollUp(plen, true)
+	t.scrollUp(plen)
 }
 
 // firstPage shows the first page of rows and selects the first row
@@ -856,7 +916,6 @@ func (t *Table) recalc() {
 		}
 	}
 	t.setVScrollBar(scroll)
-	t.updateVscrollBar()
 
 	// Sets the position and sizes of all cells of the visible rows
 	py = starty
@@ -978,7 +1037,7 @@ func (t *Table) setVScrollBar(state bool) {
 		if t.vscroll == nil {
 			t.vscroll = NewVScrollBar(0, 0)
 			t.vscroll.SetBorders(0, 0, 0, 1)
-			t.vscroll.Subscribe(OnChange, t.onVScrollBarEvent)
+			t.vscroll.Subscribe(OnChange, t.onVScrollBar)
 			t.Panel.Add(t.vscroll)
 		}
 		// Sets the scroll bar size and positions
@@ -988,6 +1047,12 @@ func (t *Table) setVScrollBar(state bool) {
 		t.vscroll.SetPositionY(py)
 		t.vscroll.recalc()
 		t.vscroll.SetVisible(true)
+		if !t.scrollBarEvent {
+			maxFirst := t.calcMaxFirst()
+			t.vscroll.SetValue(float32(t.firstRow) / float32(maxFirst))
+		} else {
+			t.scrollBarEvent = false
+		}
 		// Not visible
 	} else {
 		if t.vscroll != nil {
@@ -996,26 +1061,28 @@ func (t *Table) setVScrollBar(state bool) {
 	}
 }
 
-// onVScrollBarEvent is called when a vertical scroll bar event is received
-func (t *Table) onVScrollBarEvent(evname string, ev interface{}) {
+// onVScrollBar is called when a vertical scroll bar event is received
+func (t *Table) onVScrollBar(evname string, ev interface{}) {
 
+	// Calculates the new first visible line
 	pos := t.vscroll.Value()
 	maxFirst := t.calcMaxFirst()
 	first := int(math.Floor((float64(maxFirst) * pos) + 0.5))
-	if first == t.firstRow {
-		return
+
+	// Sets the new selected row
+	sel := t.SelectedRow()
+	if sel < first {
+		t.selectRow(first)
+	} else {
+		lines := first - t.firstRow
+		lastRow := t.lastRow + lines
+		if sel > lastRow {
+			t.selectRow(lastRow)
+		}
 	}
+	t.scrollBarEvent = true
 	t.firstRow = first
 	t.recalc()
-}
-
-// updateVscrollBar updates the position of the vertical scroll bar button
-func (t *Table) updateVscrollBar() {
-
-	maxFirst := t.calcMaxFirst()
-	if t.vscroll != nil && t.vscroll.Visible() {
-		t.vscroll.SetValue(float32(t.firstRow) / float32(maxFirst))
-	}
 }
 
 // calcMaxFirst calculates the maximum index of the first visible row
