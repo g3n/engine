@@ -38,15 +38,28 @@ type Table struct {
 
 // TableColumn describes a table column
 type TableColumn struct {
-	Id        string  // Column id used to reference the column. Must be unique
-	Name      string  // Column name shown in the header
-	Width     float32 // Column preferable width in pixels
-	Hidden    bool    // Hidden flag
-	Format    string  // Format string for numbers and strings
-	Alignment Align   // Cell content alignment: AlignNone|AlignLeft|AlignCenter|AlignRight
-	Expand    int     // Width expansion factor
-	order     int     // show order
+	Id         string          // Column id used to reference the column. Must be unique
+	Name       string          // Column name shown in the header
+	Width      float32         // Column preferable width in pixels
+	Hidden     bool            // Hidden flag
+	Align      Align           // Cell content alignment: AlignLeft|AlignCenter|AlignRight
+	Format     string          // Format string for numbers and strings
+	FormatFunc TableFormatFunc // Format function (overrides Format string)
+	Expand     int             // Width expansion factor
+	order      int             // show order
 }
+
+// TableCell describes a table cell.
+// It is used as a parameter for formatting function
+type TableCell struct {
+	Tab   *Table      // Pointer to table
+	Row   int         // Row index
+	Col   string      // Column id
+	Value interface{} // Cell value
+}
+
+// TableFormatFunc is type type for formatting functions
+type TableFormatFunc func(cell TableCell) string
 
 // TableHeaderStyle describes the style of the table header
 type TableHeaderStyle struct {
@@ -108,14 +121,15 @@ type tableHeader struct {
 
 // tableColHeader is panel for a column header
 type tableColHeader struct {
-	Panel          // header panel
-	label  *Label  // header label
-	id     string  // column id
-	width  float32 // initial column width
-	format string  // column format string
-	align  Align   // column alignment
-	expand int     // column expand factor
-	order  int     // row columns order
+	Panel                      // header panel
+	label      *Label          // header label
+	id         string          // column id
+	width      float32         // initial column width
+	format     string          // column format string
+	formatFunc TableFormatFunc // column format function
+	align      Align           // column alignment
+	expand     int             // column expand factor
+	order      int             // row columns order
 }
 
 // tableRow is panel which contains an entire table row of cells
@@ -164,8 +178,9 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 		c.Add(c.label)
 		c.id = cdesc.Id
 		c.width = cdesc.Width
-		c.align = cdesc.Alignment
+		c.align = cdesc.Align
 		c.format = cdesc.Format
+		c.formatFunc = cdesc.FormatFunc
 		c.expand = cdesc.Expand
 		// Sets default format and order
 		if c.format == "" {
@@ -201,9 +216,7 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 	t.Panel.Subscribe(OnMouseDown, t.onMouse)
 	t.Panel.Subscribe(OnKeyDown, t.onKeyEvent)
 	t.Panel.Subscribe(OnKeyRepeat, t.onKeyEvent)
-	t.Panel.Subscribe(OnResize, func(evname string, ev interface{}) {
-		t.recalc()
-	})
+	t.Panel.Subscribe(OnResize, t.onResize)
 	return t, nil
 }
 
@@ -232,8 +245,7 @@ func (t *Table) ShowColumn(col string, show bool) {
 	t.recalcHeader()
 	// Recalculates all rows
 	for ri := 0; ri < len(t.rows); ri++ {
-		trow := t.rows[ri]
-		t.recalcRow(trow)
+		t.recalcRow(ri)
 	}
 	t.recalc()
 }
@@ -255,8 +267,7 @@ func (t *Table) ShowAllColumns() {
 	t.recalcHeader()
 	// Recalculates all rows
 	for ri := 0; ri < len(t.rows); ri++ {
-		trow := t.rows[ri]
-		t.recalcRow(trow)
+		t.recalcRow(ri)
 	}
 	t.recalc()
 }
@@ -304,13 +315,13 @@ func (t *Table) SetRow(row int, values map[string]interface{}) {
 	}
 	for ci := 0; ci < len(t.header.cols); ci++ {
 		c := t.header.cols[ci]
-		cv := values[c.id]
-		if cv == nil {
+		cv, ok := values[c.id]
+		if !ok {
 			continue
 		}
-		t.SetCell(row, c.id, values[c.id])
+		t.SetCell(row, c.id, cv)
 	}
-	t.recalcRow(t.rows[row])
+	t.recalcRow(row)
 }
 
 // SetCell sets the value of the cell specified by its row and column id
@@ -325,6 +336,7 @@ func (t *Table) SetCell(row int, colid string, value interface{}) {
 	}
 	cell := t.rows[row].cells[c.order]
 	cell.label.SetText(fmt.Sprintf(c.format, value))
+	cell.value = value
 }
 
 // SetColFormat sets the formatting string (Printf) for the specified column
@@ -395,6 +407,64 @@ func (t *Table) SetStatusText(text string) {
 	t.statusLabel.SetText(text)
 }
 
+// Rows returns a slice of maps with the contents of the table rows
+// specified by the rows first and last index.
+// To get all the table rows, use Rows(0, -1)
+func (t *Table) Rows(fi, li int) []map[string]interface{} {
+
+	if fi < 0 || fi >= len(t.header.cols) {
+		panic("Invalid first row index")
+	}
+	if li < 0 {
+		li = len(t.rows) - 1
+	} else if li < 0 || li >= len(t.rows) {
+		panic("Invalid last row index")
+	}
+	if li < fi {
+		panic("Last index less than first index")
+	}
+	res := make([]map[string]interface{}, li-li+1)
+	for ri := fi; ri <= li; ri++ {
+		trow := t.rows[ri]
+		rmap := make(map[string]interface{})
+		for ci := 0; ci < len(t.header.cols); ci++ {
+			c := t.header.cols[ci]
+			rmap[c.id] = trow.cells[c.order].value
+		}
+		res = append(res, rmap)
+	}
+	return res
+}
+
+// Row returns a map with the current contents of the specified row index
+func (t *Table) Row(ri int) map[string]interface{} {
+
+	if ri < 0 || ri > len(t.header.cols) {
+		panic("Invalid row index")
+	}
+	res := make(map[string]interface{})
+	trow := t.rows[ri]
+	for ci := 0; ci < len(t.header.cols); ci++ {
+		c := t.header.cols[ci]
+		res[c.id] = trow.cells[c.order].value
+	}
+	return res
+}
+
+// Cell returns the current content of the specified cell
+func (t *Table) Cell(col string, ri int) interface{} {
+
+	c := t.header.cmap[col]
+	if c == nil {
+		panic("Invalid column id")
+	}
+	if ri < 0 || ri >= len(t.rows) {
+		panic("Invalid row index")
+	}
+	trow := t.rows[ri]
+	return trow.cells[c.order].value
+}
+
 // insertRow is the internal version of InsertRow which does not call recalc()
 func (t *Table) insertRow(row int, values map[string]interface{}) {
 
@@ -428,7 +498,7 @@ func (t *Table) insertRow(row int, values map[string]interface{}) {
 	if values != nil {
 		t.SetRow(row, values)
 	}
-	t.recalcRow(trow)
+	t.recalcRow(row)
 }
 
 // ScrollDown scrolls the table the specified number of rows down if possible
@@ -528,7 +598,7 @@ func (t *Table) onMouse(evname string, ev interface{}) {
 	t.root.StopPropagation(StopAll)
 }
 
-// onKeyEvent receives subscribed key events for the list
+// onKeyEvent receives subscribed key events for this table
 func (t *Table) onKeyEvent(evname string, ev interface{}) {
 
 	kev := ev.(*window.KeyEvent)
@@ -542,6 +612,13 @@ func (t *Table) onKeyEvent(evname string, ev interface{}) {
 	case window.KeyPageDown:
 		t.nextPage()
 	}
+}
+
+// onResize receives subscribed resize for this table
+func (t *Table) onResize(evname string, ev interface{}) {
+
+	t.recalc()
+	t.recalcStatus()
 }
 
 // findClick finds where in the table the specified mouse click event
@@ -768,8 +845,9 @@ func (t *Table) recalc() {
 
 // recalcRow recalculates the positions and sizes of all cells of the specified row
 // Should be called when the row is created and column visibility or order is changed.
-func (t *Table) recalcRow(trow *tableRow) {
+func (t *Table) recalcRow(ri int) {
 
+	trow := t.rows[ri]
 	// Calculates and sets row height
 	maxheight := float32(0)
 	for ci := 0; ci < len(t.header.cols); ci++ {
@@ -800,7 +878,12 @@ func (t *Table) recalcRow(trow *tableRow) {
 		cell.SetPosition(px, 0)
 		cell.SetVisible(true)
 		cell.SetSize(c.Width(), trow.ContentHeight())
-		// Sets the cell label position inside the cell
+		// Checks for format function
+		if c.formatFunc != nil {
+			text := c.formatFunc(TableCell{t, ri, c.id, cell.value})
+			cell.label.SetText(text)
+		}
+		// Sets the cell label alignment inside the cell
 		ccw := cell.ContentWidth()
 		lw := cell.label.Width()
 		space := ccw - lw
@@ -809,7 +892,7 @@ func (t *Table) recalcRow(trow *tableRow) {
 		case AlignLeft:
 		case AlignRight:
 			if space > 0 {
-				lx = ccw - space
+				lx = ccw - lw
 			}
 		case AlignCenter:
 			if space > 0 {
