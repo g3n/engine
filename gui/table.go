@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/g3n/engine/gui/assets"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 )
@@ -22,9 +23,30 @@ const (
 	OnTableRowCount = "onTableRowCount"
 )
 
+// TableSortType is the type used to specify the sort method for a table column
+type TableSortType int
+
+const (
+	TableSortNone TableSortType = iota
+	TableSortString
+	TableSortNumber
+)
+
+const (
+	tableSortedNoneIcon = assets.SwapVert
+	tableSortedAscIcon  = assets.ArrowDownward
+	tableSortedDescIcon = assets.ArrowUpward
+	tableSortedNone     = 0
+	tableSortedAsc      = 1
+	tableSortedDesc     = 2
+	tableResizerPix     = 4
+)
+
 //
 // Table implements a panel which can contains child panels
 // organized in rows and columns.
+// In this implementation the table data model is keep and
+// mantained by the table itself
 //
 type Table struct {
 	Panel                       // Embedded panel
@@ -37,18 +59,22 @@ type Table struct {
 	statusPanel    Panel        // optional bottom status panel
 	statusLabel    *Label       // status label
 	scrollBarEvent bool         // do not update the scrollbar value in recalc() if true
+	resizeCol      int          // column being resized
+	resizing       bool         // draggin the column resizer
 }
 
 // TableColumn describes a table column
 type TableColumn struct {
 	Id         string          // Column id used to reference the column. Must be unique
-	Name       string          // Column name shown in the header
+	Header     string          // Column name shown in the table header
 	Width      float32         // Inital column width in pixels
 	Hidden     bool            // Hidden flag
 	Align      Align           // Cell content alignment: AlignLeft|AlignCenter|AlignRight
 	Format     string          // Format string for formatting the columns' cells
 	FormatFunc TableFormatFunc // Format function (overrides Format string)
 	Expand     int             // Column width expansion factor (0 no expansion)
+	Sort       TableSortType   // Column sort type
+	Resize     bool            // Allow column to be resized by user
 }
 
 // TableCell describes a table cell.
@@ -126,13 +152,18 @@ type tableHeader struct {
 type tableColHeader struct {
 	Panel                      // header panel
 	label      *Label          // header label
+	ricon      *Label          // header right icon (sort direction)
 	id         string          // column id
 	width      float32         // initial column width
 	format     string          // column format string
 	formatFunc TableFormatFunc // column format function
 	align      Align           // column alignment
 	expand     int             // column expand factor
+	sort       TableSortType   // column sort type
+	resize     bool            // column can be resized by user
 	order      int             // row columns order
+	sorted     int             // current sorted status
+	xr         float32         // right border coordinate in pixels
 }
 
 // tableRow is panel which contains an entire table row of cells
@@ -177,7 +208,7 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 		c := new(tableColHeader)
 		c.Initialize(0, 0)
 		t.applyHeaderStyle(c)
-		c.label = NewLabel(cdesc.Name)
+		c.label = NewLabel(cdesc.Header)
 		c.Add(c.label)
 		c.id = cdesc.Id
 		c.width = cdesc.Width
@@ -185,6 +216,16 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 		c.format = cdesc.Format
 		c.formatFunc = cdesc.FormatFunc
 		c.expand = cdesc.Expand
+		c.sort = cdesc.Sort
+		c.resize = cdesc.Resize
+		// Adds optional sort icon
+		if c.sort != TableSortNone {
+			c.ricon = NewIconLabel(string(tableSortedNoneIcon))
+			c.Add(c.ricon)
+			c.ricon.Subscribe(OnMouseDown, func(evname string, ev interface{}) {
+				t.onRicon(evname, c)
+			})
+		}
 		// Sets default format and order
 		if c.format == "" {
 			c.format = "%v"
@@ -217,6 +258,7 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 	// Subscribe to events
 	t.Panel.Subscribe(OnCursorEnter, t.onCursor)
 	t.Panel.Subscribe(OnCursorLeave, t.onCursor)
+	t.Panel.Subscribe(OnCursor, t.onCursorPos)
 	t.Panel.Subscribe(OnScroll, t.onScroll)
 	t.Panel.Subscribe(OnMouseUp, t.onMouse)
 	t.Panel.Subscribe(OnMouseDown, t.onMouse)
@@ -528,6 +570,7 @@ func (t *Table) Cell(col string, ri int) interface{} {
 
 // SortColumn sorts the specified column interpreting its values as strings or numbers
 // and sorting in ascending or descending order.
+// This sorting is independent of the sort configuration of column set when the table was created
 func (t *Table) SortColumn(col string, asString bool, asc bool) {
 
 	c := t.header.cmap[col]
@@ -657,6 +700,40 @@ func (t *Table) onCursor(evname string, ev interface{}) {
 	t.root.StopPropagation(Stop3D)
 }
 
+// onCursorPos process subscribed cursor position events
+func (t *Table) onCursorPos(evname string, ev interface{}) {
+
+	// Convert mouse window coordinates to table content coordinates
+	kev := ev.(*window.CursorEvent)
+	cx, _ := t.ContentCoords(kev.Xpos, kev.Ypos)
+
+	// User is dragging the resizer
+	if t.resizing {
+		return
+	}
+
+	// Find column with right border closest to current position
+	found := false
+	for ci := 0; ci < len(t.header.cols); ci++ {
+		c := t.header.cols[ci]
+		dx := math32.Abs(cx - c.xr)
+		if dx < tableResizerPix {
+			if c.resize {
+				found = true
+				t.resizeCol = ci
+			}
+			break
+		}
+	}
+	if found {
+		t.root.SetCursorHResize()
+	} else {
+		t.root.SetCursorNormal()
+		t.resizeCol = -1
+	}
+	t.root.StopPropagation(Stop3D)
+}
+
 // onMouseEvent process subscribed mouse events
 func (t *Table) onMouse(evname string, ev interface{}) {
 
@@ -664,6 +741,11 @@ func (t *Table) onMouse(evname string, ev interface{}) {
 	t.root.SetKeyFocus(t)
 	switch evname {
 	case OnMouseDown:
+		// If
+		if t.resizeCol >= 0 {
+			t.resizing = true
+			return
+		}
 		// Creates and dispatch TableClickEvent
 		var tce TableClickEvent
 		tce.MouseEvent = *e
@@ -675,6 +757,10 @@ func (t *Table) onMouse(evname string, ev interface{}) {
 			t.recalc()
 		}
 	case OnMouseUp:
+		if t.resizing {
+			t.resizing = false
+			t.root.SetCursorNormal()
+		}
 	default:
 		return
 	}
@@ -700,7 +786,7 @@ func (t *Table) onKeyEvent(evname string, ev interface{}) {
 	}
 }
 
-// onResize receives subscribed resize for this table
+// onResize receives subscribed resize events for this table
 func (t *Table) onResize(evname string, ev interface{}) {
 
 	t.recalc()
@@ -717,6 +803,31 @@ func (t *Table) onScroll(evname string, ev interface{}) {
 		t.scrollDown(1)
 	}
 	t.root.StopPropagation(Stop3D)
+}
+
+// onRicon receives subscribed events for column header right icon
+func (t *Table) onRicon(evname string, c *tableColHeader) {
+
+	icon := tableSortedNoneIcon
+	var asc bool
+	if c.sorted == tableSortedNone || c.sorted == tableSortedDesc {
+		c.sorted = tableSortedAsc
+		icon = tableSortedAscIcon
+		asc = false
+	} else {
+		c.sorted = tableSortedDesc
+		icon = tableSortedDescIcon
+		asc = true
+	}
+
+	var asString bool
+	if c.sort == TableSortString {
+		asString = true
+	} else {
+		asString = false
+	}
+	t.SortColumn(c.id, asString, asc)
+	c.ricon.SetText(string(icon))
 }
 
 // findClick finds where in the table the specified mouse click event
@@ -904,9 +1015,18 @@ func (t *Table) recalcHeader() {
 		if c.Height() > height {
 			height = c.Height()
 		}
+		// Sets right icon position
+		if c.ricon != nil {
+			ix := c.ContentWidth() - c.ricon.Width()
+			if ix < 0 {
+				ix = 0
+			}
+			c.ricon.SetPosition(ix, 0)
+		}
 		c.SetPosition(posx, 0)
 		c.SetVisible(true)
 		posx += c.Width()
+		c.xr = posx
 	}
 	t.header.SetContentSize(posx, height)
 }
