@@ -7,6 +7,8 @@ package gui
 import (
 	"fmt"
 	"math"
+	"sort"
+	"strconv"
 
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
@@ -47,7 +49,6 @@ type TableColumn struct {
 	Format     string          // Format string for formatting the columns' cells
 	FormatFunc TableFormatFunc // Format function (overrides Format string)
 	Expand     int             // Column width expansion factor (0 no expansion)
-	order      int             // show order
 }
 
 // TableCell describes a table cell.
@@ -111,6 +112,7 @@ type TableClickEvent struct {
 	Header            bool    // True if header was clicked
 	Row               int     // Index of table row (may be -1)
 	Col               string  // Id of table column (may be empty)
+	ColOrder          int     // Current column exhibition order
 }
 
 // tableHeader is panel which contains the individual header panels for each column
@@ -355,34 +357,41 @@ func (t *Table) SetColFormat(id, format string) error {
 	return nil
 }
 
-// SetColOrders switches the order of sets the exhibition order of the specified column
-// and changes t
+// SetColOrder sets the exhibition order of the specified column.
+// The previous column which has the specified order will have
+// the original column order.
 func (t *Table) SetColOrder(id string, order int) {
 
+	// Checks column id
 	c := t.header.cmap[id]
 	if c == nil {
 		panic(fmt.Sprintf("No column with id:%s", id))
 	}
+	// Checks exhibition order
 	if order < 0 || order > len(t.header.cols) {
 		panic("Invalid column id")
 	}
-	if c.order == order {
-		return
-	}
-	var found *tableColHeader
+	// Find the exhibition order for the specified column
 	for ci := 0; ci < len(t.header.cols); ci++ {
-		c2 := t.header.cols[ci]
-		if c2.order == order {
-			found = c2
+		if t.header.cols[ci] == c {
+			// If the order of the specified column is the same, nothing to do
+			if ci == order {
+				return
+			}
+			// Swap column orders
+			prev := t.header.cols[order]
+			t.header.cols[order] = c
+			t.header.cols[ci] = prev
 			break
 		}
 	}
-	if found == nil {
-		panic("Order corrupt ?")
+
+	// Recalculates the header and all rows
+	t.recalcHeader()
+	for ri := 0; ri < len(t.rows); ri++ {
+		t.recalcRow(ri)
 	}
-	found.order = c.order
-	c.order = order
-	// Sort headers by orderx
+	t.recalc()
 }
 
 // AddRow adds a new row at the end of the table with the specified values
@@ -515,6 +524,27 @@ func (t *Table) Cell(col string, ri int) interface{} {
 	}
 	trow := t.rows[ri]
 	return trow.cells[c.order].value
+}
+
+// SortColumn sorts the specified column interpreting its values as strings or numbers
+// and sorting in ascending or descending order.
+func (t *Table) SortColumn(col string, asString bool, asc bool) {
+
+	c := t.header.cmap[col]
+	if c == nil {
+		panic("Invalid column id")
+	}
+	if len(t.rows) < 2 {
+		return
+	}
+	if asString {
+		ts := tableSortString{rows: t.rows, col: c.order, asc: asc, format: c.format}
+		sort.Sort(ts)
+	} else {
+		ts := tableSortNumber{rows: t.rows, col: c.order, asc: asc}
+		sort.Sort(ts)
+	}
+	t.recalc()
 }
 
 // insertRow is the internal version of InsertRow which does not call recalc()
@@ -707,6 +737,7 @@ func (t *Table) findClick(ev *TableClickEvent) {
 		colx += t.header.cols[ci].Width()
 		if x < colx {
 			ev.Col = c.id
+			ev.ColOrder = ci
 			break
 		}
 	}
@@ -1151,4 +1182,89 @@ func (t *Table) applyStatusStyle() {
 	t.statusPanel.SetBordersColor4(&s.BorderColor)
 	t.statusPanel.SetPaddingsFrom(&s.Paddings)
 	t.statusPanel.SetColor(&s.BgColor)
+}
+
+// tableSortString is an internal type implementing the sort.Interface
+// and is used to sort a table column interpreting its values as strings
+type tableSortString struct {
+	rows   []*tableRow
+	col    int
+	asc    bool
+	format string
+}
+
+func (ts tableSortString) Len() int      { return len(ts.rows) }
+func (ts tableSortString) Swap(i, j int) { ts.rows[i], ts.rows[j] = ts.rows[j], ts.rows[i] }
+func (ts tableSortString) Less(i, j int) bool {
+
+	vi := ts.rows[i].cells[ts.col].value
+	vj := ts.rows[j].cells[ts.col].value
+	si := fmt.Sprintf(ts.format, vi)
+	sj := fmt.Sprintf(ts.format, vj)
+	if ts.asc {
+		return si < sj
+	} else {
+		return sj < si
+	}
+}
+
+// tableSortNumber is an internal type implementing the sort.Interface
+// and is used to sort a table column interpreting its values as numbers
+type tableSortNumber struct {
+	rows []*tableRow
+	col  int
+	asc  bool
+}
+
+func (ts tableSortNumber) Len() int      { return len(ts.rows) }
+func (ts tableSortNumber) Swap(i, j int) { ts.rows[i], ts.rows[j] = ts.rows[j], ts.rows[i] }
+func (ts tableSortNumber) Less(i, j int) bool {
+
+	vi := ts.rows[i].cells[ts.col].value
+	vj := ts.rows[j].cells[ts.col].value
+	ni := cv2f64(vi)
+	nj := cv2f64(vj)
+	if ts.asc {
+		return ni < nj
+	} else {
+		return nj < ni
+	}
+}
+
+// Try to convert an interface value to a float64 number
+func cv2f64(v interface{}) float64 {
+
+	if v == nil {
+		return 0
+	}
+	switch n := v.(type) {
+	case uint8:
+		return float64(n)
+	case uint16:
+		return float64(n)
+	case uint32:
+		return float64(n)
+	case uint64:
+		return float64(n)
+	case uint:
+		return float64(n)
+	case int8:
+		return float64(n)
+	case int16:
+		return float64(n)
+	case int32:
+		return float64(n)
+	case int64:
+		return float64(n)
+	case int:
+		return float64(n)
+	case string:
+		sv, err := strconv.ParseFloat(n, 64)
+		if err == nil {
+			return sv
+		}
+		return 0
+	default:
+		return 0
+	}
 }
