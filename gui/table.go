@@ -132,11 +132,21 @@ type TableResizerStyle struct {
 	BgColor     math32.Color4
 }
 
+//// TableStyles describes all styles of the table header and rows
+//type TableStyles struct {
+//	Header  *TableHeaderStyle
+//	RowEven *TableRowStyles
+//	RowOdd  *TableRowStyles
+//	Status  *TableStatusStyle
+//	Resizer *TableResizerStyle
+//}
+
 // TableStyles describes all styles of the table header and rows
 type TableStyles struct {
 	Header  *TableHeaderStyle
-	RowEven *TableRowStyles
-	RowOdd  *TableRowStyles
+	RowEven *TableRowStyle
+	RowOdd  *TableRowStyle
+	RowSel  *TableRowStyle
 	Status  *TableStatusStyle
 	Resizer *TableResizerStyle
 }
@@ -843,7 +853,6 @@ func (t *Table) onMouse(evname string, ev interface{}) {
 			cx, _ := t.ContentCoords(e.Xpos, e.Ypos)
 			c := t.header.cols[t.resizeCol]
 			width := cx - c.xl
-			log.Error("width:%v", width)
 			t.SetColWidth(c.id, width)
 		}
 	default:
@@ -1349,16 +1358,12 @@ func (t *Table) updateRowStyle(ri int) {
 	row := t.rows[ri]
 	var trs *TableRowStyle
 	if row.selected {
-		if ri%2 == 0 {
-			trs = &t.styles.RowEven.Selected
-		} else {
-			trs = &t.styles.RowOdd.Selected
-		}
+		trs = t.styles.RowSel
 	} else {
 		if ri%2 == 0 {
-			trs = &t.styles.RowEven.Normal
+			trs = t.styles.RowEven
 		} else {
-			trs = &t.styles.RowOdd.Normal
+			trs = t.styles.RowOdd
 		}
 	}
 	t.applyRowStyle(row, trs)
