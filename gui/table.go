@@ -32,6 +32,16 @@ const (
 	TableSortNumber
 )
 
+// TableSelType is the type used to specify the table row selection
+type TableSelType int
+
+const (
+	// Single row selection mode (default)
+	TableSelSingleRow = iota
+	// Multiple row selection mode
+	TableSelMultiRow
+)
+
 const (
 	tableSortedNoneIcon = assets.SwapVert
 	tableSortedAscIcon  = assets.ArrowDownward
@@ -40,6 +50,7 @@ const (
 	tableSortedAsc      = 1
 	tableSortedDesc     = 2
 	tableResizerPix     = 4
+	tableColMinWidth    = 16
 )
 
 //
@@ -52,9 +63,10 @@ type Table struct {
 	Panel                       // Embedded panel
 	styles         *TableStyles // pointer to current styles
 	header         tableHeader  // table headers
+	rows           []*tableRow  // array of table rows
+	rowCursor      int          // index of row cursor
 	firstRow       int          // index of the first visible row
 	lastRow        int          // index of the last visible row
-	rows           []*tableRow  // array of table rows
 	vscroll        *ScrollBar   // vertical scroll bar
 	statusPanel    Panel        // optional bottom status panel
 	statusLabel    *Label       // status label
@@ -62,7 +74,8 @@ type Table struct {
 	resizerPanel   Panel        // resizer panel
 	resizeCol      int          // column being resized
 	resizerX       float32      // initial resizer x coordinate
-	resizing       bool         // draggin the column resizer
+	resizing       bool         // dragging the column resizer
+	selType        TableSelType // table selection type
 }
 
 // TableColumn describes a table column
@@ -132,23 +145,15 @@ type TableResizerStyle struct {
 	BgColor     math32.Color4
 }
 
-//// TableStyles describes all styles of the table header and rows
-//type TableStyles struct {
-//	Header  *TableHeaderStyle
-//	RowEven *TableRowStyles
-//	RowOdd  *TableRowStyles
-//	Status  *TableStatusStyle
-//	Resizer *TableResizerStyle
-//}
-
 // TableStyles describes all styles of the table header and rows
 type TableStyles struct {
-	Header  *TableHeaderStyle
-	RowEven *TableRowStyle
-	RowOdd  *TableRowStyle
-	RowSel  *TableRowStyle
-	Status  *TableStatusStyle
-	Resizer *TableResizerStyle
+	Header    *TableHeaderStyle
+	RowEven   *TableRowStyle
+	RowOdd    *TableRowStyle
+	RowCursor *TableRowStyle
+	RowSel    *TableRowStyle
+	Status    *TableStatusStyle
+	Resizer   *TableResizerStyle
 }
 
 // TableClickEvent describes a mouse click event over a table
@@ -210,6 +215,7 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 	t := new(Table)
 	t.Panel.Initialize(width, height)
 	t.styles = &StyleDefault.Table
+	t.rowCursor = -1
 
 	// Initialize table header
 	t.header.Initialize(0, 0)
@@ -291,8 +297,8 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 	t.Panel.Subscribe(OnScroll, t.onScroll)
 	t.Panel.Subscribe(OnMouseUp, t.onMouse)
 	t.Panel.Subscribe(OnMouseDown, t.onMouse)
-	t.Panel.Subscribe(OnKeyDown, t.onKeyEvent)
-	t.Panel.Subscribe(OnKeyRepeat, t.onKeyEvent)
+	t.Panel.Subscribe(OnKeyDown, t.onKey)
+	t.Panel.Subscribe(OnKeyRepeat, t.onKey)
 	t.Panel.Subscribe(OnResize, t.onResize)
 	return t, nil
 }
@@ -302,6 +308,13 @@ func (t *Table) SetStyles(ts *TableStyles) {
 
 	t.styles = ts
 	t.recalc()
+}
+
+// SetSelectionType sets this table selection type
+// Possible values are: TableSelSingleRow|TableSelMultiRow
+func (t *Table) SetSelectionType(sel TableSelType) {
+
+	t.selType = sel
 }
 
 // ShowHeader shows or hides the table header
@@ -494,8 +507,8 @@ func (t *Table) SetColWidth(colid string, width float32) {
 		panic(fmt.Sprintf("No column with id:%s", colid))
 	}
 	// Checks width minimum and maximuns
-	if width < 0 {
-		width = 16
+	if width < tableColMinWidth {
+		width = tableColMinWidth
 	}
 	if width > t.ContentHeight() {
 		width = t.ContentHeight()
@@ -550,20 +563,25 @@ func (t *Table) Clear() {
 	}
 	t.rows = nil
 	t.firstRow = 0
+	t.rowCursor = -1
 	t.recalc()
 	t.Dispatch(OnTableRowCount, nil)
 }
 
-// SelectedRow returns the index of the currently selected row
-// or -1 if no row selected
-func (t *Table) SelectedRow() int {
+// SelectedRows returns a slice with the indexes of the currently selected rows
+// If no row are selected returns an empty slice
+func (t *Table) SelectedRows() []int {
 
+	res := make([]int, 0)
+	if t.rowCursor >= 0 {
+		res = append(res, t.rowCursor)
+	}
 	for ri := 0; ri < len(t.rows); ri++ {
-		if t.rows[ri].selected {
-			return ri
+		if t.rows[ri].selected && ri != t.rowCursor {
+			res = append(res, ri)
 		}
 	}
-	return -1
+	return res
 }
 
 // ShowStatus sets the visibility of the status lines at the bottom of the table
@@ -714,8 +732,9 @@ func (t *Table) scrollDown(n int) {
 	}
 
 	t.firstRow += n
-	if t.SelectedRow() < t.firstRow {
-		t.selectRow(t.firstRow)
+	if t.rowCursor < t.firstRow {
+		t.rowCursor = t.firstRow
+		t.Dispatch(OnChange, nil)
 	}
 	t.recalc()
 	return
@@ -733,8 +752,9 @@ func (t *Table) scrollUp(n int) {
 	}
 	t.firstRow -= n
 	lastRow := t.lastRow - n
-	if t.SelectedRow() > lastRow {
-		t.selectRow(lastRow)
+	if t.rowCursor > lastRow {
+		t.rowCursor = lastRow
+		t.Dispatch(OnChange, nil)
 	}
 	t.recalc()
 }
@@ -819,7 +839,7 @@ func (t *Table) onMouse(evname string, ev interface{}) {
 	switch evname {
 	case OnMouseDown:
 		// If over a resizable column border, shows the resizer panel
-		if t.resizeCol >= 0 {
+		if t.resizeCol >= 0 && e.Button == window.MouseButtonLeft {
 			t.resizing = true
 			height := t.ContentHeight()
 			if t.statusPanel.Visible() {
@@ -832,16 +852,21 @@ func (t *Table) onMouse(evname string, ev interface{}) {
 			t.SetTopChild(&t.resizerPanel)
 			return
 		}
-		// Creates and dispatch TableClickEvent
+		// Find click position
 		var tce TableClickEvent
 		tce.MouseEvent = *e
 		t.findClick(&tce)
-		t.Dispatch(OnTableClick, tce)
-		// Select left clicked row
-		if tce.Button == window.MouseButtonLeft && tce.Row >= 0 {
-			t.selectRow(tce.Row)
+		// If row is clicked, selects it
+		if tce.Row >= 0 && e.Button == window.MouseButtonLeft {
+			t.rowCursor = tce.Row
+			if t.selType == TableSelMultiRow && e.Mods == window.ModControl {
+				t.toggleRowSel(t.rowCursor)
+			}
 			t.recalc()
+			t.Dispatch(OnChange, nil)
 		}
+		// Creates and dispatch TableClickEvent for user's context menu
+		t.Dispatch(OnTableClick, tce)
 	case OnMouseUp:
 		// If user was resizing a column, hides the resizer and
 		// sets the new column width if possible
@@ -862,7 +887,7 @@ func (t *Table) onMouse(evname string, ev interface{}) {
 }
 
 // onKeyEvent receives subscribed key events for this table
-func (t *Table) onKeyEvent(evname string, ev interface{}) {
+func (t *Table) onKey(evname string, ev interface{}) {
 
 	kev := ev.(*window.KeyEvent)
 	if kev.Keycode == window.KeyUp && kev.Mods == 0 {
@@ -877,6 +902,10 @@ func (t *Table) onKeyEvent(evname string, ev interface{}) {
 		t.firstPage()
 	} else if kev.Keycode == window.KeyPageDown && kev.Mods == window.ModControl {
 		t.lastPage()
+	} else if kev.Keycode == window.KeyEnter && kev.Mods == window.ModControl {
+		if t.selType == TableSelMultiRow {
+			t.toggleRowSel(t.rowCursor)
+		}
 	}
 }
 
@@ -978,22 +1007,22 @@ func (t *Table) findClick(ev *TableClickEvent) {
 func (t *Table) selNext() {
 
 	// If selected row is last, nothing to do
-	sel := t.SelectedRow()
-	if sel == len(t.rows)-1 {
+	if t.rowCursor == len(t.rows)-1 {
 		return
 	}
 	// If no selected row, selects first visible row
-	if sel < 0 {
-		t.selectRow(t.firstRow)
+	if t.rowCursor < 0 {
+		t.rowCursor = t.firstRow
 		t.recalc()
+		t.Dispatch(OnChange, nil)
 		return
 	}
 	// Selects next row
-	next := sel + 1
-	t.selectRow(next)
+	t.rowCursor++
+	t.Dispatch(OnChange, nil)
 
 	// Scroll down if necessary
-	if next > t.lastRow {
+	if t.rowCursor > t.lastRow {
 		t.scrollDown(1)
 	} else {
 		t.recalc()
@@ -1004,19 +1033,20 @@ func (t *Table) selNext() {
 func (t *Table) selPrev() {
 
 	// If selected row is first, nothing to do
-	sel := t.SelectedRow()
+	sel := t.rowCursor
 	if sel == 0 {
 		return
 	}
 	// If no selected row, selects last visible row
 	if sel < 0 {
-		t.selectRow(t.lastRow)
+		t.rowCursor = t.lastRow
 		t.recalc()
+		t.Dispatch(OnChange, nil)
 		return
 	}
 	// Selects previous row and selects previous
 	prev := sel - 1
-	t.selectRow(prev)
+	t.rowCursor = prev
 
 	// Scroll up if necessary
 	if prev < t.firstRow && t.firstRow > 0 {
@@ -1024,6 +1054,7 @@ func (t *Table) selPrev() {
 	} else {
 		t.recalc()
 	}
+	t.Dispatch(OnChange, nil)
 }
 
 // nextPage shows the next page of rows and selects its first row
@@ -1033,8 +1064,9 @@ func (t *Table) nextPage() {
 		return
 	}
 	if t.lastRow == len(t.rows)-1 {
-		t.selectRow(t.lastRow)
+		t.rowCursor = t.lastRow
 		t.recalc()
+		t.Dispatch(OnChange, nil)
 		return
 	}
 	plen := t.lastRow - t.firstRow
@@ -1048,8 +1080,9 @@ func (t *Table) nextPage() {
 func (t *Table) prevPage() {
 
 	if t.firstRow == 0 {
-		t.selectRow(0)
+		t.rowCursor = 0
 		t.recalc()
+		t.Dispatch(OnChange, nil)
 		return
 	}
 	plen := t.lastRow - t.firstRow
@@ -1066,8 +1099,9 @@ func (t *Table) firstPage() {
 		return
 	}
 	t.firstRow = 0
-	t.selectRow(0)
+	t.rowCursor = 0
 	t.recalc()
+	t.Dispatch(OnChange, nil)
 }
 
 // lastPage shows the last page of rows and selects the last row
@@ -1078,22 +1112,27 @@ func (t *Table) lastPage() {
 	}
 	maxFirst := t.calcMaxFirst()
 	t.firstRow = maxFirst
-	t.selectRow(len(t.rows) - 1)
+	t.rowCursor = len(t.rows) - 1
 	t.recalc()
+	t.Dispatch(OnChange, nil)
 }
 
-// selectRow sets the specified row as selected and unselects all other rows
+// selectRow selects the specified row.
+// Should be used only when multi row selection is enabled
 func (t *Table) selectRow(ri int) {
 
-	for i := 0; i < len(t.rows); i++ {
-		trow := t.rows[i]
-		if i == ri {
-			trow.selected = true
-			t.Dispatch(OnChange, nil)
-		} else {
-			trow.selected = false
-		}
-	}
+	trow := t.rows[ri]
+	trow.selected = true
+	t.Dispatch(OnChange, nil)
+}
+
+// toggleRowSel toogles the specified row selection state
+// Should be used only when multi row selection is enabled
+func (t *Table) toggleRowSel(ri int) {
+
+	trow := t.rows[ri]
+	trow.selected = !trow.selected
+	t.Dispatch(OnChange, nil)
 }
 
 // recalcHeader recalculates and sets the position and size of the header panels
@@ -1312,19 +1351,25 @@ func (t *Table) onVScrollBar(evname string, ev interface{}) {
 	first := int(math.Floor((float64(maxFirst) * pos) + 0.5))
 
 	// Sets the new selected row
-	sel := t.SelectedRow()
+	sel := t.rowCursor
+	selChange := false
 	if sel < first {
-		t.selectRow(first)
+		t.rowCursor = first
+		selChange = true
 	} else {
 		lines := first - t.firstRow
 		lastRow := t.lastRow + lines
 		if sel > lastRow {
-			t.selectRow(lastRow)
+			t.rowCursor = lastRow
+			selChange = true
 		}
 	}
 	t.scrollBarEvent = true
 	t.firstRow = first
 	t.recalc()
+	if selChange {
+		t.Dispatch(OnChange, nil)
+	}
 }
 
 // calcMaxFirst calculates the maximum index of the first visible row
@@ -1357,7 +1402,9 @@ func (t *Table) updateRowStyle(ri int) {
 
 	row := t.rows[ri]
 	var trs *TableRowStyle
-	if row.selected {
+	if ri == t.rowCursor {
+		trs = t.styles.RowCursor
+	} else if row.selected {
 		trs = t.styles.RowSel
 	} else {
 		if ri%2 == 0 {
