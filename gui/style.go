@@ -753,12 +753,28 @@ func setupDefaultStyle() {
 			BgColor:     math32.Color{0.7, 0.7, 0.7},
 			FgColor:     fgColor,
 		},
-		Row: &TableRowStyles{
+		RowEven: &TableRowStyles{
 			Normal: TableRowStyle{
 				Border:      BorderSizes{0, 1, 1, 0},
 				Paddings:    BorderSizes{2, 2, 2, 2},
 				BorderColor: math32.Color4{0.6, 0.6, 0.6, 1},
-				BgColor:     bgColor,
+				BgColor:     math32.Color{0.85, 0.85, 0.85},
+				FgColor:     fgColor,
+			},
+			Selected: TableRowStyle{
+				Border:      BorderSizes{0, 1, 1, 0},
+				Paddings:    BorderSizes{2, 2, 2, 2},
+				BorderColor: math32.Color4{0.6, 0.6, 0.6, 1},
+				BgColor:     math32.Color{0.7, 0.7, 0.7},
+				FgColor:     fgColor,
+			},
+		},
+		RowOdd: &TableRowStyles{
+			Normal: TableRowStyle{
+				Border:      BorderSizes{0, 1, 1, 0},
+				Paddings:    BorderSizes{2, 2, 2, 2},
+				BorderColor: math32.Color4{0.6, 0.6, 0.6, 1},
+				BgColor:     math32.Color{0.82, 0.82, 0.82},
 				FgColor:     fgColor,
 			},
 			Selected: TableRowStyle{
@@ -775,6 +791,12 @@ func setupDefaultStyle() {
 			BorderColor: borderColor,
 			BgColor:     math32.Color{0.9, 0.9, 0.9},
 			FgColor:     fgColor,
+		},
+		Resizer: &TableResizerStyle{
+			Width:       4,
+			Border:      BorderSizes{0, 0, 0, 0},
+			BorderColor: borderColor,
+			BgColor:     math32.Color4{0.4, 0.4, 0.4, 0.6},
 		},
 	}
 }

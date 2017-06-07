@@ -59,7 +59,9 @@ type Table struct {
 	statusPanel    Panel        // optional bottom status panel
 	statusLabel    *Label       // status label
 	scrollBarEvent bool         // do not update the scrollbar value in recalc() if true
+	resizerPanel   Panel        // resizer panel
 	resizeCol      int          // column being resized
+	resizerX       float32      // initial resizer x coordinate
 	resizing       bool         // draggin the column resizer
 }
 
@@ -113,7 +115,7 @@ type TableRowStyles struct {
 	Selected TableRowStyle
 }
 
-// TableStatusStyle describes the style of the table status lineow
+// TableStatusStyle describes the style of the table status line panel
 type TableStatusStyle struct {
 	Border      BorderSizes
 	Paddings    BorderSizes
@@ -122,11 +124,21 @@ type TableStatusStyle struct {
 	FgColor     math32.Color
 }
 
+// TableResizerStyle describes the style of the table resizer panel
+type TableResizerStyle struct {
+	Width       float32
+	Border      BorderSizes
+	BorderColor math32.Color4
+	BgColor     math32.Color4
+}
+
 // TableStyles describes all styles of the table header and rows
 type TableStyles struct {
-	Header *TableHeaderStyle
-	Row    *TableRowStyles
-	Status *TableStatusStyle
+	Header  *TableHeaderStyle
+	RowEven *TableRowStyles
+	RowOdd  *TableRowStyles
+	Status  *TableStatusStyle
+	Resizer *TableResizerStyle
 }
 
 // TableClickEvent describes a mouse click event over a table
@@ -163,6 +175,7 @@ type tableColHeader struct {
 	resize     bool            // column can be resized by user
 	order      int             // row columns order
 	sorted     int             // current sorted status
+	xl         float32         // left border coordinate in pixels
 	xr         float32         // right border coordinate in pixels
 }
 
@@ -246,6 +259,12 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 	t.Panel.Add(&t.header)
 	t.recalcHeader()
 
+	// Creates resizer panel
+	t.resizerPanel.Initialize(t.styles.Resizer.Width, 0)
+	t.resizerPanel.SetVisible(false)
+	t.applyResizerStyle()
+	t.Panel.Add(&t.resizerPanel)
+
 	// Creates status panel
 	t.statusPanel.Initialize(0, 0)
 	t.statusPanel.SetVisible(false)
@@ -266,6 +285,13 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 	t.Panel.Subscribe(OnKeyRepeat, t.onKeyEvent)
 	t.Panel.Subscribe(OnResize, t.onResize)
 	return t, nil
+}
+
+// SetStyles set this table styles overriding the default
+func (t *Table) SetStyles(ts *TableStyles) {
+
+	t.styles = ts
+	t.recalc()
 }
 
 // ShowHeader shows or hides the table header
@@ -402,12 +428,12 @@ func (t *Table) SetColFormat(id, format string) error {
 // SetColOrder sets the exhibition order of the specified column.
 // The previous column which has the specified order will have
 // the original column order.
-func (t *Table) SetColOrder(id string, order int) {
+func (t *Table) SetColOrder(colid string, order int) {
 
 	// Checks column id
-	c := t.header.cmap[id]
+	c := t.header.cmap[colid]
 	if c == nil {
-		panic(fmt.Sprintf("No column with id:%s", id))
+		panic(fmt.Sprintf("No column with id:%s", colid))
 	}
 	// Checks exhibition order
 	if order < 0 || order > len(t.header.cols) {
@@ -428,6 +454,44 @@ func (t *Table) SetColOrder(id string, order int) {
 		}
 	}
 
+	// Recalculates the header and all rows
+	t.recalcHeader()
+	for ri := 0; ri < len(t.rows); ri++ {
+		t.recalcRow(ri)
+	}
+	t.recalc()
+}
+
+// EnableColResize enable or disables if the specified column can be resized by the
+// user using the mouse.
+func (t *Table) EnableColResize(colid string, enable bool) {
+
+	// Checks column id
+	c := t.header.cmap[colid]
+	if c == nil {
+		panic(fmt.Sprintf("No column with id:%s", colid))
+	}
+	c.resize = enable
+}
+
+// SetColWidth sets the specified column width and may
+// change the widths of the columns to the right
+func (t *Table) SetColWidth(colid string, width float32) {
+
+	// Checks column id
+	c := t.header.cmap[colid]
+	if c == nil {
+		panic(fmt.Sprintf("No column with id:%s", colid))
+	}
+	// Checks width minimum and maximuns
+	if width < 0 {
+		width = 16
+	}
+	if width > t.ContentHeight() {
+		width = t.ContentHeight()
+	}
+
+	c.SetWidth(width)
 	// Recalculates the header and all rows
 	t.recalcHeader()
 	for ri := 0; ri < len(t.rows); ri++ {
@@ -707,12 +771,13 @@ func (t *Table) onCursorPos(evname string, ev interface{}) {
 	kev := ev.(*window.CursorEvent)
 	cx, _ := t.ContentCoords(kev.Xpos, kev.Ypos)
 
-	// User is dragging the resizer
+	// If user is dragging the resizer, updates its position
 	if t.resizing {
+		t.resizerPanel.SetPosition(cx, 0)
 		return
 	}
 
-	// Find column with right border closest to current position
+	// Checks if the mouse cursor is near the border of a resizable column
 	found := false
 	for ci := 0; ci < len(t.header.cols); ci++ {
 		c := t.header.cols[ci]
@@ -721,13 +786,15 @@ func (t *Table) onCursorPos(evname string, ev interface{}) {
 			if c.resize {
 				found = true
 				t.resizeCol = ci
+				t.resizerX = c.xr
+				t.root.SetCursorHResize()
 			}
 			break
 		}
 	}
-	if found {
-		t.root.SetCursorHResize()
-	} else {
+	// If column not found but previously was near a resizable column,
+	// resets the the window cursor.
+	if !found && t.resizeCol >= 0 {
 		t.root.SetCursorNormal()
 		t.resizeCol = -1
 	}
@@ -741,9 +808,18 @@ func (t *Table) onMouse(evname string, ev interface{}) {
 	t.root.SetKeyFocus(t)
 	switch evname {
 	case OnMouseDown:
-		// If
+		// If over a resizable column border, shows the resizer panel
 		if t.resizeCol >= 0 {
 			t.resizing = true
+			height := t.ContentHeight()
+			if t.statusPanel.Visible() {
+				height -= t.statusPanel.Height()
+			}
+			px := t.resizerX - t.resizerPanel.Width()/2
+			t.resizerPanel.SetPositionX(px)
+			t.resizerPanel.SetHeight(height)
+			t.resizerPanel.SetVisible(true)
+			t.SetTopChild(&t.resizerPanel)
 			return
 		}
 		// Creates and dispatch TableClickEvent
@@ -757,9 +833,18 @@ func (t *Table) onMouse(evname string, ev interface{}) {
 			t.recalc()
 		}
 	case OnMouseUp:
+		// If user was resizing a column, hides the resizer and
+		// sets the new column width if possible
 		if t.resizing {
 			t.resizing = false
+			t.resizerPanel.SetVisible(false)
 			t.root.SetCursorNormal()
+			// Calculates the new column width
+			cx, _ := t.ContentCoords(e.Xpos, e.Ypos)
+			c := t.header.cols[t.resizeCol]
+			width := cx - c.xl
+			log.Error("width:%v", width)
+			t.SetColWidth(c.id, width)
 		}
 	default:
 		return
@@ -1025,6 +1110,7 @@ func (t *Table) recalcHeader() {
 		}
 		c.SetPosition(posx, 0)
 		c.SetVisible(true)
+		c.xl = posx
 		posx += c.Width()
 		c.xr = posx
 	}
@@ -1155,10 +1241,6 @@ func (t *Table) recalcRow(ri int) {
 	trow.SetContentWidth(px)
 }
 
-func (t *Table) sortCols() {
-
-}
-
 // rowsHeight returns the available start y coordinate and height in the table for rows,
 // considering the visibility of the header and status panels.
 func (t *Table) rowsHeight() (float32, float32) {
@@ -1265,11 +1347,21 @@ func (t *Table) calcMaxFirst() int {
 func (t *Table) updateRowStyle(ri int) {
 
 	row := t.rows[ri]
+	var trs *TableRowStyle
 	if row.selected {
-		t.applyRowStyle(row, &t.styles.Row.Selected)
-		return
+		if ri%2 == 0 {
+			trs = &t.styles.RowEven.Selected
+		} else {
+			trs = &t.styles.RowOdd.Selected
+		}
+	} else {
+		if ri%2 == 0 {
+			trs = &t.styles.RowEven.Normal
+		} else {
+			trs = &t.styles.RowOdd.Normal
+		}
 	}
-	t.applyRowStyle(row, &t.styles.Row.Normal)
+	t.applyRowStyle(row, trs)
 }
 
 // applyHeaderStyle applies style to the specified table header
@@ -1283,10 +1375,10 @@ func (t *Table) applyHeaderStyle(h *tableColHeader) {
 }
 
 // applyRowStyle applies the specified style to all cells for the specified table row
-func (t *Table) applyRowStyle(row *tableRow, trs *TableRowStyle) {
+func (t *Table) applyRowStyle(trow *tableRow, trs *TableRowStyle) {
 
-	for i := 0; i < len(row.cells); i++ {
-		cell := row.cells[i]
+	for i := 0; i < len(trow.cells); i++ {
+		cell := trow.cells[i]
 		cell.SetBordersFrom(&trs.Border)
 		cell.SetBordersColor4(&trs.BorderColor)
 		cell.SetPaddingsFrom(&trs.Paddings)
@@ -1302,6 +1394,15 @@ func (t *Table) applyStatusStyle() {
 	t.statusPanel.SetBordersColor4(&s.BorderColor)
 	t.statusPanel.SetPaddingsFrom(&s.Paddings)
 	t.statusPanel.SetColor(&s.BgColor)
+}
+
+// applyResizerStyle applies the status style
+func (t *Table) applyResizerStyle() {
+
+	s := t.styles.Resizer
+	t.resizerPanel.SetBordersFrom(&s.Border)
+	t.resizerPanel.SetBordersColor4(&s.BorderColor)
+	t.resizerPanel.SetColor4(&s.BgColor)
 }
 
 // tableSortString is an internal type implementing the sort.Interface
