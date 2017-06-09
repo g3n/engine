@@ -82,12 +82,13 @@ type Table struct {
 type TableColumn struct {
 	Id         string          // Column id used to reference the column. Must be unique
 	Header     string          // Column name shown in the table header
-	Width      float32         // Inital column width in pixels
+	Width      float32         // Initial column width in pixels
+	Minwidth   float32         // Minimum width in pixels for this column
 	Hidden     bool            // Hidden flag
 	Align      Align           // Cell content alignment: AlignLeft|AlignCenter|AlignRight
 	Format     string          // Format string for formatting the columns' cells
 	FormatFunc TableFormatFunc // Format function (overrides Format string)
-	Expand     int             // Column width expansion factor (0 no expansion)
+	Expand     float32         // Column width expansion factor (0 for no expansion)
 	Sort       TableSortType   // Column sort type
 	Resize     bool            // Allow column to be resized by user
 }
@@ -183,10 +184,11 @@ type tableColHeader struct {
 	ricon      *Label          // header right icon (sort direction)
 	id         string          // column id
 	width      float32         // initial column width
+	minWidth   float32         // minimum width
 	format     string          // column format string
 	formatFunc TableFormatFunc // column format function
 	align      Align           // column alignment
-	expand     int             // column expand factor
+	expand     float32         // column expand factor
 	sort       TableSortType   // column sort type
 	resize     bool            // column can be resized by user
 	order      int             // row columns order
@@ -241,7 +243,14 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 		c.label = NewLabel(cdesc.Header)
 		c.Add(c.label)
 		c.id = cdesc.Id
+		c.minWidth = cdesc.Minwidth
+		if c.minWidth < tableColMinWidth {
+			c.minWidth = tableColMinWidth
+		}
 		c.width = cdesc.Width
+		if c.width < c.minWidth {
+			c.width = c.minWidth
+		}
 		c.align = cdesc.Align
 		c.format = cdesc.Format
 		c.formatFunc = cdesc.FormatFunc
@@ -280,7 +289,6 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 
 	// Add header panel to the table panel
 	t.Panel.Add(&t.header)
-	t.recalcHeader()
 
 	// Creates resizer panel
 	t.resizerPanel.Initialize(t.styles.Resizer.Width, 0)
@@ -295,7 +303,6 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 	t.applyStatusStyle()
 	t.statusPanel.Add(t.statusLabel)
 	t.Panel.Add(&t.statusPanel)
-	t.recalcStatus()
 
 	// Subscribe to events
 	t.Panel.Subscribe(OnCursorEnter, t.onCursor)
@@ -307,6 +314,7 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 	t.Panel.Subscribe(OnKeyDown, t.onKey)
 	t.Panel.Subscribe(OnKeyRepeat, t.onKey)
 	t.Panel.Subscribe(OnResize, t.onResize)
+	t.recalc()
 	return t, nil
 }
 
@@ -346,11 +354,6 @@ func (t *Table) ShowColumn(col string, show bool) {
 		return
 	}
 	c.SetVisible(show)
-	t.recalcHeader()
-	// Recalculates all rows
-	for ri := 0; ri < len(t.rows); ri++ {
-		t.recalcRow(ri)
-	}
 	t.recalc()
 }
 
@@ -367,11 +370,6 @@ func (t *Table) ShowAllColumns() {
 	}
 	if !recalc {
 		return
-	}
-	t.recalcHeader()
-	// Recalculates all rows
-	for ri := 0; ri < len(t.rows); ri++ {
-		t.recalcRow(ri)
 	}
 	t.recalc()
 }
@@ -485,10 +483,6 @@ func (t *Table) SetColOrder(colid string, order int) {
 	}
 
 	// Recalculates the header and all rows
-	t.recalcHeader()
-	for ri := 0; ri < len(t.rows); ri++ {
-		t.recalcRow(ri)
-	}
 	t.recalc()
 }
 
@@ -513,19 +507,24 @@ func (t *Table) SetColWidth(colid string, width float32) {
 	if c == nil {
 		panic(fmt.Sprintf("No column with id:%s", colid))
 	}
-	// Checks width minimum and maximuns
-	if width < tableColMinWidth {
-		width = tableColMinWidth
-	}
-	if width > t.ContentWidth() {
-		width = t.ContentWidth()
-	}
+	t.setColWidth(c, width)
+}
 
-	c.SetWidth(width)
-	// Recalculates the header and all rows
-	t.recalcHeader()
-	for ri := 0; ri < len(t.rows); ri++ {
-		t.recalcRow(ri)
+// SetColExpand sets the column expand factor.
+// When the table width is increased the columns widths are
+// increased proportionally to their expand factor.
+// A column with expand factor = 0 is not increased.
+func (t *Table) SetColExpand(colid string, expand float32) {
+
+	// Checks column id
+	c := t.header.cmap[colid]
+	if c == nil {
+		panic(fmt.Sprintf("No column with id:%s", colid))
+	}
+	if expand < 0 {
+		c.expand = 0
+	} else {
+		c.expand = expand
 	}
 	t.recalc()
 }
@@ -885,7 +884,7 @@ func (t *Table) onMouse(evname string, ev interface{}) {
 			cx, _ := t.ContentCoords(e.Xpos, e.Ypos)
 			c := t.header.cols[t.resizeCol]
 			width := cx - c.xl
-			t.SetColWidth(c.id, width)
+			t.setColWidth(c, width)
 		}
 	default:
 		return
@@ -919,7 +918,6 @@ func (t *Table) onKey(evname string, ev interface{}) {
 // onResize receives subscribed resize events for this table
 func (t *Table) onResize(evname string, ev interface{}) {
 
-	t.recalcHeader()
 	t.recalc()
 	t.recalcStatus()
 }
@@ -1143,12 +1141,74 @@ func (t *Table) toggleRowSel(ri int) {
 	t.Dispatch(OnChange, nil)
 }
 
+// setColWidth sets the width of the specified column
+func (t *Table) setColWidth(c *tableColHeader, width float32) {
+
+	// Sets the column width
+	if width < c.minWidth {
+		width = c.minWidth
+	}
+	if c.Width() == width {
+		return
+	}
+	dw := width - c.Width()
+	c.SetWidth(width)
+
+	// Find the column index and if any column has expand != 0
+	hasExpand := false
+	ci := -1
+	for i := 0; i < len(t.header.cols); i++ {
+		current := t.header.cols[i]
+		if current == c {
+			ci = i
+		}
+		if current.expand > 0 && current.Visible() {
+			hasExpand = true
+		}
+	}
+	if ci >= len(t.header.cols) {
+		panic("Invalid header pointer")
+	}
+	// If no column is expandable, nothing more todo
+	if !hasExpand {
+		t.recalc()
+		return
+	}
+	// Calculates the width of the columns at the right
+	rwidth := float32(0)
+	for i := ci + 1; i < len(t.header.cols); i++ {
+		c := t.header.cols[i]
+		if !c.Visible() {
+			continue
+		}
+		rwidth += c.Width()
+	}
+	// Distributes the delta to the columns at the right
+	for i := ci + 1; i < len(t.header.cols); i++ {
+		c := t.header.cols[i]
+		if !c.Visible() {
+			continue
+		}
+		cdelta := -dw * (c.Width() / rwidth)
+		newWidth := c.Width() + cdelta
+		if newWidth < c.minWidth {
+			newWidth = c.minWidth
+		}
+		c.SetWidth(newWidth)
+	}
+	t.recalc()
+}
+
 // recalcHeader recalculates and sets the position and size of the header panels
 func (t *Table) recalcHeader() {
 
-	posx := float32(0)
+	// Calculates total width, height, expansion and available width space
+	hwidth := float32(0)
 	height := float32(0)
+	wspace := float32(0)
+	totalExpand := float32(0)
 	for ci := 0; ci < len(t.header.cols); ci++ {
+		// If column is invisible, ignore
 		c := t.header.cols[ci]
 		if !c.Visible() {
 			continue
@@ -1156,7 +1216,47 @@ func (t *Table) recalcHeader() {
 		if c.Height() > height {
 			height = c.Height()
 		}
-		// Sets right icon position
+		if c.expand > 0 {
+			totalExpand += c.expand
+		}
+		hwidth += c.Width()
+	}
+	// Total table width
+	twidth := t.ContentWidth()
+	if t.vscroll != nil && t.vscroll.Visible() {
+		twidth -= t.vscroll.Width()
+	}
+	// Available space for columns: may be negative
+	wspace = twidth - hwidth
+
+	// Sets the headers positions and widths
+	posx := float32(0)
+	for ci := 0; ci < len(t.header.cols); ci++ {
+		// If column is invisible, ignore
+		c := t.header.cols[ci]
+		if !c.Visible() {
+			continue
+		}
+		if totalExpand == 0 {
+			// If no expandable column, keeps the columns widths
+		} else if wspace >= 0 {
+			// There is space available and if column is expandable,
+			// expands it proportionaly to the other expandable columns
+			factor := c.expand / totalExpand
+			w := factor * wspace
+			c.SetWidth(c.Width() + w)
+
+		} else {
+			// The table was reduced so shrinks this column proportionally to its current width
+			factor := c.Width() / twidth
+			newWidth := c.Width() + factor*wspace
+			if newWidth < c.minWidth {
+				newWidth = c.minWidth
+			}
+			c.SetWidth(newWidth)
+		}
+
+		// Sets the right icon position inside the column header panel
 		if c.ricon != nil {
 			ix := c.ContentWidth() - c.ricon.Width()
 			if ix < 0 {
@@ -1164,6 +1264,7 @@ func (t *Table) recalcHeader() {
 			}
 			c.ricon.SetPosition(ix, 0)
 		}
+		// Sets the column header panel position
 		c.SetPosition(posx, 0)
 		c.SetVisible(true)
 		c.xl = posx
@@ -1172,15 +1273,10 @@ func (t *Table) recalcHeader() {
 	}
 
 	// Last header
-	width := t.ContentWidth() - posx
-	if width > 0 {
-		if t.vscroll != nil && t.vscroll.Visible() {
-			if width < t.vscroll.Width() {
-				width = t.vscroll.Width()
-			}
-		}
+	w := t.ContentWidth() - posx
+	if w > 0 {
 		t.header.lastPan.SetVisible(true)
-		t.header.lastPan.SetSize(width, height)
+		t.header.lastPan.SetSize(w, height)
 		t.header.lastPan.SetPosition(posx, 0)
 	} else {
 		t.header.lastPan.SetVisible(false)
@@ -1227,6 +1323,8 @@ func (t *Table) recalc() {
 		}
 	}
 	t.setVScrollBar(scroll)
+	// Recalculates the header
+	t.recalcHeader()
 
 	// Sets the position and sizes of all cells of the visible rows
 	py = starty
@@ -1238,6 +1336,7 @@ func (t *Table) recalc() {
 			trow.SetVisible(false)
 			continue
 		}
+		t.recalcRow(ri)
 		// Set row y position and visible
 		trow.SetPosition(0, py)
 		trow.SetVisible(true)
