@@ -170,9 +170,10 @@ type TableClickEvent struct {
 
 // tableHeader is panel which contains the individual header panels for each column
 type tableHeader struct {
-	Panel                            // embedded panel
-	cmap  map[string]*tableColHeader // maps column id with its panel/descriptor
-	cols  []*tableColHeader          // array of individual column headers/descriptors
+	Panel                              // embedded panel
+	cmap    map[string]*tableColHeader // maps column id with its panel/descriptor
+	cols    []*tableColHeader          // array of individual column headers/descriptors
+	lastPan Panel                      // last header panel not associated with a user column
 }
 
 // tableColHeader is panel for a column header
@@ -236,7 +237,7 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 		// Creates a column header
 		c := new(tableColHeader)
 		c.Initialize(0, 0)
-		t.applyHeaderStyle(c)
+		t.applyHeaderStyle(&c.Panel, false)
 		c.label = NewLabel(cdesc.Header)
 		c.Add(c.label)
 		c.id = cdesc.Id
@@ -272,6 +273,12 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 		t.header.cols = append(t.header.cols, c)
 		t.header.Panel.Add(c)
 	}
+	// Creates last header
+	t.header.lastPan.Initialize(0, 0)
+	t.applyHeaderStyle(&t.header.lastPan, true)
+	t.header.Panel.Add(&t.header.lastPan)
+
+	// Add header panel to the table panel
 	t.Panel.Add(&t.header)
 	t.recalcHeader()
 
@@ -510,8 +517,8 @@ func (t *Table) SetColWidth(colid string, width float32) {
 	if width < tableColMinWidth {
 		width = tableColMinWidth
 	}
-	if width > t.ContentHeight() {
-		width = t.ContentHeight()
+	if width > t.ContentWidth() {
+		width = t.ContentWidth()
 	}
 
 	c.SetWidth(width)
@@ -912,6 +919,7 @@ func (t *Table) onKey(evname string, ev interface{}) {
 // onResize receives subscribed resize events for this table
 func (t *Table) onResize(evname string, ev interface{}) {
 
+	t.recalcHeader()
 	t.recalc()
 	t.recalcStatus()
 }
@@ -1162,7 +1170,25 @@ func (t *Table) recalcHeader() {
 		posx += c.Width()
 		c.xr = posx
 	}
-	t.header.SetContentSize(posx, height)
+
+	// Last header
+	width := t.ContentWidth() - posx
+	if width > 0 {
+		if t.vscroll != nil && t.vscroll.Visible() {
+			if width < t.vscroll.Width() {
+				width = t.vscroll.Width()
+			}
+		}
+		t.header.lastPan.SetVisible(true)
+		t.header.lastPan.SetSize(width, height)
+		t.header.lastPan.SetPosition(posx, 0)
+	} else {
+		t.header.lastPan.SetVisible(false)
+	}
+
+	// Header container
+	t.header.SetWidth(t.ContentWidth())
+	t.header.SetContentHeight(height)
 }
 
 // recalcStatus recalculates and sets the position and size of the status panel and its label
@@ -1334,6 +1360,8 @@ func (t *Table) setVScrollBar(state bool) {
 		} else {
 			t.scrollBarEvent = false
 		}
+		// scroll bar must be on top of all table rows
+		t.SetTopChild(t.vscroll)
 		// Not visible
 	} else {
 		if t.vscroll != nil {
@@ -1417,10 +1445,17 @@ func (t *Table) updateRowStyle(ri int) {
 }
 
 // applyHeaderStyle applies style to the specified table header
-func (t *Table) applyHeaderStyle(h *tableColHeader) {
+// the last header panel does not the right border.
+func (t *Table) applyHeaderStyle(h *Panel, last bool) {
 
 	s := t.styles.Header
-	h.SetBordersFrom(&s.Border)
+	borders := s.Border
+	if !last {
+		h.SetBordersFrom(&borders)
+	} else {
+		borders.Right = 0
+		h.SetBordersFrom(&borders)
+	}
 	h.SetBordersColor4(&s.BorderColor)
 	h.SetPaddingsFrom(&s.Paddings)
 	h.SetColor(&s.BgColor)
