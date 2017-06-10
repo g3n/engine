@@ -1229,7 +1229,53 @@ func (t *Table) recalcHeader() {
 	// Available space for columns: may be negative
 	wspace = twidth - hwidth
 
-	// Sets the headers positions and widths
+	// If no expandable column, keeps the columns widths
+	if totalExpand == 0 {
+	} else if wspace >= 0 {
+		for ci := 0; ci < len(t.header.cols); ci++ {
+			// If column is invisible, ignore
+			c := t.header.cols[ci]
+			if !c.Visible() {
+				continue
+			}
+			// There is space available and if column is expandable,
+			// expands it proportionaly to the other expandable columns
+			factor := c.expand / totalExpand
+			w := factor * wspace
+			c.SetWidth(c.Width() + w)
+		}
+	} else {
+		acols := make([]*tableColHeader, 0)
+		awidth := float32(0)
+		widthAvail := twidth
+		// Sets the widths of the columns
+		for ci := 0; ci < len(t.header.cols); ci++ {
+			// If column is invisible, ignore
+			c := t.header.cols[ci]
+			if !c.Visible() {
+				continue
+			}
+			// The table was reduced so shrinks this column proportionally to its current width
+			factor := c.Width() / hwidth
+			newWidth := factor * twidth
+			if newWidth < c.minWidth {
+				newWidth = c.minWidth
+				c.SetWidth(newWidth)
+				widthAvail -= c.minWidth
+			} else {
+				acols = append(acols, c)
+				awidth += c.Width()
+			}
+		}
+		for ci := 0; ci < len(acols); ci++ {
+			c := acols[ci]
+			factor := c.Width() / awidth
+			newWidth := factor * widthAvail
+			c.SetWidth(newWidth)
+		}
+	}
+
+	// Sets the header panel and its internal panels positions
 	posx := float32(0)
 	for ci := 0; ci < len(t.header.cols); ci++ {
 		// If column is invisible, ignore
@@ -1237,25 +1283,6 @@ func (t *Table) recalcHeader() {
 		if !c.Visible() {
 			continue
 		}
-		if totalExpand == 0 {
-			// If no expandable column, keeps the columns widths
-		} else if wspace >= 0 {
-			// There is space available and if column is expandable,
-			// expands it proportionaly to the other expandable columns
-			factor := c.expand / totalExpand
-			w := factor * wspace
-			c.SetWidth(c.Width() + w)
-
-		} else {
-			// The table was reduced so shrinks this column proportionally to its current width
-			factor := c.Width() / twidth
-			newWidth := c.Width() + factor*wspace
-			if newWidth < c.minWidth {
-				newWidth = c.minWidth
-			}
-			c.SetWidth(newWidth)
-		}
-
 		// Sets the right icon position inside the column header panel
 		if c.ricon != nil {
 			ix := c.ContentWidth() - c.ricon.Width()
