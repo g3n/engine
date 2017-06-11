@@ -51,13 +51,13 @@ const (
 	tableSortedDesc     = 2
 	tableResizerPix     = 4
 	tableColMinWidth    = 16
+	tableErrInvRow      = "Invalid row index"
+	tableErrInvCol      = "Invalid column id"
 )
 
 //
 // Table implements a panel which can contains child panels
 // organized in rows and columns.
-// In this implementation the table data model is keep and
-// mantained by the table itself
 //
 type Table struct {
 	Panel                       // Embedded panel
@@ -348,7 +348,7 @@ func (t *Table) ShowColumn(col string, show bool) {
 
 	c := t.header.cmap[col]
 	if c == nil {
-		panic("Invalid column id")
+		panic(tableErrInvCol)
 	}
 	if c.Visible() == show {
 		return
@@ -402,9 +402,10 @@ func (t *Table) SetRows(values []map[string]interface{}) {
 
 	// Set rows values
 	for row := 0; row < len(values); row++ {
-		t.SetRow(row, values[row])
+		t.setRow(row, values[row])
 	}
 	t.firstRow = 0
+	t.rowCursor = -1
 	t.recalc()
 }
 
@@ -413,44 +414,35 @@ func (t *Table) SetRows(values []map[string]interface{}) {
 func (t *Table) SetRow(row int, values map[string]interface{}) {
 
 	if row < 0 || row >= len(t.rows) {
-		panic("Invalid row index")
+		panic(tableErrInvRow)
 	}
-	for ci := 0; ci < len(t.header.cols); ci++ {
-		c := t.header.cols[ci]
-		cv, ok := values[c.id]
-		if !ok {
-			continue
-		}
-		t.SetCell(row, c.id, cv)
-	}
-	t.recalcRow(row)
+	t.setRow(row, values)
+	t.recalc()
 }
 
 // SetCell sets the value of the cell specified by its row and column id
+// The function panics if the passed row or column id is invalid
 func (t *Table) SetCell(row int, colid string, value interface{}) {
 
 	if row < 0 || row >= len(t.rows) {
-		panic("Invalid row index")
+		panic(tableErrInvRow)
 	}
-	c := t.header.cmap[colid]
-	if c == nil {
-		return
+	if t.header.cmap[colid] == nil {
+		panic(tableErrInvCol)
 	}
-	cell := t.rows[row].cells[c.order]
-	cell.label.SetText(fmt.Sprintf(c.format, value))
-	cell.value = value
+	t.setCell(row, colid, value)
+	t.recalc()
 }
 
 // SetColFormat sets the formatting string (Printf) for the specified column
 // Update must be called to update the table.
-func (t *Table) SetColFormat(id, format string) error {
+func (t *Table) SetColFormat(id, format string) {
 
 	c := t.header.cmap[id]
 	if c == nil {
-		return fmt.Errorf("No column with id:%s", id)
+		panic(tableErrInvCol)
 	}
 	c.format = format
-	return nil
 }
 
 // SetColOrder sets the exhibition order of the specified column.
@@ -461,11 +453,11 @@ func (t *Table) SetColOrder(colid string, order int) {
 	// Checks column id
 	c := t.header.cmap[colid]
 	if c == nil {
-		panic(fmt.Sprintf("No column with id:%s", colid))
+		panic(tableErrInvCol)
 	}
 	// Checks exhibition order
 	if order < 0 || order > len(t.header.cols) {
-		panic("Invalid column id")
+		panic(tableErrInvRow)
 	}
 	// Find the exhibition order for the specified column
 	for ci := 0; ci < len(t.header.cols); ci++ {
@@ -493,7 +485,7 @@ func (t *Table) EnableColResize(colid string, enable bool) {
 	// Checks column id
 	c := t.header.cmap[colid]
 	if c == nil {
-		panic(fmt.Sprintf("No column with id:%s", colid))
+		panic(tableErrInvCol)
 	}
 	c.resize = enable
 }
@@ -505,7 +497,7 @@ func (t *Table) SetColWidth(colid string, width float32) {
 	// Checks column id
 	c := t.header.cmap[colid]
 	if c == nil {
-		panic(fmt.Sprintf("No column with id:%s", colid))
+		panic(tableErrInvCol)
 	}
 	t.setColWidth(c, width)
 }
@@ -519,7 +511,7 @@ func (t *Table) SetColExpand(colid string, expand float32) {
 	// Checks column id
 	c := t.header.cmap[colid]
 	if c == nil {
-		panic(fmt.Sprintf("No column with id:%s", colid))
+		panic(tableErrInvCol)
 	}
 	if expand < 0 {
 		c.expand = 0
@@ -538,6 +530,10 @@ func (t *Table) AddRow(values map[string]interface{}) {
 // InsertRow inserts the specified values in a new row at the specified index
 func (t *Table) InsertRow(row int, values map[string]interface{}) {
 
+	// Checks row index
+	if row < 0 || row > len(t.rows) {
+		panic(tableErrInvRow)
+	}
 	t.insertRow(row, values)
 	t.recalc()
 	t.Dispatch(OnTableRowCount, nil)
@@ -548,7 +544,7 @@ func (t *Table) RemoveRow(row int) {
 
 	// Checks row index
 	if row < 0 || row >= len(t.rows) {
-		panic("Invalid row index")
+		panic(tableErrInvRow)
 	}
 	t.removeRow(row)
 	maxFirst := t.calcMaxFirst()
@@ -614,12 +610,12 @@ func (t *Table) SetStatusText(text string) {
 func (t *Table) Rows(fi, li int) []map[string]interface{} {
 
 	if fi < 0 || fi >= len(t.header.cols) {
-		panic("Invalid first row index")
+		panic(tableErrInvRow)
 	}
 	if li < 0 {
 		li = len(t.rows) - 1
 	} else if li < 0 || li >= len(t.rows) {
-		panic("Invalid last row index")
+		panic(tableErrInvRow)
 	}
 	if li < fi {
 		panic("Last index less than first index")
@@ -641,7 +637,7 @@ func (t *Table) Rows(fi, li int) []map[string]interface{} {
 func (t *Table) Row(ri int) map[string]interface{} {
 
 	if ri < 0 || ri > len(t.header.cols) {
-		panic("Invalid row index")
+		panic(tableErrInvRow)
 	}
 	res := make(map[string]interface{})
 	trow := t.rows[ri]
@@ -657,10 +653,10 @@ func (t *Table) Cell(col string, ri int) interface{} {
 
 	c := t.header.cmap[col]
 	if c == nil {
-		panic("Invalid column id")
+		panic(tableErrInvCol)
 	}
 	if ri < 0 || ri >= len(t.rows) {
-		panic("Invalid row index")
+		panic(tableErrInvRow)
 	}
 	trow := t.rows[ri]
 	return trow.cells[c.order].value
@@ -673,7 +669,7 @@ func (t *Table) SortColumn(col string, asString bool, asc bool) {
 
 	c := t.header.cmap[col]
 	if c == nil {
-		panic("Invalid column id")
+		panic(tableErrInvCol)
 	}
 	if len(t.rows) < 2 {
 		return
@@ -688,13 +684,34 @@ func (t *Table) SortColumn(col string, asString bool, asc bool) {
 	t.recalc()
 }
 
+// setRow sets the value of all the cells of the specified row from
+// the specified map indexed by column id.
+func (t *Table) setRow(row int, values map[string]interface{}) {
+
+	for ci := 0; ci < len(t.header.cols); ci++ {
+		c := t.header.cols[ci]
+		cv, ok := values[c.id]
+		if !ok {
+			continue
+		}
+		t.setCell(row, c.id, cv)
+	}
+}
+
+// setCell sets the value of the cell specified by its row and column id
+func (t *Table) setCell(row int, colid string, value interface{}) {
+
+	c := t.header.cmap[colid]
+	if c == nil {
+		return
+	}
+	cell := t.rows[row].cells[c.order]
+	cell.label.SetText(fmt.Sprintf(c.format, value))
+	cell.value = value
+}
+
 // insertRow is the internal version of InsertRow which does not call recalc()
 func (t *Table) insertRow(row int, values map[string]interface{}) {
-
-	// Checks row index
-	if row < 0 || row > len(t.rows) {
-		panic("Invalid row index")
-	}
 
 	// Creates tableRow panel
 	trow := new(tableRow)
@@ -776,16 +793,9 @@ func (t *Table) removeRow(row int) {
 	t.rows[len(t.rows)-1] = nil
 	t.rows = t.rows[:len(t.rows)-1]
 
+	// Dispose row resources
 	trow.DisposeChildren(true)
 	trow.Dispose()
-
-	// Adjusts table first visible row if necessary
-	//if t.firstRow == row {
-	//	t.firstRow--
-	//	if t.firstRow < 0 {
-	//		t.firstRow = 0
-	//	}
-	//}
 }
 
 // onCursor process subscribed cursor events
@@ -1167,7 +1177,7 @@ func (t *Table) setColWidth(c *tableColHeader, width float32) {
 		}
 	}
 	if ci >= len(t.header.cols) {
-		panic("Invalid header pointer")
+		panic("Internal: column not found")
 	}
 	// If no column is expandable, nothing more todo
 	if !hasExpand {
