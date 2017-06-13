@@ -161,7 +161,7 @@ func NewMenu() *Menu {
 	m.styles = &StyleDefault.Menu
 	m.items = make([]*MenuItem, 0)
 	m.Panel.Subscribe(OnCursorEnter, m.onCursor)
-	m.Panel.Subscribe(OnCursorLeave, m.onCursor)
+	m.Panel.Subscribe(OnCursor, m.onCursor)
 	m.Panel.Subscribe(OnKeyDown, m.onKey)
 	m.Panel.Subscribe(OnResize, m.onResize)
 	m.update()
@@ -223,7 +223,8 @@ func (m *Menu) RemoveItem(mi *MenuItem) {
 // onCursor process subscribed cursor events
 func (m *Menu) onCursor(evname string, ev interface{}) {
 
-	if evname == OnCursorEnter {
+	switch evname {
+	case OnCursorEnter:
 		m.root.SetKeyFocus(m)
 	}
 	m.root.StopPropagation(StopAll)
@@ -586,7 +587,7 @@ func newMenuItem(text string, styles *MenuItemStyles) *MenuItem {
 		mi.label = NewLabel(text)
 		mi.Panel.Add(mi.label)
 		mi.Panel.Subscribe(OnCursorEnter, mi.onCursor)
-		mi.Panel.Subscribe(OnCursorLeave, mi.onCursor)
+		mi.Panel.Subscribe(OnCursor, mi.onCursor)
 		mi.Panel.Subscribe(OnMouseDown, mi.onMouse)
 	}
 	mi.update()
@@ -724,8 +725,8 @@ func (mi *MenuItem) onCursor(evname string, ev interface{}) {
 	switch evname {
 	case OnCursorEnter:
 		mi.menu.setSelectedItem(mi)
-	case OnCursorLeave:
 	}
+	mi.root.StopPropagation(StopAll)
 }
 
 // onMouse processes subscribed mouse events over the menu item
@@ -748,6 +749,7 @@ func (mi *MenuItem) onMouse(evname string, ev interface{}) {
 		}
 		mi.activate()
 	}
+	mi.root.StopPropagation(StopAll)
 }
 
 // activate activates this menu item dispatching OnClick events
