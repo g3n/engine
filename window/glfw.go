@@ -257,7 +257,7 @@ func (w *GLFW) SetFullScreen(full bool) {
 		w.lastX, w.lastY = w.win.GetPos()
 		w.lastWidth, w.lastHeight = w.win.GetSize()
 		// Sets monitor for full screen
-		w.win.SetMonitor(mon, 0, 0, width, height, glfw.DontCare)
+		w.win.SetMonitor(mon, 0, 0, width, height, vmode.RefreshRate)
 		w.fullScreen = true
 	} else {
 		// Restore window to previous position and size
