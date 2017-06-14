@@ -25,6 +25,11 @@ type GLFW struct {
 	handCursor      *glfw.Cursor
 	hresizeCursor   *glfw.Cursor
 	vresizeCursor   *glfw.Cursor
+	fullScreen      bool
+	lastX           int
+	lastY           int
+	lastWidth       int
+	lastHeight      int
 }
 
 // Global GLFW initialization flag
@@ -47,17 +52,11 @@ func newGLFW(width, height int, title string, full bool) (*GLFW, error) {
 		initialized = true
 	}
 
-	// If full screen requested, get primary monitor and screen size
-	var mon *glfw.Monitor
-	if full {
-		mon = glfw.GetPrimaryMonitor()
-		vmode := mon.GetVideoMode()
-		width = vmode.Width
-		height = vmode.Height
-	}
-
-	// Creates window and sets it as the current context
-	win, err := glfw.CreateWindow(width, height, title, mon, nil)
+	// Creates window and sets it as the current context.
+	// The window is created always as not full screen because if it is
+	// created as full screen it not possible to revert it to windowed mode.
+	// At the end of this function, the window will be set to full screen if requested.
+	win, err := glfw.CreateWindow(width, height, title, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -163,6 +162,10 @@ func newGLFW(width, height int, title string, full bool) (*GLFW, error) {
 	w.hresizeCursor = glfw.CreateStandardCursor(glfw.HResizeCursor)
 	w.vresizeCursor = glfw.CreateStandardCursor(glfw.VResizeCursor)
 
+	// Sets full screen if requested
+	if full {
+		w.SetFullScreen(true)
+	}
 	return w, nil
 }
 
@@ -230,11 +233,46 @@ func (w *GLFW) SetStandardCursor(cursor StandardCursor) {
 	}
 }
 
+// FullScreen returns this window full screen state for the primary monitor
+func (w *GLFW) FullScreen() bool {
+
+	return w.fullScreen
+}
+
+// SetFullScreen sets this window full screen state for the primary monitor
+func (w *GLFW) SetFullScreen(full bool) {
+
+	// If already in the desired state, nothing to do
+	if w.fullScreen == full {
+		return
+	}
+	// Sets this window full screen for the primary monitor
+	if full {
+		// Get primary monitor
+		mon := glfw.GetPrimaryMonitor()
+		vmode := mon.GetVideoMode()
+		width := vmode.Width
+		height := vmode.Height
+		// Saves current position and size of the window
+		w.lastX, w.lastY = w.win.GetPos()
+		w.lastWidth, w.lastHeight = w.win.GetSize()
+		// Sets monitor for full screen
+		w.win.SetMonitor(mon, 0, 0, width, height, glfw.DontCare)
+		w.fullScreen = true
+	} else {
+		// Restore window to previous position and size
+		w.win.SetMonitor(nil, w.lastX, w.lastY, w.lastWidth, w.lastHeight, glfw.DontCare)
+		w.fullScreen = false
+	}
+}
+
+// ShouldClose returns the current state of this window  should close flag
 func (w *GLFW) ShouldClose() bool {
 
 	return w.win.ShouldClose()
 }
 
+// SetShouldClose sets the state of this windows should close flag
 func (w *GLFW) SetShouldClose(v bool) {
 
 	w.win.SetShouldClose(v)

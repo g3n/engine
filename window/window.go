@@ -30,6 +30,8 @@ type IWindow interface {
 	SwapBuffers()
 	ShouldClose() bool
 	SetShouldClose(bool)
+	FullScreen() bool
+	SetFullScreen(bool)
 	Destroy()
 	PollEvents()
 	GetTime() float64
