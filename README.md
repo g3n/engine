@@ -7,6 +7,10 @@ G3N was heavily inspired and based on the [three.js](https://threejs.org/) Javas
 
 ### **To see G3N in action try the [G3N demo](https://github.com/g3n/g3nd).**
 
+<p align="center">
+  <img style="float: right;" src="https://github.com/g3n/g3n.github.io/blob/master/g3n_banner_small.png" alt="G3N Banner"/>
+</p>
+
 # Dependencies
 
 The engine needs an OpenGL driver installed in the system and
