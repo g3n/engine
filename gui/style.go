@@ -37,6 +37,7 @@ type Style struct {
 	ControlFolder ControlFolderStyles
 	Menu          MenuStyles
 	Table         TableStyles
+	ImageButton   ImageButtonStyles
 }
 
 const (
@@ -795,4 +796,44 @@ func setupDefaultStyle() {
 			BgColor:     math32.Color4{0.4, 0.4, 0.4, 0.6},
 		},
 	}
+
+	// Button styles
+	StyleDefault.ImageButton = ImageButtonStyles{
+		Normal: ImageButtonStyle{
+			Border:      borderSizes,
+			Paddings:    BorderSizes{0, 0, 0, 0},
+			BorderColor: borderColor,
+			BgColor:     bgColor4,
+			FgColor:     fgColor,
+		},
+		Over: ImageButtonStyle{
+			Border:      borderSizes,
+			Paddings:    BorderSizes{0, 0, 0, 0},
+			BorderColor: borderColor,
+			BgColor:     bgColor4Over,
+			FgColor:     fgColor,
+		},
+		Focus: ImageButtonStyle{
+			Border:      borderSizes,
+			Paddings:    BorderSizes{0, 0, 0, 0},
+			BorderColor: borderColor,
+			BgColor:     bgColor4Over,
+			FgColor:     fgColor,
+		},
+		Pressed: ImageButtonStyle{
+			Border:      BorderSizes{2, 2, 2, 2},
+			Paddings:    BorderSizes{0, 0, 0, 0},
+			BorderColor: borderColor,
+			BgColor:     bgColor4Over,
+			FgColor:     fgColor,
+		},
+		Disabled: ImageButtonStyle{
+			Border:      borderSizes,
+			Paddings:    BorderSizes{0, 0, 0, 0},
+			BorderColor: borderColorDis,
+			BgColor:     bgColor4,
+			FgColor:     fgColorDis,
+		},
+	}
+
 }

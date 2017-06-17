@@ -45,6 +45,18 @@ func NewImageFromTex(tex *texture.Texture2D) *Image {
 	return i
 }
 
+// SetTexture changes the image texture to the specified texture2D.
+// It returns a pointer to the previous texture.
+func (i *Image) SetTexture(tex *texture.Texture2D) *texture.Texture2D {
+
+	prevtex := i.tex
+	i.Material().RemoveTexture(prevtex)
+	i.tex = tex
+	i.Panel.SetContentSize(float32(i.tex.Width()), float32(i.tex.Height()))
+	i.Material().AddTexture(i.tex)
+	return prevtex
+}
+
 //func (i *Image) Clone() *Image {
 //
 //	return NewImageFromTex(i.tex.Clone())
