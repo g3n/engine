@@ -4,8 +4,12 @@
 
 G3N is a basic (for now!) OpenGL 3D game engine written in Go.
 G3N was heavily inspired and based on the [three.js](https://threejs.org/) Javascript 3D library.
-If you are curious about G3N and would like to see it in action
-we recommend that you install the [G3N demo program](https://github.com/g3n/g3nd).
+
+### **To see G3N in action try the [G3N demo](https://github.com/g3n/g3nd).**
+
+<p align="center">
+  <img style="float: right;" src="https://github.com/g3n/g3n.github.io/blob/master/g3n_banner_small.png" alt="G3N Banner"/>
+</p>
 
 # Dependencies
 
