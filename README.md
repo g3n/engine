@@ -12,9 +12,6 @@ G3N was heavily inspired and based on the [three.js](https://threejs.org/) Javas
   <img style="float: right;" src="https://github.com/g3n/g3n.github.io/blob/master/g3n_banner_small.png" alt="G3N Banner"/>
 </p>
 
-# Communication
-Join our [channel](https://gophers.slack.com/messages/g3n) on Gophers Slack.
-
 # Dependencies
 
 The engine needs an OpenGL driver installed in the system and
@@ -192,4 +189,7 @@ to build a user guide in the [wiki](https://github.com/g3n/engine/wiki).
 If you spot a bug or create a new feature you are encouraged to
 send pull requests.
 
+# Community
+
+Join our [channel](https://gophers.slack.com/messages/g3n) on Gophers Slack.
 
