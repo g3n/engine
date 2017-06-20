@@ -52,19 +52,25 @@ type GLS struct {
 	blendDstAlpha       uint32            // cached last set blend destination alpha value
 	polygonOffsetFactor float32           // cached last set polygon offset factor
 	polygonOffsetUnits  float32           // cached last set polygon offset units
-	cbuf                []byte            // pre allocated buffer to convert Go strings to C strings
+	gobuf               []byte            // pre allocated buffer to convert Go strings to C strings
 }
 
 // Stats contains several counter
 type Stats struct {
-	Vaos     int // Number of Vertex Array Objects
-	Vbos     int // Number of Vertex Buffer Objects
-	Textures int // Number of Textures
-	// Cummulative fields
-	Caphits   uint64 // Number of hits for Enable/Disable
-	Unisets   uint64 // Number of uniform sets
-	Drawcalls uint64 // Number of draw calls
+	Vaos      int    // Number of Vertex Array Objects
+	Vbos      int    // Number of Vertex Buffer Objects
+	Textures  int    // Number of Textures
+	Caphits   uint64 // Cummulative number of hits for Enable/Disable
+	Unisets   uint64 // Cummulative number of uniform sets
+	Drawcalls uint64 // Cummulative number of draw calls
 }
+
+// Polygon side view.
+const (
+	FrontSide = iota + 1
+	BackSide
+	DoubleSide
+)
 
 const (
 	capUndef    = 0
@@ -73,13 +79,6 @@ const (
 	uintUndef   = math.MaxUint32
 	intFalse    = 0
 	intTrue     = 1
-)
-
-// Polygon side view.
-const (
-	FrontSide = iota + 1
-	BackSide
-	DoubleSide
 )
 
 // New creates and returns a new instance of an GLS object
@@ -98,7 +97,7 @@ func New() (*GLS, error) {
 	gs.SetDefaultState()
 	gs.checkErrors = true
 	// Preallocates buffer for C string with initial size
-	gs.cbuf = make([]byte, 1*1024)
+	gs.gobuf = make([]byte, 1*1024)
 	return gs, nil
 }
 
@@ -401,7 +400,7 @@ func (gs *GLS) GenVertexArray() uint32 {
 
 func (gs *GLS) GetAttribLocation(program uint32, name string) int32 {
 
-	loc := C.glGetAttribLocation(C.GLuint(program), gs.cbufStr(name))
+	loc := C.glGetAttribLocation(C.GLuint(program), gs.gobufStr(name))
 	return int32(loc)
 }
 
@@ -418,8 +417,8 @@ func (gs *GLS) GetProgramInfoLog(program uint32) string {
 	if length == 0 {
 		return ""
 	}
-	C.glGetProgramInfoLog(C.GLuint(program), C.GLsizei(length), nil, gs.cbufSize(uint32(length)))
-	return string(gs.cbuf[:length])
+	C.glGetProgramInfoLog(C.GLuint(program), C.GLsizei(length), nil, gs.gobufSize(uint32(length)))
+	return string(gs.gobuf[:length])
 }
 
 // GetShaderInfoLog returns the information log for the specified shader object.
@@ -430,20 +429,20 @@ func (gs *GLS) GetShaderInfoLog(shader uint32) string {
 	if length == 0 {
 		return ""
 	}
-	C.glGetShaderInfoLog(C.GLuint(shader), C.GLsizei(length), nil, gs.cbufSize(uint32(length)))
-	return string(gs.cbuf[:length])
+	C.glGetShaderInfoLog(C.GLuint(shader), C.GLsizei(length), nil, gs.gobufSize(uint32(length)))
+	return string(gs.gobuf[:length])
 }
 
 func (gs *GLS) GetString(name uint32) string {
 
-	cbufStr := C.glGetString(C.GLenum(name))
-	return C.GoString((*C.char)(unsafe.Pointer(cbufStr)))
+	cs := C.glGetString(C.GLenum(name))
+	return C.GoString((*C.char)(unsafe.Pointer(cs)))
 }
 
 // GetUniformLocation returns the location of a uniform variable for the specified program.
 func (gs *GLS) GetUniformLocation(program uint32, name string) int32 {
 
-	loc := C.glGetUniformLocation(C.GLuint(program), gs.cbufStr(name))
+	loc := C.glGetUniformLocation(C.GLuint(program), gs.gobufStr(name))
 	return int32(loc)
 }
 
@@ -466,9 +465,9 @@ func (gs *GLS) LinkProgram(program uint32) {
 	C.glLinkProgram(C.GLuint(program))
 }
 
-func (gs *GLS) SetDepthTest(mode bool) {
+func (gs *GLS) SetDepthTest(enable bool) {
 
-	if mode {
+	if enable {
 		gs.Enable(DEPTH_TEST)
 	} else {
 		gs.Disable(DEPTH_TEST)
@@ -505,7 +504,8 @@ func (gs *GLS) GetShaderiv(shader, pname uint32, params *int32) {
 
 func (gs *GLS) ShaderSource(shader uint32, src string) {
 
-	csource := gs.cbufStr(src)
+	csource := C.CString(src)
+	defer C.free(unsafe.Pointer(csource))
 	C.glShaderSource(C.GLuint(shader), 1, (**C.GLchar)(unsafe.Pointer(&csource)), nil)
 }
 
@@ -688,24 +688,24 @@ func bool2c(b bool) C.GLboolean {
 	return C.GLboolean(0)
 }
 
-// cbufStr converts a Go String to a C string copying it to a single pre-allocated buffer
+// gobufStr converts a Go String to a C string copying it to a single pre-allocated buffer
 // and returning a pointer to the start of the buffer
-func (gs *GLS) cbufStr(s string) *C.GLchar {
+func (gs *GLS) gobufStr(s string) *C.GLchar {
 
-	if len(s)+1 > len(gs.cbuf) {
-		gs.cbuf = make([]byte, len(s)+1)
+	if len(s)+1 > len(gs.gobuf) {
+		gs.gobuf = make([]byte, len(s)+1)
 	}
-	copy(gs.cbuf, s)
-	gs.cbuf[len(s)] = 0
-	return (*C.GLchar)(unsafe.Pointer(&gs.cbuf[0]))
+	copy(gs.gobuf, s)
+	gs.gobuf[len(s)] = 0
+	return (*C.GLchar)(unsafe.Pointer(&gs.gobuf[0]))
 }
 
-// cbufSize returns a pointer to C buffer with the specified size not including the terminator.
+// gobufSize returns a pointer to C buffer with the specified size not including the terminator.
 // Currently the function uses a single pre-allocated area to avoid Go allocations
-func (gs *GLS) cbufSize(size uint32) *C.GLchar {
+func (gs *GLS) gobufSize(size uint32) *C.GLchar {
 
-	if size+1 > uint32(len(gs.cbuf)) {
-		gs.cbuf = make([]byte, size+1)
+	if size+1 > uint32(len(gs.gobuf)) {
+		gs.gobuf = make([]byte, size+1)
 	}
-	return (*C.GLchar)(unsafe.Pointer(&gs.cbuf[0]))
+	return (*C.GLchar)(unsafe.Pointer(&gs.gobuf[0]))
 }
