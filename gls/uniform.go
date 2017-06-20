@@ -351,12 +351,12 @@ func (uni *UniformMatrix3f) GetMatrix3() math32.Matrix3 {
 
 func (uni *UniformMatrix3f) Transfer(gl *GLS) {
 
-	gl.UniformMatrix3fv(uni.Location(gl), 1, false, uni.v[0:9])
+	gl.UniformMatrix3fv(uni.Location(gl), 1, false, &uni.v[0])
 }
 
 func (uni *UniformMatrix3f) TransferIdx(gl *GLS, idx int) {
 
-	gl.UniformMatrix3fv(uni.LocationIdx(gl, idx), 1, false, uni.v[0:9])
+	gl.UniformMatrix3fv(uni.LocationIdx(gl, idx), 1, false, &uni.v[0])
 }
 
 //
@@ -392,10 +392,10 @@ func (uni *UniformMatrix4f) GetMatrix4() math32.Matrix4 {
 
 func (uni *UniformMatrix4f) Transfer(gl *GLS) {
 
-	gl.UniformMatrix4fv(uni.Location(gl), 1, false, uni.v[0:16])
+	gl.UniformMatrix4fv(uni.Location(gl), 1, false, &uni.v[0])
 }
 
 func (uni *UniformMatrix4f) TransferIdx(gl *GLS, idx int) {
 
-	gl.UniformMatrix4fv(uni.LocationIdx(gl, idx), 1, false, uni.v[0:16])
+	gl.UniformMatrix4fv(uni.LocationIdx(gl, idx), 1, false, &uni.v[0])
 }

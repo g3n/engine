@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/g3n/engine/math32"
-	"github.com/go-gl/gl/v3.3-core/gl"
 	"io"
 	"strconv"
 	"strings"
@@ -35,8 +34,8 @@ type shaderInfo struct {
 
 // Map shader types to names
 var shaderNames = map[uint32]string{
-	gl.VERTEX_SHADER:   "Vertex Shader",
-	gl.FRAGMENT_SHADER: "Fragment Shader",
+//gl.VERTEX_SHADER:   "Vertex Shader",
+//gl.FRAGMENT_SHADER: "Fragment Shader",
 }
 
 // NewProgram creates a new empty shader program object.
@@ -75,7 +74,7 @@ func (prog *Program) Build() error {
 	}
 
 	// Create program
-	prog.handle = gl.CreateProgram()
+	prog.handle = prog.gs.CreateProgram()
 	if prog.handle == 0 {
 		return fmt.Errorf("Error creating program")
 	}
@@ -84,7 +83,7 @@ func (prog *Program) Build() error {
 	defer func() {
 		for _, sinfo := range prog.shaders {
 			if sinfo.handle != 0 {
-				gl.DeleteShader(sinfo.handle)
+				prog.gs.DeleteShader(sinfo.handle)
 				sinfo.handle = 0
 			}
 		}
@@ -112,9 +111,9 @@ func (prog *Program) Build() error {
 		}
 		deftext := strings.Join(deflines, "\n")
 		// Compile shader
-		shader, err := CompileShader(sinfo.stype, sinfo.source+deftext)
+		shader, err := prog.CompileShader(sinfo.stype, sinfo.source+deftext)
 		if err != nil {
-			gl.DeleteProgram(prog.handle)
+			prog.gs.DeleteProgram(prog.handle)
 			prog.handle = 0
 			msg := fmt.Sprintf("Error compiling %s: %s", shaderNames[sinfo.stype], err)
 			if prog.ShowSource {
@@ -124,18 +123,15 @@ func (prog *Program) Build() error {
 			return errors.New(msg)
 		}
 		sinfo.handle = shader
-		gl.AttachShader(prog.handle, shader)
+		prog.gs.AttachShader(prog.handle, shader)
 	}
 
 	// Link program and checks for errors
-	gl.LinkProgram(prog.handle)
+	prog.gs.LinkProgram(prog.handle)
 	var status int32
-	gl.GetProgramiv(prog.handle, gl.LINK_STATUS, &status)
-	if status == gl.FALSE {
-		var logLength int32
-		gl.GetProgramiv(prog.handle, gl.INFO_LOG_LENGTH, &logLength)
-		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetProgramInfoLog(prog.handle, logLength, nil, gl.Str(log))
+	prog.gs.GetProgramiv(prog.handle, LINK_STATUS, &status)
+	if status == FALSE {
+		log := prog.gs.GetProgramInfoLog(prog.handle)
 		prog.handle = 0
 		return fmt.Errorf("Error linking program: %v", log)
 	}
@@ -149,81 +145,79 @@ func (prog *Program) Handle() uint32 {
 	return prog.handle
 }
 
-// GetActiveUniformBlockSize returns the minimum number of bytes
-// to contain the data for the uniform block specified by its index.
-func (prog *Program) GetActiveUniformBlockSize(ubindex uint32) int32 {
+//// GetActiveUniformBlockSize returns the minimum number of bytes
+//// to contain the data for the uniform block specified by its index.
+//func (prog *Program) GetActiveUniformBlockSize(ubindex uint32) int32 {
+//
+//	var uboSize int32
+//	gl.GetActiveUniformBlockiv(prog.handle, ubindex, gl.UNIFORM_BLOCK_DATA_SIZE, &uboSize)
+//	if prog.gs.CheckErrors() {
+//		ecode := gl.GetError()
+//		if ecode != 0 {
+//			log.Fatal("GetUniformBlockSize(%v) error: %d", ubindex, ecode)
+//		}
+//	}
+//	return uboSize
+//}
 
-	var uboSize int32
-	gl.GetActiveUniformBlockiv(prog.handle, ubindex, gl.UNIFORM_BLOCK_DATA_SIZE, &uboSize)
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("GetUniformBlockSize(%v) error: %d", ubindex, ecode)
-		}
-	}
-	return uboSize
-}
-
-// GetActiveUniformsiv returns information about the specified uniforms
-// specified by its indices
-func (prog *Program) GetActiveUniformsiv(indices []uint32, pname uint32) []int32 {
-
-	data := make([]int32, len(indices))
-	gl.GetActiveUniformsiv(prog.handle, int32(len(indices)), &indices[0], pname, &data[0])
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("GetActiveUniformsiv() error: %d", ecode)
-		}
-	}
-	return data
-}
+//// GetActiveUniformsiv returns information about the specified uniforms
+//// specified by its indices
+//func (prog *Program) GetActiveUniformsiv(indices []uint32, pname uint32) []int32 {
+//
+//	data := make([]int32, len(indices))
+//	gl.GetActiveUniformsiv(prog.handle, int32(len(indices)), &indices[0], pname, &data[0])
+//	if prog.gs.CheckErrors() {
+//		ecode := gl.GetError()
+//		if ecode != 0 {
+//			log.Fatal("GetActiveUniformsiv() error: %d", ecode)
+//		}
+//	}
+//	return data
+//}
 
 // GetAttributeLocation returns the location of the specified attribute
 // in this program. This location is internally cached.
 func (prog *Program) GetAttribLocation(name string) int32 {
 
-	loc := gl.GetAttribLocation(prog.handle, gl.Str(name+"\x00"))
-	prog.gs.checkError("GetAttribLocation")
-	return loc
+	return prog.gs.GetAttribLocation(prog.handle, name)
 }
 
-// GetUniformBlockIndex returns the index of the named uniform block.
-// If the supplied name is not valid, the function returns gl.INVALID_INDEX
-func (prog *Program) GetUniformBlockIndex(name string) uint32 {
+//// GetUniformBlockIndex returns the index of the named uniform block.
+//// If the supplied name is not valid, the function returns gl.INVALID_INDEX
+//func (prog *Program) GetUniformBlockIndex(name string) uint32 {
+//
+//	index := gl.GetUniformBlockIndex(prog.handle, gl.Str(name+"\x00"))
+//	if prog.gs.CheckErrors() {
+//		ecode := gl.GetError()
+//		if ecode != 0 {
+//			log.Fatal("GetUniformBlockIndex(%s) error", name)
+//		}
+//	}
+//	return index
+//}
 
-	index := gl.GetUniformBlockIndex(prog.handle, gl.Str(name+"\x00"))
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("GetUniformBlockIndex(%s) error", name)
-		}
-	}
-	return index
-}
-
-// GetUniformIndices returns the indices for each specified named
-// uniform. If an specified name is not valid the corresponding
-// index value will be gl.INVALID_INDEX
-func (prog *Program) GetUniformIndices(names []string) []uint32 {
-
-	// Add C terminators to uniform names
-	for _, s := range names {
-		s += "\x00"
-	}
-	unames, freefunc := gl.Strs(names...)
-
-	indices := make([]uint32, len(names))
-	gl.GetUniformIndices(prog.handle, int32(len(names)), unames, &indices[0])
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("GetUniformIndices() error: %d", ecode)
-		}
-	}
-	freefunc()
-	return indices
-}
+//// GetUniformIndices returns the indices for each specified named
+//// uniform. If an specified name is not valid the corresponding
+//// index value will be gl.INVALID_INDEX
+//func (prog *Program) GetUniformIndices(names []string) []uint32 {
+//
+//	// Add C terminators to uniform names
+//	for _, s := range names {
+//		s += "\x00"
+//	}
+//	unames, freefunc := gl.Strs(names...)
+//
+//	indices := make([]uint32, len(names))
+//	gl.GetUniformIndices(prog.handle, int32(len(names)), unames, &indices[0])
+//	if prog.gs.CheckErrors() {
+//		ecode := gl.GetError()
+//		if ecode != 0 {
+//			log.Fatal("GetUniformIndices() error: %d", ecode)
+//		}
+//	}
+//	freefunc()
+//	return indices
+//}
 
 // GetUniformLocation returns the location of the specified uniform in this program.
 // This location is internally cached.
@@ -235,13 +229,7 @@ func (prog *Program) GetUniformLocation(name string) int32 {
 		return loc
 	}
 	// Get location from GL
-	loc = gl.GetUniformLocation(prog.handle, gl.Str(name+"\x00"))
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("GetUniformLocation(%s) error: %d", name, ecode)
-		}
-	}
+	loc = prog.gs.GetUniformLocation(prog.handle, name)
 	// Cache result
 	prog.uniforms[name] = loc
 	if loc < 0 {
@@ -254,91 +242,49 @@ func (prog *Program) GetUniformLocation(name string) int32 {
 // its location to the the value of the specified int
 func (prog *Program) SetUniformInt(loc int32, v int) {
 
-	gl.Uniform1i(loc, int32(v))
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("SetUniformInt() error: %d", ecode)
-		}
-	}
+	prog.gs.Uniform1i(loc, int32(v))
 }
 
 // SetUniformFloat sets this program uniform variable specified by
 // its location to the the value of the specified float
 func (prog *Program) SetUniformFloat(loc int32, v float32) {
 
-	gl.Uniform1f(loc, v)
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("SetUniformFloat() error: %d", ecode)
-		}
-	}
+	prog.gs.Uniform1f(loc, v)
 }
 
 // SetUniformVector2 sets this program uniform variable specified by
 // its location to the the value of the specified Vector2
 func (prog *Program) SetUniformVector2(loc int32, v *math32.Vector2) {
 
-	gl.Uniform2f(loc, v.X, v.Y)
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("SetUniformVector2() error: %d", ecode)
-		}
-	}
+	prog.gs.Uniform2f(loc, v.X, v.Y)
 }
 
 // SetUniformVector3 sets this program uniform variable specified by
 // its location to the the value of the specified Vector3
 func (prog *Program) SetUniformVector3(loc int32, v *math32.Vector3) {
 
-	gl.Uniform3f(loc, v.X, v.Y, v.Z)
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("SetUniformVector3() error: %d", ecode)
-		}
-	}
+	prog.gs.Uniform3f(loc, v.X, v.Y, v.Z)
 }
 
 // SetUniformVector4 sets this program uniform variable specified by
 // its location to the the value of the specified Vector4
 func (prog *Program) SetUniformVector4(loc int32, v *math32.Vector4) {
 
-	gl.Uniform4f(loc, v.X, v.Y, v.Z, v.W)
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("SetUniformVector4() error: %d", ecode)
-		}
-	}
+	prog.gs.Uniform4f(loc, v.X, v.Y, v.Z, v.W)
 }
 
 // SetUniformMatrix3 sets this program uniform variable specified by
 // its location with the values from the specified Matrix3.
 func (prog *Program) SetUniformMatrix3(loc int32, m *math32.Matrix3) {
 
-	gl.UniformMatrix3fv(loc, 1, false, &m[0])
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("SetUniformMatrix3() error: %d", ecode)
-		}
-	}
+	prog.gs.UniformMatrix3fv(loc, 1, false, &m[0])
 }
 
 // SetUniformMatrix4 sets this program uniform variable specified by
 // its location with the values from the specified Matrix4.
 func (prog *Program) SetUniformMatrix4(loc int32, m *math32.Matrix4) {
 
-	gl.UniformMatrix4fv(loc, 1, false, &m[0])
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("SetUniformMatrix4() error: %d", ecode)
-		}
-	}
+	prog.gs.UniformMatrix4fv(loc, 1, false, &m[0])
 }
 
 // SetUniformIntByName sets this program uniform variable specified by
@@ -346,13 +292,7 @@ func (prog *Program) SetUniformMatrix4(loc int32, m *math32.Matrix4) {
 // The specified name location is cached internally.
 func (prog *Program) SetUniformIntByName(name string, v int) {
 
-	gl.Uniform1i(prog.GetUniformLocation(name), int32(v))
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("GetUniformIntByName(%s) error: %d", name, ecode)
-		}
-	}
+	prog.gs.Uniform1i(prog.GetUniformLocation(name), int32(v))
 }
 
 // SetUniformFloatByName sets this program uniform variable specified by
@@ -360,13 +300,7 @@ func (prog *Program) SetUniformIntByName(name string, v int) {
 // The specified name location is cached internally.
 func (prog *Program) SetUniformFloatByName(name string, v float32) {
 
-	gl.Uniform1f(prog.GetUniformLocation(name), v)
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("SetUniformFloatByName(%s) error: %d", name, ecode)
-		}
-	}
+	prog.gs.Uniform1f(prog.GetUniformLocation(name), v)
 }
 
 // SetUniformVector2ByName sets this program uniform variable specified by
@@ -374,13 +308,7 @@ func (prog *Program) SetUniformFloatByName(name string, v float32) {
 // The specified name location is cached internally.
 func (prog *Program) SetUniformVector2ByName(name string, v *math32.Vector2) {
 
-	gl.Uniform2f(prog.GetUniformLocation(name), v.X, v.Y)
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("SetUniformVector2ByName(%s) error: %d", name, ecode)
-		}
-	}
+	prog.gs.Uniform2f(prog.GetUniformLocation(name), v.X, v.Y)
 }
 
 // SetUniformVector3ByName sets this program uniform variable specified by
@@ -388,13 +316,7 @@ func (prog *Program) SetUniformVector2ByName(name string, v *math32.Vector2) {
 // The specified name location is cached internally.
 func (prog *Program) SetUniformVector3ByName(name string, v *math32.Vector3) {
 
-	gl.Uniform3f(prog.GetUniformLocation(name), v.X, v.Y, v.Z)
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("SetUniformVector3ByName(%s) error: %d", name, ecode)
-		}
-	}
+	prog.gs.Uniform3f(prog.GetUniformLocation(name), v.X, v.Y, v.Z)
 }
 
 // SetUniformVector4ByName sets this program uniform variable specified by
@@ -402,13 +324,7 @@ func (prog *Program) SetUniformVector3ByName(name string, v *math32.Vector3) {
 // The specified name location is cached internally.
 func (prog *Program) SetUniformVector4ByName(name string, v *math32.Vector4) {
 
-	gl.Uniform4f(prog.GetUniformLocation(name), v.X, v.Y, v.Z, v.W)
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("SetUniformVector4ByName(%s) error: %d", name, ecode)
-		}
-	}
+	prog.gs.Uniform4f(prog.GetUniformLocation(name), v.X, v.Y, v.Z, v.W)
 }
 
 // SetUniformMatrix3ByName sets this program uniform variable specified by
@@ -416,13 +332,7 @@ func (prog *Program) SetUniformVector4ByName(name string, v *math32.Vector4) {
 // The specified name location is cached internally.
 func (prog *Program) SetUniformMatrix3ByName(name string, m *math32.Matrix3) {
 
-	gl.UniformMatrix3fv(prog.GetUniformLocation(name), 1, false, &m[0])
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("SetUniformMatrix3ByName(%s) error: %d", name, ecode)
-		}
-	}
+	prog.gs.UniformMatrix3fv(prog.GetUniformLocation(name), 1, false, &m[0])
 }
 
 // SetUniformMatrix4ByName sets this program uniform variable specified by
@@ -430,13 +340,7 @@ func (prog *Program) SetUniformMatrix3ByName(name string, m *math32.Matrix3) {
 // The location of the name is cached internally.
 func (prog *Program) SetUniformMatrix4ByName(name string, m *math32.Matrix4) {
 
-	gl.UniformMatrix4fv(prog.GetUniformLocation(name), 1, false, &m[0])
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("SetUniformMatrix4ByName(%s) error: %d", name, ecode)
-		}
-	}
+	prog.gs.UniformMatrix4fv(prog.GetUniformLocation(name), 1, false, &m[0])
 }
 
 // SetUniformColorByName set this program uniform variable specified by
@@ -444,13 +348,7 @@ func (prog *Program) SetUniformMatrix4ByName(name string, m *math32.Matrix4) {
 // The specified name location is cached internally.
 func (prog *Program) SetUniformColorByName(name string, c *math32.Color) {
 
-	gl.Uniform3f(prog.GetUniformLocation(name), c.R, c.G, c.B)
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("SetUniformColorByName(%s) error: %d", name, ecode)
-		}
-	}
+	prog.gs.Uniform3f(prog.GetUniformLocation(name), c.R, c.G, c.B)
 }
 
 // SetUniformColor4ByName set this program uniform variable specified by
@@ -458,43 +356,31 @@ func (prog *Program) SetUniformColorByName(name string, c *math32.Color) {
 // The specified name location is cached internally.
 func (prog *Program) SetUniformColor4ByName(name string, c *math32.Color4) {
 
-	gl.Uniform4f(prog.GetUniformLocation(name), c.R, c.G, c.B, c.A)
-	if prog.gs.CheckErrors() {
-		ecode := gl.GetError()
-		if ecode != 0 {
-			log.Fatal("SetUniformColor4ByName(%s) error: %d", name, ecode)
-		}
-	}
+	prog.gs.Uniform4f(prog.GetUniformLocation(name), c.R, c.G, c.B, c.A)
 }
 
 // CompileShader creates and compiles a shader of the specified type and with
 // the specified source code and returns a non-zero value by which
 // it can be referenced.
-func CompileShader(stype uint32, source string) (uint32, error) {
+func (prog *Program) CompileShader(stype uint32, source string) (uint32, error) {
 
-	shader := gl.CreateShader(stype)
+	// Creates shader object
+	shader := prog.gs.CreateShader(stype)
 	if shader == 0 {
 		return 0, fmt.Errorf("Error creating shader")
 	}
 
-	// Allocates C string to store the source
-	csource, freeSource := gl.Strs(source + "\x00")
-	defer freeSource()
-
 	// Set shader source and compile it
-	gl.ShaderSource(shader, 1, csource, nil)
-	gl.CompileShader(shader)
+	prog.gs.ShaderSource(shader, source)
+	prog.gs.CompileShader(shader)
 
 	// Get the shader compiler log
-	var logLength int32
-	gl.GetShaderiv(shader, gl.INFO_LOG_LENGTH, &logLength)
-	slog := strings.Repeat("\x00", int(logLength+1))
-	gl.GetShaderInfoLog(shader, logLength, nil, gl.Str(slog))
+	slog := prog.gs.GetShaderInfoLog(shader)
 
 	// Get the shader compile status
 	var status int32
-	gl.GetShaderiv(shader, gl.COMPILE_STATUS, &status)
-	if status == gl.FALSE {
+	prog.gs.GetShaderiv(shader, COMPILE_STATUS, &status)
+	if status == FALSE {
 		return shader, fmt.Errorf("%s", slog)
 	}
 
