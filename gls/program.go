@@ -34,8 +34,8 @@ type shaderInfo struct {
 
 // Map shader types to names
 var shaderNames = map[uint32]string{
-//gl.VERTEX_SHADER:   "Vertex Shader",
-//gl.FRAGMENT_SHADER: "Fragment Shader",
+	VERTEX_SHADER:   "Vertex Shader",
+	FRAGMENT_SHADER: "Fragment Shader",
 }
 
 // NewProgram creates a new empty shader program object.
@@ -145,79 +145,12 @@ func (prog *Program) Handle() uint32 {
 	return prog.handle
 }
 
-//// GetActiveUniformBlockSize returns the minimum number of bytes
-//// to contain the data for the uniform block specified by its index.
-//func (prog *Program) GetActiveUniformBlockSize(ubindex uint32) int32 {
-//
-//	var uboSize int32
-//	gl.GetActiveUniformBlockiv(prog.handle, ubindex, gl.UNIFORM_BLOCK_DATA_SIZE, &uboSize)
-//	if prog.gs.CheckErrors() {
-//		ecode := gl.GetError()
-//		if ecode != 0 {
-//			log.Fatal("GetUniformBlockSize(%v) error: %d", ubindex, ecode)
-//		}
-//	}
-//	return uboSize
-//}
-
-//// GetActiveUniformsiv returns information about the specified uniforms
-//// specified by its indices
-//func (prog *Program) GetActiveUniformsiv(indices []uint32, pname uint32) []int32 {
-//
-//	data := make([]int32, len(indices))
-//	gl.GetActiveUniformsiv(prog.handle, int32(len(indices)), &indices[0], pname, &data[0])
-//	if prog.gs.CheckErrors() {
-//		ecode := gl.GetError()
-//		if ecode != 0 {
-//			log.Fatal("GetActiveUniformsiv() error: %d", ecode)
-//		}
-//	}
-//	return data
-//}
-
 // GetAttributeLocation returns the location of the specified attribute
 // in this program. This location is internally cached.
 func (prog *Program) GetAttribLocation(name string) int32 {
 
 	return prog.gs.GetAttribLocation(prog.handle, name)
 }
-
-//// GetUniformBlockIndex returns the index of the named uniform block.
-//// If the supplied name is not valid, the function returns gl.INVALID_INDEX
-//func (prog *Program) GetUniformBlockIndex(name string) uint32 {
-//
-//	index := gl.GetUniformBlockIndex(prog.handle, gl.Str(name+"\x00"))
-//	if prog.gs.CheckErrors() {
-//		ecode := gl.GetError()
-//		if ecode != 0 {
-//			log.Fatal("GetUniformBlockIndex(%s) error", name)
-//		}
-//	}
-//	return index
-//}
-
-//// GetUniformIndices returns the indices for each specified named
-//// uniform. If an specified name is not valid the corresponding
-//// index value will be gl.INVALID_INDEX
-//func (prog *Program) GetUniformIndices(names []string) []uint32 {
-//
-//	// Add C terminators to uniform names
-//	for _, s := range names {
-//		s += "\x00"
-//	}
-//	unames, freefunc := gl.Strs(names...)
-//
-//	indices := make([]uint32, len(names))
-//	gl.GetUniformIndices(prog.handle, int32(len(names)), unames, &indices[0])
-//	if prog.gs.CheckErrors() {
-//		ecode := gl.GetError()
-//		if ecode != 0 {
-//			log.Fatal("GetUniformIndices() error: %d", ecode)
-//		}
-//	}
-//	freefunc()
-//	return indices
-//}
 
 // GetUniformLocation returns the location of the specified uniform in this program.
 // This location is internally cached.

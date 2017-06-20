@@ -1,3 +1,6 @@
+// Copyright 2016 The G3N Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 package gls
 
 // // Platform build flags
@@ -22,10 +25,12 @@ import (
 	"unsafe"
 )
 
+// GLS encapsulates the state of an OpenGL context which should be
+// associated with a single Window.
 type GLS struct {
 	stats               Stats             // statistics
-	Prog                *Program          // Current active program
-	programs            map[*Program]bool // Programs cache
+	Prog                *Program          // current active program
+	programs            map[*Program]bool // programs cache
 	checkErrors         bool              // check openGL API errors flag
 	viewportX           int32             // cached last set viewport x
 	viewportY           int32             // cached last set viewport y
@@ -36,28 +41,29 @@ type GLS struct {
 	depthFunc           uint32            // cached last set depth function
 	depthMask           int               // cached last set depth mask
 	capabilities        map[int]int       // cached capabilities (Enable/Disable)
-	blendEquation       uint32
-	blendSrc            uint32
-	blendDst            uint32
-	blendEquationRGB    uint32
-	blendEquationAlpha  uint32
-	blendSrcRGB         uint32
-	blendSrcAlpha       uint32
-	blendDstRGB         uint32
-	blendDstAlpha       uint32
-	polygonOffsetFactor float32
-	polygonOffsetUnits  float32
-	logBuf              []byte // pre allocated buffer for program/shader logs
+	blendEquation       uint32            // cached last set blend equation value
+	blendSrc            uint32            // cached last set blend src value
+	blendDst            uint32            // cached last set blend equation destination value
+	blendEquationRGB    uint32            // cached last set blend equation rgb value
+	blendEquationAlpha  uint32            // cached last set blend equation alpha value
+	blendSrcRGB         uint32            // cached last set blend src rgb
+	blendSrcAlpha       uint32            // cached last set blend src alpha value
+	blendDstRGB         uint32            // cached last set blend destination rgb value
+	blendDstAlpha       uint32            // cached last set blend destination alpha value
+	polygonOffsetFactor float32           // cached last set polygon offset factor
+	polygonOffsetUnits  float32           // cached last set polygon offset units
+	cbuf                []byte            // pre allocated buffer to convert Go strings to C strings
 }
 
+// Stats contains several counter
 type Stats struct {
 	Vaos     int // Number of Vertex Array Objects
 	Vbos     int // Number of Vertex Buffer Objects
 	Textures int // Number of Textures
 	// Cummulative fields
-	Caphits   int // Number of hits for Enable/Disable
-	Unisets   int // Number of uniform sets
-	Drawcalls int // Number of draw calls
+	Caphits   uint64 // Number of hits for Enable/Disable
+	Unisets   uint64 // Number of uniform sets
+	Drawcalls uint64 // Number of draw calls
 }
 
 const (
@@ -67,7 +73,6 @@ const (
 	uintUndef   = math.MaxUint32
 	intFalse    = 0
 	intTrue     = 1
-	maxLogBuf   = 32 * 1024
 )
 
 // Polygon side view.
@@ -84,16 +89,16 @@ const (
 func New() (*GLS, error) {
 
 	gs := new(GLS)
-	gs.Reset()
-
-	// Initialize GL
+	gs.reset()
+	// Load OpenGL functions
 	err := C.glapiLoad()
 	if err != 0 {
 		return nil, fmt.Errorf("Error loading OpenGL")
 	}
 	gs.SetDefaultState()
 	gs.checkErrors = true
-	gs.logBuf = make([]byte, maxLogBuf)
+	// Preallocates buffer for C string with initial size
+	gs.cbuf = make([]byte, 1*1024)
 	return gs, nil
 }
 
@@ -116,8 +121,8 @@ func (gs *GLS) CheckErrors() bool {
 	return gs.checkErrors
 }
 
-// Reset resets the internal state kept of the OpenGL
-func (gs *GLS) Reset() {
+// reset resets the internal state kept of the OpenGL
+func (gs *GLS) reset() {
 
 	gs.lineWidth = 0.0
 	gs.sideView = uintUndef
@@ -159,6 +164,13 @@ func (gs *GLS) SetDefaultState() {
 	gs.Enable(POLYGON_OFFSET_FILL)
 	gs.Enable(POLYGON_OFFSET_LINE)
 	gs.Enable(POLYGON_OFFSET_POINT)
+}
+
+// Stats copy the current values of the internal statistics structure
+// to the specified pointer.
+func (gs *GLS) Stats(s *Stats) {
+
+	*s = gs.stats
 }
 
 func (gs *GLS) ActiveTexture(texture uint32) {
@@ -319,7 +331,7 @@ func (gs *GLS) DrawArrays(mode uint32, first int32, count int32) {
 
 func (gs *GLS) DrawElements(mode uint32, count int32, itype uint32, start uint32) {
 
-	C.glDrawElements(C.GLenum(mode), C.GLsizei(count), C.GLenum(itype), ptrOffset(int(start)))
+	C.glDrawElements(C.GLenum(mode), C.GLsizei(count), C.GLenum(itype), unsafe.Pointer(uintptr(start)))
 	gs.stats.Drawcalls++
 }
 
@@ -389,10 +401,8 @@ func (gs *GLS) GenVertexArray() uint32 {
 
 func (gs *GLS) GetAttribLocation(program uint32, name string) int32 {
 
-	cname := C.CString(name)
-	defer C.free(unsafe.Pointer(cname))
-	res := C.glGetAttribLocation(C.GLuint(program), (*C.GLchar)(cname))
-	return int32(res)
+	loc := C.glGetAttribLocation(C.GLuint(program), gs.cbufStr(name))
+	return int32(loc)
 }
 
 func (gs *GLS) GetProgramiv(program, pname uint32, params *int32) {
@@ -400,42 +410,40 @@ func (gs *GLS) GetProgramiv(program, pname uint32, params *int32) {
 	C.glGetProgramiv(C.GLuint(program), C.GLenum(pname), (*C.GLint)(params))
 }
 
+// GetProgramInfoLog returns the information log for the specified program object.
 func (gs *GLS) GetProgramInfoLog(program uint32) string {
 
-	// Get length of program info log buffer
-	var logLength int32
-	gs.GetProgramiv(program, INFO_LOG_LENGTH, &logLength)
-	if logLength == 0 {
+	var length int32
+	gs.GetProgramiv(program, INFO_LOG_LENGTH, &length)
+	if length == 0 {
 		return ""
 	}
-	C.glGetProgramInfoLog(C.GLuint(program), maxLogBuf, nil, (*C.GLchar)(unsafe.Pointer(&gs.logBuf[0])))
-	return string(gs.logBuf)
+	C.glGetProgramInfoLog(C.GLuint(program), C.GLsizei(length), nil, gs.cbufSize(uint32(length)))
+	return string(gs.cbuf[:length])
 }
 
+// GetShaderInfoLog returns the information log for the specified shader object.
 func (gs *GLS) GetShaderInfoLog(shader uint32) string {
 
-	// Get length of shaderinfo log buffer
-	var logLength int32
-	gs.GetShaderiv(shader, INFO_LOG_LENGTH, &logLength)
-	if logLength == 0 {
+	var length int32
+	gs.GetShaderiv(shader, INFO_LOG_LENGTH, &length)
+	if length == 0 {
 		return ""
 	}
-	buf := make([]byte, logLength)
-	C.glGetShaderInfoLog(C.GLuint(shader), C.GLsizei(logLength), nil, (*C.GLchar)(unsafe.Pointer(&gs.logBuf[0])))
-	return string(buf)
+	C.glGetShaderInfoLog(C.GLuint(shader), C.GLsizei(length), nil, gs.cbufSize(uint32(length)))
+	return string(gs.cbuf[:length])
 }
 
 func (gs *GLS) GetString(name uint32) string {
 
-	cstr := C.glGetString(C.GLenum(name))
-	return goStr((*uint8)(cstr))
+	cbufStr := C.glGetString(C.GLenum(name))
+	return C.GoString((*C.char)(unsafe.Pointer(cbufStr)))
 }
 
+// GetUniformLocation returns the location of a uniform variable for the specified program.
 func (gs *GLS) GetUniformLocation(program uint32, name string) int32 {
 
-	cname := C.CString(name)
-	defer C.free(unsafe.Pointer(cname))
-	loc := C.glGetUniformLocation(C.GLuint(program), (*C.GLchar)(cname))
+	loc := C.glGetUniformLocation(C.GLuint(program), gs.cbufStr(name))
 	return int32(loc)
 }
 
@@ -497,9 +505,8 @@ func (gs *GLS) GetShaderiv(shader, pname uint32, params *int32) {
 
 func (gs *GLS) ShaderSource(shader uint32, src string) {
 
-	csource := C.CString(src)
-	defer C.free(unsafe.Pointer(csource))
-	C.glShaderSource(C.GLuint(shader), 1, (**C.GLchar)(unsafe.Pointer(csource)), nil)
+	csource := gs.cbufStr(src)
+	C.glShaderSource(C.GLuint(shader), 1, (**C.GLchar)(unsafe.Pointer(&csource)), nil)
 }
 
 func (gs *GLS) TexImage2D(target uint32, level int32, iformat int32, width int32, height int32, border int32, format uint32, itype uint32, data interface{}) {
@@ -608,7 +615,7 @@ func (gs *GLS) Uniform4fv(location int32, count int32, v []float32) {
 
 func (gs *GLS) VertexAttribPointer(index uint32, size int32, xtype uint32, normalized bool, stride int32, offset uint32) {
 
-	C.glVertexAttribPointer(C.GLuint(index), C.GLint(size), C.GLenum(xtype), bool2c(normalized), C.GLsizei(stride), ptrOffset(int(offset)))
+	C.glVertexAttribPointer(C.GLuint(index), C.GLint(size), C.GLenum(xtype), bool2c(normalized), C.GLsizei(stride), unsafe.Pointer(uintptr(offset)))
 }
 
 func (gs *GLS) Viewport(x, y, width, height int32) {
@@ -621,20 +628,20 @@ func (gs *GLS) Viewport(x, y, width, height int32) {
 }
 
 // Use set this program as the current program.
-//func (gs *GLS) UseProgram(prog *Program) {
-//
-//	if prog.handle == 0 {
-//		panic("Invalid program")
-//	}
-//	C.glUseProgram(prog.handle)
-//	gs.Prog = prog
-//
-//	// Inserts program in cache if not already there.
-//	if !gs.programs[prog] {
-//		gs.programs[prog] = true
-//		log.Debug("New Program activated. Total: %d", len(gs.programs))
-//	}
-//}
+func (gs *GLS) UseProgram(prog *Program) {
+
+	if prog.handle == 0 {
+		panic("Invalid program")
+	}
+	C.glUseProgram(C.GLuint(prog.handle))
+	gs.Prog = prog
+
+	// Inserts program in cache if not already there.
+	if !gs.programs[prog] {
+		gs.programs[prog] = true
+		log.Debug("New Program activated. Total: %d", len(gs.programs))
+	}
+}
 
 // Ptr takes a slice or pointer (to a singular scalar value or the first
 // element of an array or slice) and returns its GL-compatible address.
@@ -681,28 +688,24 @@ func bool2c(b bool) C.GLboolean {
 	return C.GLboolean(0)
 }
 
-// ptrOffset takes a pointer offset and returns a GL-compatible pointer.
-// Useful for functions such as glVertexAttribPointer that take pointer
-// parameters indicating an offset rather than an absolute memory address.
-func ptrOffset(offset int) unsafe.Pointer {
+// cbufStr converts a Go String to a C string copying it to a single pre-allocated buffer
+// and returning a pointer to the start of the buffer
+func (gs *GLS) cbufStr(s string) *C.GLchar {
 
-	return unsafe.Pointer(uintptr(offset))
+	if len(s)+1 > len(gs.cbuf) {
+		gs.cbuf = make([]byte, len(s)+1)
+	}
+	copy(gs.cbuf, s)
+	gs.cbuf[len(s)] = 0
+	return (*C.GLchar)(unsafe.Pointer(&gs.cbuf[0]))
 }
 
-//// Str takes a null-terminated Go string and returns its GL-compatible address.
-//// This function reaches into Go string storage in an unsafe way so the caller
-//// must ensure the string is not garbage collected.
-//func Str(str string) *uint8 {
-//	if !strings.HasSuffix(str, "\x00") {
-//		panic("str argument missing null terminator: " + str)
-//	}
-//	header := (*reflect.StringHeader)(unsafe.Pointer(&str))
-//	return (*uint8)(unsafe.Pointer(header.Data))
-//}
+// cbufSize returns a pointer to C buffer with the specified size not including the terminator.
+// Currently the function uses a single pre-allocated area to avoid Go allocations
+func (gs *GLS) cbufSize(size uint32) *C.GLchar {
 
-// goStr takes a null-terminated string returned by OpenGL and constructs a
-// corresponding Go string.
-func goStr(cstr *uint8) string {
-
-	return C.GoString((*C.char)(unsafe.Pointer(cstr)))
+	if size+1 > uint32(len(gs.cbuf)) {
+		gs.cbuf = make([]byte, size+1)
+	}
+	return (*C.GLchar)(unsafe.Pointer(&gs.cbuf[0]))
 }
