@@ -3,16 +3,6 @@
 // license that can be found in the LICENSE file.
 package gls
 
-// // Platform build flags
-// #cgo freebsd CFLAGS: -DGL_GLEXT_PROTOTYPES
-// #cgo freebsd LDFLAGS: -ldl -lGL
-//
-// #cgo linux CFLAGS: -DGL_GLEXT_PROTOTYPES
-// #cgo linux LDFLAGS: -ldl -lGL
-//
-// #cgo windows CFLAGS: -DGL_GEXT_PROTOTYPES
-// #cgo windows LDFLAGS: -lopengl32
-//
 // #include <stdlib.h>
 // #include "glcorearb.h"
 // #include "glapi.h"
