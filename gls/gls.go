@@ -52,7 +52,8 @@ type GLS struct {
 	blendDstAlpha       uint32            // cached last set blend destination alpha value
 	polygonOffsetFactor float32           // cached last set polygon offset factor
 	polygonOffsetUnits  float32           // cached last set polygon offset units
-	gobuf               []byte            // pre allocated buffer to convert Go strings to C strings
+	gobuf               []byte            // conversion buffer with GO memory
+	cbuf                []byte            // conversion buffer with C memory
 }
 
 // Stats contains several counter
@@ -96,8 +97,13 @@ func New() (*GLS, error) {
 	}
 	gs.SetDefaultState()
 	gs.checkErrors = true
-	// Preallocates buffer for C string with initial size
-	gs.gobuf = make([]byte, 1*1024)
+
+	// Preallocates conversion buffers
+	size := 1 * 1024
+	gs.gobuf = make([]byte, size)
+	p := C.malloc(C.size_t(size))
+	gs.cbuf = (*[1 << 30]byte)(unsafe.Pointer(p))[:size:size]
+
 	return gs, nil
 }
 
@@ -504,8 +510,7 @@ func (gs *GLS) GetShaderiv(shader, pname uint32, params *int32) {
 
 func (gs *GLS) ShaderSource(shader uint32, src string) {
 
-	csource := C.CString(src)
-	defer C.free(unsafe.Pointer(csource))
+	csource := gs.cbufStr(src)
 	C.glShaderSource(C.GLuint(shader), 1, (**C.GLchar)(unsafe.Pointer(&csource)), nil)
 }
 
@@ -688,24 +693,48 @@ func bool2c(b bool) C.GLboolean {
 	return C.GLboolean(0)
 }
 
-// gobufStr converts a Go String to a C string copying it to a single pre-allocated buffer
-// and returning a pointer to the start of the buffer
-func (gs *GLS) gobufStr(s string) *C.GLchar {
-
-	if len(s)+1 > len(gs.gobuf) {
-		gs.gobuf = make([]byte, len(s)+1)
-	}
-	copy(gs.gobuf, s)
-	gs.gobuf[len(s)] = 0
-	return (*C.GLchar)(unsafe.Pointer(&gs.gobuf[0]))
-}
-
-// gobufSize returns a pointer to C buffer with the specified size not including the terminator.
-// Currently the function uses a single pre-allocated area to avoid Go allocations
+// gobufSize returns a pointer to static buffer with the specified size not including the terminator.
+// If there is available space, there is no memory allocation.
 func (gs *GLS) gobufSize(size uint32) *C.GLchar {
 
 	if size+1 > uint32(len(gs.gobuf)) {
 		gs.gobuf = make([]byte, size+1)
 	}
 	return (*C.GLchar)(unsafe.Pointer(&gs.gobuf[0]))
+}
+
+// gobufStr converts a Go String to a C string by copying it to a static buffer
+// and returning a pointer to the start of the buffer.
+// If there is available space, there is no memory allocation.
+func (gs *GLS) gobufStr(s string) *C.GLchar {
+
+	p := gs.gobufSize(uint32(len(s) + 1))
+	copy(gs.gobuf, s)
+	gs.gobuf[len(s)] = 0
+	return p
+}
+
+// cbufSize returns a pointer to static buffer with C memory
+// If there is available space, there is no memory allocation.
+func (gs *GLS) cbufSize(size uint32) *C.GLchar {
+
+	if size > uint32(len(gs.cbuf)) {
+		if len(gs.cbuf) > 0 {
+			C.free(unsafe.Pointer(&gs.cbuf[0]))
+		}
+		p := C.malloc(C.size_t(size))
+		gs.cbuf = (*[1 << 30]byte)(unsafe.Pointer(p))[:size:size]
+	}
+	return (*C.GLchar)(unsafe.Pointer(&gs.cbuf[0]))
+}
+
+// cbufStr converts a Go String to a C string by copying it to a single pre-allocated buffer
+// using C memory and returning a pointer to the start of the buffer.
+// If there is available space, there is no memory allocation.
+func (gs *GLS) cbufStr(s string) *C.GLchar {
+
+	p := gs.cbufSize(uint32(len(s) + 1))
+	copy(gs.cbuf, s)
+	gs.cbuf[len(s)] = 0
+	return p
 }
