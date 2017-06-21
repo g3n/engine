@@ -262,12 +262,6 @@ func glfname2go(glfname string) string {
 func gldef2go(gldef string) string {
 
 	return strings.TrimPrefix(gldef, "GL_")
-	//parts := strings.Split(gldef, "_")
-	//var res string
-	//for _, p := range parts[1:] {
-	//	res += strings.Title(strings.ToLower(p))
-	//}
-	//return res
 }
 
 // glval2go converts a C OpenGL value to a Go value

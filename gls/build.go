@@ -13,6 +13,6 @@ package gls
 // #cgo linux CFLAGS: -DGL_GLEXT_PROTOTYPES
 // #cgo linux LDFLAGS: -ldl -lGL
 //
-// #cgo windows CFLAGS: -DGL_GEXT_PROTOTYPES
+// #cgo windows CFLAGS: -DGL_GLEXT_PROTOTYPES
 // #cgo windows LDFLAGS: -lopengl32
 import "C"

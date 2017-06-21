@@ -101,13 +101,19 @@ const templGLAPIC = `
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
+#undef near
+#undef far
 
 static HMODULE libgl;
 
 // open_libgl opens the OpenGL dll for Windows
-static void open_libgl(void) {
+static int open_libgl(void) {
 
 	libgl = LoadLibraryA("opengl32.dll");
+	if (libgl == NULL) {
+		return -1;
+	}
+	return 0;
 }
 
 // close_libgl closes the OpenGL dll object for Windows

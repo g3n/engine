@@ -517,11 +517,6 @@ func (gs *GLS) TexImage2D(target uint32, level int32, iformat int32, width int32
 		ptr(data))
 }
 
-func (gs *GLS) TexStorage2D(target int, levels int, iformat int, width, height int) {
-
-	C.glTexStorage2D(C.GLenum(target), C.GLsizei(levels), C.GLenum(iformat), C.GLsizei(width), C.GLsizei(height))
-}
-
 func (gs *GLS) TexParameteri(target uint32, pname uint32, param int32) {
 
 	C.glTexParameteri(C.GLenum(target), C.GLenum(pname), C.GLint(param))
