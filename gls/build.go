@@ -9,8 +9,13 @@ package gls
 // // Platform build flags
 // #cgo freebsd CFLAGS:  -DGL_GLEXT_PROTOTYPES
 // #cgo freebsd LDFLAGS: -ldl
+//
 // #cgo linux   CFLAGS:  -DGL_GLEXT_PROTOTYPES
 // #cgo linux   LDFLAGS: -ldl
+//
 // #cgo windows CFLAGS:  -DGL_GLEXT_PROTOTYPES
+// #cgo windows LDFLAGS: -lopengl32
+//
+// #cgo darwin  CFLAGS:  -DGL_GLEXT_PROTOTYPES
 // #cgo darwin  LDFLAGS: -framework OpenGL
 import "C"
