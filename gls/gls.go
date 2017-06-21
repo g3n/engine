@@ -15,8 +15,8 @@ import (
 	"unsafe"
 )
 
-// GLS encapsulates the state of an OpenGL context which should be
-// associated with a single Window.
+// GLS encapsulates the state of an OpenGL context and contains
+// methods to call OpenGL functions.
 type GLS struct {
 	stats               Stats             // statistics
 	Prog                *Program          // current active program
