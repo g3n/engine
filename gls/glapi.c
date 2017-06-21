@@ -209,6 +209,7 @@ static PFNGLGETDOUBLEVPROC                            pglGetDoublev;
 static PFNGLGETERRORPROC                              pglGetError;
 static PFNGLGETFLOATVPROC                             pglGetFloatv;
 static PFNGLGETINTEGERVPROC                           pglGetIntegerv;
+static PFNGLGETSTRINGPROC                             pglGetString;
 static PFNGLGETTEXIMAGEPROC                           pglGetTexImage;
 static PFNGLGETTEXPARAMETERFVPROC                     pglGetTexParameterfv;
 static PFNGLGETTEXPARAMETERIVPROC                     pglGetTexParameteriv;
@@ -268,6 +269,7 @@ static PFNGLISBUFFERPROC                              pglIsBuffer;
 static PFNGLBUFFERDATAPROC                            pglBufferData;
 static PFNGLBUFFERSUBDATAPROC                         pglBufferSubData;
 static PFNGLGETBUFFERSUBDATAPROC                      pglGetBufferSubData;
+static PFNGLMAPBUFFERPROC                             pglMapBuffer;
 static PFNGLUNMAPBUFFERPROC                           pglUnmapBuffer;
 static PFNGLGETBUFFERPARAMETERIVPROC                  pglGetBufferParameteriv;
 static PFNGLGETBUFFERPOINTERVPROC                     pglGetBufferPointerv;
@@ -427,6 +429,7 @@ static PFNGLCLEARBUFFERIVPROC                         pglClearBufferiv;
 static PFNGLCLEARBUFFERUIVPROC                        pglClearBufferuiv;
 static PFNGLCLEARBUFFERFVPROC                         pglClearBufferfv;
 static PFNGLCLEARBUFFERFIPROC                         pglClearBufferfi;
+static PFNGLGETSTRINGIPROC                            pglGetStringi;
 static PFNGLISRENDERBUFFERPROC                        pglIsRenderbuffer;
 static PFNGLBINDRENDERBUFFERPROC                      pglBindRenderbuffer;
 static PFNGLDELETERENDERBUFFERSPROC                   pglDeleteRenderbuffers;
@@ -447,6 +450,7 @@ static PFNGLGENERATEMIPMAPPROC                        pglGenerateMipmap;
 static PFNGLBLITFRAMEBUFFERPROC                       pglBlitFramebuffer;
 static PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC        pglRenderbufferStorageMultisample;
 static PFNGLFRAMEBUFFERTEXTURELAYERPROC               pglFramebufferTextureLayer;
+static PFNGLMAPBUFFERRANGEPROC                        pglMapBufferRange;
 static PFNGLFLUSHMAPPEDBUFFERRANGEPROC                pglFlushMappedBufferRange;
 static PFNGLBINDVERTEXARRAYPROC                       pglBindVertexArray;
 static PFNGLDELETEVERTEXARRAYSPROC                    pglDeleteVertexArrays;
@@ -556,6 +560,7 @@ static void load_procs() {
 	pglGetError = (PFNGLGETERRORPROC)get_proc("glGetError"); 
 	pglGetFloatv = (PFNGLGETFLOATVPROC)get_proc("glGetFloatv"); 
 	pglGetIntegerv = (PFNGLGETINTEGERVPROC)get_proc("glGetIntegerv"); 
+	pglGetString = (PFNGLGETSTRINGPROC)get_proc("glGetString"); 
 	pglGetTexImage = (PFNGLGETTEXIMAGEPROC)get_proc("glGetTexImage"); 
 	pglGetTexParameterfv = (PFNGLGETTEXPARAMETERFVPROC)get_proc("glGetTexParameterfv"); 
 	pglGetTexParameteriv = (PFNGLGETTEXPARAMETERIVPROC)get_proc("glGetTexParameteriv"); 
@@ -615,6 +620,7 @@ static void load_procs() {
 	pglBufferData = (PFNGLBUFFERDATAPROC)get_proc("glBufferData"); 
 	pglBufferSubData = (PFNGLBUFFERSUBDATAPROC)get_proc("glBufferSubData"); 
 	pglGetBufferSubData = (PFNGLGETBUFFERSUBDATAPROC)get_proc("glGetBufferSubData"); 
+	pglMapBuffer = (PFNGLMAPBUFFERPROC)get_proc("glMapBuffer"); 
 	pglUnmapBuffer = (PFNGLUNMAPBUFFERPROC)get_proc("glUnmapBuffer"); 
 	pglGetBufferParameteriv = (PFNGLGETBUFFERPARAMETERIVPROC)get_proc("glGetBufferParameteriv"); 
 	pglGetBufferPointerv = (PFNGLGETBUFFERPOINTERVPROC)get_proc("glGetBufferPointerv"); 
@@ -774,6 +780,7 @@ static void load_procs() {
 	pglClearBufferuiv = (PFNGLCLEARBUFFERUIVPROC)get_proc("glClearBufferuiv"); 
 	pglClearBufferfv = (PFNGLCLEARBUFFERFVPROC)get_proc("glClearBufferfv"); 
 	pglClearBufferfi = (PFNGLCLEARBUFFERFIPROC)get_proc("glClearBufferfi"); 
+	pglGetStringi = (PFNGLGETSTRINGIPROC)get_proc("glGetStringi"); 
 	pglIsRenderbuffer = (PFNGLISRENDERBUFFERPROC)get_proc("glIsRenderbuffer"); 
 	pglBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC)get_proc("glBindRenderbuffer"); 
 	pglDeleteRenderbuffers = (PFNGLDELETERENDERBUFFERSPROC)get_proc("glDeleteRenderbuffers"); 
@@ -794,6 +801,7 @@ static void load_procs() {
 	pglBlitFramebuffer = (PFNGLBLITFRAMEBUFFERPROC)get_proc("glBlitFramebuffer"); 
 	pglRenderbufferStorageMultisample = (PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC)get_proc("glRenderbufferStorageMultisample"); 
 	pglFramebufferTextureLayer = (PFNGLFRAMEBUFFERTEXTURELAYERPROC)get_proc("glFramebufferTextureLayer"); 
+	pglMapBufferRange = (PFNGLMAPBUFFERRANGEPROC)get_proc("glMapBufferRange"); 
 	pglFlushMappedBufferRange = (PFNGLFLUSHMAPPEDBUFFERRANGEPROC)get_proc("glFlushMappedBufferRange"); 
 	pglBindVertexArray = (PFNGLBINDVERTEXARRAYPROC)get_proc("glBindVertexArray"); 
 	pglDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSPROC)get_proc("glDeleteVertexArrays"); 
@@ -1333,6 +1341,18 @@ void glGetIntegerv (GLenum pname, GLint *data) {
 		}
 	}
 	
+}
+
+const GLubyte * glGetString (GLenum name) {
+
+	const GLubyte * res = pglGetString(name);
+	if (checkError) {
+		GLenum err = pglGetError();
+		if (err != GL_NO_ERROR) {
+			panic(err, "glGetString");
+		}
+	}
+	return res;
 }
 
 void glGetTexImage (GLenum target, GLint level, GLenum format, GLenum type, void *pixels) {
@@ -2041,6 +2061,18 @@ void glGetBufferSubData (GLenum target, GLintptr offset, GLsizeiptr size, void *
 		}
 	}
 	
+}
+
+void * glMapBuffer (GLenum target, GLenum access) {
+
+	void * res = pglMapBuffer(target, access);
+	if (checkError) {
+		GLenum err = pglGetError();
+		if (err != GL_NO_ERROR) {
+			panic(err, "glMapBuffer");
+		}
+	}
+	return res;
 }
 
 GLboolean glUnmapBuffer (GLenum target) {
@@ -3951,6 +3983,18 @@ void glClearBufferfi (GLenum buffer, GLint drawbuffer, GLfloat depth, GLint sten
 	
 }
 
+const GLubyte * glGetStringi (GLenum name, GLuint index) {
+
+	const GLubyte * res = pglGetStringi(name, index);
+	if (checkError) {
+		GLenum err = pglGetError();
+		if (err != GL_NO_ERROR) {
+			panic(err, "glGetStringi");
+		}
+	}
+	return res;
+}
+
 GLboolean glIsRenderbuffer (GLuint renderbuffer) {
 
 	GLboolean res = pglIsRenderbuffer(renderbuffer);
@@ -4189,6 +4233,18 @@ void glFramebufferTextureLayer (GLenum target, GLenum attachment, GLuint texture
 		}
 	}
 	
+}
+
+void * glMapBufferRange (GLenum target, GLintptr offset, GLsizeiptr length, GLbitfield access) {
+
+	void * res = pglMapBufferRange(target, offset, length, access);
+	if (checkError) {
+		GLenum err = pglGetError();
+		if (err != GL_NO_ERROR) {
+			panic(err, "glMapBufferRange");
+		}
+	}
+	return res;
 }
 
 void glFlushMappedBufferRange (GLenum target, GLintptr offset, GLsizeiptr length) {

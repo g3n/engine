@@ -46,7 +46,9 @@ type GLS struct {
 	cbuf                []byte            // conversion buffer with C memory
 }
 
-// Stats contains several counter
+// Stats contains counters of OpenGL resources being used as well
+// the cummulative numbers of some OpenGL calls activities for performance
+// evaluation.
 type Stats struct {
 	Vaos      int    // Number of Vertex Array Objects
 	Vbos      int    // Number of Vertex Buffer Objects
@@ -85,7 +87,7 @@ func New() (*GLS, error) {
 	if err != 0 {
 		return nil, fmt.Errorf("Error loading OpenGL")
 	}
-	gs.SetDefaultState()
+	gs.setDefaultState()
 	gs.checkErrors = true
 
 	// Preallocates conversion buffers
@@ -140,7 +142,9 @@ func (gs *GLS) reset() {
 	gs.polygonOffsetUnits = -1
 }
 
-func (gs *GLS) SetDefaultState() {
+// setDefaultState is used internally to set the initial state of OpenGL
+// for this context.
+func (gs *GLS) setDefaultState() {
 
 	C.glClearColor(0, 0, 0, 1)
 	C.glClearDepth(1)

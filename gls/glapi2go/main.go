@@ -19,8 +19,7 @@ const (
 
 // Command line options
 var (
-	oVersion = flag.Bool("version", false, "Show version and exits")
-	oLoader  = flag.String("loader", "loader.c", "Name for the generated C loader file")
+	oGLVersion = flag.String("glversion", "GL_VERSION_3_3", "OpenGL version to use")
 )
 
 const (
@@ -28,7 +27,6 @@ const (
 	fileGLAPIH   = "glapi.h"
 	fileGLPARAMH = "glparam.h"
 	fileCONSTS   = "consts.go"
-	glMaxVersion = "GL_VERSION_3_3"
 )
 
 // Maps OpenGL types to Go
@@ -58,12 +56,6 @@ func main() {
 	// Parse command line parameters
 	flag.Usage = usage
 	flag.Parse()
-
-	// Print version and exits
-	if *oVersion == true {
-		fmt.Fprintf(os.Stderr, "%s v%d.%d\n", PROGNAME, VMAJOR, VMINOR)
-		return
-	}
 
 	// Checks for input header file
 	if len(flag.Args()) == 0 {
@@ -117,7 +109,7 @@ func parser(fheader io.Reader, h *GLHeader) error {
 
 	// Regex to parse function definition line,
 	// capturing return value (1), function name (2) and parameters (3)
-	rexApi := regexp.MustCompile(`GLAPI\s+(\w+)\s+APIENTRY\s+(\w+)\s+\((.*)\)`)
+	rexApi := regexp.MustCompile(`GLAPI\s+(.*)APIENTRY\s+(\w+)\s+\((.*)\)`)
 
 	h.Defines = make([]GLDefine, 0)
 	h.Funcs = make([]GLFunc, 0)
@@ -134,7 +126,7 @@ func parser(fheader io.Reader, h *GLHeader) error {
 		// OpenGL version
 		res := rexEndif.FindStringSubmatch(line)
 		if len(res) > 0 {
-			if res[1] == glMaxVersion {
+			if res[1] == *oGLVersion {
 				break
 			}
 		}
@@ -155,12 +147,11 @@ func parser(fheader io.Reader, h *GLHeader) error {
 		res = rexApi.FindStringSubmatch(line)
 		if len(res) >= 2 {
 			var f GLFunc
-			f.Rtype = res[1]
+			f.Rtype = strings.Trim(res[1], " ")
 			f.Ptype = "PFN" + strings.ToUpper(res[2]) + "PROC"
 			f.Fname = res[2]
 			f.FnameGo = glfname2go(res[2])
 			f.Pname = "p" + f.Fname
-			f.Rtype = res[1]
 			f.CParams = res[3]
 			err := parseParams(res[3], &f)
 			if err != nil {
