@@ -47,8 +47,7 @@ type GLS struct {
 }
 
 // Stats contains counters of OpenGL resources being used as well
-// the cummulative numbers of some OpenGL calls activities for performance
-// evaluation.
+// the cummulative numbers of some OpenGL calls for performance evaluation.
 type Stats struct {
 	Vaos      int    // Number of Vertex Array Objects
 	Vbos      int    // Number of Vertex Buffer Objects
