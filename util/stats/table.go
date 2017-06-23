@@ -33,7 +33,7 @@ func NewStatsTable(width, height float32, gs *gls.GLS) *StatsTable {
 	st.ShowHeader(false)
 	st.addRow("shaders", "Shaders:")
 	st.addRow("vaos", "Vaos:")
-	st.addRow("vbos", "Vbos:")
+	st.addRow("buffers", "Buffers:")
 	st.addRow("textures", "Textures:")
 	st.addRow("unisets", "Uniforms/frame:")
 	st.addRow("drawcalls", "Draw calls/frame:")
@@ -59,8 +59,8 @@ func (st *StatsTable) update() {
 			st.Table.SetCell(f.row, "v", st.stats.Glstats.Shaders)
 		case "vaos":
 			st.Table.SetCell(f.row, "v", st.stats.Glstats.Vaos)
-		case "vbos":
-			st.Table.SetCell(f.row, "v", st.stats.Glstats.Vbos)
+		case "buffers":
+			st.Table.SetCell(f.row, "v", st.stats.Glstats.Buffers)
 		case "textures":
 			st.Table.SetCell(f.row, "v", st.stats.Glstats.Textures)
 		case "unisets":
