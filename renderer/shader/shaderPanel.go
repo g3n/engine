@@ -48,13 +48,22 @@ const shaderPanelFrag = `
 in vec2 FragTexcoord;
 
 // Input uniforms
-uniform vec4 Bounds;
-uniform vec4 Border;
-uniform vec4 Padding;
-uniform vec4 Content;
-uniform vec4 BorderColor;
-uniform vec4 PaddingColor;
-uniform vec4 ContentColor;
+//uniform vec4 Bounds;
+//uniform vec4 Border;
+//uniform vec4 Padding;
+//uniform vec4 Content;
+//uniform vec4 BorderColor;
+//uniform vec4 PaddingColor;
+//uniform vec4 ContentColor;
+
+uniform vec4 Panel[7];
+const int bounds			= 0;              // index of uniform array for bounds coordinates
+const int border			= 1;              // index of uniform array for border coordinates
+const int padding		= 2;              // index of uniform array for padding coordinates
+const int content		= 3;              // index of uniform array for content coordinates
+const int borderColor  	= 4;              // index of uniform array for border color
+const int paddingColor 	= 5;              // index of uniform array for padding color
+const int contentColor	= 6;              // index of uniform array for content color
 
 // Output
 out vec4 FragColor;
@@ -93,21 +102,21 @@ void main() {
     // Bounds[1] - ymin
     // Bounds[2] - xmax
     // Bounds[3] - ymax
-    if (FragTexcoord.x <= Bounds[0] || FragTexcoord.x >= Bounds[2]) {
+    if (FragTexcoord.x <= Panel[bounds][0] || FragTexcoord.x >= Panel[bounds][2]) {
         discard;
     }
-    if (FragTexcoord.y <= Bounds[1] || FragTexcoord.y >= Bounds[3]) {
+    if (FragTexcoord.y <= Panel[bounds][1] || FragTexcoord.y >= Panel[bounds][3]) {
         discard;
     }
 
     // Check if fragment is inside content area
-    if (checkRect(Content)) {
+    if (checkRect(Panel[content])) {
         // If no texture, the color will be the material color.
-        vec4 color = ContentColor;
+        vec4 color = Panel[contentColor];
         {{ if .MatTexturesMax }}
             // Adjust texture coordinates to fit texture inside the content area
-            vec2 offset = vec2(-Content[0], -Content[1]);
-            vec2 factor = vec2(1/Content[2], 1/Content[3]);
+            vec2 offset = vec2(-Panel[content][0], -Panel[content][1]);
+            vec2 factor = vec2(1/Panel[content][2], 1/Panel[content][3]);
             vec2 texcoord = (FragTexcoord + offset) * factor;
             color = texture(MatTexture[0], texcoord * MatTexRepeat[0] + MatTexOffset[0]);
         {{ end }}
@@ -119,14 +128,14 @@ void main() {
     }
 
     // Checks if fragment is inside paddings area
-    if (checkRect(Padding)) {
-        FragColor = PaddingColor;
+    if (checkRect(Panel[padding])) {
+        FragColor = Panel[paddingColor];
         return;
     }
 
     // Checks if fragment is inside borders area
-    if (checkRect(Border)) {
-        FragColor = BorderColor;
+    if (checkRect(Panel[border])) {
+        FragColor = Panel[borderColor];
         return;
     }
 

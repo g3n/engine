@@ -399,3 +399,109 @@ func (uni *UniformMatrix4f) TransferIdx(gl *GLS, idx int) {
 
 	gl.UniformMatrix4fv(uni.LocationIdx(gl, idx), 1, false, &uni.v[0])
 }
+
+//
+// Type Uniform4fv is a Uniform containing an array of four float32 values
+//
+type Uniform4fv struct {
+	Uniform           // embedded uniform
+	count   int       // number of group of 4 float32 values
+	v       []float32 // array of values
+}
+
+// NewUniform4fv creates and returns an uniform array with the specified size
+// of 4 float values
+func NewUniform4fv(name string, count int) *Uniform4fv {
+
+	uni := new(Uniform4fv)
+	uni.Init(name, count)
+	return uni
+}
+
+// Init initializes an Uniform4fv object with the specified name and count of 4 float32 groups.
+// It is normally used when the uniform is embedded in another object.
+func (uni *Uniform4fv) Init(name string, count int) {
+
+	uni.name = name
+	uni.count = count
+	uni.v = make([]float32, count*4)
+}
+
+// Set sets the value of all elements of the specified group of 4 floats for this uniform array
+func (uni *Uniform4fv) Set(idx int, v0, v1, v2, v3 float32) {
+
+	if idx < 0 || idx >= uni.count {
+		panic("Invalid index")
+	}
+	pos := idx * 4
+	uni.v[pos] = v0
+	uni.v[pos+1] = v1
+	uni.v[pos+2] = v2
+	uni.v[pos+3] = v3
+}
+
+// Get gets the value of all elements of the specified group of 4 floats for this uniform array
+func (uni *Uniform4fv) Get(idx int) (v0, v1, v2, v3 float32) {
+
+	if idx < 0 || idx >= uni.count {
+		panic("Invalid index")
+	}
+	pos := idx * 4
+	return uni.v[pos], uni.v[pos+1], uni.v[pos+2], uni.v[pos+3]
+}
+
+// SetVector4 sets the value of all elements for the specified group of 4 float for this uniform array
+// from the specified Vector4 object.
+func (uni *Uniform4fv) SetVector4(idx int, v *math32.Vector4) {
+
+	if idx < 0 || idx >= uni.count {
+		panic("Invalid index")
+	}
+	pos := idx * 4
+	uni.v[pos] = v.X
+	uni.v[pos+1] = v.Y
+	uni.v[pos+2] = v.Z
+	uni.v[pos+3] = v.W
+}
+
+// GetVector4 gets the value of all elements of the specified group of 4 float for this uniform array
+// as a Vector4 object.
+func (uni *Uniform4fv) GetVector4(idx int) math32.Vector4 {
+
+	if idx < 0 || idx >= uni.count {
+		panic("Invalid index")
+	}
+	pos := idx * 4
+	return math32.Vector4{uni.v[pos], uni.v[pos+1], uni.v[pos+2], uni.v[pos+3]}
+}
+
+// SetColor4 sets the value of all elements of the specified group of 4 floats for this uniform array
+// form the specified Color4 object.
+func (uni *Uniform4fv) SetColor4(idx int, color *math32.Color4) {
+
+	if idx < 0 || idx >= uni.count {
+		panic("Invalid index")
+	}
+	pos := idx * 4
+	uni.v[pos] = color.R
+	uni.v[pos+1] = color.G
+	uni.v[pos+2] = color.B
+	uni.v[pos+3] = color.A
+}
+
+// GetColor4 gets the value of all elements of the specified group of 4 float for this uniform array
+// as a Color4 object.
+func (uni *Uniform4fv) GetColor4(idx int) math32.Color4 {
+
+	if idx < 0 || idx >= uni.count {
+		panic("Invalid index")
+	}
+	pos := idx * 4
+	return math32.Color4{uni.v[pos], uni.v[pos+1], uni.v[pos+2], uni.v[pos+3]}
+}
+
+// Transfer transfers the current values of this uniform to the current shader program
+func (uni *Uniform4fv) Transfer(gl *GLS) {
+
+	gl.Uniform4fv(uni.Location(gl), int32(uni.count), uni.v)
+}
