@@ -118,7 +118,7 @@ func (s *Scroller) InsertAt(pos int, item IPanel) {
 }
 
 // RemoveAt removes item from the specified position
-func (s *Scroller) RemoveAt(pos int) {
+func (s *Scroller) RemoveAt(pos int) IPanel {
 
 	// Validates position
 	if pos < 0 || pos >= len(s.items) {
@@ -137,6 +137,7 @@ func (s *Scroller) RemoveAt(pos int) {
 	s.Panel.Remove(item)
 	s.autoSize()
 	s.recalc()
+	return item
 }
 
 // Remove removes the specified item from the Scroller

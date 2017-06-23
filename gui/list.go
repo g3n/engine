@@ -134,10 +134,9 @@ func (li *List) InsertAt(pos int, item IPanel) {
 }
 
 // RemoveAt removes the list item from the specified position
-// Returns true if the item was successfuly removed
-func (li *List) RemoveAt(pos int) {
+func (li *List) RemoveAt(pos int) IPanel {
 
-	li.Scroller.RemoveAt(pos)
+	return li.Scroller.RemoveAt(pos)
 }
 
 // Remove removes the specified item from the list
