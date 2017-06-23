@@ -8,17 +8,17 @@ import (
 
 // Stats contains several statistics usefull for performance evaluation
 type Stats struct {
-	Glstats    gls.Stats // GLS statistics structure
-	UnilocHits int       // Uniform location cache hits per frame
-	UnilocMiss int       // Uniform location cache misses per frame
-	Unisets    int       // Uniform sets per frame
-	Drawcalls  int       // Draw calls per frame
-	Cgocalls   int       // Cgo calls per frame
-	gs         *gls.GLS  // reference to gls state
-	glprev     gls.Stats // previous gls statistics
-	frames     int       // frame counter
-	cgocalls   int64     // previous number of cgo calls
-	last       time.Time // last update time
+	Glstats      gls.Stats // GLS statistics structure
+	UnilocHits   int       // Uniform location cache hits per frame
+	UnilocMiss   int       // Uniform location cache misses per frame
+	Unisets      int       // Uniform sets per frame
+	Drawcalls    int       // Draw calls per frame
+	Cgocalls     int       // Cgo calls per frame
+	prevGls      gls.Stats // previous gls statistics
+	prevCgocalls int64     // previous number of cgo calls
+	gs           *gls.GLS  // reference to gls state
+	frames       int       // frame counter
+	last         time.Time // last update time
 }
 
 // NewStats creates and returns a pointer to a new statistics object
@@ -46,28 +46,28 @@ func (s *Stats) Update(d time.Duration) bool {
 	s.gs.Stats(&s.Glstats)
 
 	// Calculates uniform location cache hits per frame
-	unilochits := s.Glstats.UnilocHits - s.glprev.UnilocHits
+	unilochits := s.Glstats.UnilocHits - s.prevGls.UnilocHits
 	s.UnilocHits = int(float64(unilochits) / float64(s.frames))
 
 	// Calculates uniform location cache hits per frame
-	unilocmiss := s.Glstats.UnilocMiss - s.glprev.UnilocMiss
+	unilocmiss := s.Glstats.UnilocMiss - s.prevGls.UnilocMiss
 	s.UnilocMiss = int(float64(unilocmiss) / float64(s.frames))
 
 	// Calculates uniforms sets per frame
-	unisets := s.Glstats.Unisets - s.glprev.Unisets
+	unisets := s.Glstats.Unisets - s.prevGls.Unisets
 	s.Unisets = int(float64(unisets) / float64(s.frames))
 
 	// Calculates draw calls per frame
-	drawcalls := s.Glstats.Drawcalls - s.glprev.Drawcalls
+	drawcalls := s.Glstats.Drawcalls - s.prevGls.Drawcalls
 	s.Drawcalls = int(float64(drawcalls) / float64(s.frames))
 
 	// Calculates number of cgo calls per frame
 	current := runtime.NumCgoCall()
-	cgocalls := current - s.cgocalls
+	cgocalls := current - s.prevCgocalls
 	s.Cgocalls = int(float64(cgocalls) / float64(s.frames))
-	s.cgocalls = current
+	s.prevCgocalls = current
 
-	s.glprev = s.Glstats
+	s.prevGls = s.Glstats
 	s.last = now
 	s.frames = 0
 	return true
