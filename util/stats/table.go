@@ -8,8 +8,8 @@ import (
 
 // StatsTable is a gui.Table panel with statistics
 type StatsTable struct {
-	*gui.Table          // embedded table
-	fields     []*field // array of fields
+	*gui.Table          // embedded table panel
+	fields     []*field // array of fields to show
 	stats      *Stats   // statistics object
 }
 
