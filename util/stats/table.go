@@ -1,21 +1,16 @@
 package stats
 
 import (
-	"fmt"
-	"runtime"
-	"time"
-
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/gui"
+	"time"
 )
 
+// StatsTable is a gui.Table panel with statistics
 type StatsTable struct {
 	*gui.Table          // embedded table
 	fields     []*field // array of fields
-	prev       gls.Stats
-	frames     int
-	cgocalls   int64
-	last       time.Time
+	stats      *Stats   // statistics object
 }
 
 type field struct {
@@ -23,83 +18,66 @@ type field struct {
 	row int
 }
 
-func NewStatsTable(width, height float32) *StatsTable {
+// NewStatsTable creates and returns a pointer to a new statistics table panel
+func NewStatsTable(width, height float32, gs *gls.GLS) *StatsTable {
 
-	s := new(StatsTable)
+	st := new(StatsTable)
 	t, err := gui.NewTable(width, height, []gui.TableColumn{
-		{Id: "f", Header: "Stat", Width: 50, Minwidth: 32, Align: gui.AlignRight, Format: "%s", Resize: true, Expand: 1.5},
+		{Id: "f", Header: "Stat", Width: 50, Minwidth: 32, Align: gui.AlignRight, Format: "%s", Resize: true, Expand: 2},
 		{Id: "v", Header: "Value", Width: 50, Minwidth: 32, Align: gui.AlignRight, Format: "%d", Resize: false, Expand: 1},
 	})
 	if err != nil {
 		panic(err)
 	}
-	s.Table = t
-	s.ShowHeader(false)
-	s.addRow("shaders", "Shaders:")
-	s.addRow("vaos", "Vaos:")
-	s.addRow("vbos", "Vbos:")
-	s.addRow("textures", "Textures:")
-	s.addRow("unisets", "Uniforms/frame:")
-	s.addRow("cgocalls", "CGO calls/frame:")
-	s.last = time.Now()
-	s.cgocalls = runtime.NumCgoCall()
-	return s
+	st.Table = t
+	st.ShowHeader(false)
+	st.addRow("shaders", "Shaders:")
+	st.addRow("vaos", "Vaos:")
+	st.addRow("vbos", "Vbos:")
+	st.addRow("textures", "Textures:")
+	st.addRow("unisets", "Uniforms/frame:")
+	st.addRow("drawcalls", "Draw calls/frame:")
+	st.addRow("cgocalls", "CGO calls/frame:")
+	st.stats = NewStats(gs)
+	return st
 }
 
-func (s *StatsTable) Update(gs *gls.GLS, d time.Duration) {
+// Update should be called normally in the render loop with the desired update interval
+func (st *StatsTable) Update(d time.Duration) {
 
-	now := time.Now()
-	s.frames++
-	if s.last.Add(d).After(now) {
-		return
+	if st.stats.Update(d) {
+		st.update()
 	}
-	s.update(gs)
-	s.last = now
-	s.frames = 0
 }
 
-func (s *StatsTable) update(gs *gls.GLS) {
+func (st *StatsTable) update() {
 
-	var stats gls.Stats
-	gs.Stats(&stats)
-	for i := 0; i < len(s.fields); i++ {
-		f := s.fields[i]
+	for i := 0; i < len(st.fields); i++ {
+		f := st.fields[i]
 		switch f.id {
 		case "shaders":
-			if stats.Shaders != s.prev.Shaders {
-				s.Table.SetCell(f.row, "v", stats.Shaders)
-				fmt.Println("update")
-			}
+			st.Table.SetCell(f.row, "v", st.stats.Glstats.Shaders)
 		case "vaos":
-			if stats.Vaos != s.prev.Vaos {
-				s.Table.SetCell(f.row, "v", stats.Vaos)
-				fmt.Println("update")
-			}
+			st.Table.SetCell(f.row, "v", st.stats.Glstats.Vaos)
 		case "vbos":
-			if stats.Vbos != s.prev.Vbos {
-				s.Table.SetCell(f.row, "v", stats.Vbos)
-				fmt.Println("update")
-			}
+			st.Table.SetCell(f.row, "v", st.stats.Glstats.Vbos)
 		case "textures":
-			if stats.Textures != s.prev.Textures {
-				s.Table.SetCell(f.row, "v", stats.Textures)
-				fmt.Println("update")
-			}
+			st.Table.SetCell(f.row, "v", st.stats.Glstats.Textures)
+		case "unisets":
+			st.Table.SetCell(f.row, "v", st.stats.Unisets)
+		case "drawcalls":
+			st.Table.SetCell(f.row, "v", st.stats.Drawcalls)
 		case "cgocalls":
-			current := runtime.NumCgoCall()
-			calls := current - s.cgocalls
-			s.Table.SetCell(f.row, "v", int(float64(calls)/float64(s.frames)))
-			s.cgocalls = current
+			st.Table.SetCell(f.row, "v", st.stats.Cgocalls)
 		}
 	}
-	s.prev = stats
 }
 
-func (s *StatsTable) addRow(id, label string) {
+func (st *StatsTable) addRow(id, label string) {
 
 	f := new(field)
 	f.id = id
-	f.row = s.Table.RowCount()
-	s.Table.AddRow(map[string]interface{}{"f": label, "v": 0})
-	s.fields = append(s.fields, f)
+	f.row = st.Table.RowCount()
+	st.Table.AddRow(map[string]interface{}{"f": label, "v": 0})
+	st.fields = append(st.fields, f)
 }
