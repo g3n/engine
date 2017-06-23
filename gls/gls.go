@@ -19,7 +19,7 @@ import (
 // methods to call OpenGL functions.
 type GLS struct {
 	stats               Stats             // statistics
-	Prog                *Program          // current active program
+	prog                *Program          // current active program
 	programs            map[*Program]bool // programs cache
 	checkErrors         bool              // check openGL API errors flag
 	viewportX           int32             // cached last set viewport x
@@ -49,12 +49,15 @@ type GLS struct {
 // Stats contains counters of OpenGL resources being used as well
 // the cummulative numbers of some OpenGL calls for performance evaluation.
 type Stats struct {
-	Vaos      int    // Number of Vertex Array Objects
-	Vbos      int    // Number of Vertex Buffer Objects
-	Textures  int    // Number of Textures
-	Caphits   uint64 // Cummulative number of hits for Enable/Disable
-	Unisets   uint64 // Cummulative number of uniform sets
-	Drawcalls uint64 // Cummulative number of draw calls
+	Shaders    int    // Current number of shader programs
+	Vaos       int    // Number of Vertex Array Objects
+	Vbos       int    // Number of Vertex Buffer Objects
+	Textures   int    // Number of Textures
+	Caphits    uint64 // Cummulative number of hits for Enable/Disable
+	UnilocHits uint64 // Cummulative number of uniform location cache hits
+	UnilocMiss uint64 // Cummulative number of uniform location cache misses
+	Unisets    uint64 // Cummulative number of uniform sets
+	Drawcalls  uint64 // Cummulative number of draw calls
 }
 
 // Polygon side view.
@@ -126,7 +129,7 @@ func (gs *GLS) reset() {
 	gs.depthMask = uintUndef
 	gs.capabilities = make(map[int]int)
 	gs.programs = make(map[*Program]bool)
-	gs.Prog = nil
+	gs.prog = nil
 
 	gs.blendEquation = uintUndef
 	gs.blendSrc = uintUndef
@@ -169,6 +172,7 @@ func (gs *GLS) setDefaultState() {
 func (gs *GLS) Stats(s *Stats) {
 
 	*s = gs.stats
+	s.Shaders = len(gs.programs)
 }
 
 func (gs *GLS) ActiveTexture(texture uint32) {
@@ -627,7 +631,7 @@ func (gs *GLS) UseProgram(prog *Program) {
 		panic("Invalid program")
 	}
 	C.glUseProgram(C.GLuint(prog.handle))
-	gs.Prog = prog
+	gs.prog = prog
 
 	// Inserts program in cache if not already there.
 	if !gs.programs[prog] {

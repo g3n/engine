@@ -138,7 +138,7 @@ func (vbo *VBO) Transfer(gs *GLS) {
 		elsize := int32(unsafe.Sizeof(float32(0)))
 		for _, attrib := range vbo.attribs {
 			// Get attribute location in the current program
-			loc := gs.Prog.GetAttribLocation(attrib.Name)
+			loc := gs.prog.GetAttribLocation(attrib.Name)
 			if loc < 0 {
 				continue
 			}

@@ -159,6 +159,7 @@ func (prog *Program) GetUniformLocation(name string) int32 {
 	// Try to get from the cache
 	loc, ok := prog.uniforms[name]
 	if ok {
+		prog.gs.stats.UnilocHits++
 		return loc
 	}
 	// Get location from GL
@@ -168,6 +169,7 @@ func (prog *Program) GetUniformLocation(name string) int32 {
 	if loc < 0 {
 		log.Warn("GetUniformLocation(%s) NOT FOUND", name)
 	}
+	prog.gs.stats.UnilocMiss++
 	return loc
 }
 
