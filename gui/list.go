@@ -136,7 +136,15 @@ func (li *List) InsertAt(pos int, item IPanel) {
 // RemoveAt removes the list item from the specified position
 func (li *List) RemoveAt(pos int) IPanel {
 
-	return li.Scroller.RemoveAt(pos)
+	// Remove the list item from the internal scroller
+	pan := li.Scroller.RemoveAt(pos)
+	litem := pan.(*ListItem)
+
+	// Remove item from the list item children and disposes of the list item panel
+	item := litem.item
+	litem.Remove(item)
+	litem.Dispose()
+	return item
 }
 
 // Remove removes the specified item from the list
