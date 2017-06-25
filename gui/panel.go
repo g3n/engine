@@ -62,26 +62,19 @@ type Panel struct {
 	content          Rect                // current content rectangle in pixel coordinates
 	modelMatrixUni   gls.UniformMatrix4f // model matrix uniform
 	panUni           gls.Uniform4fv      // uniform array with all panel dimensions and colors
-	//borderColorUni   gls.Uniform4f       // pointer to border color uniform
-	//paddingColorUni  gls.Uniform4f       // pointer to padding color uniform
-	//contentColorUni  gls.Uniform4f       // pointer to content color uniform
-	//boundsUni        gls.Uniform4f       // pointer to bounds uniform (texture coordinates)
-	//borderUni        gls.Uniform4f       // pointer to border uniform (texture coordinates)
-	//paddingUni       gls.Uniform4f       // pointer to padding uniform (texture coordinates)
-	//contentUni       gls.Uniform4f       // pointer to content uniform (texture coordinates)
-	pospix       math32.Vector3 // absolute position in pixels
-	posclip      math32.Vector3 // position in clip (NDC) coordinates
-	wclip        float32        // width in clip coordinates
-	hclip        float32        // height in clip coordinates
-	xmin         float32        // minimum absolute x this panel can use
-	xmax         float32        // maximum absolute x this panel can use
-	ymin         float32        // minimum absolute y this panel can use
-	ymax         float32        // maximum absolute y this panel can use
-	bounded      bool           // panel is bounded by its parent
-	enabled      bool           // enable event processing
-	cursorEnter  bool           // mouse enter dispatched
-	layout       ILayout        // current layout for children
-	layoutParams interface{}    // current layout parameters used by container panel
+	pospix           math32.Vector3      // absolute position in pixels
+	posclip          math32.Vector3      // position in clip (NDC) coordinates
+	wclip            float32             // width in clip coordinates
+	hclip            float32             // height in clip coordinates
+	xmin             float32             // minimum absolute x this panel can use
+	xmax             float32             // maximum absolute x this panel can use
+	ymin             float32             // minimum absolute y this panel can use
+	ymax             float32             // maximum absolute y this panel can use
+	bounded          bool                // panel is bounded by its parent
+	enabled          bool                // enable event processing
+	cursorEnter      bool                // mouse enter dispatched
+	layout           ILayout             // current layout for children
+	layoutParams     interface{}         // current layout parameters used by container panel
 }
 
 const (
@@ -140,20 +133,11 @@ func (p *Panel) Initialize(width, height float32) {
 	p.Graphic = graphic.NewGraphic(geom, gls.TRIANGLES)
 	p.AddMaterial(p, p.mat, 0, 0)
 
-	// Creates and adds uniform
+	// Initialize uniforms
 	p.modelMatrixUni.Init("ModelMatrix")
 	p.panUni.Init("Panel", 7)
 
-	//p.borderColorUni.Init("BorderColor")
-	//p.paddingColorUni.Init("PaddingColor")
-	//p.contentColorUni.Init("ContentColor")
-	//p.boundsUni.Init("Bounds")
-	//p.borderUni.Init("Border")
-	//p.paddingUni.Init("Padding")
-	//p.contentUni.Init("Content")
-
 	// Set defaults
-	//p.borderColorUni.Set(0, 0, 0, 1)
 	p.panUni.Set(idxBorderColor, 0, 0, 0, 1)
 	p.bounded = true
 	p.enabled = true
@@ -167,19 +151,11 @@ func (p *Panel) InitializeGraphic(width, height float32, gr *graphic.Graphic) {
 	p.width = width
 	p.height = height
 
-	// Creates and adds uniform
+	// Initializes uniforms
+	p.modelMatrixUni.Init("ModelMatrix")
 	p.panUni.Init("Panel", 7)
-	//p.modelMatrixUni.Init("ModelMatrix")
-	//p.borderColorUni.Init("BorderColor")
-	//p.paddingColorUni.Init("PaddingColor")
-	//p.contentColorUni.Init("ContentColor")
-	//p.boundsUni.Init("Bounds")
-	//p.borderUni.Init("Border")
-	//p.paddingUni.Init("Padding")
-	//p.contentUni.Init("Content")
 
 	// Set defaults
-	//p.borderColorUni.Set(0, 0, 0, 1)
 	p.panUni.Set(idxBorderColor, 0, 0, 0, 1)
 	p.bounded = true
 	p.enabled = true
@@ -407,14 +383,12 @@ func (p *Panel) Paddings() BorderSizes {
 // The borders opacity is set to 1.0 (full opaque)
 func (p *Panel) SetBordersColor(color *math32.Color) {
 
-	//p.borderColorUni.Set(color.R, color.G, color.B, 1)
 	p.panUni.Set(idxBorderColor, color.R, color.G, color.B, 1)
 }
 
 // SetBordersColor4 sets the color and opacity of this panel borders
 func (p *Panel) SetBordersColor4(color *math32.Color4) {
 
-	//p.borderColorUni.Set(color.R, color.G, color.B, color.A)
 	p.panUni.SetColor4(idxBorderColor, color)
 }
 
@@ -427,15 +401,12 @@ func (p *Panel) BordersColor4() math32.Color4 {
 // SetPaddingsColor sets the color of this panel paddings.
 func (p *Panel) SetPaddingsColor(color *math32.Color) {
 
-	//p.paddingColorUni.Set(color.R, color.G, color.B, 1.0)
 	p.panUni.Set(idxPaddingColor, color.R, color.G, color.B, 1)
 }
 
 // SetColor sets the color of the panel paddings and content area
 func (p *Panel) SetColor(color *math32.Color) *Panel {
 
-	//p.paddingColorUni.Set(color.R, color.G, color.B, 1.0)
-	//p.contentColorUni.Set(color.R, color.G, color.B, 1.0)
 	p.panUni.Set(idxPaddingColor, color.R, color.G, color.B, 1)
 	p.panUni.Set(idxContentColor, color.R, color.G, color.B, 1)
 	return p
@@ -444,8 +415,6 @@ func (p *Panel) SetColor(color *math32.Color) *Panel {
 // SetColor4 sets the color of the panel paddings and content area
 func (p *Panel) SetColor4(color *math32.Color4) *Panel {
 
-	//p.paddingColorUni.Set(color.R, color.G, color.B, color.A)
-	//p.contentColorUni.Set(color.R, color.G, color.B, color.A)
 	p.panUni.SetColor4(idxPaddingColor, color)
 	p.panUni.SetColor4(idxContentColor, color)
 	return p
@@ -454,7 +423,6 @@ func (p *Panel) SetColor4(color *math32.Color4) *Panel {
 // Color4 returns the current color of the panel content area
 func (p *Panel) Color4() math32.Color4 {
 
-	//return p.contentColorUni.GetColor4()
 	return p.panUni.GetColor4(idxContentColor)
 }
 
@@ -873,20 +841,8 @@ func (p *Panel) RenderSetup(gl *gls.GLS, rinfo *core.RenderInfo) {
 	p.modelMatrixUni.SetMatrix4(&mm)
 
 	// Transfer uniforms
-	//p.borderColorUni.Transfer(gl)
-	//p.paddingColorUni.Transfer(gl)
-	//p.contentColorUni.Transfer(gl)
-	//p.boundsUni.Transfer(gl)
-	//p.borderUni.Transfer(gl)
-	//p.paddingUni.Transfer(gl)
-	//p.contentUni.Transfer(gl)
 	p.panUni.Transfer(gl)
 	p.modelMatrixUni.Transfer(gl)
-	//log.Error("panel:%p boundsUni.:%v", p, p.boundsUni)
-	//log.Error("panel:%p borderUni.:%v", p, p.borderUni)
-	//log.Error("panel:%p paddingUni:%v", p, p.paddingUni)
-	//log.Error("panel:%p contentUni:%v", p, p.contentUni)
-	//log.Error("panel:%p mm        :%v", p, p.modelMatrixUni)
 }
 
 // SetModelMatrix calculates and sets the specified matrix with the model matrix for this panel
