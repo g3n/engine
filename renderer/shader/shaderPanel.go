@@ -10,6 +10,9 @@ func init() {
 	AddProgram("shaderPanel", "shaderPanelVertex", "shaderPanelFrag")
 }
 
+//
+// Vertex Shader template
+//
 const shaderPanelVertex = `
 #version {{.Version}}
 
@@ -47,18 +50,10 @@ const shaderPanelFrag = `
 // Inputs from vertex shader
 in vec2 FragTexcoord;
 
-// Input uniforms
-//uniform vec4 Bounds;
-//uniform vec4 Border;
-//uniform vec4 Padding;
-//uniform vec4 Content;
-//uniform vec4 BorderColor;
-//uniform vec4 PaddingColor;
-//uniform vec4 ContentColor;
-
+// Input uniform
 uniform vec4 Panel[7];
-const int bounds			= 0;              // index of uniform array for bounds coordinates
-const int border			= 1;              // index of uniform array for border coordinates
+const int bounds		= 0;              // index of uniform array for bounds coordinates
+const int border		= 1;              // index of uniform array for border coordinates
 const int padding		= 2;              // index of uniform array for padding coordinates
 const int content		= 3;              // index of uniform array for content coordinates
 const int borderColor  	= 4;              // index of uniform array for border color
