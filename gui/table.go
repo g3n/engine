@@ -560,6 +560,7 @@ func (t *Table) Clear() {
 
 	for ri := 0; ri < len(t.rows); ri++ {
 		trow := t.rows[ri]
+		t.Panel.Remove(trow)
 		trow.DisposeChildren(true)
 		trow.Dispose()
 	}
@@ -788,7 +789,10 @@ func (t *Table) removeRow(row int) {
 	// Get row to be removed
 	trow := t.rows[row]
 
-	// Remove row from table
+	// Remove row from table children
+	t.Panel.Remove(trow)
+
+	// Remove row from rows array
 	copy(t.rows[row:], t.rows[row+1:])
 	t.rows[len(t.rows)-1] = nil
 	t.rows = t.rows[:len(t.rows)-1]
