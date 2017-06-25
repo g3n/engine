@@ -22,7 +22,7 @@ type Uniform struct {
 // for the current active program
 func (uni *Uniform) Location(gs *GLS) int32 {
 
-	loc := gs.Prog.GetUniformLocation(uni.name)
+	loc := gs.prog.GetUniformLocation(uni.name)
 	return loc
 }
 
@@ -36,7 +36,7 @@ func (uni *Uniform) LocationIdx(gs *GLS, idx int) int32 {
 		uni.idx = idx
 	}
 	//log.Debug("Location(%s, %d)", uni.name, idx)
-	loc := gs.Prog.GetUniformLocation(uni.nameidx)
+	loc := gs.prog.GetUniformLocation(uni.nameidx)
 	return loc
 }
 

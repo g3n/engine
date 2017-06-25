@@ -19,8 +19,8 @@ import (
 // methods to call OpenGL functions.
 type GLS struct {
 	stats               Stats             // statistics
-	Prog                *Program          // current active program
-	programs            map[*Program]bool // programs cache
+	prog                *Program          // current active shader program
+	programs            map[*Program]bool // shader programs cache
 	checkErrors         bool              // check openGL API errors flag
 	viewportX           int32             // cached last set viewport x
 	viewportY           int32             // cached last set viewport y
@@ -49,12 +49,15 @@ type GLS struct {
 // Stats contains counters of OpenGL resources being used as well
 // the cummulative numbers of some OpenGL calls for performance evaluation.
 type Stats struct {
-	Vaos      int    // Number of Vertex Array Objects
-	Vbos      int    // Number of Vertex Buffer Objects
-	Textures  int    // Number of Textures
-	Caphits   uint64 // Cummulative number of hits for Enable/Disable
-	Unisets   uint64 // Cummulative number of uniform sets
-	Drawcalls uint64 // Cummulative number of draw calls
+	Shaders    int    // Current number of shader programs
+	Vaos       int    // Number of Vertex Array Objects
+	Buffers    int    // Number of Buffer Objects
+	Textures   int    // Number of Textures
+	Caphits    uint64 // Cummulative number of hits for Enable/Disable
+	UnilocHits uint64 // Cummulative number of uniform location cache hits
+	UnilocMiss uint64 // Cummulative number of uniform location cache misses
+	Unisets    uint64 // Cummulative number of uniform sets
+	Drawcalls  uint64 // Cummulative number of draw calls
 }
 
 // Polygon side view.
@@ -126,7 +129,7 @@ func (gs *GLS) reset() {
 	gs.depthMask = uintUndef
 	gs.capabilities = make(map[int]int)
 	gs.programs = make(map[*Program]bool)
-	gs.Prog = nil
+	gs.prog = nil
 
 	gs.blendEquation = uintUndef
 	gs.blendSrc = uintUndef
@@ -169,6 +172,7 @@ func (gs *GLS) setDefaultState() {
 func (gs *GLS) Stats(s *Stats) {
 
 	*s = gs.stats
+	s.Shaders = len(gs.programs)
 }
 
 func (gs *GLS) ActiveTexture(texture uint32) {
@@ -270,9 +274,10 @@ func (gs *GLS) CreateShader(stype uint32) uint32 {
 	return uint32(h)
 }
 
-func (gs *GLS) DeleteBuffers(vbos ...uint32) {
+func (gs *GLS) DeleteBuffers(bufs ...uint32) {
 
-	C.glDeleteBuffers(C.GLsizei(len(vbos)), (*C.GLuint)(&vbos[0]))
+	C.glDeleteBuffers(C.GLsizei(len(bufs)), (*C.GLuint)(&bufs[0]))
+	gs.stats.Buffers -= len(bufs)
 }
 
 func (gs *GLS) DeleteShader(shader uint32) {
@@ -294,6 +299,7 @@ func (gs *GLS) DeleteTextures(tex ...uint32) {
 func (gs *GLS) DeleteVertexArrays(vaos ...uint32) {
 
 	C.glDeleteVertexArrays(C.GLsizei(len(vaos)), (*C.GLuint)(&vaos[0]))
+	gs.stats.Vaos -= len(vaos)
 }
 
 func (gs *GLS) DepthFunc(mode uint32) {
@@ -372,7 +378,7 @@ func (gs *GLS) GenBuffer() uint32 {
 
 	var buf uint32
 	C.glGenBuffers(1, (*C.GLuint)(&buf))
-	gs.stats.Vbos++
+	gs.stats.Buffers++
 	return buf
 }
 
@@ -627,7 +633,7 @@ func (gs *GLS) UseProgram(prog *Program) {
 		panic("Invalid program")
 	}
 	C.glUseProgram(C.GLuint(prog.handle))
-	gs.Prog = prog
+	gs.prog = prog
 
 	// Inserts program in cache if not already there.
 	if !gs.programs[prog] {

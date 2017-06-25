@@ -9,10 +9,9 @@ import (
 )
 
 type ControlFolder struct {
-	Folder                       // Embedded folder
-	tree    Tree                 // control tree
-	styles  *ControlFolderStyles // Pointer to styles
-	current interface{}
+	Folder                      // Embedded folder
+	tree   Tree                 // control tree
+	styles *ControlFolderStyles // Pointer to styles
 }
 
 type ControlFolderStyles struct {
@@ -52,6 +51,16 @@ func (f *ControlFolder) Initialize(text string, width float32) {
 func (f *ControlFolder) Clear() {
 
 	f.tree.Clear()
+}
+
+func (f *ControlFolder) RemoveAt(pos int) IPanel {
+
+	return f.tree.RemoveAt(pos)
+}
+
+func (f *ControlFolder) AddPanel(pan IPanel) {
+
+	f.tree.Add(pan)
 }
 
 func (f *ControlFolder) AddCheckBox(text string) *CheckRadio {
@@ -101,6 +110,11 @@ func (g *ControlFolderGroup) AddSlider(text string, sf, v float32) *Slider {
 	cont, slider := g.control.newSlider(text, sf, v)
 	g.node.Add(cont)
 	return slider
+}
+
+func (g *ControlFolderGroup) AddPanel(pan IPanel) {
+
+	g.node.Add(pan)
 }
 
 func (f *ControlFolder) newSlider(text string, sf, value float32) (IPanel, *Slider) {

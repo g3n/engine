@@ -11,7 +11,7 @@ import (
 
 // VBO abstracts an OpenGL Vertex Buffer Object
 type VBO struct {
-	gs      *GLS
+	gs      *GLS            // reference to GLS state
 	handle  uint32          // OpenGL handle for this VBO
 	usage   uint32          // Expected usage patter of the buffer
 	update  bool            // Update flag
@@ -77,6 +77,17 @@ func (vbo *VBO) AttribCount() int {
 	return len(vbo.attribs)
 }
 
+// Dispose disposes of this VBO OpenGL resources
+// As currently the VBO is used only by the Geometry object
+// it is not referenced counted.
+func (vbo *VBO) Dispose() {
+
+	if vbo.gs != nil {
+		vbo.gs.DeleteBuffers(vbo.handle)
+	}
+	vbo.gs = nil
+}
+
 // Sets the VBO buffer
 func (vbo *VBO) SetBuffer(buffer math32.ArrayF32) *VBO {
 
@@ -138,7 +149,7 @@ func (vbo *VBO) Transfer(gs *GLS) {
 		elsize := int32(unsafe.Sizeof(float32(0)))
 		for _, attrib := range vbo.attribs {
 			// Get attribute location in the current program
-			loc := gs.Prog.GetAttribLocation(attrib.Name)
+			loc := gs.prog.GetAttribLocation(attrib.Name)
 			if loc < 0 {
 				continue
 			}

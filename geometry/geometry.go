@@ -78,9 +78,14 @@ func (g *Geometry) Dispose() {
 		return
 	}
 
+	// Delete VAO and indices buffer
 	if g.gs != nil {
 		g.gs.DeleteVertexArrays(g.handleVAO)
 		g.gs.DeleteBuffers(g.handleIndices)
+	}
+	// Delete this geometry VBO buffers
+	for i := 0; i < len(g.vbos); i++ {
+		g.vbos[i].Dispose()
 	}
 	g.Init()
 }

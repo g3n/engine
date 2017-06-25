@@ -128,20 +128,6 @@ func (t *Tree) Remove(child IPanel) {
 	}
 }
 
-//// Clear removes all items from the tree
-//func (t *Tree) Clear() {
-//
-//	for t.List.Len() > 0 {
-//		curr := t.List.ItemAt(0)
-//		node, ok := curr.(*TreeNode)
-//		if ok {
-//			node.remove()
-//		} else {
-//			t.List.Remove(curr)
-//		}
-//	}
-//}
-
 // Selected returns the currently selected element or nil
 func (t *Tree) Selected() IPanel {
 
