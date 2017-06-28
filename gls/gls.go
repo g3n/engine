@@ -41,6 +41,8 @@ type GLS struct {
 	blendSrcAlpha       uint32            // cached last set blend src alpha value
 	blendDstRGB         uint32            // cached last set blend destination rgb value
 	blendDstAlpha       uint32            // cached last set blend destination alpha value
+	polygonModeFace     uint32            // cached last set polygon mode face
+	polygonModeMode     uint32            // cached last set polygon mode mode
 	polygonOffsetFactor float32           // cached last set polygon offset factor
 	polygonOffsetUnits  float32           // cached last set polygon offset units
 	gobuf               []byte            // conversion buffer with GO memory
@@ -142,6 +144,8 @@ func (gs *GLS) reset() {
 	gs.blendSrcAlpha = uintUndef
 	gs.blendDstRGB = uintUndef
 	gs.blendDstAlpha = uintUndef
+	gs.polygonModeFace = 0
+	gs.polygonModeMode = 0
 	gs.polygonOffsetFactor = -1
 	gs.polygonOffsetUnits = -1
 }
@@ -537,9 +541,14 @@ func (gs *GLS) TexParameteri(target uint32, pname uint32, param int32) {
 	C.glTexParameteri(C.GLenum(target), C.GLenum(pname), C.GLint(param))
 }
 
-func (gs *GLS) PolygonMode(face, mode int) {
+func (gs *GLS) PolygonMode(face, mode uint32) {
 
+	if gs.polygonModeFace == face && gs.polygonModeMode == mode {
+		return
+	}
 	C.glPolygonMode(C.GLenum(face), C.GLenum(mode))
+	gs.polygonModeFace = face
+	gs.polygonModeMode = mode
 }
 
 func (gs *GLS) PolygonOffset(factor float32, units float32) {
