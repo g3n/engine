@@ -480,38 +480,6 @@ func (gs *GLS) LinkProgram(program uint32) {
 	C.glLinkProgram(C.GLuint(program))
 }
 
-func (gs *GLS) SetDepthTest(enable bool) {
-
-	if enable {
-		gs.Enable(DEPTH_TEST)
-	} else {
-		gs.Disable(DEPTH_TEST)
-	}
-}
-
-func (gs *GLS) SetSideView(mode int) {
-
-	if gs.sideView == mode {
-		return
-	}
-	switch mode {
-	// Default: show only the front size
-	case FrontSide:
-		gs.Enable(CULL_FACE)
-		C.glFrontFace(CCW)
-	// Show only the back side
-	case BackSide:
-		gs.Enable(CULL_FACE)
-		C.glFrontFace(CW)
-	// Show both sides
-	case DoubleSide:
-		gs.Disable(CULL_FACE)
-	default:
-		panic("SetSideView() invalid mode")
-	}
-	gs.sideView = mode
-}
-
 func (gs *GLS) GetShaderiv(shader, pname uint32, params *int32) {
 
 	C.glGetShaderiv(C.GLuint(shader), C.GLenum(pname), (*C.GLint)(params))
