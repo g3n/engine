@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/g3n/engine/math32"
 	"io"
 	"strconv"
 	"strings"
@@ -171,127 +170,6 @@ func (prog *Program) GetUniformLocation(name string) int32 {
 	}
 	prog.gs.stats.UnilocMiss++
 	return loc
-}
-
-// SetUniformInt sets this program uniform variable specified by
-// its location to the the value of the specified int
-func (prog *Program) SetUniformInt(loc int32, v int) {
-
-	prog.gs.Uniform1i(loc, int32(v))
-}
-
-// SetUniformFloat sets this program uniform variable specified by
-// its location to the the value of the specified float
-func (prog *Program) SetUniformFloat(loc int32, v float32) {
-
-	prog.gs.Uniform1f(loc, v)
-}
-
-// SetUniformVector2 sets this program uniform variable specified by
-// its location to the the value of the specified Vector2
-func (prog *Program) SetUniformVector2(loc int32, v *math32.Vector2) {
-
-	prog.gs.Uniform2f(loc, v.X, v.Y)
-}
-
-// SetUniformVector3 sets this program uniform variable specified by
-// its location to the the value of the specified Vector3
-func (prog *Program) SetUniformVector3(loc int32, v *math32.Vector3) {
-
-	prog.gs.Uniform3f(loc, v.X, v.Y, v.Z)
-}
-
-// SetUniformVector4 sets this program uniform variable specified by
-// its location to the the value of the specified Vector4
-func (prog *Program) SetUniformVector4(loc int32, v *math32.Vector4) {
-
-	prog.gs.Uniform4f(loc, v.X, v.Y, v.Z, v.W)
-}
-
-// SetUniformMatrix3 sets this program uniform variable specified by
-// its location with the values from the specified Matrix3.
-func (prog *Program) SetUniformMatrix3(loc int32, m *math32.Matrix3) {
-
-	prog.gs.UniformMatrix3fv(loc, 1, false, &m[0])
-}
-
-// SetUniformMatrix4 sets this program uniform variable specified by
-// its location with the values from the specified Matrix4.
-func (prog *Program) SetUniformMatrix4(loc int32, m *math32.Matrix4) {
-
-	prog.gs.UniformMatrix4fv(loc, 1, false, &m[0])
-}
-
-// SetUniformIntByName sets this program uniform variable specified by
-// its name to the value of the specified int.
-// The specified name location is cached internally.
-func (prog *Program) SetUniformIntByName(name string, v int) {
-
-	prog.gs.Uniform1i(prog.GetUniformLocation(name), int32(v))
-}
-
-// SetUniformFloatByName sets this program uniform variable specified by
-// its name to the value of the specified float32.
-// The specified name location is cached internally.
-func (prog *Program) SetUniformFloatByName(name string, v float32) {
-
-	prog.gs.Uniform1f(prog.GetUniformLocation(name), v)
-}
-
-// SetUniformVector2ByName sets this program uniform variable specified by
-// its name to the values from the specified Vector2.
-// The specified name location is cached internally.
-func (prog *Program) SetUniformVector2ByName(name string, v *math32.Vector2) {
-
-	prog.gs.Uniform2f(prog.GetUniformLocation(name), v.X, v.Y)
-}
-
-// SetUniformVector3ByName sets this program uniform variable specified by
-// its name to the values from the specified Vector3.
-// The specified name location is cached internally.
-func (prog *Program) SetUniformVector3ByName(name string, v *math32.Vector3) {
-
-	prog.gs.Uniform3f(prog.GetUniformLocation(name), v.X, v.Y, v.Z)
-}
-
-// SetUniformVector4ByName sets this program uniform variable specified by
-// its name to the values from the specified Vector4.
-// The specified name location is cached internally.
-func (prog *Program) SetUniformVector4ByName(name string, v *math32.Vector4) {
-
-	prog.gs.Uniform4f(prog.GetUniformLocation(name), v.X, v.Y, v.Z, v.W)
-}
-
-// SetUniformMatrix3ByName sets this program uniform variable specified by
-// its name with the values from the specified Matrix3.
-// The specified name location is cached internally.
-func (prog *Program) SetUniformMatrix3ByName(name string, m *math32.Matrix3) {
-
-	prog.gs.UniformMatrix3fv(prog.GetUniformLocation(name), 1, false, &m[0])
-}
-
-// SetUniformMatrix4ByName sets this program uniform variable specified by
-// its name with the values from the specified Matrix4.
-// The location of the name is cached internally.
-func (prog *Program) SetUniformMatrix4ByName(name string, m *math32.Matrix4) {
-
-	prog.gs.UniformMatrix4fv(prog.GetUniformLocation(name), 1, false, &m[0])
-}
-
-// SetUniformColorByName set this program uniform variable specified by
-// its name to the values from the specified Color
-// The specified name location is cached internally.
-func (prog *Program) SetUniformColorByName(name string, c *math32.Color) {
-
-	prog.gs.Uniform3f(prog.GetUniformLocation(name), c.R, c.G, c.B)
-}
-
-// SetUniformColor4ByName set this program uniform variable specified by
-// its name to the values from the specified Color4
-// The specified name location is cached internally.
-func (prog *Program) SetUniformColor4ByName(name string, c *math32.Color4) {
-
-	prog.gs.Uniform4f(prog.GetUniformLocation(name), c.R, c.G, c.B, c.A)
 }
 
 // CompileShader creates and compiles a shader of the specified type and with
