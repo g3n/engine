@@ -28,6 +28,7 @@ type GLS struct {
 	viewportHeight      int32             // cached last set viewport height
 	lineWidth           float32           // cached last set line width
 	sideView            int               // cached last set triangle side view mode
+	frontFace           uint32            // cached last set glFrontFace value
 	depthFunc           uint32            // cached last set depth function
 	depthMask           int               // cached last set depth mask
 	capabilities        map[int]int       // cached capabilities (Enable/Disable)
@@ -125,6 +126,7 @@ func (gs *GLS) reset() {
 
 	gs.lineWidth = 0.0
 	gs.sideView = uintUndef
+	gs.frontFace = 0
 	gs.depthFunc = 0
 	gs.depthMask = uintUndef
 	gs.capabilities = make(map[int]int)
@@ -371,7 +373,11 @@ func (gs *GLS) CullFace(mode uint32) {
 
 func (gs *GLS) FrontFace(mode uint32) {
 
+	if gs.frontFace == mode {
+		return
+	}
 	C.glFrontFace(C.GLenum(mode))
+	gs.frontFace = mode
 }
 
 func (gs *GLS) GenBuffer() uint32 {
