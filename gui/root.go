@@ -242,7 +242,7 @@ func (r *Root) sendPanels(x, y float32, evname string, ev interface{}) {
 			return
 		}
 		// Checks if this panel contains the mouse position
-		found := pan.ContainsPosition(x, y)
+		found := pan.InsideBorders(x, y)
 		if found {
 			r.targets = append(r.targets, ipan)
 		} else {

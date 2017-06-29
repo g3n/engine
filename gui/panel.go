@@ -547,6 +547,20 @@ func (p *Panel) ContainsPosition(x, y float32) bool {
 	return true
 }
 
+// InsideBorders returns indication if the specified screen
+// position in pixels is inside the panel borders, including the borders width.
+// Unlike "ContainsPosition" is does not consider the panel margins.
+func (p *Panel) InsideBorders(x, y float32) bool {
+
+	if x < (p.pospix.X+p.marginSizes.Left) || x >= (p.pospix.X+p.width-p.marginSizes.Right) {
+		return false
+	}
+	if y < (p.pospix.Y+p.marginSizes.Top) || y >= (p.pospix.Y+p.height-p.marginSizes.Bottom) {
+		return false
+	}
+	return true
+}
+
 // SetEnabled sets the panel enabled state
 // A disabled panel do not process key or mouse events.
 func (p *Panel) SetEnabled(state bool) {

@@ -175,7 +175,7 @@ func (dd *DropDown) onListMouse(evname string, ev interface{}) {
 	if evname == OnMouseDown {
 		// If click occurred inside the list scrollbar ignore it
 		if dd.list.vscroll != nil {
-			if dd.list.vscroll.ContainsPosition(mev.Xpos, mev.Ypos) {
+			if dd.list.vscroll.InsideBorders(mev.Xpos, mev.Ypos) {
 				return
 			}
 		}
@@ -193,7 +193,7 @@ func (dd *DropDown) onListMouse(evname string, ev interface{}) {
 		}
 		// If list clickout occurred inside the dropdown, set 'clickOut' to
 		// indicate that the list was already closed
-		if dd.Panel.ContainsPosition(mev.Xpos, mev.Ypos) {
+		if dd.Panel.InsideBorders(mev.Xpos, mev.Ypos) {
 			dd.clickOut = true
 		}
 	}
