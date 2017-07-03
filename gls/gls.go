@@ -22,6 +22,7 @@ type GLS struct {
 	prog                *Program          // current active shader program
 	programs            map[*Program]bool // shader programs cache
 	checkErrors         bool              // check openGL API errors flag
+	activeTexture       uint32            // cached last set active texture unit
 	viewportX           int32             // cached last set viewport x
 	viewportY           int32             // cached last set viewport y
 	viewportWidth       int32             // cached last set viewport width
@@ -135,6 +136,7 @@ func (gs *GLS) reset() {
 	gs.programs = make(map[*Program]bool)
 	gs.prog = nil
 
+	gs.activeTexture = uintUndef
 	gs.blendEquation = uintUndef
 	gs.blendSrc = uintUndef
 	gs.blendDst = uintUndef
@@ -183,7 +185,11 @@ func (gs *GLS) Stats(s *Stats) {
 
 func (gs *GLS) ActiveTexture(texture uint32) {
 
+	if gs.activeTexture == texture {
+		return
+	}
 	C.glActiveTexture(C.GLenum(texture))
+	gs.activeTexture = texture
 }
 
 func (gs *GLS) AttachShader(program, shader uint32) {
