@@ -8,6 +8,9 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// Phong material is identical to the Standard material but
+// the calculation of the lighting model is done in the
+// fragment shader.
 type Phong struct {
 	Standard // Embedded standard material
 }

@@ -9,37 +9,21 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// Point material is normally used for single point sprites
 type Point struct {
-	Material                // Embedded base material
-	emissive  gls.Uniform3f // point emissive uniform
-	size      gls.Uniform1f // point size uniform
-	opacity   gls.Uniform1f // point opacity uniform
-	rotationZ gls.Uniform1f // point z rotation
+	Standard // Embedded standard material
 }
 
 // NewPoint creates and returns a pointer to a new point material
 func NewPoint(color *math32.Color) *Point {
 
 	pm := new(Point)
-	pm.Material.Init()
-	pm.SetShader("shaderPoint")
+	pm.Standard.Init("shaderPoint", color)
 
-	// Creates color uniform
-	pm.emissive.Init("MatEmissiveColor")
-	pm.emissive.SetColor(color)
-
-	// Creates point size uniform
-	pm.size.Init("PointSize")
-	pm.size.Set(1.0)
-
-	// Creates point opacity uniform
-	pm.opacity.Init("MatOpacity")
-	pm.opacity.Set(1.0)
-
-	// Creates point rotation Z uniform
-	pm.rotationZ.Init("RotationZ")
-	pm.rotationZ.Set(0)
-
+	// Sets uniform's initial values
+	pm.uni.SetColor(vEmissive, color)
+	pm.uni.SetPos(pSize, 1.0)
+	pm.uni.SetPos(pRotationZ, 0)
 	return pm
 }
 
@@ -47,36 +31,25 @@ func NewPoint(color *math32.Color) *Point {
 // The default is {0,0,0}
 func (pm *Point) SetEmissiveColor(color *math32.Color) {
 
-	pm.emissive.SetColor(color)
+	pm.uni.SetColor(vEmissive, color)
 }
 
-// EmissiveColor returns the material current emissive color
-func (pm *Point) EmissiveColor() math32.Color {
-
-	return pm.emissive.GetColor()
-}
-
+// SetSize sets the point size
 func (pm *Point) SetSize(size float32) {
 
-	pm.size.Set(size)
+	pm.uni.SetPos(pSize, size)
 }
 
-func (pm *Point) SetOpacity(opacity float32) {
-
-	pm.opacity.Set(opacity)
-}
-
+// SetRotationZ sets the point rotation around the Z axis.
 func (pm *Point) SetRotationZ(rot float32) {
 
-	pm.rotationZ.Set(rot)
+	pm.uni.SetPos(pRotationZ, rot)
 }
 
+// RenderSetup is called by the engine before drawing the object
+// which uses this material
 func (pm *Point) RenderSetup(gs *gls.GLS) {
 
 	pm.Material.RenderSetup(gs)
-
-	pm.emissive.Transfer(gs)
-	pm.size.Transfer(gs)
-	pm.opacity.Transfer(gs)
-	pm.rotationZ.Transfer(gs)
+	pm.uni.Transfer(gs)
 }

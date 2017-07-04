@@ -24,10 +24,6 @@ uniform mat4 MVP;
 // Material uniforms
 {{template "material" .}}
 
-// Specific uniforms
-uniform float PointSize;
-uniform float RotationZ;
-
 // Outputs for fragment shader
 out vec3 Color;
 flat out mat2 Rotation;
@@ -35,8 +31,8 @@ flat out mat2 Rotation;
 void main() {
 
     // Rotation matrix for fragment shader
-    float rotSin = sin(RotationZ);
-    float rotCos = cos(RotationZ);
+    float rotSin = sin(MatPointRotationZ);
+    float rotCos = cos(MatPointRotationZ);
     Rotation = mat2(rotCos, rotSin, - rotSin, rotCos);
 
     // Sets the vertex position
@@ -44,7 +40,7 @@ void main() {
     gl_Position = pos;
 
     // Sets the size of the rasterized point decreasing with distance
-    gl_PointSize = (1.0 - pos.z / pos.w) * PointSize;
+    gl_PointSize = (1.0 - pos.z / pos.w) * MatPointSize;
 
     // Outputs color
     Color = MatEmissiveColor;
@@ -73,7 +69,7 @@ void main() {
     {{ range loop .MatTexturesMax }}
     {
         vec2 pt = gl_PointCoord - vec2(0.5);
-        vec4 texcolor = texture(MatTexture[{{.}}], (Rotation * pt + vec2(0.5)) * MatTexinfo[{{.}}]TexRepeat + MatTexinfo[{{.}}]TexOffset);
+        vec4 texcolor = texture(MatTexture[{{.}}], (Rotation * pt + vec2(0.5)) * MatTexRepeat({{.}}) + MatTexOffset({{.}}));
         if ({{.}} == 0) {
             texCombined = texcolor;
         } else {

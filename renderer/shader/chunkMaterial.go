@@ -10,7 +10,7 @@ func init() {
 
 const chunkMaterial = `
 // Material uniforms
-uniform vec3	Material[5];
+uniform vec3	Material[6];
 
 // Macros to access elements inside the Material uniform array
 #define MatAmbientColor		Material[0]
@@ -19,6 +19,8 @@ uniform vec3	Material[5];
 #define MatEmissiveColor	Material[3]
 #define MatShininess		Material[4].x
 #define MatOpacity			Material[4].y
+#define MatPointSize		Material[4].z
+#define MatPointRotationZ	Material[5].x
 
 {{if .MatTexturesMax}}
 // Textures uniforms

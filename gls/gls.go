@@ -113,7 +113,7 @@ func (gs *GLS) SetCheckErrors(enable bool) {
 	if enable {
 		C.glapiCheckError(1)
 	} else {
-		C.glapiCheckError(1)
+		C.glapiCheckError(0)
 	}
 	gs.checkErrors = enable
 }
