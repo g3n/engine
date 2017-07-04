@@ -11,13 +11,20 @@ import (
 )
 
 type Directional struct {
-	core.Node                // Embedded node
-	color      math32.Color  // Light color
-	intensity  float32       // Light intensity
-	uColor     gls.Uniform3f // Light color uniform (color * intensity)
-	uDirection gls.Uniform3f // Light direction uniform
+	core.Node                 // Embedded node
+	color     math32.Color    // Light color
+	intensity float32         // Light intensity
+	uni       *gls.Uniform3fv // uniform with light color and direction
 }
 
+const (
+	dirColor    = 0 // index of color triplet in uniform
+	dirPosition = 1 // index of position vector in uniform
+	dirUniSize  = 2 // uniform count of 3 float32
+)
+
+// NewDirectional creates and returns a pointer of a new directional light
+// the specified color and intensity.
 func NewDirectional(color *math32.Color, intensity float32) *Directional {
 
 	ld := new(Directional)
@@ -25,8 +32,7 @@ func NewDirectional(color *math32.Color, intensity float32) *Directional {
 
 	ld.color = *color
 	ld.intensity = intensity
-	ld.uColor.Init("DirLightColor")
-	ld.uDirection.Init("DirLightPosition")
+	ld.uni = gls.NewUniform3fv("DirLight", dirUniSize)
 	ld.SetColor(color)
 	return ld
 }
@@ -37,7 +43,7 @@ func (ld *Directional) SetColor(color *math32.Color) {
 	ld.color = *color
 	tmpColor := ld.color
 	tmpColor.MultiplyScalar(ld.intensity)
-	ld.uColor.SetColor(&tmpColor)
+	ld.uni.SetColor(dirColor, &tmpColor)
 }
 
 // Color returns the current color of this light
@@ -52,7 +58,7 @@ func (ld *Directional) SetIntensity(intensity float32) {
 	ld.intensity = intensity
 	tmpColor := ld.color
 	tmpColor.MultiplyScalar(ld.intensity)
-	ld.uColor.SetColor(&tmpColor)
+	ld.uni.SetColor(dirColor, &tmpColor)
 }
 
 // Intensity returns the current intensity of this light
@@ -64,14 +70,13 @@ func (ld *Directional) Intensity() float32 {
 // RenderSetup is called by the engine before rendering the scene
 func (ld *Directional) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo, idx int) {
 
-	// Sets color
-	ld.uColor.TransferIdx(gs, idx)
-
 	// Calculates and updates light direction uniform in camera coordinates
 	var pos math32.Vector3
 	ld.WorldPosition(&pos)
 	pos4 := math32.Vector4{pos.X, pos.Y, pos.Z, 0.0}
 	pos4.ApplyMatrix4(&rinfo.ViewMatrix)
-	ld.uDirection.SetVector3(&math32.Vector3{pos4.X, pos4.Y, pos4.Z})
-	ld.uDirection.TransferIdx(gs, idx)
+	ld.uni.SetVector3(dirPosition, &math32.Vector3{pos4.X, pos4.Y, pos4.Z})
+
+	// Transfer color and position uniform
+	ld.uni.TransferIdx(gs, idx*dirUniSize)
 }

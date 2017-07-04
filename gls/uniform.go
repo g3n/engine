@@ -35,7 +35,6 @@ func (uni *Uniform) LocationIdx(gs *GLS, idx int) int32 {
 		uni.nameidx = fmt.Sprintf("%s[%d]", uni.name, idx)
 		uni.idx = idx
 	}
-	//log.Debug("Location(%s, %d)", uni.name, idx)
 	loc := gs.prog.GetUniformLocation(uni.nameidx)
 	return loc
 }
@@ -438,6 +437,81 @@ func (uni *UniformMatrix4f) TransferIdx(gl *GLS, idx int) {
 }
 
 //
+// Type Uniform1fv is a uniform containing an array of float32 values
+//
+type Uniform1fv struct {
+	Uniform           // embedded uniform
+	v       []float32 // array of values
+}
+
+// NewUniform1fv creates and returns an uniform with array of float32 values
+// with the specified size
+func NewUniform1fv(name string, count int) *Uniform1fv {
+
+	uni := new(Uniform1fv)
+	uni.Init(name, count)
+	return uni
+}
+
+// Init initializes an Uniform1fv object with the specified name and count of float32 values.
+// It is normally used when the uniform is embedded in another object.
+func (uni *Uniform1fv) Init(name string, count int) {
+
+	uni.name = name
+	uni.v = make([]float32, count)
+}
+
+// SetVector3 sets the value of the elements of uniform starting at pos
+// from the specified Vector3 object.
+func (uni *Uniform1fv) SetVector3(pos int, v *math32.Vector3) {
+
+	uni.v[pos] = v.X
+	uni.v[pos+1] = v.Y
+	uni.v[pos+2] = v.Z
+}
+
+// GetVector3 gets the value of the elements of the uniform starting at
+// pos as a Vector3 object.
+func (uni *Uniform1fv) GetVector3(pos int) math32.Vector3 {
+
+	return math32.Vector3{uni.v[pos], uni.v[pos+1], uni.v[pos+2]}
+}
+
+// SetColor sets the value of the elements of the uniform starting at pos
+// from the specified Color object.
+func (uni *Uniform1fv) SetColor(pos int, color *math32.Color) {
+
+	uni.v[pos] = color.R
+	uni.v[pos+1] = color.G
+	uni.v[pos+2] = color.B
+}
+
+// GetColor gets the value of the elements of the uniform starting at pos
+// as a Color object.
+func (uni *Uniform1fv) GetColor(pos int) math32.Color {
+
+	return math32.Color{uni.v[pos], uni.v[pos+1], uni.v[pos+2]}
+}
+
+// Set sets the value of the element at the specified position
+func (uni *Uniform1fv) Set(pos int, v float32) {
+
+	uni.v[pos] = v
+}
+
+// Get gets the value of the element at the specified position
+func (uni *Uniform1fv) Get(pos int, v float32) float32 {
+
+	return uni.v[pos]
+}
+
+// TransferIdx transfer a block of 'count' values of this uniform starting at 'pos'.
+func (uni *Uniform1fv) TransferIdx(gl *GLS, pos, count int) {
+
+	gl.Uniform1fv(uni.LocationIdx(gl, pos), 1, uni.v[pos:])
+}
+
+//
 // Type Uniform3fv is a uniform containing an array of three float32 values
 //
 type Uniform3fv struct {
@@ -467,9 +541,6 @@ func (uni *Uniform3fv) Init(name string, count int) {
 // Set sets the value of all elements of the specified group of 3 floats for this uniform array
 func (uni *Uniform3fv) Set(idx int, v0, v1, v2 float32) {
 
-	if idx < 0 || idx >= uni.count {
-		panic("Invalid index")
-	}
 	pos := idx * 3
 	uni.v[pos] = v0
 	uni.v[pos+1] = v1
@@ -479,9 +550,6 @@ func (uni *Uniform3fv) Set(idx int, v0, v1, v2 float32) {
 // Get gets the value of all elements of the specified group of 3 floats for this uniform array
 func (uni *Uniform3fv) Get(idx int) (v0, v1, v2 float32) {
 
-	if idx < 0 || idx >= uni.count {
-		panic("Invalid index")
-	}
 	pos := idx * 3
 	return uni.v[pos], uni.v[pos+1], uni.v[pos+2]
 }
@@ -490,9 +558,6 @@ func (uni *Uniform3fv) Get(idx int) (v0, v1, v2 float32) {
 // from the specified Vector3 object.
 func (uni *Uniform3fv) SetVector3(idx int, v *math32.Vector3) {
 
-	if idx < 0 || idx >= uni.count {
-		panic("Invalid index")
-	}
 	pos := idx * 3
 	uni.v[pos] = v.X
 	uni.v[pos+1] = v.Y
@@ -503,9 +568,6 @@ func (uni *Uniform3fv) SetVector3(idx int, v *math32.Vector3) {
 // as a Vector3 object.
 func (uni *Uniform3fv) GetVector3(idx int) math32.Vector3 {
 
-	if idx < 0 || idx >= uni.count {
-		panic("Invalid index")
-	}
 	pos := idx * 3
 	return math32.Vector3{uni.v[pos], uni.v[pos+1], uni.v[pos+2]}
 }
@@ -514,9 +576,6 @@ func (uni *Uniform3fv) GetVector3(idx int) math32.Vector3 {
 // form the specified Color object.
 func (uni *Uniform3fv) SetColor(idx int, color *math32.Color) {
 
-	if idx < 0 || idx >= uni.count {
-		panic("Invalid index")
-	}
 	pos := idx * 3
 	uni.v[pos] = color.R
 	uni.v[pos+1] = color.G
@@ -527,9 +586,6 @@ func (uni *Uniform3fv) SetColor(idx int, color *math32.Color) {
 // as a Color object.
 func (uni *Uniform3fv) GetColor(idx int) math32.Color {
 
-	if idx < 0 || idx >= uni.count {
-		panic("Invalid index")
-	}
 	pos := idx * 3
 	return math32.Color{uni.v[pos], uni.v[pos+1], uni.v[pos+2]}
 }
@@ -537,18 +593,12 @@ func (uni *Uniform3fv) GetColor(idx int) math32.Color {
 // SetPos sets the value at the specified position in the uniform array.
 func (uni *Uniform3fv) SetPos(pos int, v float32) {
 
-	if pos < 0 || pos >= len(uni.v) {
-		panic("Invalid index")
-	}
 	uni.v[pos] = v
 }
 
 // GetPos gets the value at the specified position in the uniform array.
 func (uni *Uniform3fv) GetPos(pos int) float32 {
 
-	if pos < 0 || pos >= len(uni.v) {
-		panic("Invalid index")
-	}
 	return uni.v[pos]
 }
 
@@ -556,6 +606,13 @@ func (uni *Uniform3fv) GetPos(pos int) float32 {
 func (uni *Uniform3fv) Transfer(gl *GLS) {
 
 	gl.Uniform3fv(uni.Location(gl), int32(uni.count), uni.v)
+}
+
+// Transfer transfers the current values of this uniform to a specified
+// start position in the target uniform array.
+func (uni *Uniform3fv) TransferIdx(gl *GLS, idx int) {
+
+	gl.Uniform3fv(uni.LocationIdx(gl, idx), int32(uni.count), uni.v)
 }
 
 //
@@ -588,9 +645,6 @@ func (uni *Uniform4fv) Init(name string, count int) {
 // Set sets the value of all elements of the specified group of 4 floats for this uniform array
 func (uni *Uniform4fv) Set(idx int, v0, v1, v2, v3 float32) {
 
-	if idx < 0 || idx >= uni.count {
-		panic("Invalid index")
-	}
 	pos := idx * 4
 	uni.v[pos] = v0
 	uni.v[pos+1] = v1
@@ -601,9 +655,6 @@ func (uni *Uniform4fv) Set(idx int, v0, v1, v2, v3 float32) {
 // Get gets the value of all elements of the specified group of 4 floats for this uniform array
 func (uni *Uniform4fv) Get(idx int) (v0, v1, v2, v3 float32) {
 
-	if idx < 0 || idx >= uni.count {
-		panic("Invalid index")
-	}
 	pos := idx * 4
 	return uni.v[pos], uni.v[pos+1], uni.v[pos+2], uni.v[pos+3]
 }
@@ -612,9 +663,6 @@ func (uni *Uniform4fv) Get(idx int) (v0, v1, v2, v3 float32) {
 // from the specified Vector4 object.
 func (uni *Uniform4fv) SetVector4(idx int, v *math32.Vector4) {
 
-	if idx < 0 || idx >= uni.count {
-		panic("Invalid index")
-	}
 	pos := idx * 4
 	uni.v[pos] = v.X
 	uni.v[pos+1] = v.Y
@@ -626,9 +674,6 @@ func (uni *Uniform4fv) SetVector4(idx int, v *math32.Vector4) {
 // as a Vector4 object.
 func (uni *Uniform4fv) GetVector4(idx int) math32.Vector4 {
 
-	if idx < 0 || idx >= uni.count {
-		panic("Invalid index")
-	}
 	pos := idx * 4
 	return math32.Vector4{uni.v[pos], uni.v[pos+1], uni.v[pos+2], uni.v[pos+3]}
 }
@@ -637,9 +682,6 @@ func (uni *Uniform4fv) GetVector4(idx int) math32.Vector4 {
 // form the specified Color4 object.
 func (uni *Uniform4fv) SetColor4(idx int, color *math32.Color4) {
 
-	if idx < 0 || idx >= uni.count {
-		panic("Invalid index")
-	}
 	pos := idx * 4
 	uni.v[pos] = color.R
 	uni.v[pos+1] = color.G
@@ -651,9 +693,6 @@ func (uni *Uniform4fv) SetColor4(idx int, color *math32.Color4) {
 // as a Color4 object.
 func (uni *Uniform4fv) GetColor4(idx int) math32.Color4 {
 
-	if idx < 0 || idx >= uni.count {
-		panic("Invalid index")
-	}
 	pos := idx * 4
 	return math32.Color4{uni.v[pos], uni.v[pos+1], uni.v[pos+2], uni.v[pos+3]}
 }
