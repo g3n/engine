@@ -46,7 +46,7 @@ void main() {
     // Flips texture coordinate Y if requested.
     vec2 texcoord = VertexTexcoord;
     {{ if .MatTexturesMax }}
-    if (MatTexFlipY[0] > 0) {
+    if (MatTexFlipY(0)) {
         texcoord.y = 1 - texcoord.y;
     }
     {{ end }}
@@ -80,8 +80,8 @@ void main() {
     // Combine all texture colors
     vec4 texCombined = vec4(1);
     {{ range loop .MatTexturesMax }}
-    if (MatTexVisible[{{.}}] == true) {
-        vec4 texcolor = texture(MatTexture[{{.}}], FragTexcoord * MatTexRepeat[{{.}}] + MatTexOffset[{{.}}]);
+    if (MatTexVisible({{.}})) {
+        vec4 texcolor = texture(MatTexture[{{.}}], FragTexcoord * MatTexRepeat({{.}}) + MatTexOffset({{.}}));
         if ({{.}} == 0) {
             texCombined = texcolor;
         } else {

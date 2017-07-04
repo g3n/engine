@@ -10,18 +10,25 @@ func init() {
 
 const chunkMaterial = `
 // Material uniforms
-uniform vec3      MatAmbientColor;
-uniform vec3      MatDiffuseColor;
-uniform vec3      MatSpecularColor;
-uniform float     MatShininess;
-uniform vec3      MatEmissiveColor;
-uniform float     MatOpacity;
+uniform vec3	Material[5];
+
+// Macros to access elements inside the Material uniform array
+#define MatAmbientColor		Material[0]
+#define MatDiffuseColor		Material[1]
+#define MatSpecularColor	Material[2]
+#define MatEmissiveColor	Material[3]
+#define MatShininess		Material[4].x
+#define MatOpacity			Material[4].y
 
 {{if .MatTexturesMax}}
-uniform sampler2D MatTexture[{{.MatTexturesMax}}];
-uniform vec2      MatTexRepeat[{{.MatTexturesMax}}];
-uniform vec2      MatTexOffset[{{.MatTexturesMax}}];
-uniform int       MatTexFlipY[{{.MatTexturesMax}}];
-uniform bool      MatTexVisible[{{.MatTexturesMax}}];
+// Textures uniforms
+uniform sampler2D	MatTexture[{{.MatTexturesMax}}];
+uniform mat3		MatTexinfo[{{.MatTexturesMax}}];
+
+// Macros to access elements inside MatTexinfo uniform
+#define MatTexOffset(a)		MatTexinfo[a][0].xy
+#define MatTexRepeat(a)		MatTexinfo[a][1].xy
+#define MatTexFlipY(a)		bool(MatTexinfo[a][2].x)
+#define MatTexVisible(a)	bool(MatTexinfo[a][2].y)
 {{ end }}
 `

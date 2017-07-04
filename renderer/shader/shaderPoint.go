@@ -73,7 +73,7 @@ void main() {
     {{ range loop .MatTexturesMax }}
     {
         vec2 pt = gl_PointCoord - vec2(0.5);
-        vec4 texcolor = texture(MatTexture[{{.}}], (Rotation * pt + vec2(0.5)) * MatTexRepeat[{{.}}] + MatTexOffset[{{.}}]);
+        vec4 texcolor = texture(MatTexture[{{.}}], (Rotation * pt + vec2(0.5)) * MatTexinfo[{{.}}]TexRepeat + MatTexinfo[{{.}}]TexOffset);
         if ({{.}} == 0) {
             texCombined = texcolor;
         } else {

@@ -55,7 +55,7 @@ void main() {
     vec2 texcoord = VertexTexcoord;
     {{if .MatTexturesMax }}
     // Flips texture coordinate Y if requested.
-    if (MatTexFlipY[0] > 0) {
+    if (MatTexFlipY(0)) {
         texcoord.y = 1 - texcoord.y;
     }
     {{ end }}
@@ -92,8 +92,8 @@ void main() {
     // Use Go templates to unroll the loop because non-const
     // array indexes are not allowed until GLSL 4.00.
     {{ range loop .MatTexturesMax }}
-    if (MatTexVisible[{{.}}] == true) {
-        vec4 texcolor = texture(MatTexture[{{.}}], FragTexcoord * MatTexRepeat[{{.}}] + MatTexOffset[{{.}}]);
+    if (MatTexVisible({{.}})) {
+        vec4 texcolor = texture(MatTexture[{{.}}], FragTexcoord * MatTexRepeat({{.}}) + MatTexOffset({{.}}));
         if ({{.}} == 0) {
             texCombined = texcolor;
         } else {

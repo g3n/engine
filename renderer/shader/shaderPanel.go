@@ -113,7 +113,7 @@ void main() {
             vec2 offset = vec2(-Panel[content][0], -Panel[content][1]);
             vec2 factor = vec2(1/Panel[content][2], 1/Panel[content][3]);
             vec2 texcoord = (FragTexcoord + offset) * factor;
-            color = texture(MatTexture[0], texcoord * MatTexRepeat[0] + MatTexOffset[0]);
+            color = texture(MatTexture[0], texcoord * MatTexRepeat(0) + MatTexOffset(0));
         {{ end }}
         if (color.a == 0) {
             discard;

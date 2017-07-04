@@ -327,6 +327,8 @@ type UniformMatrix3f struct {
 	v [9]float32
 }
 
+// NewUniformMatrix3 creates and returns a pointer to a new UniformMatrix3f
+// with the specified name
 func NewUniformMatrix3f(name string) *UniformMatrix3f {
 
 	uni := new(UniformMatrix3f)
@@ -334,26 +336,61 @@ func NewUniformMatrix3f(name string) *UniformMatrix3f {
 	return uni
 }
 
+// Init initializes this uniform the specified name
+// It is normally used when the uniform is embedded in another object.
 func (uni *UniformMatrix3f) Init(name string) {
 
 	uni.name = name
 }
 
+// SetMatrix3 sets the matrix stored by the uniform
 func (uni *UniformMatrix3f) SetMatrix3(m *math32.Matrix3) {
 
 	uni.v = *m
 }
 
+// GetMatrix3 gets the matrix stored by the uniform
 func (uni *UniformMatrix3f) GetMatrix3() math32.Matrix3 {
 
 	return uni.v
 }
 
+// SetElement sets the value of the matrix element at the specified column and row
+func (uni *UniformMatrix3f) SetElement(col, row int, v float32) {
+
+	uni.v[col*3+row] = v
+}
+
+// GetElement gets the value of the matrix element at the specified column and row
+func (uni *UniformMatrix3f) GetElement(col, row int, v float32) float32 {
+
+	return uni.v[col*3+row]
+}
+
+// Set sets the value of the matrix element by its position starting
+// from 0 for col0, row0 to 8 from col2, row2.
+// This way the matrix can be considered as a vector of 9 elements
+func (uni *UniformMatrix3f) Set(pos int, v float32) {
+
+	uni.v[pos] = v
+}
+
+// Get gets the value of the matrix element by its position starting
+// from 0 for col0, row0 to 8 from col2, row2.
+// This way the matrix can be considered as a vector of 9 elements
+func (uni *UniformMatrix3f) Get(pos int) float32 {
+
+	return uni.v[pos]
+}
+
+// Transfer transfer the uniform matrix data to the graphics library
 func (uni *UniformMatrix3f) Transfer(gl *GLS) {
 
 	gl.UniformMatrix3fv(uni.Location(gl), 1, false, &uni.v[0])
 }
 
+// TransferIdx transfer the uniform matrix data to a specified destination index
+// of an uniform array to the graphics library
 func (uni *UniformMatrix3f) TransferIdx(gl *GLS, idx int) {
 
 	gl.UniformMatrix3fv(uni.LocationIdx(gl, idx), 1, false, &uni.v[0])
@@ -398,6 +435,127 @@ func (uni *UniformMatrix4f) Transfer(gl *GLS) {
 func (uni *UniformMatrix4f) TransferIdx(gl *GLS, idx int) {
 
 	gl.UniformMatrix4fv(uni.LocationIdx(gl, idx), 1, false, &uni.v[0])
+}
+
+//
+// Type Uniform3fv is a uniform containing an array of three float32 values
+//
+type Uniform3fv struct {
+	Uniform           // embedded uniform
+	count   int       // number of groups of 3 float32 values
+	v       []float32 // array of values
+}
+
+// NewUniform3fv creates and returns an uniform array with the specified size
+// of 3 float values
+func NewUniform3fv(name string, count int) *Uniform3fv {
+
+	uni := new(Uniform3fv)
+	uni.Init(name, count)
+	return uni
+}
+
+// Init initializes an Uniform3fv object with the specified name and count of 3 float32 groups.
+// It is normally used when the uniform is embedded in another object.
+func (uni *Uniform3fv) Init(name string, count int) {
+
+	uni.name = name
+	uni.count = count
+	uni.v = make([]float32, count*3)
+}
+
+// Set sets the value of all elements of the specified group of 3 floats for this uniform array
+func (uni *Uniform3fv) Set(idx int, v0, v1, v2 float32) {
+
+	if idx < 0 || idx >= uni.count {
+		panic("Invalid index")
+	}
+	pos := idx * 3
+	uni.v[pos] = v0
+	uni.v[pos+1] = v1
+	uni.v[pos+2] = v2
+}
+
+// Get gets the value of all elements of the specified group of 3 floats for this uniform array
+func (uni *Uniform3fv) Get(idx int) (v0, v1, v2 float32) {
+
+	if idx < 0 || idx >= uni.count {
+		panic("Invalid index")
+	}
+	pos := idx * 3
+	return uni.v[pos], uni.v[pos+1], uni.v[pos+2]
+}
+
+// SetVector3 sets the value of all elements for the specified group of 3 float for this uniform array
+// from the specified Vector3 object.
+func (uni *Uniform3fv) SetVector3(idx int, v *math32.Vector3) {
+
+	if idx < 0 || idx >= uni.count {
+		panic("Invalid index")
+	}
+	pos := idx * 3
+	uni.v[pos] = v.X
+	uni.v[pos+1] = v.Y
+	uni.v[pos+2] = v.Z
+}
+
+// GetVector3 gets the value of all elements of the specified group of 3 float for this uniform array
+// as a Vector3 object.
+func (uni *Uniform3fv) GetVector3(idx int) math32.Vector3 {
+
+	if idx < 0 || idx >= uni.count {
+		panic("Invalid index")
+	}
+	pos := idx * 3
+	return math32.Vector3{uni.v[pos], uni.v[pos+1], uni.v[pos+2]}
+}
+
+// SetColor sets the value of all elements of the specified group of 3 floats for this uniform array
+// form the specified Color object.
+func (uni *Uniform3fv) SetColor(idx int, color *math32.Color) {
+
+	if idx < 0 || idx >= uni.count {
+		panic("Invalid index")
+	}
+	pos := idx * 3
+	uni.v[pos] = color.R
+	uni.v[pos+1] = color.G
+	uni.v[pos+2] = color.B
+}
+
+// GetColor gets the value of all elements of the specified group of 3 float for this uniform array
+// as a Color object.
+func (uni *Uniform3fv) GetColor(idx int) math32.Color {
+
+	if idx < 0 || idx >= uni.count {
+		panic("Invalid index")
+	}
+	pos := idx * 3
+	return math32.Color{uni.v[pos], uni.v[pos+1], uni.v[pos+2]}
+}
+
+// SetPos sets the value at the specified position in the uniform array.
+func (uni *Uniform3fv) SetPos(pos int, v float32) {
+
+	if pos < 0 || pos >= len(uni.v) {
+		panic("Invalid index")
+	}
+	uni.v[pos] = v
+}
+
+// GetPos gets the value at the specified position in the uniform array.
+func (uni *Uniform3fv) GetPos(pos int) float32 {
+
+	if pos < 0 || pos >= len(uni.v) {
+		panic("Invalid index")
+	}
+	return uni.v[pos]
+}
+
+// Transfer transfers the current values of this uniform to the current shader program
+func (uni *Uniform3fv) Transfer(gl *GLS) {
+
+	gl.Uniform3fv(uni.Location(gl), int32(uni.count), uni.v)
 }
 
 //
