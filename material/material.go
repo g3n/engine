@@ -36,11 +36,12 @@ const (
 type UseLights int
 
 const (
-	UseLightAmbient     UseLights = 0
-	UseLightDirectional UseLights = 1
-	UseLightPoint       UseLights = 2
-	UseLightSpot        UseLights = 3
-	UseLightAll         UseLights = 4
+	UseLightNone        UseLights = 0x00
+	UseLightAmbient     UseLights = 0x01
+	UseLightDirectional UseLights = 0x02
+	UseLightPoint       UseLights = 0x04
+	UseLightSpot        UseLights = 0x08
+	UseLightAll         UseLights = 0xFF
 )
 
 // Interface for all materials
@@ -84,7 +85,7 @@ func NewMaterial() *Material {
 
 func (mat *Material) Init() *Material {
 
-    mat.refcount = 1
+	mat.refcount = 1
 	mat.uselights = UseLightAll
 	mat.sidevis = SideFront
 	mat.wireframe = false
@@ -125,9 +126,9 @@ func (mat *Material) Dispose() {
 		mat.refcount--
 		return
 	}
-    for i := 0; i < len(mat.textures); i++ {
-        mat.textures[i].Dispose()
-    }
+	for i := 0; i < len(mat.textures); i++ {
+		mat.textures[i].Dispose()
+	}
 	mat.Init()
 }
 
@@ -145,6 +146,7 @@ func (mat *Material) Shader() string {
 
 // SetUseLights sets the material use lights bit mask specifying which
 // light types will be used when rendering the material
+// By default the material will use all lights
 func (mat *Material) SetUseLights(lights UseLights) {
 
 	mat.uselights = lights

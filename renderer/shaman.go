@@ -15,14 +15,14 @@ import (
 )
 
 type ShaderSpecs struct {
-	Name             string // Shader name
-	Version          string // GLSL version
-	UseLights        material.UseLights
-	AmbientLightsMax int // Current number of ambient lights
-	DirLightsMax     int // Current Number of directional lights
-	PointLightsMax   int // Current Number of point lights
-	SpotLightsMax    int // Current Number of spot lights
-	MatTexturesMax   int // Current Number of material textures
+	Name             string             // Shader name
+	Version          string             // GLSL version
+	UseLights        material.UseLights // Bitmask indicating which lights to consider
+	AmbientLightsMax int                // Current number of ambient lights
+	DirLightsMax     int                // Current Number of directional lights
+	PointLightsMax   int                // Current Number of point lights
+	SpotLightsMax    int                // Current Number of spot lights
+	MatTexturesMax   int                // Current Number of material textures
 }
 
 type ProgSpecs struct {
@@ -124,26 +124,44 @@ func (sm *Shaman) AddProgram(name, vertexName, fragName string) error {
 	return nil
 }
 
-// SetShader set the shader to satify the specified specs
-// Returns an indication if the current shader has changed and an error
-func (sm *Shaman) SetProgram(specs *ShaderSpecs) (bool, error) {
+// SetProgram set the shader program to satisfy the specified specs.
+// Returns an indication if the current shader has changed and a possible error
+// when creating a new shader program.
+// Receives a copy of the specs because it changes the fields which specify the
+// number of lights depending on the UseLights flags.
+func (sm *Shaman) SetProgram(s *ShaderSpecs) (bool, error) {
+
+	// Checks material use lights bit mask
+	specs := *s
+	if (specs.UseLights & material.UseLightAmbient) == 0 {
+		specs.AmbientLightsMax = 0
+	}
+	if (specs.UseLights & material.UseLightDirectional) == 0 {
+		specs.DirLightsMax = 0
+	}
+	if (specs.UseLights & material.UseLightPoint) == 0 {
+		specs.PointLightsMax = 0
+	}
+	if (specs.UseLights & material.UseLightSpot) == 0 {
+		specs.SpotLightsMax = 0
+	}
 
 	// If current shader specs are the same as the specified specs, nothing to do.
-	if sm.specs.Compare(specs) {
+	if sm.specs.Compare(&specs) {
 		return false, nil
 	}
 
 	// Search for compiled program with the specified specs
 	for _, pinfo := range sm.programs {
-		if pinfo.specs.Compare(specs) {
+		if pinfo.specs.Compare(&specs) {
 			sm.gs.UseProgram(pinfo.program)
-			sm.specs = *specs
+			sm.specs = specs
 			return true, nil
 		}
 	}
 
 	// Generates new program with the specified specs
-	prog, err := sm.GenProgram(specs)
+	prog, err := sm.GenProgram(&specs)
 	if err != nil {
 		return false, err
 	}
@@ -151,8 +169,8 @@ func (sm *Shaman) SetProgram(specs *ShaderSpecs) (bool, error) {
 
 	// Save specs as current specs, adds new program to the list
 	// and actives program
-	sm.specs = *specs
-	sm.programs = append(sm.programs, ProgSpecs{prog, *specs})
+	sm.specs = specs
+	sm.programs = append(sm.programs, ProgSpecs{prog, specs})
 	sm.gs.UseProgram(prog)
 	return true, nil
 }
