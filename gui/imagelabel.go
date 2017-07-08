@@ -87,6 +87,24 @@ func (il *ImageLabel) SetIcon(icode int) {
 	il.recalc()
 }
 
+// SetImageVisible sets the image visibility
+func (il *ImageLabel) SetImageVisible(vis bool) {
+
+	if il.image == nil {
+		return
+	}
+	il.image.SetVisible(vis)
+}
+
+// ImageVisible returns the image visibility
+func (il *ImageLabel) ImageVisible() bool {
+
+	if il.image == nil {
+		return false
+	}
+	return il.image.Visible()
+}
+
 // SetImage sets the image label image
 func (il *ImageLabel) SetImage(img *Image) {
 
