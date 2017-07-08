@@ -98,7 +98,9 @@ func (il *ImageLabel) SetImage(img *Image) {
 		il.Panel.Remove(il.image)
 	}
 	il.image = img
-	il.Panel.Add(il.image)
+	if img != nil {
+		il.Panel.Add(il.image)
+	}
 	il.recalc()
 }
 
