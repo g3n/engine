@@ -1,11 +1,12 @@
 //
-// This file was generated from the original
-// 'codepoints' file from the material icon fonts.
+// This file was generated from the original 'codepoints' file
+// from the material design icon fonts:
+// https://github.com/google/material-design-icons
 //
 package assets
 
 const (
-	Rotation3d                            = 0xe84d
+	N3dRotation                           = 0xe84d
 	AcUnit                                = 0xeb3b
 	AccessAlarm                           = 0xe190
 	AccessAlarms                          = 0xe191
@@ -110,6 +111,7 @@ const (
 	BorderStyle                           = 0xe231
 	BorderTop                             = 0xe232
 	BorderVertical                        = 0xe233
+	BrandingWatermark                     = 0xe06b
 	Brightness1                           = 0xe3a6
 	Brightness2                           = 0xe3a7
 	Brightness3                           = 0xe3a8
@@ -123,8 +125,10 @@ const (
 	BrightnessMedium                      = 0xe1ae
 	BrokenImage                           = 0xe3ad
 	Brush                                 = 0xe3ae
+	BubbleChart                           = 0xe6dd
 	BugReport                             = 0xe868
 	Build                                 = 0xe869
+	BurstMode                             = 0xe43c
 	Business                              = 0xe0af
 	BusinessCenter                        = 0xeb3f
 	Cached                                = 0xe86a
@@ -137,6 +141,7 @@ const (
 	CallMissedOutgoing                    = 0xe0e4
 	CallReceived                          = 0xe0b5
 	CallSplit                             = 0xe0b6
+	CallToAction                          = 0xe06c
 	Camera                                = 0xe3af
 	CameraAlt                             = 0xe3b0
 	CameraEnhance                         = 0xe8fc
@@ -216,6 +221,8 @@ const (
 	DateRange                             = 0xe916
 	Dehaze                                = 0xe3c7
 	Delete                                = 0xe872
+	DeleteForever                         = 0xe92b
+	DeleteSweep                           = 0xe16c
 	Description                           = 0xe873
 	DesktopMac                            = 0xe30b
 	DesktopWindows                        = 0xe30c
@@ -241,6 +248,8 @@ const (
 	Dns                                   = 0xe875
 	DoNotDisturb                          = 0xe612
 	DoNotDisturbAlt                       = 0xe611
+	DoNotDisturbOff                       = 0xe643
+	DoNotDisturbOn                        = 0xe644
 	Dock                                  = 0xe30e
 	Domain                                = 0xe7ee
 	Done                                  = 0xe876
@@ -259,6 +268,8 @@ const (
 	Equalizer                             = 0xe01d
 	Error                                 = 0xe000
 	ErrorOutline                          = 0xe001
+	EuroSymbol                            = 0xe926
+	EvStation                             = 0xe56d
 	Event                                 = 0xe878
 	EventAvailable                        = 0xe614
 	EventBusy                             = 0xe615
@@ -281,6 +292,8 @@ const (
 	FastRewind                            = 0xe020
 	Favorite                              = 0xe87d
 	FavoriteBorder                        = 0xe87e
+	FeaturedPlayList                      = 0xe06d
+	FeaturedVideo                         = 0xe06e
 	Feedback                              = 0xe87f
 	FiberDvr                              = 0xe05d
 	FiberManualRecord                     = 0xe061
@@ -312,6 +325,7 @@ const (
 	FindInPage                            = 0xe880
 	FindReplace                           = 0xe881
 	Fingerprint                           = 0xe90d
+	FirstPage                             = 0xe5dc
 	FitnessCenter                         = 0xeb43
 	Flag                                  = 0xe153
 	Flare                                 = 0xe3e4
@@ -361,6 +375,7 @@ const (
 	Fullscreen                            = 0xe5d0
 	FullscreenExit                        = 0xe5d1
 	Functions                             = 0xe24a
+	GTranslate                            = 0xe927
 	Gamepad                               = 0xe30f
 	Games                                 = 0xe021
 	Gavel                                 = 0xe90e
@@ -442,6 +457,7 @@ const (
 	LaptopChromebook                      = 0xe31f
 	LaptopMac                             = 0xe320
 	LaptopWindows                         = 0xe321
+	LastPage                              = 0xe5dd
 	Launch                                = 0xe895
 	Layers                                = 0xe53b
 	LayersClear                           = 0xe53c
@@ -506,6 +522,7 @@ const (
 	LooksTwo                              = 0xe401
 	Loop                                  = 0xe028
 	Loupe                                 = 0xe402
+	LowPriority                           = 0xe16d
 	Loyalty                               = 0xe89a
 	Mail                                  = 0xe158
 	MailOutline                           = 0xe0e1
@@ -522,6 +539,7 @@ const (
 	Mms                                   = 0xe618
 	ModeComment                           = 0xe253
 	ModeEdit                              = 0xe254
+	MonetizationOn                        = 0xe263
 	MoneyOff                              = 0xe25c
 	MonochromePhotos                      = 0xe403
 	Mood                                  = 0xe7f2
@@ -535,6 +553,7 @@ const (
 	Movie                                 = 0xe02c
 	MovieCreation                         = 0xe404
 	MovieFilter                           = 0xe43a
+	MultilineChart                        = 0xe6df
 	MusicNote                             = 0xe405
 	MusicVideo                            = 0xe063
 	MyLocation                            = 0xe55c
@@ -554,6 +573,7 @@ const (
 	NoEncryption                          = 0xe641
 	NoSim                                 = 0xe0cc
 	NotInterested                         = 0xe033
+	Note                                  = 0xe06f
 	NoteAdd                               = 0xe89c
 	Notifications                         = 0xe7f4
 	NotificationsActive                   = 0xe7f7
@@ -623,6 +643,8 @@ const (
 	PictureAsPdf                          = 0xe415
 	PictureInPicture                      = 0xe8aa
 	PictureInPictureAlt                   = 0xe911
+	PieChart                              = 0xe6c4
+	PieChartOutlined                      = 0xe6c5
 	PinDrop                               = 0xe55e
 	Place                                 = 0xe55f
 	PlayArrow                             = 0xe037
@@ -644,6 +666,7 @@ const (
 	PregnantWoman                         = 0xe91e
 	PresentToAll                          = 0xe0df
 	Print                                 = 0xe8ad
+	PriorityHigh                          = 0xe645
 	Public                                = 0xe80b
 	Publish                               = 0xe255
 	QueryBuilder                          = 0xe8ae
@@ -666,6 +689,7 @@ const (
 	RemoveCircleOutline                   = 0xe15d
 	RemoveFromQueue                       = 0xe067
 	RemoveRedEye                          = 0xe417
+	RemoveShoppingCart                    = 0xe928
 	Reorder                               = 0xe8fe
 	Repeat                                = 0xe040
 	RepeatOne                             = 0xe041
@@ -677,8 +701,10 @@ const (
 	ReplyAll                              = 0xe15f
 	Report                                = 0xe160
 	ReportProblem                         = 0xe8b2
+	Restaurant                            = 0xe56c
 	RestaurantMenu                        = 0xe561
 	Restore                               = 0xe8b3
+	RestorePage                           = 0xe929
 	RingVolume                            = 0xe0d1
 	Room                                  = 0xe8b4
 	RoomService                           = 0xeb49
@@ -688,6 +714,7 @@ const (
 	RoundedCorner                         = 0xe920
 	Router                                = 0xe328
 	Rowing                                = 0xe921
+	RssFeed                               = 0xe0e5
 	RvHookup                              = 0xe642
 	Satellite                             = 0xe562
 	Save                                  = 0xe161
@@ -705,6 +732,11 @@ const (
 	Security                              = 0xe32a
 	SelectAll                             = 0xe162
 	Send                                  = 0xe163
+	SentimentDissatisfied                 = 0xe811
+	SentimentNeutral                      = 0xe812
+	SentimentSatisfied                    = 0xe813
+	SentimentVeryDissatisfied             = 0xe814
+	SentimentVerySatisfied                = 0xe815
 	Settings                              = 0xe8b8
 	SettingsApplications                  = 0xe8b9
 	SettingsBackupRestore                 = 0xe8ba
@@ -729,6 +761,7 @@ const (
 	ShoppingBasket                        = 0xe8cb
 	ShoppingCart                          = 0xe8cc
 	ShortText                             = 0xe261
+	ShowChart                             = 0xe6e1
 	Shuffle                               = 0xe043
 	SignalCellular4Bar                    = 0xe1c8
 	SignalCellularConnectedNoInternet4Bar = 0xe1cd
@@ -757,6 +790,7 @@ const (
 	Speaker                               = 0xe32d
 	SpeakerGroup                          = 0xe32e
 	SpeakerNotes                          = 0xe8cd
+	SpeakerNotesOff                       = 0xe92a
 	SpeakerPhone                          = 0xe0d2
 	Spellcheck                            = 0xe8ce
 	Star                                  = 0xe838
@@ -773,6 +807,7 @@ const (
 	Store                                 = 0xe8d1
 	StoreMallDirectory                    = 0xe563
 	Straighten                            = 0xe41c
+	Streetview                            = 0xe56e
 	StrikethroughS                        = 0xe257
 	Style                                 = 0xe41d
 	SubdirectoryArrowLeft                 = 0xe5d9
@@ -780,6 +815,7 @@ const (
 	Subject                               = 0xe8d2
 	Subscriptions                         = 0xe064
 	Subtitles                             = 0xe048
+	Subway                                = 0xe56f
 	SupervisorAccount                     = 0xe8d3
 	SurroundSound                         = 0xe049
 	SwapCalls                             = 0xe0d7
@@ -816,6 +852,7 @@ const (
 	Timer10                               = 0xe423
 	Timer3                                = 0xe424
 	TimerOff                              = 0xe426
+	Title                                 = 0xe264
 	Toc                                   = 0xe8de
 	Today                                 = 0xe8df
 	Toll                                  = 0xe8e0
@@ -824,6 +861,9 @@ const (
 	Toys                                  = 0xe332
 	TrackChanges                          = 0xe8e1
 	Traffic                               = 0xe565
+	Train                                 = 0xe570
+	Tram                                  = 0xe571
+	TransferWithinAStation                = 0xe572
 	Transform                             = 0xe428
 	Translate                             = 0xe8e2
 	TrendingDown                          = 0xe8e3
@@ -844,6 +884,8 @@ const (
 	VerticalAlignCenter                   = 0xe259
 	VerticalAlignTop                      = 0xe25a
 	Vibration                             = 0xe62d
+	VideoCall                             = 0xe070
+	VideoLabel                            = 0xe071
 	VideoLibrary                          = 0xe04a
 	Videocam                              = 0xe04b
 	VideocamOff                           = 0xe04c
