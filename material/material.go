@@ -57,7 +57,8 @@ type IMaterial interface {
 type Material struct {
 	refcount         int                  // Current number of references
 	shader           string               // Shader name
-	uselights        UseLights            // Use lights bit mask
+	shaderUnique     bool                 // shader has only one instance (does not depend on lights or textures)
+	uselights        UseLights            // consider lights for shader selection
 	sidevis          Side                 // sides visible
 	wireframe        bool                 // show as wirefrme
 	depthMask        bool                 // Enable writing into the depth buffer
@@ -144,6 +145,20 @@ func (mat *Material) Shader() string {
 	return mat.shader
 }
 
+// SetShaderUnique sets indication that this material shader is unique and
+// does not depend on the number of lights in the scene and/or the
+// number of textures in the material.
+func (mat *Material) SetShaderUnique(unique bool) {
+
+	mat.shaderUnique = unique
+}
+
+// ShaderUnique returns this material shader is unique.
+func (mat *Material) ShaderUnique() bool {
+
+	return mat.shaderUnique
+}
+
 // SetUseLights sets the material use lights bit mask specifying which
 // light types will be used when rendering the material
 // By default the material will use all lights
@@ -152,6 +167,7 @@ func (mat *Material) SetUseLights(lights UseLights) {
 	mat.uselights = lights
 }
 
+// UseLights returns the current use lights bitmask
 func (mat *Material) UseLights() UseLights {
 
 	return mat.uselights

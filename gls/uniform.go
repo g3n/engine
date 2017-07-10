@@ -697,6 +697,18 @@ func (uni *Uniform4fv) GetColor4(idx int) math32.Color4 {
 	return math32.Color4{uni.v[pos], uni.v[pos+1], uni.v[pos+2], uni.v[pos+3]}
 }
 
+// SetPos sets the value at the specified position in the uniform array.
+func (uni *Uniform4fv) SetPos(pos int, v float32) {
+
+	uni.v[pos] = v
+}
+
+// GetPos gets the value at the specified position in the uniform array.
+func (uni *Uniform4fv) GetPos(pos int) float32 {
+
+	return uni.v[pos]
+}
+
 // Transfer transfers the current values of this uniform to the current shader program
 func (uni *Uniform4fv) Transfer(gl *GLS) {
 

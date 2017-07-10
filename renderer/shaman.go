@@ -17,6 +17,7 @@ import (
 type ShaderSpecs struct {
 	Name             string             // Shader name
 	Version          string             // GLSL version
+	ShaderUnique     bool               // indicates if shader is independent of lights and textures
 	UseLights        material.UseLights // Bitmask indicating which lights to consider
 	AmbientLightsMax int                // Current number of ambient lights
 	DirLightsMax     int                // Current Number of directional lights
@@ -222,10 +223,16 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 	return prog, nil
 }
 
+// Compare compares two shaders specifications structures
 func (ss *ShaderSpecs) Compare(other *ShaderSpecs) bool {
 
-	if ss.Name == other.Name &&
-		ss.AmbientLightsMax == other.AmbientLightsMax &&
+	if ss.Name != other.Name {
+		return false
+	}
+	if other.ShaderUnique {
+		return true
+	}
+	if ss.AmbientLightsMax == other.AmbientLightsMax &&
 		ss.DirLightsMax == other.DirLightsMax &&
 		ss.PointLightsMax == other.PointLightsMax &&
 		ss.SpotLightsMax == other.SpotLightsMax &&

@@ -16,14 +16,6 @@ type Spot struct {
 	intensity float32         // Light intensity
 	direction math32.Vector3  // Direction in world coordinates
 	uni       *gls.Uniform3fv // Uniform with spot light properties
-
-	//uColor          gls.Uniform3f // Uniform for light color
-	//uPosition       gls.Uniform3f // Uniform for position in camera coordinates
-	//uDirection      gls.Uniform3f // Uniform for direction in camera coordinates
-	//uAngularDecay   gls.Uniform1f // Uniform for angular attenuation exponent
-	//uCutoffAngle    gls.Uniform1f // Uniform for cutoff angle from 0 to 90 degrees
-	//uLinearDecay    gls.Uniform1f // Uniform for linear distance decay
-	//uQuadraticDecay gls.Uniform1f // Uniform for quadratic distance decay
 }
 
 const (
@@ -54,22 +46,6 @@ func NewSpot(color *math32.Color, intensity float32) *Spot {
 	sl.SetLinearDecay(1.0)
 	sl.SetQuadraticDecay(1.0)
 
-	//	// Creates uniforms
-	//	sp.uColor.Init("SpotLightColor")
-	//	sp.uPosition.Init("SpotLightPosition")
-	//	sp.uDirection.Init("SpotLightDirection")
-	//	sp.uAngularDecay.Init("SpotLightAngularDecay")
-	//	sp.uCutoffAngle.Init("SpotLightCutoffAngle")
-	//	sp.uLinearDecay.Init("SpotLightLinearDecay")
-	//	sp.uQuadraticDecay.Init("SpotQuadraticDecay")
-	//
-	//	// Set initial values
-	//	sp.intensity = intensity
-	//	sp.SetColor(color)
-	//	sp.uAngularDecay.Set(15.0)
-	//	sp.uCutoffAngle.Set(45.0)
-	//	sp.uLinearDecay.Set(1.0)
-	//	sp.uQuadraticDecay.Set(1.0)
 	return sl
 }
 
@@ -166,28 +142,18 @@ func (sl *Spot) QuadraticDecay() float32 {
 // RenderSetup is called by the engine before rendering the scene
 func (sl *Spot) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo, idx int) {
 
-	//sl.uColor.TransferIdx(gs, idx)
-	//sl.uAngularDecay.TransferIdx(gs, idx)
-	//sl.uCutoffAngle.TransferIdx(gs, idx)
-	//sl.uLinearDecay.TransferIdx(gs, idx)
-	//sl.uQuadraticDecay.TransferIdx(gs, idx)
-
 	// Calculates and updates light position uniform in camera coordinates
 	var pos math32.Vector3
 	sl.WorldPosition(&pos)
 	var pos4 math32.Vector4
 	pos4.SetVector3(&pos, 1.0)
 	pos4.ApplyMatrix4(&rinfo.ViewMatrix)
-	//sl.uPosition.SetVector3(&math32.Vector3{pos4.X, pos4.Y, pos4.Z})
-	//sl.uPosition.TransferIdx(gs, idx)
 	sl.uni.SetVector3(sPosition, &math32.Vector3{pos4.X, pos4.Y, pos4.Z})
 
 	// Calculates and updates light direction uniform in camera coordinates
 	pos4.SetVector3(&sl.direction, 0.0)
 	pos4.ApplyMatrix4(&rinfo.ViewMatrix)
 	// Normalize here ??
-	//sl.uDirection.SetVector3(&math32.Vector3{pos4.X, pos4.Y, pos4.Z})
-	//sl.uDirection.TransferIdx(gs, idx)
 	sl.uni.SetVector3(sDirection, &math32.Vector3{pos4.X, pos4.Y, pos4.Z})
 
 	// Transfer uniform

@@ -34,12 +34,6 @@ type Texture2D struct {
 	data         interface{}         // array with texture data
 	uTexture     gls.Uniform1i       // Texture unit uniform
 	uTexinfo     gls.UniformMatrix3f // uniform 3x3 array with texture info
-
-	//uTexture     gls.Uniform1i // Texture unit uniform
-	//uFlipY       gls.Uniform1i // Flip Y coordinate flag uniform
-	//uVisible     gls.Uniform1i // Texture visible uniform
-	//uOffset      gls.Uniform2f // Texture offset uniform
-	//uRepeat      gls.Uniform2f // Texture repeat uniform
 }
 
 const (
@@ -74,15 +68,6 @@ func newTexture2D() *Texture2D {
 	t.uTexinfo.Set(iRepeatY, 1)
 	t.uTexinfo.Set(iFlipY, 1)
 	t.uTexinfo.Set(iVisible, 1)
-
-	//t.uFlipY.Init("MatTexFlipY")
-	//t.uVisible.Init("MatTexVisible")
-	//t.uOffset.Init("MatTexOffset")
-	//t.uRepeat.Init("MatTexRepeat")
-	//t.uRepeat.Set(1, 1)
-	//t.uOffset.Set(0, 0)
-	//t.uVisible.Set(1)
-	//t.uFlipY.Set(1)
 
 	return t
 }
@@ -238,14 +223,12 @@ func (t *Texture2D) SetRepeat(x, y float32) {
 
 	t.uTexinfo.Set(iRepeatX, x)
 	t.uTexinfo.Set(iRepeatY, y)
-	//t.uRepeat.Set(x, y)
 }
 
 // Repeat returns the current X and Y repeat factors
 func (t *Texture2D) Repeat() (float32, float32) {
 
 	return t.uTexinfo.Get(iRepeatX), t.uTexinfo.Get(iRepeatY)
-	//return t.uRepeat.Get()
 }
 
 // SetOffset sets the offset factor
@@ -253,14 +236,12 @@ func (t *Texture2D) SetOffset(x, y float32) {
 
 	t.uTexinfo.Set(iOffsetX, x)
 	t.uTexinfo.Set(iOffsetY, y)
-	//t.uOffset.Set(x, y)
 }
 
 // Offset returns the current X and Y offset factors
 func (t *Texture2D) Offset() (float32, float32) {
 
 	return t.uTexinfo.Get(iOffsetX), t.uTexinfo.Get(iOffsetY)
-	//return t.uOffset.Get()
 }
 
 // SetFlipY set the state for flipping the Y coordinate
@@ -268,10 +249,8 @@ func (t *Texture2D) SetFlipY(state bool) {
 
 	if state {
 		t.uTexinfo.Set(iFlipY, 1)
-		//t.uFlipY.Set(1)
 	} else {
 		t.uTexinfo.Set(iFlipY, 0)
-		//t.uFlipY.Set(0)
 	}
 }
 
@@ -363,11 +342,4 @@ func (t *Texture2D) RenderSetup(gs *gls.GLS, idx int) {
 	t.uTexture.Set(int32(idx))
 	t.uTexture.TransferIdx(gs, idx)
 	t.uTexinfo.TransferIdx(gs, idx)
-
-	//	t.uTexture.Set(int32(idx))
-	//	t.uTexture.TransferIdx(gs, idx)
-	//	t.uFlipY.TransferIdx(gs, idx)
-	//	t.uVisible.TransferIdx(gs, idx)
-	//	t.uOffset.TransferIdx(gs, idx)
-	//	t.uRepeat.TransferIdx(gs, idx)
 }

@@ -711,6 +711,7 @@ func (cm *chartMaterial) Init(color *math32.Color) {
 
 	cm.Material.Init()
 	cm.SetShader("shaderChart")
+	cm.SetShaderUnique(true)
 
 	// Creates uniforms and adds to material
 	cm.color = gls.NewUniform3f("MatColor")

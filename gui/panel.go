@@ -87,6 +87,7 @@ const (
 	idxBorderColor  = 4              // index of uniform array for border color
 	idxPaddingColor = 5              // index of uniform array for padding color
 	idxContentColor = 6              // index of uniform array for content color
+	posTextureValid = 7 * 4          // position of uniform array for texture valid
 )
 
 // NewPanel creates and returns a pointer to a new panel with the
@@ -128,6 +129,7 @@ func (p *Panel) Initialize(width, height float32) {
 	// Initialize material
 	p.mat = material.NewMaterial()
 	p.mat.SetShader("shaderPanel")
+	p.mat.SetShaderUnique(true)
 
 	// Initialize graphic
 	p.Graphic = graphic.NewGraphic(geom, gls.TRIANGLES)
@@ -135,7 +137,7 @@ func (p *Panel) Initialize(width, height float32) {
 
 	// Initialize uniforms
 	p.modelMatrixUni.Init("ModelMatrix")
-	p.panUni.Init("Panel", 7)
+	p.panUni.Init("Panel", 8)
 
 	// Set defaults
 	p.panUni.Set(idxBorderColor, 0, 0, 0, 1)
@@ -153,7 +155,7 @@ func (p *Panel) InitializeGraphic(width, height float32, gr *graphic.Graphic) {
 
 	// Initializes uniforms
 	p.modelMatrixUni.Init("ModelMatrix")
-	p.panUni.Init("Panel", 7)
+	p.panUni.Init("Panel", 8)
 
 	// Set defaults
 	p.panUni.Set(idxBorderColor, 0, 0, 0, 1)
@@ -848,6 +850,14 @@ func (p *Panel) resize(width, height float32) {
 
 // RenderSetup is called by the Engine before drawing the object
 func (p *Panel) RenderSetup(gl *gls.GLS, rinfo *core.RenderInfo) {
+
+	// Sets texture valid flag in uniforms
+	// depending if the material has texture
+	if p.mat.TextureCount() > 0 {
+		p.panUni.SetPos(posTextureValid, 1)
+	} else {
+		p.panUni.SetPos(posTextureValid, 0)
+	}
 
 	// Sets model matrix
 	var mm math32.Matrix4

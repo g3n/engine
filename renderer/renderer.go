@@ -154,6 +154,7 @@ func (r *Renderer) Render(iscene core.INode, icam camera.ICamera) error {
 
 		// Sets the shader specs for this material and sets shader program
 		r.specs.Name = mat.Shader()
+		r.specs.ShaderUnique = mat.ShaderUnique()
 		r.specs.UseLights = mat.UseLights()
 		r.specs.MatTexturesMax = mat.TextureCount()
 		_, err := r.shaman.SetProgram(&r.specs)

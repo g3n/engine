@@ -45,20 +45,29 @@ void main() {
 const shaderPanelFrag = `
 #version {{.Version}}
 
-{{template "material" .}}
+// Textures uniforms
+uniform sampler2D	MatTexture[1];
+uniform mat3		MatTexinfo[1];
+
+// Macros to access elements inside MatTexinfo uniform
+#define MatTexOffset(a)		MatTexinfo[a][0].xy
+#define MatTexRepeat(a)		MatTexinfo[a][1].xy
+#define MatTexFlipY(a)		bool(MatTexinfo[a][2].x)
+#define MatTexVisible(a)	bool(MatTexinfo[a][2].y)
 
 // Inputs from vertex shader
 in vec2 FragTexcoord;
 
 // Input uniform
-uniform vec4 Panel[7];
-const int bounds		= 0;              // index of uniform array for bounds coordinates
-const int border		= 1;              // index of uniform array for border coordinates
-const int padding		= 2;              // index of uniform array for padding coordinates
-const int content		= 3;              // index of uniform array for content coordinates
-const int borderColor  	= 4;              // index of uniform array for border color
-const int paddingColor 	= 5;              // index of uniform array for padding color
-const int contentColor	= 6;              // index of uniform array for content color
+uniform vec4 Panel[8];
+#define Bounds			Panel[0]		  // panel bounds in texture coordinates
+#define Border			Panel[1]		  // panel border in texture coordinates
+#define Padding			Panel[2]		  // panel padding in texture coordinates
+#define Content			Panel[3]		  // panel content area in texture coordinates
+#define BorderColor		Panel[4]		  // panel border color
+#define PaddingColor	Panel[5]		  // panel padding color
+#define ContentColor	Panel[6]		  // panel content color
+#define TextureValid	bool(Panel[7].x)  // texture valid flag
 
 // Output
 out vec4 FragColor;
@@ -97,24 +106,24 @@ void main() {
     // Bounds[1] - ymin
     // Bounds[2] - xmax
     // Bounds[3] - ymax
-    if (FragTexcoord.x <= Panel[bounds][0] || FragTexcoord.x >= Panel[bounds][2]) {
+    if (FragTexcoord.x <= Bounds[0] || FragTexcoord.x >= Bounds[2]) {
         discard;
     }
-    if (FragTexcoord.y <= Panel[bounds][1] || FragTexcoord.y >= Panel[bounds][3]) {
+    if (FragTexcoord.y <= Bounds[1] || FragTexcoord.y >= Bounds[3]) {
         discard;
     }
 
     // Check if fragment is inside content area
-    if (checkRect(Panel[content])) {
+    if (checkRect(Content)) {
         // If no texture, the color will be the material color.
-        vec4 color = Panel[contentColor];
-        {{ if .MatTexturesMax }}
+        vec4 color = ContentColor;
+		if (TextureValid) {
             // Adjust texture coordinates to fit texture inside the content area
-            vec2 offset = vec2(-Panel[content][0], -Panel[content][1]);
-            vec2 factor = vec2(1/Panel[content][2], 1/Panel[content][3]);
+            vec2 offset = vec2(-Content[0], -Content[1]);
+            vec2 factor = vec2(1/Content[2], 1/Content[3]);
             vec2 texcoord = (FragTexcoord + offset) * factor;
             color = texture(MatTexture[0], texcoord * MatTexRepeat(0) + MatTexOffset(0));
-        {{ end }}
+		}
         if (color.a == 0) {
             discard;
         }
@@ -123,14 +132,14 @@ void main() {
     }
 
     // Checks if fragment is inside paddings area
-    if (checkRect(Panel[padding])) {
-        FragColor = Panel[paddingColor];
+    if (checkRect(Padding)) {
+        FragColor = PaddingColor;
         return;
     }
 
     // Checks if fragment is inside borders area
-    if (checkRect(Panel[border])) {
-        FragColor = Panel[borderColor];
+    if (checkRect(Border)) {
+        FragColor = BorderColor;
         return;
     }
 
