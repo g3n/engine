@@ -19,7 +19,7 @@ import (
 
 const (
 	playerBufferCount = 2
-	playerBufferSize  = 16 * 1024
+	playerBufferSize  = 32 * 1024
 )
 
 // Player is a 3D (spatial) audio file player
