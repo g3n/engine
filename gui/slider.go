@@ -87,6 +87,7 @@ func newSlider(horiz bool, width, height float32) *Slider {
 	s.Panel.Subscribe(OnKeyDown, s.onKey)
 	s.Panel.Subscribe(OnKeyRepeat, s.onKey)
 	s.Panel.Subscribe(OnResize, s.onResize)
+	s.Panel.Subscribe(OnEnable, func(evname string, ev interface{}) { s.update() })
 
 	// Initialize slider panel
 	s.slider.Initialize(0, 0)
