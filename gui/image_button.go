@@ -147,7 +147,7 @@ func (b *ImageButton) SetImage(state ButtonState, imgfile string) error {
 		b.stateImages[state].Dispose()
 	}
 	b.stateImages[state] = tex
-
+	b.update()
 
 	return nil
 }
