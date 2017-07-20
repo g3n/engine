@@ -348,6 +348,17 @@ const (
 	MAT4       = "MAT4"
 )
 
+// TypeSizes maps the attribute type to the number of its elements
+var TypeSizes = map[string]int{
+	SCALAR: 1,
+	VEC2:   2,
+	VEC3:   3,
+	VEC4:   4,
+	MAT2:   4,
+	MAT3:   9,
+	MAT4:   16,
+}
+
 type GLB struct {
 	Header GLBHeader
 	JSON   GLBChunk

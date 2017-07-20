@@ -264,11 +264,10 @@ func (g *GLTF) loadCamera(ci int) (core.INode, error) {
 // from the specified GLTF Mesh index
 func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 
-	// Create attribute buffers
+	// Create buffers and VBO
 	indices := math32.NewArrayU32(0, 0)
-	positions := math32.NewArrayF32(0, 0)
-	normals := math32.NewArrayF32(0, 0)
-	uvs0 := math32.NewArrayF32(0, 0)
+	vbuf := math32.NewArrayF32(0, 0)
+	vbo := gls.NewVBO()
 
 	// Array of primitive materials
 	type matGroup struct {
@@ -322,12 +321,20 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 
 		// Load primitive attributes
 		for name, aci := range p.Attributes {
+			//interleaved := g.isInterleaved(aci)
+			//if interleaved {
+			//	buf, err := g.loadBufferView(*g.Accessors[aci].BufferView)
+			//	if err != nil {
+			//		return nil, err
+			//	}
+			//}
 			if name == "POSITION" {
 				ppos, err := g.loadVec3(aci)
 				if err != nil {
 					return nil, err
 				}
-				positions = append(positions, ppos...)
+				vbo.AddAttribEx("VertexPosition", 3, 0, uint32(len(vbuf)*int(gls.FloatSize)))
+				vbuf = append(vbuf, ppos...)
 				continue
 			}
 			if name == "NORMAL" {
@@ -335,7 +342,8 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 				if err != nil {
 					return nil, err
 				}
-				normals = append(normals, pnorms...)
+				vbo.AddAttribEx("VertexNormal", 3, 0, uint32(len(vbuf)*int(gls.FloatSize)))
+				vbuf = append(vbuf, pnorms...)
 				continue
 			}
 			if name == "TEXCOORD_0" {
@@ -343,31 +351,28 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 				if err != nil {
 					return nil, err
 				}
-				uvs0 = append(uvs0, puvs...)
+				vbo.AddAttribEx("VertexTexcoord", 2, 0, uint32(len(vbuf)*int(gls.FloatSize)))
+				vbuf = append(vbuf, puvs...)
 				continue
 			}
 		}
 	}
 
-	// Creates Geometry and add attribute VBOs
+	// Creates Geometry and add attribute VBO
 	geom := geometry.NewGeometry()
 	if len(indices) > 0 {
 		geom.SetIndices(indices)
 	}
-	if len(positions) > 0 {
-		geom.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(positions))
-	}
-	if len(normals) > 0 {
-		geom.AddVBO(gls.NewVBO().AddAttrib("VertexNormal", 3).SetBuffer(normals))
-	}
-	if len(uvs0) > 0 {
-		geom.AddVBO(gls.NewVBO().AddAttrib("VertexTexcoord", 2).SetBuffer(uvs0))
+	if len(vbuf) > 0 {
+		vbo.SetBuffer(vbuf)
+		geom.AddVBO(vbo)
 	}
 
 	//log.Error("positions:%v", positions)
 	//log.Error("indices..:%v", indices)
 	//log.Error("normals..:%v", normals)
 	//log.Error("uvs0.....:%v", uvs0)
+	log.Error("VBUF size in number of floats:%v", len(vbuf))
 
 	// Create Mesh
 	if mode == TRIANGLES {
@@ -478,7 +483,7 @@ func (g *GLTF) loadImage(ii int) (*image.RGBA, error) {
 	imgDesc := g.Images[ii]
 	var data []byte
 	var err error
-	// If Uri is empty, load image from chunk
+	// If Uri is empty, load image from GLB binary chunk
 	if imgDesc.Uri == "" {
 		bvi := imgDesc.BufferView
 		if bvi == nil {
@@ -496,9 +501,8 @@ func (g *GLTF) loadImage(ii int) (*image.RGBA, error) {
 		if err != nil {
 			return nil, err
 		}
-		// Loads external buffer file
-	} else {
 		// Load image data from file
+	} else {
 		fpath := filepath.Join(g.path, imgDesc.Uri)
 		f, err := os.Open(fpath)
 		if err != nil {
@@ -527,7 +531,8 @@ func (g *GLTF) loadImage(ii int) (*image.RGBA, error) {
 	return rgba, nil
 }
 
-// loadVec3 load array of Vector3 from the specified accessor index
+// loadVec3 load array of float32 values from the specified accessor index.
+// The acesssor must have type of VEC3 and component type of FLOAT
 func (g *GLTF) loadVec3(ai int) (math32.ArrayF32, error) {
 
 	// Get Accessor for the specified index
@@ -646,6 +651,31 @@ func (g *GLTF) loadIndices(ai int) (math32.ArrayU32, error) {
 		return indices, nil
 	}
 	return nil, fmt.Errorf("Unsupported Accessor ComponentType:%v", ac.ComponentType)
+}
+
+// isInterleaves checks if the BufferView used by the specified Accessor index is
+// interleaved or not
+func (g *GLTF) isInterleaved(aci int) bool {
+
+	// Get the Accessor's BufferView
+	accessor := g.Accessors[aci]
+	if accessor.BufferView == nil {
+		return false
+	}
+	bv := g.BufferViews[*accessor.BufferView]
+
+	// Calculates the size in bytes of a complete attribute
+	itemSize := TypeSizes[accessor.Type]
+	itemBytes := int(gls.FloatSize) * itemSize
+
+	// If the BufferView stride is equal to the item size, the buffer is not interleaved
+	if bv.ByteStride == nil {
+		return false
+	}
+	if *bv.ByteStride == itemBytes {
+		return false
+	}
+	return true
 }
 
 // loadBufferView loads and returns a byte slice with data from the specified

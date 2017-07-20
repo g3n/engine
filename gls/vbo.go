@@ -22,7 +22,9 @@ type VBO struct {
 // VBOattrib describes one attribute of an OpenGL Vertex Buffer Object
 type VBOattrib struct {
 	Name     string // Name of of the attribute
-	ItemSize int32  // Number of elements for each item
+	ItemSize int32  // Number of elements for each item (1,2,3 or 4)
+	Stride   int32  // Specifies the byte offset between consecutive attributes
+	Offset   uint32 // Byte offset of this attribute from the start of the buffer
 }
 
 // NewVBO creates and returns a pointer to a new OpenGL Vertex Buffer Object
@@ -43,12 +45,25 @@ func (vbo *VBO) init() {
 	vbo.attribs = make([]VBOattrib, 0)
 }
 
-// AddAttrib adds a new attribute to this VBO
+// AddAttrib adds a new attribute to this VBO with the specified item size (1,2,3 or 4)
+// The attribute stride and offset are set to 0.
+// Use AddAttribEx to specify the stride and offset
 func (vbo *VBO) AddAttrib(name string, itemSize int32) *VBO {
 
 	vbo.attribs = append(vbo.attribs, VBOattrib{
 		Name:     name,
 		ItemSize: itemSize,
+	})
+	return vbo
+}
+
+func (vbo *VBO) AddAttribEx(name string, itemSize, stride int32, offset uint32) *VBO {
+
+	vbo.attribs = append(vbo.attribs, VBOattrib{
+		Name:     name,
+		ItemSize: itemSize,
+		Stride:   stride,
+		Offset:   offset,
 	})
 	return vbo
 }
@@ -141,12 +156,6 @@ func (vbo *VBO) Transfer(gs *GLS) {
 	if vbo.gs == nil {
 		vbo.handle = gs.GenBuffer()
 		gs.BindBuffer(ARRAY_BUFFER, vbo.handle)
-		// Calculates stride
-		stride := vbo.Stride()
-		// For each attribute
-		var items uint32 = 0
-		var offset uint32 = 0
-		elsize := int32(unsafe.Sizeof(float32(0)))
 		for _, attrib := range vbo.attribs {
 			// Get attribute location in the current program
 			loc := gs.prog.GetAttribLocation(attrib.Name)
@@ -155,9 +164,7 @@ func (vbo *VBO) Transfer(gs *GLS) {
 			}
 			// Enables attribute and sets its stride and offset in the buffer
 			gs.EnableVertexAttribArray(uint32(loc))
-			gs.VertexAttribPointer(uint32(loc), attrib.ItemSize, FLOAT, false, int32(stride), offset)
-			items += uint32(attrib.ItemSize)
-			offset = uint32(elsize) * items
+			gs.VertexAttribPointer(uint32(loc), attrib.ItemSize, FLOAT, false, attrib.Stride, attrib.Offset)
 		}
 		vbo.gs = gs // this indicates that the vbo was initialized
 	}
@@ -169,3 +176,44 @@ func (vbo *VBO) Transfer(gs *GLS) {
 	gs.BufferData(ARRAY_BUFFER, vbo.buffer.Bytes(), &vbo.buffer[0], vbo.usage)
 	vbo.update = false
 }
+
+//// Transfer is called internally and transfer the data in the VBO buffer to OpenGL if necessary
+//func (vbo *VBO) Transfer(gs *GLS) {
+//
+//	// If the VBO buffer is empty, ignore
+//	if vbo.buffer.Bytes() == 0 {
+//		return
+//	}
+//
+//	// First time initialization
+//	if vbo.gs == nil {
+//		vbo.handle = gs.GenBuffer()
+//		gs.BindBuffer(ARRAY_BUFFER, vbo.handle)
+//		// Calculates stride
+//		stride := vbo.Stride()
+//		// For each attribute
+//		var items uint32 = 0
+//		var offset uint32 = 0
+//		elsize := int32(unsafe.Sizeof(float32(0)))
+//		for _, attrib := range vbo.attribs {
+//			// Get attribute location in the current program
+//			loc := gs.prog.GetAttribLocation(attrib.Name)
+//			if loc < 0 {
+//				continue
+//			}
+//			// Enables attribute and sets its stride and offset in the buffer
+//			gs.EnableVertexAttribArray(uint32(loc))
+//			gs.VertexAttribPointer(uint32(loc), attrib.ItemSize, FLOAT, false, int32(stride), offset)
+//			items += uint32(attrib.ItemSize)
+//			offset = uint32(elsize) * items
+//		}
+//		vbo.gs = gs // this indicates that the vbo was initialized
+//	}
+//	if !vbo.update {
+//		return
+//	}
+//	// Transfer the VBO data to OpenGL
+//	gs.BindBuffer(ARRAY_BUFFER, vbo.handle)
+//	gs.BufferData(ARRAY_BUFFER, vbo.buffer.Bytes(), &vbo.buffer[0], vbo.usage)
+//	vbo.update = false
+//}

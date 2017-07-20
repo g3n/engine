@@ -80,6 +80,10 @@ const (
 	intTrue     = 1
 )
 
+const (
+	FloatSize = int32(unsafe.Sizeof(float32(0)))
+)
+
 // New creates and returns a new instance of an GLS object
 // which encapsulates the state of an OpenGL context
 // This should be called only after an active OpenGL context

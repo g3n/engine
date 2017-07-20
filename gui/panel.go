@@ -121,8 +121,8 @@ func (p *Panel) Initialize(width, height float32) {
 	geom := geometry.NewGeometry()
 	geom.SetIndices(indices)
 	geom.AddVBO(gls.NewVBO().
-		AddAttrib("VertexPosition", 3).
-		AddAttrib("VertexTexcoord", 2).
+		AddAttribEx("VertexPosition", 3, 5*gls.FloatSize, 0).
+		AddAttribEx("VertexTexcoord", 2, 5*gls.FloatSize, uint32(3*gls.FloatSize)).
 		SetBuffer(positions),
 	)
 
