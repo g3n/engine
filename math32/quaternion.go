@@ -310,7 +310,7 @@ func (this *Quaternion) Slerp(qb *Quaternion, t float32) *Quaternion {
 	x := this.x
 	y := this.y
 	z := this.z
-	w := this.z
+	w := this.w
 
 	cosHalfTheta := w*qb.w + x*qb.x + y*qb.y + z*qb.z
 
