@@ -645,8 +645,7 @@ func (g *GLTF) loadIndices(ai int) (math32.ArrayU32, error) {
 	if ac.ComponentType == UNSIGNED_BYTE {
 		indices := math32.NewArrayU32(ac.Count, ac.Count)
 		for i := 0; i < ac.Count; i++ {
-			indices[i] = uint32(data[i*4]) + uint32(data[i*4+1])*256 +
-				uint32(data[i*4+2])*256*256 + uint32(data[i*4+3])*256*256*256
+			indices[i] = uint32(data[i])
 		}
 		return indices, nil
 	}
