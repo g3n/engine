@@ -12,7 +12,11 @@ G3N was heavily inspired and based on the [three.js](https://threejs.org/) Javas
   <img style="float: right;" src="https://github.com/g3n/g3n.github.io/blob/master/g3n_banner_small.png" alt="G3N Banner"/>
 </p>
 
-# Dependencies
+## Highlighted Projects
+
+[Gokoban - 3D Puzzle Game](https://github.com/danaugrs/gokoban)
+
+## Dependencies
 
 The engine needs an OpenGL driver installed in the system and
 on Unix like systems depends on some C libraries that can be installed using the distribution package manager.
@@ -38,14 +42,14 @@ The following libraries are necessary for the optional audio support:
 
 G3N was only tested with Go1.7.4+
 
-# Installation
+## Installation
 
 The following command will download the engine and all its dependencies, compile and
 install the packages. Make sure your GOPATH is set correctly. 
 
 `go get -u github.com/g3n/engine/...`
 
-# Features
+## Features
 
 * Hierarchical scene graph. Any node can contain other nodes.
 * Supports perspective and orthographic cameras. The camera can be controlled
@@ -62,7 +66,7 @@ install the packages. Make sure your GOPATH is set correctly.
 * Spatial audio support allowing playing sound from wave or Ogg Vorbis files.
 * Users' applications can use their own vertex and fragment shaders.
 
-# Basic application
+## Basic application
 
 The following code shows a basic G3N application 
 ([hellog3n](https://github.com/g3n/demos/tree/master/hellog3n))
@@ -170,12 +174,12 @@ func main() {
   <img style="float: right;" src="https://github.com/g3n/demos/blob/master/hellog3n/screenshot.png" alt="hellog3n Screenshot"/>
 </p>
 
-# To Do
+## To Do
 
 G3N is a basic game engine. There is a lot of things to do.
 We will soon insert here a list of the most important missing features.
 
-# Documentation
+## Documentation
 
 For the engine API reference, please use
 [![GoDoc](https://godoc.org/github.com/g3n/engine?status.svg)](https://godoc.org/github.com/g3n/engine).
@@ -184,12 +188,12 @@ of the demos from [G3ND](https://github.com/g3n/g3nd).
 We intend to write in the future documentation topics
 to build a user guide in the [wiki](https://github.com/g3n/engine/wiki).
 
-# Contributing
+## Contributing
 
 If you spot a bug or create a new feature you are encouraged to
 send pull requests.
 
-# Community
+## Community
 
 Join our [channel](https://gophers.slack.com/messages/g3n) on Gophers Slack.
 
