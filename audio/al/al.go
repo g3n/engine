@@ -12,7 +12,7 @@ The OpenAL documentation can be accessed at https://openal.org/documentation/
 package al
 
 /*
-#cgo darwin   CFLAGS:  -DGO_DARWIN
+#cgo darwin   CFLAGS:  -DGO_DARWIN  -I../include
 #cgo linux    CFLAGS:  -DGO_LINUX   -I../include
 #cgo windows  CFLAGS:  -DGO_WINDOWS -I../include
 #cgo darwin   LDFLAGS:

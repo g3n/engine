@@ -40,12 +40,15 @@ static alProc get_proc(const char *proc) {
 CFBundleRef bundle;
 CFURLRef bundleURL;
 
-static void open_libvbf(void) {
+static int open_libvbf(void) {
 	bundleURL = CFURLCreateWithFileSystemPath(kCFAllocatorDefault,
 		CFSTR("/System/Library/Frameworks/OpenAL.framework"),
 		kCFURLPOSIXPathStyle, true);
 	bundle = CFBundleCreate(kCFAllocatorDefault, bundleURL);
-	assert(bundle != NULL);
+	if (bundle == NULL) {
+		return -1;
+	}
+	return 0;
 }
 
 static void close_libvbf(void) {
