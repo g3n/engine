@@ -60,14 +60,17 @@ CFBundleRef bundle;
 CFURLRef bundleURL;
 
 // open_libgl opens the OpenGL shared object for OSX
-static void open_libgl(void) {
+static int open_libgl(void) {
 
 	bundleURL = CFURLCreateWithFileSystemPath(kCFAllocatorDefault,
 		CFSTR("/System/Library/Frameworks/OpenGL.framework"),
 		kCFURLPOSIXPathStyle, true);
 
 	bundle = CFBundleCreate(kCFAllocatorDefault, bundleURL);
-	assert(bundle != NULL);
+	if (bundle == NULL) {
+		return -1;
+	}
+	return 0;
 }
 
 // close_libgl closes the OpenGL shared object object for OSX
