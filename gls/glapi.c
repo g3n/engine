@@ -53,38 +53,29 @@ static void* get_proc(const char *proc) {
 //
 // OpenGL function loader for Mac OS
 //
-#elif defined(__APPLE__) || defined(__APPLE_CC__)
-#include <Carbon/Carbon.h>
+#elif defined(__APPLE__)
+#include <dlfcn.h>
 
-CFBundleRef bundle;
-CFURLRef bundleURL;
+static void *libgl;
 
-// open_libgl opens the OpenGL shared object for OSX
-static void open_libgl(void) {
+static int open_libgl(void) {
 
-	bundleURL = CFURLCreateWithFileSystemPath(kCFAllocatorDefault,
-		CFSTR("/System/Library/Frameworks/OpenGL.framework"),
-		kCFURLPOSIXPathStyle, true);
-
-	bundle = CFBundleCreate(kCFAllocatorDefault, bundleURL);
-	assert(bundle != NULL);
+	libgl = dlopen("/System/Library/Frameworks/OpenGL.framework/OpenGL", RTLD_LAZY | RTLD_GLOBAL);
+	if (!libgl) {
+		return -1;
+	}
+	return 0;
 }
 
-// close_libgl closes the OpenGL shared object object for OSX
 static void close_libgl(void) {
 
-	CFRelease(bundle);
-	CFRelease(bundleURL);
+	dlclose(libgl);
 }
 
-// get_proc gets the pointer for an OpenGL function for OSX
 static void* get_proc(const char *proc) {
 
 	void* res;
-	CFStringRef procname = CFStringCreateWithCString(kCFAllocatorDefault, proc,
-		kCFStringEncodingASCII);
-	*(void **)(&res) = CFBundleGetFunctionPointerForName(bundle, procname);
-	CFRelease(procname);
+	*(void **)(&res) = dlsym(libgl, proc);
 	return res;
 }
 

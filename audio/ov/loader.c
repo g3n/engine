@@ -25,41 +25,41 @@ static int open_libvbf(void) {
 }
 
 static void close_libvbf(void) {
+
 	FreeLibrary(libvbf);
 }
 
 static alProc get_proc(const char *proc) {
+
     return (alProc) GetProcAddress(libvbf, proc);
 }
 //
 // Mac --------------------------------------------------------------------
 //
-#elif defined(__APPLE__) || defined(__APPLE_CC__)
-#include <Carbon/Carbon.h>
+#elif defined(__APPLE__)
+#include <dlfcn.h>
 
-CFBundleRef bundle;
-CFURLRef bundleURL;
+static void *libvbf;
 
-static void open_libvbf(void) {
-	bundleURL = CFURLCreateWithFileSystemPath(kCFAllocatorDefault,
-		CFSTR("/System/Library/Frameworks/OpenAL.framework"),
-		kCFURLPOSIXPathStyle, true);
-	bundle = CFBundleCreate(kCFAllocatorDefault, bundleURL);
-	assert(bundle != NULL);
+static int open_libvbf(void) {
+
+    libvbf = dlopen("/System/Library/Frameworks/libvorbisfile.framework/libvorbisfile", RTLD_LAZY | RTLD_GLOBAL);
+    if (!libvbf) {
+        return -1;
+    }
+    return 0;
 }
 
 static void close_libvbf(void) {
-	CFRelease(bundle);
-	CFRelease(bundleURL);
+
+    dlclose(libvbf);
 }
 
-static alProc get_proc(const char *proc) {
-	GL3WglProc res;
-	CFStringRef procname = CFStringCreateWithCString(kCFAllocatorDefault, proc,
-		kCFStringEncodingASCII);
-	res = (GL3WglProc) CFBundleGetFunctionPointerForName(bundle, procname);
-	CFRelease(procname);
-	return res;
+static void* get_proc(const char *proc) {
+
+    void* res;
+    *(void **)(&res) = dlsym(libvbf, proc);
+    return res;
 }
 //
 // Linux --------------------------------------------------------------------
@@ -90,10 +90,12 @@ static int open_libvbf(void) {
 }
 
 static void close_libvbf(void) {
+
 	dlclose(libvbf);
 }
 
 static alProc get_proc(const char *proc) {
+
     return dlsym(libvbf, proc);
 }
 #endif

@@ -26,19 +26,42 @@ static int open_libvb(void) {
 }
 
 static void close_libvb(void) {
+
 	FreeLibrary(libvb);
 }
 
 static alProc get_proc(const char *proc) {
+
     return (alProc) GetProcAddress(libvb, proc);
 }
 //
 // Mac --------------------------------------------------------------------
 //
-#elif defined(__APPLE__) || defined(__APPLE_CC__)
+#elif defined(__APPLE__)
+#include <dlfcn.h>
 
+static void *libvb;
 
+static int open_libvb(void) {
 
+    libvb = dlopen("/System/Library/Frameworks/libvorbis.framework/libvorbis", RTLD_LAZY | RTLD_GLOBAL);
+    if (!libvb) {
+        return -1;
+    }
+    return 0;
+}
+
+static void close_libvb(void) {
+
+    dlclose(libvb);
+}
+
+static void* get_proc(const char *proc) {
+
+    void* res;
+    *(void **)(&res) = dlsym(libvb, proc);
+    return res;
+}
 //
 // Linux --------------------------------------------------------------------
 //
@@ -68,10 +91,12 @@ static int open_libvb(void) {
 }
 
 static void close_libvb(void) {
+
 	dlclose(libvb);
 }
 
 static alProc get_proc(const char *proc) {
+
     return dlsym(libvb, proc);
 }
 #endif
@@ -96,6 +121,7 @@ int vorbis_load() {
 }
 
 static void load_procs(void) {
+
     p_vorbis_version_string = (LPVORBISVERSIONSTRING)get_proc("vorbis_version_string");
 }
 
