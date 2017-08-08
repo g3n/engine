@@ -49,6 +49,7 @@ func newGLFW(width, height int, title string, full bool) (*GLFW, error) {
 		glfw.WindowHint(glfw.ContextVersionMinor, 3)
 		glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 		glfw.WindowHint(glfw.Samples, 8)
+		glfw.WindowHint(glfw.OpenGLForwardCompatible, 1)
 		initialized = true
 	}
 
