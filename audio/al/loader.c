@@ -12,7 +12,7 @@ typedef void (*alProc)(void);
 static HMODULE libal;
 
 static int open_libal(void) {
-
+ 
 	libal = LoadLibraryA("OpenAL32.dll");
     if (libal == NULL) {
         return -1;
@@ -21,41 +21,41 @@ static int open_libal(void) {
 }
 
 static void close_libal(void) {
+
 	FreeLibrary(libal);
 }
 
 static alProc get_proc(const char *proc) {
+
     return (alProc) GetProcAddress(libal, proc);
 }
 //
 // Mac --------------------------------------------------------------------
 //
-#elif defined(__APPLE__) || defined(__APPLE_CC__)
-#include <Carbon/Carbon.h>
+#elif defined(__APPLE__)
+#include <dlfcn.h>
 
-CFBundleRef bundle;
-CFURLRef bundleURL;
+static void *libal;
 
-static void open_libal(void) {
-	bundleURL = CFURLCreateWithFileSystemPath(kCFAllocatorDefault,
-		CFSTR("/System/Library/Frameworks/OpenAL.framework"),
-		kCFURLPOSIXPathStyle, true);
-	bundle = CFBundleCreate(kCFAllocatorDefault, bundleURL);
-	assert(bundle != NULL);
+static int open_libal(void) {
+
+    libal = dlopen("/System/Library/Frameworks/OpenAL.framework/OpenAL", RTLD_LAZY | RTLD_GLOBAL);
+    if (!libal) {
+        return -1;
+    }
+    return 0;
 }
 
 static void close_libal(void) {
-	CFRelease(bundle);
-	CFRelease(bundleURL);
+
+    dlclose(libal);
 }
 
-static alProc get_proc(const char *proc) {
-	GL3WglProc res;
-	CFStringRef procname = CFStringCreateWithCString(kCFAllocatorDefault, proc,
-		kCFStringEncodingASCII);
-	res = (GL3WglProc) CFBundleGetFunctionPointerForName(bundle, procname);
-	CFRelease(procname);
-	return res;
+static void* get_proc(const char *proc) {
+
+    void* res;
+    *(void **)(&res) = dlsym(libal, proc);
+    return res;
 }
 //
 // Linux --------------------------------------------------------------------
@@ -86,10 +86,12 @@ static int open_libal(void) {
 }
 
 static void close_libal(void) {
+
 	dlclose(libal);
 }
 
 static alProc get_proc(const char *proc) {
+    
     return dlsym(libal, proc);
 }
 #endif
