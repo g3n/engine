@@ -1,0 +1,29 @@
+Physically Based Rendering/Shading
+----------------------------------
+
+https://www.marmoset.co/posts/basic-theory-of-physically-based-rendering/
+
+- albedo: a color which describes the fractions of various colors of light
+  that will scatter back out of a surface.
+  “Diffuse color” is a phrase sometimes used synonymously.
+
+- Reflection
+- Diffusion
+- Energy conservation:
+    - Reflection and diffusion are mutually exclusive.
+- Fresnel
+    - Differing reflectivity that occurs at diffent angles
+- Microsurface
+    - Gloss, smoothness, roughness.
+
+- BRDF - Bidirectional Reflectance Distribution Function.
+    -   Function of View and Light direction - f(l, v)
+    -   For a ray of incoming light from a given direction
+        the BRDF function gives the distribution of outgoing light
+        in all directions.
+    -   For a given view direction, the BRDF gives the relative 
+        contribution of each incoming direction.
+    -   The BRDF varies by light wavelength
+
+
+
