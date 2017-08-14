@@ -14,7 +14,7 @@ G3N was heavily inspired and based on the [three.js](https://threejs.org/) Javas
 
 ## Highlighted Projects
 
-[Gokoban - 3D Puzzle Game](https://github.com/danaugrs/gokoban)
+[Gokoban - 3D Puzzle Game (_1st place in the 2017 Gopher Game Jam_)](https://github.com/danaugrs/gokoban)
 
 ## Dependencies
 
