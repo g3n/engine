@@ -43,7 +43,7 @@ func (g *GLTF) loadMaterialCommon(ext interface{}) (material.IMaterial, error) {
 	shininess := float32(0)
 	transparency := float32(1)
 
-	// Converts a slice of interface values which should be float64 to
+	// Converts a slice of interface values which should be float64
 	// to a slice of float32
 	convIF32 := func(v interface{}) []float32 {
 
@@ -68,7 +68,11 @@ func (g *GLTF) loadMaterialCommon(ext interface{}) (material.IMaterial, error) {
 		// Diffuse light
 		val, ok = values["diffuse"]
 		if ok {
-			diffuse = convIF32(val)
+			v := convIF32(val)
+			// there is a gltf sample where diffuse has only one element.
+			if len(v) == 4 {
+				diffuse = v
+			}
 		}
 
 		// Emission light
