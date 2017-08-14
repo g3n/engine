@@ -3,6 +3,7 @@ package gltf
 import (
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/texture"
 )
 
 // loadMaterialCommon receives an interface value describing a KHR_materials_common extension,
@@ -42,6 +43,7 @@ func (g *GLTF) loadMaterialCommon(ext interface{}) (material.IMaterial, error) {
 	specular := []float32{0, 0, 0, 1}
 	shininess := float32(0)
 	transparency := float32(1)
+	var texDiffuse *texture.Texture2D
 
 	// Converts a slice of interface values which should be float64
 	// to a slice of float32
@@ -69,9 +71,14 @@ func (g *GLTF) loadMaterialCommon(ext interface{}) (material.IMaterial, error) {
 		val, ok = values["diffuse"]
 		if ok {
 			v := convIF32(val)
-			// there is a gltf sample where diffuse has only one element.
-			if len(v) == 4 {
-				diffuse = v
+			// Checks for texture index
+			if len(v) == 1 {
+				var err error
+				texDiffuse, err = g.loadTexture(int(v[0]))
+				if err != nil {
+					return nil, err
+				}
+				diffuse = []float32{1, 1, 1, 1}
 			}
 		}
 
@@ -121,6 +128,9 @@ func (g *GLTF) loadMaterialCommon(ext interface{}) (material.IMaterial, error) {
 		pm.SetSpecularColor(&math32.Color{specular[0], specular[1], specular[2]})
 		pm.SetShininess(shininess)
 		pm.SetOpacity(transparency)
+		if texDiffuse != nil {
+			pm.AddTexture(texDiffuse)
+		}
 		imat = pm
 	} else {
 		sm := material.NewStandard(&math32.Color{diffuse[0], diffuse[1], diffuse[2]})
@@ -129,6 +139,9 @@ func (g *GLTF) loadMaterialCommon(ext interface{}) (material.IMaterial, error) {
 		sm.SetSpecularColor(&math32.Color{specular[0], specular[1], specular[2]})
 		sm.SetShininess(shininess)
 		sm.SetOpacity(transparency)
+		if texDiffuse != nil {
+			sm.AddTexture(texDiffuse)
+		}
 		imat = sm
 	}
 

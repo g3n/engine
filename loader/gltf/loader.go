@@ -432,9 +432,14 @@ func (g *GLTF) loadMaterial(mi int) (material.IMaterial, error) {
 // loadTextureInfo loads the texture specified by the TextureInfo pointer
 func (g *GLTF) loadTextureInfo(ti *TextureInfo) (*texture.Texture2D, error) {
 
-	log.Error("loadTexture:%+v", ti)
+	return g.loadTexture(ti.Index)
+}
+
+// loadTexture loads the texture specified by its index
+func (g *GLTF) loadTexture(texi int) (*texture.Texture2D, error) {
+
 	// loads texture image
-	texDesc := g.Textures[ti.Index]
+	texDesc := g.Textures[texi]
 	img, err := g.loadImage(texDesc.Source)
 	if err != nil {
 		return nil, err
