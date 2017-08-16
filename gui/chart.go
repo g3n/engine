@@ -19,7 +19,7 @@ import (
 func init() {
 	shader.AddShader("shaderChartVertex", shaderChartVertex)
 	shader.AddShader("shaderChartFrag", shaderChartFrag)
-	shader.AddProgram("shaderChart", "shaderChartVertex", "shaderChartFrag")
+	shader.AddProgram("shaderChart", "shaderChartVertex", "shaderChartFrag", "")
 }
 
 //

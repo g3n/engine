@@ -19,27 +19,35 @@ func NewAxisHelper(size float32) *AxisHelper {
 
 	axis := new(AxisHelper)
 
+	vertexCount := 2
+
 	// Creates geometry with three orthogonal lines
 	// starting at the origin
 	geom := geometry.NewGeometry()
-	positions := math32.NewArrayF32(0, 18)
-	positions.Append(
-		0, 0, 0, size, 0, 0,
-		0, 0, 0, 0, size, 0,
-		0, 0, 0, 0, 0, size,
+
+	zero := math32.Vector3Zero
+	up := math32.Vector3Up.MultiplyScalar(size)
+	right := math32.Vector3Right.MultiplyScalar(size)
+	back := math32.Vector3Back.MultiplyScalar(size)
+
+	positions := math32.NewArrayF32(vertexCount*3, vertexCount*3)
+	positions.AppendVector3(
+		&zero, up,
+		&zero, right,
+		&zero, back,
 	)
-	colors := math32.NewArrayF32(0, 18)
-	colors.Append(
-		1, 0, 0, 1, 0.6, 0,
-		0, 1, 0, 0.6, 1, 0,
-		0, 0, 1, 0, 0.6, 1,
+
+	colors := math32.NewArrayF32(vertexCount*3, vertexCount*3)
+	colors.AppendColor(
+		&math32.Red, &math32.Red,
+		&math32.Green, &math32.Green,
+		&math32.Blue, &math32.Blue,
 	)
 	geom.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(positions))
 	geom.AddVBO(gls.NewVBO().AddAttrib("VertexColor", 3).SetBuffer(colors))
 
 	// Creates line material
-	mat := material.NewBasic()
-	mat.SetLineWidth(2.0)
+	mat := material.NewScreenSpaceLine()
 
 	// Initialize lines with the specified geometry and material
 	axis.Lines.Init(geom, mat)

@@ -119,9 +119,9 @@ func (sm *Shaman) AddShader(name, source string) error {
 	return nil
 }
 
-func (sm *Shaman) AddProgram(name, vertexName, fragName string) error {
+func (sm *Shaman) AddProgram(name, vertexName, fragName, geomName string) error {
 
-	sm.proginfo[name] = shader.ProgramInfo{vertexName, fragName}
+	sm.proginfo[name] = shader.ProgramInfo{vertexName, fragName, geomName}
 	return nil
 }
 
@@ -191,7 +191,7 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 	// Get vertex shader compiled template
 	vtempl, ok := sm.shaders[progInfo.Vertex]
 	if !ok {
-		return nil, fmt.Errorf("Shader:%s template not found", progInfo.Vertex)
+		return nil, fmt.Errorf("Vertext Shader:%s template not found", progInfo.Vertex)
 	}
 	// Generates vertex shader source from template
 	var sourceVertex bytes.Buffer
@@ -203,7 +203,7 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 	// Get fragment shader compiled template
 	fragTempl, ok := sm.shaders[progInfo.Frag]
 	if !ok {
-		return nil, fmt.Errorf("Shader:%s template not found", progInfo.Frag)
+		return nil, fmt.Errorf("Fragement Shader:%s template not found", progInfo.Frag)
 	}
 	// Generates fragment shader source from template
 	var sourceFrag bytes.Buffer
@@ -212,10 +212,31 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 		return nil, err
 	}
 
+	// Get geometry shader compiled template
+	hasEmptyGeomShader := progInfo.Geom == ""
+	var sourceGeom bytes.Buffer
+
+	if !hasEmptyGeomShader {
+		geomTempl, ok := sm.shaders[progInfo.Geom]
+		if !ok {
+			return nil, fmt.Errorf("Geometry Shader:%s template not found", progInfo.Geom)
+		}
+
+		// Generates geometry shader source from template
+		err = geomTempl.Execute(&sourceGeom, specs)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// Creates shader program
 	prog := sm.gs.NewProgram()
 	prog.AddShader(gls.VERTEX_SHADER, sourceVertex.String(), nil)
 	prog.AddShader(gls.FRAGMENT_SHADER, sourceFrag.String(), nil)
+	if !hasEmptyGeomShader {
+		prog.AddShader(gls.GEOMETRY_SHADER, sourceGeom.String(), nil)
+	}
+
 	err = prog.Build()
 	if err != nil {
 		return nil, err

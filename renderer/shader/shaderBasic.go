@@ -7,7 +7,7 @@ package shader
 func init() {
 	AddShader("shaderBasicVertex", shaderBasicVertex)
 	AddShader("shaderBasicFrag", shaderBasicFrag)
-	AddProgram("shaderBasic", "shaderBasicVertex", "shaderBasicFrag")
+	AddProgram("shaderBasic", "shaderBasicVertex", "shaderBasicFrag", "")
 }
 
 //
