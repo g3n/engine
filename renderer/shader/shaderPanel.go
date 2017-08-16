@@ -7,7 +7,7 @@ package shader
 func init() {
 	AddShader("shaderPanelVertex", shaderPanelVertex)
 	AddShader("shaderPanelFrag", shaderPanelFrag)
-	AddProgram("shaderPanel", "shaderPanelVertex", "shaderPanelFrag")
+	AddProgram("shaderPanel", "shaderPanelVertex", "shaderPanelFrag", "")
 }
 
 //

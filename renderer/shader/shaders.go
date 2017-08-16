@@ -4,11 +4,10 @@
 
 package shader
 
-import ()
-
 type ProgramInfo struct {
 	Vertex string // Vertex shader name
 	Frag   string // Fragment shader name
+	Geom   string // Geometry shader name
 }
 
 var chunks = map[string]string{}
@@ -40,7 +39,11 @@ func AddShader(name, source string) {
 	shaders[name] = source
 }
 
-func AddProgram(name, vertexName, fragName string) {
+// AddProgram add a set of shader programms
+func AddProgram(name, vertexName, fragName, geomName string) {
 
-	programs[name] = ProgramInfo{vertexName, fragName}
+	// consider making the shader program arguments a type
+	// to make the interface a bit nicer and support optional/nill shaders
+
+	programs[name] = ProgramInfo{vertexName, fragName, geomName}
 }

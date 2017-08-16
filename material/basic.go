@@ -4,8 +4,6 @@
 
 package material
 
-import ()
-
 type Basic struct {
 	Material // Embedded material
 }

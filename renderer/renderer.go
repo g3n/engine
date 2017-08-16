@@ -56,9 +56,9 @@ func (r *Renderer) AddShader(name, source string) error {
 	return r.shaman.AddShader(name, source)
 }
 
-func (r *Renderer) AddProgram(name, vertex, frag string) error {
+func (r *Renderer) AddProgram(name, vertex, frag, geom string) error {
 
-	return r.shaman.AddProgram(name, vertex, frag)
+	return r.shaman.AddProgram(name, vertex, frag, geom)
 }
 
 func (r *Renderer) Render(iscene core.INode, icam camera.ICamera) error {
