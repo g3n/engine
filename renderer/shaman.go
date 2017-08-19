@@ -48,7 +48,7 @@ func NewShaman(gs *gls.GLS) *Shaman {
 	return sm
 }
 
-// Init initializes the shander manager
+// Init initializes the shader manager
 func (sm *Shaman) Init(gs *gls.GLS) {
 
 	sm.gs = gs
@@ -160,6 +160,8 @@ func (sm *Shaman) SetProgramShader(pname string, stype int, sname string) error 
 	default:
 		return fmt.Errorf("Invalid shader type")
 	}
+	sm.proginfo[pname] = pinfo
+	log.Error("SetProgramShader: %v", pinfo)
 	return nil
 }
 
@@ -249,6 +251,7 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Error("Shader:%s INFO:%+v", specs.Name, progInfo)
 
 	// Checks for optional geometry shader compiled template
 	var sourceGeom bytes.Buffer

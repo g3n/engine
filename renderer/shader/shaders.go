@@ -86,4 +86,5 @@ func SetProgramShader(pname string, stype int, sname string) {
 	default:
 		panic("Invalid shader type")
 	}
+	programs[pname] = pinfo
 }
