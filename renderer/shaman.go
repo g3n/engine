@@ -69,6 +69,8 @@ func (sm *Shaman) Init(gs *gls.GLS) {
 	})
 }
 
+// AddDefaultShaders adds to the shader manager all default
+// shaders statically registered.
 func (sm *Shaman) AddDefaultShaders() error {
 
 	for name, source := range shader.Chunks() {
@@ -91,6 +93,7 @@ func (sm *Shaman) AddDefaultShaders() error {
 	return nil
 }
 
+// AddChunk adds a shader chunk with the specified name and source code
 func (sm *Shaman) AddChunk(name, source string) error {
 
 	tmpl := sm.chunks.New(name)
@@ -101,6 +104,7 @@ func (sm *Shaman) AddChunk(name, source string) error {
 	return nil
 }
 
+// AddShader adds a shader program with the specified name and source code
 func (sm *Shaman) AddShader(name, source string) error {
 
 	// Clone chunks template so any shader can use
@@ -119,9 +123,43 @@ func (sm *Shaman) AddShader(name, source string) error {
 	return nil
 }
 
+// AddProgram adds a program with the specified name and associated vertex
+// and fragment shaders names (previously registered)
+// To specify other types of shaders for a program use SetProgramShader()
 func (sm *Shaman) AddProgram(name, vertexName, fragName string) error {
 
-	sm.proginfo[name] = shader.ProgramInfo{vertexName, fragName}
+	sm.proginfo[name] = shader.ProgramInfo{Vertex: vertexName, Frag: fragName}
+	return nil
+}
+
+// SetProgramShader sets the shader type and name for a previously specified program name.
+// Returns error if the specified program or shader name not found or
+// if an invalid shader type was specified.
+func (sm *Shaman) SetProgramShader(pname string, stype int, sname string) error {
+
+	// Checks if program name is valid
+	pinfo, ok := sm.proginfo[pname]
+	if !ok {
+		return fmt.Errorf("Program name:%s not found", pname)
+	}
+
+	// Checks if shader name is valid
+	_, ok = sm.shaders[sname]
+	if !ok {
+		return fmt.Errorf("Shader name:%s not found", sname)
+	}
+
+	// Sets the program shader name for the specified type
+	switch stype {
+	case gls.VERTEX_SHADER:
+		pinfo.Vertex = sname
+	case gls.FRAGMENT_SHADER:
+		pinfo.Frag = sname
+	case gls.GEOMETRY_SHADER:
+		pinfo.Geometry = sname
+	default:
+		return fmt.Errorf("Invalid shader type")
+	}
 	return nil
 }
 

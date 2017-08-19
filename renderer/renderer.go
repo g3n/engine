@@ -61,6 +61,14 @@ func (r *Renderer) AddProgram(name, vertex, frag string) error {
 	return r.shaman.AddProgram(name, vertex, frag)
 }
 
+// SetProgramShader sets the shader type and name for a previously specified program name.
+// Returns error if the specified program or shader name not found or
+// if an invalid shader type was specified.
+func (r *Renderer) SetProgramShader(pname string, stype int, sname string) error {
+
+	return r.shaman.SetProgramShader(pname, stype, sname)
+}
+
 func (r *Renderer) Render(iscene core.INode, icam camera.ICamera) error {
 
 	// Updates world matrices of all scene nodes
