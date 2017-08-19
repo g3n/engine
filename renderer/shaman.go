@@ -229,7 +229,7 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 	// Get vertex shader compiled template
 	vtempl, ok := sm.shaders[progInfo.Vertex]
 	if !ok {
-		return nil, fmt.Errorf("Shader:%s template not found", progInfo.Vertex)
+		return nil, fmt.Errorf("Vertex shader:%s template not found", progInfo.Vertex)
 	}
 	// Generates vertex shader source from template
 	var sourceVertex bytes.Buffer
@@ -241,7 +241,7 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 	// Get fragment shader compiled template
 	fragTempl, ok := sm.shaders[progInfo.Frag]
 	if !ok {
-		return nil, fmt.Errorf("Shader:%s template not found", progInfo.Frag)
+		return nil, fmt.Errorf("Fragment shader:%s template not found", progInfo.Frag)
 	}
 	// Generates fragment shader source from template
 	var sourceFrag bytes.Buffer
@@ -250,10 +250,28 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 		return nil, err
 	}
 
+	// Checks for optional geometry shader compiled template
+	var sourceGeom bytes.Buffer
+	if progInfo.Geometry != "" {
+		// Get geometry shader compiled template
+		geomTempl, ok := sm.shaders[progInfo.Geometry]
+		if !ok {
+			return nil, fmt.Errorf("Geometry shader:%s template not found", progInfo.Geometry)
+		}
+		// Generates geometry shader source from template
+		err = geomTempl.Execute(&sourceGeom, specs)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// Creates shader program
 	prog := sm.gs.NewProgram()
 	prog.AddShader(gls.VERTEX_SHADER, sourceVertex.String(), nil)
 	prog.AddShader(gls.FRAGMENT_SHADER, sourceFrag.String(), nil)
+	if progInfo.Geometry != "" {
+		prog.AddShader(gls.GEOMETRY_SHADER, sourceGeom.String(), nil)
+	}
 	err = prog.Build()
 	if err != nil {
 		return nil, err
