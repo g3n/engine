@@ -54,6 +54,15 @@ func (c *Color4) SetName(name string) *Color4 {
 	return c.SetHex(colorKeywords[name])
 }
 
+func (c *Color4) Add(other *Color4) *Color4 {
+
+	c.R += other.R
+	c.G += other.G
+	c.B += other.B
+	c.A += other.A
+	return c
+}
+
 func (c *Color4) MultiplyScalar(v float32) *Color4 {
 
 	c.R *= v

@@ -61,6 +61,13 @@ func (a *ArrayF32) AppendColor(v ...*Color) {
 	}
 }
 
+func (a *ArrayF32) AppendColor4(v ...*Color4) {
+
+	for i := 0; i < len(v); i++ {
+		*a = append(*a, v[i].R, v[i].G, v[i].B, v[i].A)
+	}
+}
+
 func (a ArrayF32) GetVector2(pos int, v *Vector2) {
 
 	v.X = a[pos]
