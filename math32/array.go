@@ -115,6 +115,14 @@ func (a ArrayF32) SetColor(pos int, v *Color) {
 	a[pos+2] = v.B
 }
 
+func (a ArrayF32) SetColor4(pos int, v *Color4) {
+
+	a[pos] = v.R
+	a[pos+1] = v.G
+	a[pos+2] = v.B
+	a[pos+3] = v.A
+}
+
 //
 //
 //
