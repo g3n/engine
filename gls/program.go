@@ -16,12 +16,14 @@ import (
 // Shader Program Object
 type Program struct {
 	// Shows source code in error messages
-	ShowSource bool
-	gs         *GLS
-	handle     uint32
-	shaders    []shaderInfo
-	uniforms   map[string]int32
-	Specs      interface{}
+	ShowSource      bool
+	gs              *GLS
+	handle          uint32
+	shaders         []shaderInfo
+	uniforms        map[string]int32
+	feedbacks       []string
+	feedbacksBuffer uint32
+	Specs           interface{}
 }
 
 type shaderInfo struct {
@@ -58,6 +60,16 @@ func (prog *Program) AddShader(stype uint32, source string, defines map[string]i
 		log.Fatal("Program already built")
 	}
 	prog.shaders = append(prog.shaders, shaderInfo{stype, source, defines, 0})
+}
+
+// SetTransformFeedbacks sets the names of the vertex or geometry shaders outputs
+// to be recorded in transform feedback mode and the mode used to capture the data
+// (INTERLEAVED_ATTRIBS | SEPARATE_ATTRIBS)
+// This functions must be called before building the program.
+func (prog *Program) SetTransformFeedbacks(names []string, bufferMode uint32) {
+
+	prog.feedbacks = names
+	prog.feedbacksBuffer = bufferMode
 }
 
 // Build builds the program compiling and linking the previously supplied shaders.
@@ -123,6 +135,11 @@ func (prog *Program) Build() error {
 		}
 		sinfo.handle = shader
 		prog.gs.AttachShader(prog.handle, shader)
+	}
+
+	// Checks for transform feedback varyings
+	if len(prog.feedbacks) > 0 {
+		prog.gs.TransformFeedbackVaryings(prog.handle, prog.feedbacks, prog.feedbacksBuffer)
 	}
 
 	// Link program and checks for errors

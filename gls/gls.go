@@ -197,9 +197,19 @@ func (gs *GLS) AttachShader(program, shader uint32) {
 	C.glAttachShader(C.GLuint(program), C.GLuint(shader))
 }
 
+func BeginTransformFeedback(primitiveMode uint32) {
+
+	C.glBeginTransformFeedback(C.GLenum(primitiveMode))
+}
+
 func (gs *GLS) BindBuffer(target int, vbo uint32) {
 
 	C.glBindBuffer(C.GLenum(target), C.GLuint(vbo))
+}
+
+func (gs *GLS) BindBufferBase(target, index, buffer uint32) {
+
+	C.glBindBufferBase(C.GLenum(target), C.GLuint(index), C.GLuint(buffer))
 }
 
 func (gs *GLS) BindTexture(target int, tex uint32) {
@@ -366,6 +376,11 @@ func (gs *GLS) EnableVertexAttribArray(index uint32) {
 	C.glEnableVertexAttribArray(C.GLuint(index))
 }
 
+func (gs *GLS) EndTransformFeedback() {
+
+	C.glEndTransformFeedback()
+}
+
 func (gs *GLS) Disable(cap int) {
 
 	if gs.capabilities[cap] == capDisabled {
@@ -423,6 +438,11 @@ func (gs *GLS) GetAttribLocation(program uint32, name string) int32 {
 
 	loc := C.glGetAttribLocation(C.GLuint(program), gs.gobufStr(name))
 	return int32(loc)
+}
+
+func (gs *GLS) GetBufferSubData(target, offset, size uint32, data interface{}) {
+
+	C.glGetBufferSubData(C.GLenum(target), C.GLintptr(offset), C.GLsizeiptr(size), ptr(data))
 }
 
 func (gs *GLS) GetProgramiv(program, pname uint32, params *int32) {
@@ -513,6 +533,19 @@ func (gs *GLS) TexImage2D(target uint32, level int32, iformat int32, width int32
 func (gs *GLS) TexParameteri(target uint32, pname uint32, param int32) {
 
 	C.glTexParameteri(C.GLenum(target), C.GLenum(pname), C.GLint(param))
+}
+
+func (gs *GLS) TransformFeedbackVaryings(program uint32, feedbacks []string, bufferMode uint32) {
+
+	// Converts Go string slice to a C array of C string pointers
+	cArray := C.malloc(C.size_t(len(feedbacks)) * C.size_t(unsafe.Sizeof(uintptr(0))))
+	a := (*[1<<30 - 1]*C.GLchar)(cArray)
+	for i, name := range feedbacks {
+		a[i] = gs.cbufStr(name)
+	}
+
+	C.glTransformFeedbackVaryings(C.GLuint(program), C.GLsizei(len(feedbacks)),
+		(**C.GLchar)(cArray), C.GLenum(bufferMode))
 }
 
 func (gs *GLS) PolygonMode(face, mode uint32) {
