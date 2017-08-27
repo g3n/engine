@@ -197,7 +197,7 @@ func (gs *GLS) AttachShader(program, shader uint32) {
 	C.glAttachShader(C.GLuint(program), C.GLuint(shader))
 }
 
-func BeginTransformFeedback(primitiveMode uint32) {
+func (gs *GLS) BeginTransformFeedback(primitiveMode uint32) {
 
 	C.glBeginTransformFeedback(C.GLenum(primitiveMode))
 }
@@ -267,6 +267,11 @@ func (gs *GLS) BlendFuncSeparate(srcRGB uint32, dstRGB uint32, srcAlpha uint32, 
 func (gs *GLS) BufferData(target uint32, size int, data interface{}, usage uint32) {
 
 	C.glBufferData(C.GLenum(target), C.GLsizeiptr(size), ptr(data), C.GLenum(usage))
+}
+
+func (gs *GLS) BufferSubData(target, offset uint32, size int, data interface{}) {
+
+	C.glBufferSubData(C.GLenum(target), C.GLintptr(offset), C.GLsizeiptr(size), ptr(data))
 }
 
 func (gs *GLS) ClearColor(r, g, b, a float32) {
@@ -440,9 +445,9 @@ func (gs *GLS) GetAttribLocation(program uint32, name string) int32 {
 	return int32(loc)
 }
 
-func (gs *GLS) GetBufferSubData(target, offset, size uint32, data interface{}) {
+func (gs *GLS) GetBufferSubData(target, offset, size uint32, pdata unsafe.Pointer) {
 
-	C.glGetBufferSubData(C.GLenum(target), C.GLintptr(offset), C.GLsizeiptr(size), ptr(data))
+	C.glGetBufferSubData(C.GLenum(target), C.GLintptr(offset), C.GLsizeiptr(size), pdata)
 }
 
 func (gs *GLS) GetProgramiv(program, pname uint32, params *int32) {
@@ -541,8 +546,11 @@ func (gs *GLS) TransformFeedbackVaryings(program uint32, feedbacks []string, buf
 	cArray := C.malloc(C.size_t(len(feedbacks)) * C.size_t(unsafe.Sizeof(uintptr(0))))
 	a := (*[1<<30 - 1]*C.GLchar)(cArray)
 	for i, name := range feedbacks {
-		a[i] = gs.cbufStr(name)
+		a[i] = (*C.GLchar)(C.CString(name))
+		defer C.free(unsafe.Pointer(a[i]))
+
 	}
+	defer C.free(unsafe.Pointer(cArray))
 
 	C.glTransformFeedbackVaryings(C.GLuint(program), C.GLsizei(len(feedbacks)),
 		(**C.GLchar)(cArray), C.GLenum(bufferMode))

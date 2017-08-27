@@ -69,6 +69,14 @@ func (r *Renderer) SetProgramShader(pname string, stype int, sname string) error
 	return r.shaman.SetProgramShader(pname, stype, sname)
 }
 
+// SetProgramFeedbacks sets the names of the vertex or geometry shaders outputs
+// to be recorded in transform feedback mode and the mode used to capture the data
+// (INTERLEAVED_ATTRIBS | SEPARATE_ATTRIBS)
+func (r *Renderer) SetProgramFeedbacks(pname string, feedbacks []string, bufferMode uint32) error {
+
+	return r.shaman.SetProgramFeedbacks(pname, feedbacks, bufferMode)
+}
+
 func (r *Renderer) Render(iscene core.INode, icam camera.ICamera) error {
 
 	// Updates world matrices of all scene nodes

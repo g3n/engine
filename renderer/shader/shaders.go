@@ -12,9 +12,11 @@ import (
 
 // ProgramInfo contains information for a registered program name
 type ProgramInfo struct {
-	Vertex   string // Vertex shader name
-	Frag     string // Fragment shader name
-	Geometry string // Geometry shader name (maybe an empty string)
+	Vertex          string   // Vertex shader name
+	Frag            string   // Fragment shader name
+	Geometry        string   // Optional geometry shader name
+	Feedbacks       []string // Optional list of transform feedback outputs
+	FeedbacksBuffer uint32   // Optional transform feedback buffer mode
 }
 
 // Internal global maps of shader chunks, shader sources and programs
@@ -54,7 +56,7 @@ func AddShader(name, source string) {
 // AddProgram adds a program name to the global program registry
 func AddProgram(name, vertexName, fragName string) {
 
-	programs[name] = ProgramInfo{vertexName, fragName, ""}
+	programs[name] = ProgramInfo{Vertex: vertexName, Frag: fragName}
 }
 
 // SetProgramShader sets the shader type and name for a previously
@@ -87,4 +89,18 @@ func SetProgramShader(pname string, stype int, sname string) {
 		panic("Invalid shader type")
 	}
 	programs[pname] = pinfo
+}
+
+// SetProgramFeedbacks sets the names of the vertex or geometry shaders outputs
+// to be recorded in transform feedback mode and the mode used to capture the data
+// (INTERLEAVED_ATTRIBS | SEPARATE_ATTRIBS)
+func SetProgramFeedbacks(pname string, feedbacks []string, bufferMode uint32) {
+
+	// Checks if program name is valid
+	pinfo, ok := programs[pname]
+	if !ok {
+		panic(fmt.Sprintf("Program name:%s not found", pname))
+	}
+	pinfo.Feedbacks = feedbacks
+	pinfo.FeedbacksBuffer = bufferMode
 }

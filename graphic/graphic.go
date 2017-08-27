@@ -41,6 +41,7 @@ type IGraphic interface {
 	Renderable() bool
 	SetRenderable(bool)
 	RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo)
+	RenderEnd(gs *gls.GLS)
 }
 
 // NewGraphic creates and returns a pointer to a new graphic object with
@@ -99,6 +100,10 @@ func (gr *Graphic) SetRenderable(state bool) {
 func (gr *Graphic) Renderable() bool {
 
 	return gr.renderable
+}
+
+// Default RenderEnd does nothing
+func (gr *Graphic) RenderEnd(gs *gls.GLS) {
 }
 
 // Add material for the specified subset of vertices.
@@ -182,4 +187,6 @@ func (grmat *GraphicMaterial) Render(gs *gls.GLS, rinfo *core.RenderInfo) {
 		}
 		gs.DrawArrays(gr.mode, int32(grmat.start), int32(count))
 	}
+
+	grmat.igraphic.RenderEnd(gs)
 }

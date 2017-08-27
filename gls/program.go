@@ -37,6 +37,7 @@ type shaderInfo struct {
 var shaderNames = map[uint32]string{
 	VERTEX_SHADER:   "Vertex Shader",
 	FRAGMENT_SHADER: "Fragment Shader",
+	GEOMETRY_SHADER: "Geometry Shader",
 }
 
 // NewProgram creates a new empty shader program object.
@@ -68,6 +69,9 @@ func (prog *Program) AddShader(stype uint32, source string, defines map[string]i
 // This functions must be called before building the program.
 func (prog *Program) SetTransformFeedbacks(names []string, bufferMode uint32) {
 
+	if prog.handle != 0 {
+		log.Fatal("Program already built")
+	}
 	prog.feedbacks = names
 	prog.feedbacksBuffer = bufferMode
 }

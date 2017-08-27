@@ -164,6 +164,22 @@ func (sm *Shaman) SetProgramShader(pname string, stype int, sname string) error 
 	return nil
 }
 
+// SetProgramFeedbacks sets the names of the vertex or geometry shaders outputs
+// to be recorded in transform feedback mode and the mode used to capture the data
+// (INTERLEAVED_ATTRIBS | SEPARATE_ATTRIBS)
+func (sm *Shaman) SetProgramFeedbacks(pname string, feedbacks []string, bufferMode uint32) error {
+
+	// Checks if program name is valid
+	pinfo, ok := sm.proginfo[pname]
+	if !ok {
+		return fmt.Errorf("Program name:%s not found", pname)
+	}
+	pinfo.Feedbacks = feedbacks
+	pinfo.FeedbacksBuffer = bufferMode
+	sm.proginfo[pname] = pinfo
+	return nil
+}
+
 // SetProgram set the shader program to satisfy the specified specs.
 // Returns an indication if the current shader has changed and a possible error
 // when creating a new shader program.
@@ -273,6 +289,13 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 	if progInfo.Geometry != "" {
 		prog.AddShader(gls.GEOMETRY_SHADER, sourceGeom.String(), nil)
 	}
+
+	// Sets optional transform feedback outputs
+	if len(progInfo.Feedbacks) > 0 {
+		prog.SetTransformFeedbacks(progInfo.Feedbacks, progInfo.FeedbacksBuffer)
+	}
+
+	// Builds program
 	err = prog.Build()
 	if err != nil {
 		return nil, err
