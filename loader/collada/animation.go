@@ -101,6 +101,10 @@ func (at *AnimationTarget) Update(delta float32) bool {
 // The map is indexed by the node loaderID.
 func (d *Decoder) NewAnimationTargets(scene core.INode) (map[string]*AnimationTarget, error) {
 
+	if d.dom.LibraryAnimations == nil {
+		return nil, fmt.Errorf("No animations found")
+	}
+
 	// Maps target node to its animation target instance
 	targetsMap := make(map[string]*AnimationTarget)
 
