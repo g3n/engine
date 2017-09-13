@@ -8,18 +8,20 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"github.com/g3n/engine/core"
-	"github.com/g3n/engine/geometry"
-	"github.com/g3n/engine/gls"
-	"github.com/g3n/engine/graphic"
-	"github.com/g3n/engine/material"
-	"github.com/g3n/engine/math32"
 	"io"
 	"math"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/g3n/engine/core"
+	"github.com/g3n/engine/geometry"
+	"github.com/g3n/engine/gls"
+	"github.com/g3n/engine/graphic"
+	"github.com/g3n/engine/material"
+	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/texture"
 )
 
 // Decoder contains all decoded data from the obj and mtl files
@@ -35,6 +37,7 @@ type Decoder struct {
 	objCurrent    *Object              // current object
 	matCurrent    *Material            // current material
 	smoothCurrent bool                 // current smooth state
+	mtlDir        string               // Directory of material file
 }
 
 // Object contains all information about one decoded object
@@ -101,7 +104,9 @@ func Decode(objpath string, mtlpath string) (*Decoder, error) {
 	}
 	defer fmtl.Close()
 
-	return DecodeReader(fobj, fmtl)
+	dec, err := DecodeReader(fobj, fmtl)
+	dec.mtlDir = filepath.Dir(objpath)
+	return dec, err
 }
 
 // DecodeReader decodes the specified obj and mtl readers returning a decoder
@@ -168,6 +173,11 @@ func (dec *Decoder) NewMesh(obj *Object) (*graphic.Mesh, error) {
 		mat.SetAmbientColor(ambientColor.Multiply(&matDesc.Ambient))
 		mat.SetSpecularColor(&matDesc.Specular)
 		mat.SetShininess(matDesc.Shininess)
+		// Loads material textures if specified
+		err = dec.loadTex(&mat.Material, matDesc)
+		if err != nil {
+			return nil, err
+		}
 		return graphic.NewMesh(geom, mat), nil
 	}
 
@@ -183,6 +193,11 @@ func (dec *Decoder) NewMesh(obj *Object) (*graphic.Mesh, error) {
 		matGroup.SetAmbientColor(ambientColor.Multiply(&matDesc.Ambient))
 		matGroup.SetSpecularColor(&matDesc.Specular)
 		matGroup.SetShininess(matDesc.Shininess)
+		// Loads material textures if specified
+		err = dec.loadTex(&matGroup.Material, matDesc)
+		if err != nil {
+			return nil, err
+		}
 		mesh.AddGroupMaterial(matGroup, idx)
 	}
 	return mesh, nil
@@ -246,6 +261,34 @@ func (dec *Decoder) NewGeometry(obj *Object) (*geometry.Geometry, error) {
 	geom.AddVBO(gls.NewVBO().AddAttrib("VertexTexcoord", 2).SetBuffer(uvs))
 
 	return geom, nil
+}
+
+// loadTex loads textures described in the material descriptor into the
+// specified material
+func (dec *Decoder) loadTex(mat *material.Material, desc *Material) error {
+
+	// Checks if material descriptor specified texture
+	if desc.MapKd == "" {
+		return nil
+	}
+
+	// Get texture file path
+	// If texture file path is not absolute assumes it is relative
+	// to the directory of the material file
+	var texPath string
+	if filepath.IsAbs(desc.MapKd) {
+		texPath = desc.MapKd
+	} else {
+		texPath = filepath.Join(dec.mtlDir, desc.MapKd)
+	}
+
+	// Try to load texture from image file
+	tex, err := texture.NewTexture2DFromImage(texPath)
+	if err != nil {
+		return err
+	}
+	mat.AddTexture(tex)
+	return nil
 }
 
 // parse reads the lines from the specified reader and dispatch them
