@@ -79,6 +79,7 @@ func newSplitter(horiz bool, width, height float32) *Splitter {
 		s.pos = height / 2
 	}
 
+	s.Subscribe(OnResize, s.onResize)
 	s.spacer.Subscribe(OnMouseDown, s.onMouse)
 	s.spacer.Subscribe(OnMouseUp, s.onMouse)
 	s.spacer.Subscribe(OnCursor, s.onCursor)
@@ -112,6 +113,12 @@ func (s *Splitter) Split() float32 {
 		pos = s.pos / s.Height()
 	}
 	return pos
+}
+
+// onResize receives subscribed resize events for the whole splitter panel
+func (s *Splitter) onResize(evname string, ev interface{}) {
+
+	s.recalc()
 }
 
 // onMouse receives subscribed mouse events over the spacer panel
