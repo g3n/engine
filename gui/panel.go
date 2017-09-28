@@ -195,18 +195,6 @@ func (p *Panel) TotalHeight() float32 {
 	return p.Height()
 }
 
-// SetSelected satisfies the IPanel interface and is normally called
-// by a list container to change the panel visual appearance
-func (p *Panel) SetSelected2(state bool) {
-
-}
-
-// SetHighlighted satisfies the IPanel interface and is normally called
-// by a list container to change the panel visual appearance
-func (p *Panel) SetHighlighted2(state bool) {
-
-}
-
 // Material returns a pointer for this panel core.Material
 func (p *Panel) Material() *material.Material {
 
@@ -473,6 +461,12 @@ func (p *Panel) MinHeight() float32 {
 	return p.paddingSizes.Top + p.paddingSizes.Bottom +
 		p.borderSizes.Top + p.borderSizes.Bottom +
 		p.marginSizes.Top + p.marginSizes.Bottom
+}
+
+// Pospix returns this panel absolute coordinate in pixels
+func (p *Panel) Pospix() math32.Vector3 {
+
+	return p.pospix
 }
 
 // Add adds a child panel to this one
