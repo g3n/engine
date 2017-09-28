@@ -16,8 +16,8 @@ type Splitter struct {
 	styles    *SplitterStyles // pointer to current styles
 	spacer    Panel           // spacer panel
 	horiz     bool            // horizontal or vertical splitter
-	pos       float32         // central position of the spacer panel bar in pixels
-	posLast   float32         // last position of the mouse cursor when dragging
+	pos       float32         // relative position of the center of the spacer panel (0 to 1)
+	posLast   float32         // last position in pixels of the mouse cursor when dragging
 	pressed   bool            // mouse button is pressed and dragging
 	mouseOver bool            // mouse is over the spacer panel
 }
@@ -71,12 +71,10 @@ func newSplitter(horiz bool, width, height float32) *Splitter {
 
 	if horiz {
 		s.spacer.SetBorders(0, 1, 0, 1)
-		s.spacer.SetWidth(6)
-		s.pos = width / 2
+		s.pos = 0.5
 	} else {
 		s.spacer.SetBorders(1, 0, 1, 0)
-		s.spacer.SetHeight(6)
-		s.pos = height / 2
+		s.pos = 0.5
 	}
 
 	s.Subscribe(OnResize, s.onResize)
@@ -94,11 +92,7 @@ func newSplitter(horiz bool, width, height float32) *Splitter {
 // It accepts a value from 0.0 to 1.0
 func (s *Splitter) SetSplit(pos float32) {
 
-	if s.horiz {
-		s.setSplit(pos * s.Width())
-	} else {
-		s.setSplit(pos * s.Height())
-	}
+	s.setSplit(pos)
 	s.recalc()
 }
 
@@ -106,13 +100,7 @@ func (s *Splitter) SetSplit(pos float32) {
 // It returns a value from 0.0 to 1.0
 func (s *Splitter) Split() float32 {
 
-	var pos float32
-	if s.horiz {
-		pos = s.pos / s.Width()
-	} else {
-		pos = s.pos / s.Height()
-	}
-	return pos
+	return s.pos
 }
 
 // onResize receives subscribed resize events for the whole splitter panel
@@ -164,14 +152,17 @@ func (s *Splitter) onCursor(evname string, ev interface{}) {
 		}
 		cev := ev.(*window.CursorEvent)
 		var delta float32
+		pos := s.pos
 		if s.horiz {
 			delta = cev.Xpos - s.posLast
 			s.posLast = cev.Xpos
+			pos += delta / s.ContentWidth()
 		} else {
 			delta = cev.Ypos - s.posLast
 			s.posLast = cev.Ypos
+			pos += delta / s.ContentHeight()
 		}
-		s.setSplit(s.pos + delta)
+		s.setSplit(pos)
 		s.recalc()
 	}
 	s.root.StopPropagation(Stop3D)
@@ -180,20 +171,10 @@ func (s *Splitter) onCursor(evname string, ev interface{}) {
 // setSplit sets the validated and clamped split position from the received value.
 func (s *Splitter) setSplit(pos float32) {
 
-	var max float32
-	var halfspace float32
-	if s.horiz {
-		halfspace = s.spacer.Width() / 2
-		max = s.Width()
-	} else {
-		halfspace = s.spacer.Height() / 2
-		max = s.Height()
-	}
-
-	if pos > max-halfspace {
-		s.pos = max - halfspace
-	} else if pos <= halfspace {
-		s.pos = halfspace
+	if pos < 0 {
+		s.pos = 0
+	} else if pos > 1 {
+		s.pos = 1
 	} else {
 		s.pos = pos
 	}
@@ -228,29 +209,41 @@ func (s *Splitter) applyStyle(ss *SplitterStyle) {
 // recalc relcalculates the position and sizes of the internal panels
 func (s *Splitter) recalc() {
 
-	width := s.Width()
-	height := s.Height()
+	width := s.ContentWidth()
+	height := s.ContentHeight()
 	if s.horiz {
-		halfspace := s.spacer.Width() / 2
-		// First panel
+		// Calculate x position for spacer panel
+		spx := width*s.pos - s.spacer.Width()/2
+		if spx < 0 {
+			spx = 0
+		} else if spx > width-s.spacer.Width() {
+			spx = width - s.spacer.Width()
+		}
+		// Left panel
 		s.P0.SetPosition(0, 0)
-		s.P0.SetSize(s.pos-halfspace, height)
+		s.P0.SetSize(spx, height)
 		// Spacer panel
-		s.spacer.SetPosition(s.pos-halfspace, 0)
+		s.spacer.SetPosition(spx, 0)
 		s.spacer.SetHeight(height)
-		// Second panel
-		s.P1.SetPosition(s.pos+halfspace, 0)
-		s.P1.SetSize(width-s.pos-halfspace, height)
+		// Right panel
+		s.P1.SetPosition(spx+s.spacer.Width(), 0)
+		s.P1.SetSize(width-spx-s.spacer.Width(), height)
 	} else {
-		halfspace := s.spacer.Height() / 2
-		// First panel
+		// Calculate y position for spacer panel
+		spy := height*s.pos - s.spacer.Height()/2
+		if spy < 0 {
+			spy = 0
+		} else if spy > height-s.spacer.Height() {
+			spy = height - s.spacer.Height()
+		}
+		// Top panel
 		s.P0.SetPosition(0, 0)
-		s.P0.SetSize(width, s.pos-halfspace)
+		s.P0.SetSize(width, spy)
 		// Spacer panel
-		s.spacer.SetPosition(0, s.pos-halfspace)
+		s.spacer.SetPosition(0, spy)
 		s.spacer.SetWidth(width)
-		// Second panel
-		s.P1.SetPosition(0, s.pos+halfspace)
-		s.P1.SetSize(width, height-s.pos-halfspace)
+		// Bottom panel
+		s.P1.SetPosition(0, spy+s.spacer.Height())
+		s.P1.SetSize(width, height-spy-s.spacer.Height())
 	}
 }
