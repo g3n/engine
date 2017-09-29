@@ -23,11 +23,12 @@ type CheckRadio struct {
 	icon       *Label
 	styles     *CheckRadioStyles
 	check      bool
-	group      string
+	group      string // current group name
 	cursorOver bool
 	state      bool
 	codeON     string
 	codeOFF    string
+	subroot    bool // indicates root subcription
 }
 
 type CheckRadioStyle struct {
@@ -101,19 +102,6 @@ func newCheckRadio(check bool, text string) *CheckRadio {
 	return cb
 }
 
-// SetRoot overrides the IPanel.SetRoot method
-func (cb *CheckRadio) SetRoot(root *Root) {
-
-	if cb.root == root || root == nil {
-		return
-	}
-	cb.root = root
-	// Subscribes once to this root panel OnRadioGroup events
-	root.Subscribe(OnRadioGroup, func(name string, ev interface{}) {
-		cb.onRadioGroup(ev.(*CheckRadio))
-	})
-}
-
 // Value returns the current state of the checkbox
 func (cb *CheckRadio) Value() bool {
 
@@ -153,6 +141,15 @@ func (cb *CheckRadio) SetStyles(bs *CheckRadioStyles) {
 
 // toggleState toggles the current state of the checkbox/radiobutton
 func (cb *CheckRadio) toggleState() {
+
+	// Subscribes once to the root panel for OnRadioGroup events
+	// The root panel is used to dispatch events to all checkradios
+	if !cb.subroot {
+		cb.root.Subscribe(OnRadioGroup, func(name string, ev interface{}) {
+			cb.onRadioGroup(ev.(*CheckRadio))
+		})
+		cb.subroot = true
+	}
 
 	if cb.check {
 		cb.state = !cb.state
@@ -215,7 +212,7 @@ func (cb *CheckRadio) onKey(evname string, ev interface{}) {
 	return
 }
 
-// onRadioGroup receives subscriber OnRadioGroup events
+// onRadioGroup receives subscribed OnRadioGroup events
 func (cb *CheckRadio) onRadioGroup(other *CheckRadio) {
 
 	// If event is for this button, ignore
