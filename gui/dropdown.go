@@ -52,6 +52,7 @@ func NewDropDown(width float32, item *ImageLabel) *DropDown {
 	dd.Panel.Subscribe(OnMouseDown, dd.onMouse)
 	dd.Panel.Subscribe(OnCursorEnter, dd.onCursor)
 	dd.Panel.Subscribe(OnCursorLeave, dd.onCursor)
+	dd.Panel.Subscribe(OnResize, func(name string, ev interface{}) { dd.recalc() })
 
 	// ListItem
 	dd.Panel.Add(dd.litem)
@@ -74,7 +75,8 @@ func NewDropDown(width float32, item *ImageLabel) *DropDown {
 	dd.Panel.Add(dd.list)
 
 	dd.update()
-	dd.recalc()
+	// This will trigger recalc()
+	dd.Panel.SetContentHeight(item.Height())
 	return dd
 }
 
@@ -243,9 +245,7 @@ func (dd *DropDown) recalc() {
 	// List item position and width
 	ipan := dd.litem.GetPanel()
 	ipan.SetPosition(0, 0)
-	//ipan.SetWidth(posx)
 	height := ipan.Height()
-	dd.Panel.SetContentHeight(height)
 
 	// List position
 	dd.list.SetWidth(dd.Panel.Width())
