@@ -216,6 +216,9 @@ func newTreeNode(text string, tree *Tree, parNode *TreeNode) *TreeNode {
 
 	// Subscribe to events
 	n.Panel.Subscribe(OnMouseDown, n.onMouse)
+	n.Panel.Subscribe(OnListItemResize, func(evname string, ev interface{}) {
+		n.recalc()
+	})
 	n.tree = tree
 	n.parNode = parNode
 

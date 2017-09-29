@@ -51,6 +51,9 @@ type ListItemStyle struct {
 	FgColor     math32.Color
 }
 
+// Event sent to list item child panel on resize
+const OnListItemResize = "gui.OnListItemResize"
+
 // NewVList creates and returns a pointer to a new vertical list panel
 // with the specified dimensions
 func NewVList(width, height float32) *List {
@@ -472,6 +475,10 @@ func newListItem(list *List, item IPanel) *ListItem {
 	litem.Panel.Add(item)
 	litem.SetContentWidth(item.GetPanel().Width())
 	litem.SetContentHeight(item.GetPanel().Height())
+	// If this list item is resized, sends event to its child panel
+	litem.Subscribe(OnResize, func(evname string, ev interface{}) {
+		item.GetPanel().Dispatch(OnListItemResize, nil)
+	})
 	litem.update()
 	return litem
 }
