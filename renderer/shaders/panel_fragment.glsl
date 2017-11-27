@@ -1,59 +1,16 @@
-// Copyright 2016 The G3N Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-package shader
-
-func init() {
-	AddShader("shaderPanelVertex", shaderPanelVertex)
-	AddShader("shaderPanelFrag", shaderPanelFrag)
-	AddProgram("shaderPanel", "shaderPanelVertex", "shaderPanelFrag")
-}
-
-//
-// Vertex Shader template
-//
-const shaderPanelVertex = `
-#version {{.Version}}
-
-// Vertex attributes
-{{template "attributes" .}}
-
-// Input uniforms
-uniform mat4 ModelMatrix;
-
-// Outputs for fragment shader
-out vec2 FragTexcoord;
-
-
-void main() {
-
-    // Always flip texture coordinates
-    vec2 texcoord = VertexTexcoord;
-    texcoord.y = 1 - texcoord.y;
-    FragTexcoord = texcoord;
-
-    // Set position
-    vec4 pos = vec4(VertexPosition.xyz, 1);
-    gl_Position = ModelMatrix * pos;
-}
-`
-
 //
 // Fragment Shader template
 //
-const shaderPanelFrag = `
-#version {{.Version}}
 
-// Textures uniforms
+// Texture uniforms
 uniform sampler2D	MatTexture[1];
-uniform mat3		MatTexinfo[1];
+uniform vec2		MatTexinfo[3];
 
-// Macros to access elements inside MatTexinfo uniform
-#define MatTexOffset(a)		MatTexinfo[a][0].xy
-#define MatTexRepeat(a)		MatTexinfo[a][1].xy
-#define MatTexFlipY(a)		bool(MatTexinfo[a][2].x)
-#define MatTexVisible(a)	bool(MatTexinfo[a][2].y)
+// Macros to access elements inside the MatTexinfo array
+#define MatTexOffset		MatTexinfo[0]
+#define MatTexRepeat		MatTexinfo[1]
+#define MatTexFlipY	    	bool(MatTexinfo[2].x) // not used
+#define MatTexVisible	    bool(MatTexinfo[2].y) // not used
 
 // Inputs from vertex shader
 in vec2 FragTexcoord;
@@ -122,11 +79,11 @@ void main() {
             vec2 offset = vec2(-Content[0], -Content[1]);
             vec2 factor = vec2(1/Content[2], 1/Content[3]);
             vec2 texcoord = (FragTexcoord + offset) * factor;
-            color = texture(MatTexture[0], texcoord * MatTexRepeat(0) + MatTexOffset(0));
+            vec4 texColor = texture(MatTexture[0], texcoord * MatTexRepeat + MatTexOffset);
+            // Mix content color with texture color ???
+            //color = mix(color, texColor, texColor.a);
+            color = texColor;
 		}
-        if (color.a == 0) {
-            discard;
-        }
         FragColor = color;
         return;
     }
@@ -147,4 +104,3 @@ void main() {
     FragColor = vec4(1,1,1,0);
 }
 
-`

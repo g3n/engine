@@ -12,14 +12,14 @@ import (
 	"github.com/g3n/engine/graphic"
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
-	"github.com/g3n/engine/renderer/shader"
+	"github.com/g3n/engine/renderer/shaders"
 	"math"
 )
 
 func init() {
-	shader.AddShader("shaderChartVertex", shaderChartVertex)
-	shader.AddShader("shaderChartFrag", shaderChartFrag)
-	shader.AddProgram("shaderChart", "shaderChartVertex", "shaderChartFrag")
+	shaders.AddShader("shaderChartVertex", shaderChartVertex)
+	shaders.AddShader("shaderChartFrag", shaderChartFrag)
+	shaders.AddProgram("shaderChart", "shaderChartVertex", "shaderChartFrag")
 }
 
 //

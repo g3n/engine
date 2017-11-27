@@ -33,7 +33,7 @@ const (
 func NewStandard(color *math32.Color) *Standard {
 
 	ms := new(Standard)
-	ms.Init("shaderStandard", color)
+	ms.Init("standard", color)
 	return ms
 }
 

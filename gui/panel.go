@@ -128,7 +128,7 @@ func (p *Panel) Initialize(width, height float32) {
 
 	// Initialize material
 	p.mat = material.NewMaterial()
-	p.mat.SetShader("shaderPanel")
+	p.mat.SetShader("panel")
 	p.mat.SetShaderUnique(true)
 
 	// Initialize graphic

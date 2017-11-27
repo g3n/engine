@@ -14,6 +14,6 @@ func NewBasic() *Basic {
 
 	mb := new(Basic)
 	mb.Material.Init()
-	mb.SetShader("shaderBasic")
+	mb.SetShader("basic")
 	return mb
 }

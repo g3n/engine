@@ -46,28 +46,28 @@ func (r *Renderer) AddDefaultShaders() error {
 	return r.shaman.AddDefaultShaders()
 }
 
-func (r *Renderer) AddChunk(name, source string) error {
+func (r *Renderer) AddChunk(name, source string) {
 
-	return r.shaman.AddChunk(name, source)
+	r.shaman.AddChunk(name, source)
 }
 
-func (r *Renderer) AddShader(name, source string) error {
+func (r *Renderer) AddShader(name, source string) {
 
-	return r.shaman.AddShader(name, source)
+	r.shaman.AddShader(name, source)
 }
 
-func (r *Renderer) AddProgram(name, vertex, frag string) error {
+func (r *Renderer) AddProgram(name, vertex, frag string, others ...string) {
 
-	return r.shaman.AddProgram(name, vertex, frag)
+	r.shaman.AddProgram(name, vertex, frag, others...)
 }
 
-// SetProgramShader sets the shader type and name for a previously specified program name.
-// Returns error if the specified program or shader name not found or
-// if an invalid shader type was specified.
-func (r *Renderer) SetProgramShader(pname string, stype int, sname string) error {
-
-	return r.shaman.SetProgramShader(pname, stype, sname)
-}
+//// SetProgramShader sets the shader type and name for a previously specified program name.
+//// Returns error if the specified program or shader name not found or
+//// if an invalid shader type was specified.
+//func (r *Renderer) SetProgramShader(pname string, stype int, sname string) error {
+//
+//	return r.shaman.SetProgramShader(pname, stype, sname)
+//}
 
 func (r *Renderer) Render(iscene core.INode, icam camera.ICamera) error {
 
