@@ -187,22 +187,22 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 	}
 	// Preprocess vertex shader source
 	vertexSource, err := sm.preprocess(vertexSource, defines)
-	if !ok {
+	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("vertexSource:%s\n", vertexSource)
+	//fmt.Printf("vertexSource:%s\n", vertexSource)
 
 	// Get fragment shader source
 	fragSource, ok := sm.shadersm[progInfo.Fragment]
-	if !ok {
+	if err != nil {
 		return nil, fmt.Errorf("Fragment shader:%s not found", progInfo.Fragment)
 	}
 	// Preprocess fragment shader source
 	fragSource, err = sm.preprocess(fragSource, defines)
-	if !ok {
+	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("fragSource:%s\n", fragSource)
+	//fmt.Printf("fragSource:%s\n", fragSource)
 
 	// Checks for optional geometry shader compiled template
 	var geomSource = ""
@@ -214,7 +214,7 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 		}
 		// Preprocess geometry shader source
 		geomSource, err = sm.preprocess(geomSource, defines)
-		if !ok {
+		if err != nil {
 			return nil, err
 		}
 	}

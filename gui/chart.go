@@ -730,10 +730,8 @@ func (cm *chartMaterial) RenderSetup(gs *gls.GLS) {
 // Vertex Shader template
 //
 const shaderChartVertex = `
-#version {{.Version}}
-
 // Vertex attributes
-{{template "attributes" .}}
+#include <attributes>
 
 // Input uniforms
 uniform mat4 ModelMatrix;
@@ -757,8 +755,6 @@ void main() {
 // Fragment Shader template
 //
 const shaderChartFrag = `
-#version {{.Version}}
-
 // Input uniforms from vertex shader
 in vec3 Color;
 

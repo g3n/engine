@@ -91,7 +91,7 @@ void phongModel(vec4 position, vec3 normal, vec3 camDir, vec3 matAmbient, vec3 m
 const include_material_source = `//
 // Material properties uniform
 //
-uniform vec3 Material[5];
+uniform vec3 Material[6];
 // Macros to access elements inside the MatTexinfo array
 // Each texture uses 3 vec2 elements.
 #define MatAmbientColor		Material[0]
@@ -100,18 +100,19 @@ uniform vec3 Material[5];
 #define MatSpecularColor    Material[3]
 #define MatShininess        Material[4].x
 #define MatOpacity          Material[4].y
+#define MatPointSize		Material[4].z
+#define MatPointRotationZ	Material[5].x
 
 #if MAT_TEXTURES > 0
     // Texture unit sampler array
     uniform sampler2D MatTexture[MAT_TEXTURES];
     // Texture parameters (3*vec2 per texture)
-    uniform vec2 MatTexinfo[3*MAT_TEXTURES];
+    uniform mat3 MatTexinfo[MAT_TEXTURES];
     // Macros to access elements inside the MatTexinfo array
-    // Each texture uses 3 vec2 elements.
-    #define MatTexOffset(a)		MatTexinfo[(3*a)]
-    #define MatTexRepeat(a)		MatTexinfo[(3*a)+1]
-    #define MatTexFlipY(a)		bool(MatTexinfo[(3*a)+2].x)
-    #define MatTexVisible(a)	bool(MatTexinfo[(3*a)+2].y)
+    #define MatTexOffset(a)		MatTexinfo[a][0].xy
+    #define MatTexRepeat(a)		MatTexinfo[a][1].xy
+    #define MatTexFlipY(a)		bool(MatTexinfo[a][2].x)
+    #define MatTexVisible(a)	bool(MatTexinfo[a][2].y)
 #endif
 
 
@@ -123,27 +124,40 @@ const include_lights_source = `//
 
 // Ambient lights uniforms
 #if AMB_LIGHTS>0
-uniform vec3 AmbientLightColor[AMB_LIGHTS];
+    uniform vec3 AmbientLightColor[AMB_LIGHTS];
 #endif
 
 // Directional lights uniform array. Each directional light uses 2 elements
 #if DIR_LIGHTS>0
-uniform vec3 DirLight[2*DIR_LIGHTS];
-// Macros to access elements inside the DirectionalLight uniform array
-#define DirLightColor(a)		DirLight[2*a]
-#define DirLightPosition(a)		DirLight[2*a+1]
+    uniform vec3 DirLight[2*DIR_LIGHTS];
+    // Macros to access elements inside the DirectionalLight uniform array
+    #define DirLightColor(a)		DirLight[2*a]
+    #define DirLightPosition(a)		DirLight[2*a+1]
 #endif
 
 // Point lights uniform array. Each point light uses 3 elements
 #if POINT_LIGHTS>0
-uniform vec3 PointLight[3*POINT_LIGHTS];
-// Macros to access elements inside the PointLight uniform array
-#define PointLightColor(a)			PointLight[3*a]
-#define PointLightPosition(a)		PointLight[3*a+1]
-#define PointLightLinearDecay(a)	PointLight[3*a+2].x
-#define PointLightQuadraticDecay(a)	PointLight[3*a+2].y
+    uniform vec3 PointLight[3*POINT_LIGHTS];
+    // Macros to access elements inside the PointLight uniform array
+    #define PointLightColor(a)			PointLight[3*a]
+    #define PointLightPosition(a)		PointLight[3*a+1]
+    #define PointLightLinearDecay(a)	PointLight[3*a+2].x
+    #define PointLightQuadraticDecay(a)	PointLight[3*a+2].y
 #endif
 
+#if SPOT_LIGHTS>0
+    // Spot lights uniforms. Each spot light uses 5 elements
+    uniform vec3  SpotLight[5*SPOT_LIGHTS];
+    
+    // Macros to access elements inside the PointLight uniform array
+    #define SpotLightColor(a)			SpotLight[5*a]
+    #define SpotLightPosition(a)		SpotLight[5*a+1]
+    #define SpotLightDirection(a)		SpotLight[5*a+2]
+    #define SpotLightAngularDecay(a)	SpotLight[5*a+3].x
+    #define SpotLightCutoffAngle(a)		SpotLight[5*a+3].y
+    #define SpotLightLinearDecay(a)		SpotLight[5*a+3].z
+    #define SpotLightQuadraticDecay(a)	SpotLight[5*a+4].x
+#endif
 
 `
 
@@ -285,6 +299,37 @@ void main() {
 
 `
 
+const point_fragment_source = `#include <material>
+
+// Inputs from vertex shader
+in vec3 Color;
+flat in mat2 Rotation;
+
+// Output
+out vec4 FragColor;
+
+void main() {
+
+    vec4 texCombined = vec4(1);
+    #if MAT_TEXTURES > 0
+    // Combine all texture colors and opacity
+    for (int i = 0; i < MAT_TEXTURES; i++) {
+        vec2 pt = gl_PointCoord - vec2(0.5);
+        vec4 texcolor = texture(MatTexture[i], (Rotation * pt + vec2(0.5)) * MatTexRepeat(i) + MatTexOffset(i));
+        if (i  == 0) {
+            texCombined = texcolor;
+        } else {
+            texCombined = mix(texCombined, texcolor, texcolor.a);
+        }
+    }
+    #endif
+
+    // Combine material color with texture
+    FragColor = min(vec4(Color, MatOpacity) * texCombined, vec4(1));
+}
+
+`
+
 const phong_vertex_source = `//
 // Vertex Shader
 //
@@ -333,15 +378,15 @@ const panel_fragment_source = `//
 // Fragment Shader template
 //
 
-// Texture uniforms
+// Textures uniforms
 uniform sampler2D	MatTexture[1];
-uniform vec2		MatTexinfo[3];
+uniform mat3		MatTexinfo[1];
 
-// Macros to access elements inside the MatTexinfo array
-#define MatTexOffset		MatTexinfo[0]
-#define MatTexRepeat		MatTexinfo[1]
-#define MatTexFlipY	    	bool(MatTexinfo[2].x) // not used
-#define MatTexVisible	    bool(MatTexinfo[2].y) // not used
+// Macros to access elements inside MatTexinfo uniform
+#define MatTexOffset(a)		MatTexinfo[a][0].xy
+#define MatTexRepeat(a)		MatTexinfo[a][1].xy
+#define MatTexFlipY(a)		bool(MatTexinfo[a][2].x)
+#define MatTexVisible(a)	bool(MatTexinfo[a][2].y)
 
 // Inputs from vertex shader
 in vec2 FragTexcoord;
@@ -410,7 +455,7 @@ void main() {
             vec2 offset = vec2(-Content[0], -Content[1]);
             vec2 factor = vec2(1/Content[2], 1/Content[3]);
             vec2 texcoord = (FragTexcoord + offset) * factor;
-            vec4 texColor = texture(MatTexture[0], texcoord * MatTexRepeat + MatTexOffset);
+            vec4 texColor = texture(MatTexture[0], texcoord * MatTexRepeat(0) + MatTexOffset(0));
             // Mix content color with texture color ???
             //color = mix(color, texColor, texColor.a);
             color = texColor;
@@ -580,6 +625,38 @@ void main() {
 
 `
 
+const point_vertex_source = `#include <attributes>
+
+// Model uniforms
+uniform mat4 MVP;
+
+// Material uniforms
+#include <material>
+
+// Outputs for fragment shader
+out vec3 Color;
+flat out mat2 Rotation;
+
+void main() {
+
+    // Rotation matrix for fragment shader
+    float rotSin = sin(MatPointRotationZ);
+    float rotCos = cos(MatPointRotationZ);
+    Rotation = mat2(rotCos, rotSin, - rotSin, rotCos);
+
+    // Sets the vertex position
+    vec4 pos = MVP * vec4(VertexPosition, 1.0);
+    gl_Position = pos;
+
+    // Sets the size of the rasterized point decreasing with distance
+    gl_PointSize = (1.0 - pos.z / pos.w) * MatPointSize;
+
+    // Outputs color
+    Color = MatEmissiveColor;
+}
+
+`
+
 const basic_vertex_source = `//
 // Vertex shader basic
 //
@@ -616,11 +693,13 @@ var shaderMap = map[string]string{
 	"standard_fragment": standard_fragment_source,
 	"panel_vertex":      panel_vertex_source,
 	"sprite_fragment":   sprite_fragment_source,
+	"point_fragment":    point_fragment_source,
 	"phong_vertex":      phong_vertex_source,
 	"panel_fragment":    panel_fragment_source,
 	"phong_fragment":    phong_fragment_source,
 	"sprite_vertex":     sprite_vertex_source,
 	"standard_vertex":   standard_vertex_source,
+	"point_vertex":      point_vertex_source,
 	"basic_vertex":      basic_vertex_source,
 }
 
@@ -630,6 +709,7 @@ var programMap = map[string]ProgramInfo{
 	"basic":    {"basic_vertex", "basic_fragment", ""},
 	"panel":    {"panel_vertex", "panel_fragment", ""},
 	"phong":    {"phong_vertex", "phong_fragment", ""},
+	"point":    {"point_vertex", "point_fragment", ""},
 	"sprite":   {"sprite_vertex", "sprite_fragment", ""},
 	"standard": {"standard_vertex", "standard_fragment", ""},
 }

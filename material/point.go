@@ -18,7 +18,7 @@ type Point struct {
 func NewPoint(color *math32.Color) *Point {
 
 	pm := new(Point)
-	pm.Standard.Init("shaderPoint", color)
+	pm.Standard.Init("point", color)
 
 	// Sets uniform's initial values
 	pm.uni.SetColor(vEmissive, color)
