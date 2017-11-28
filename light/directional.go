@@ -23,9 +23,6 @@ type Directional struct {
 	}
 }
 
-// Number of glsl shader vec3 elements used by uniform data
-const udataVec3 = 2
-
 // NewDirectional creates and returns a pointer of a new directional light
 // the specified color and intensity.
 func NewDirectional(color *math32.Color, intensity float32) *Directional {
@@ -82,6 +79,7 @@ func (ld *Directional) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo, idx int)
 	ld.udata.position.Z = pos4.Z
 
 	// Transfer uniform data
-	location := ld.uni.LocationIdx(gs, int32(idx))
-	gs.Uniform3fvUP(location, udataVec3, unsafe.Pointer(&ld.udata))
+	const vec3count = 2
+	location := ld.uni.LocationIdx(gs, vec3count*int32(idx))
+	gs.Uniform3fvUP(location, vec3count, unsafe.Pointer(&ld.udata))
 }

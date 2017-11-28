@@ -29,7 +29,7 @@ type Standard struct {
 }
 
 // Number of glsl shader vec3 elements used by uniform data
-const udataVec3 = 6
+const standardVec3Count = 6
 
 // NewStandard creates and returns a pointer to a new standard material
 func NewStandard(color *math32.Color) *Standard {
@@ -114,5 +114,5 @@ func (ms *Standard) RenderSetup(gs *gls.GLS) {
 
 	ms.Material.RenderSetup(gs)
 	location := ms.uni.Location(gs)
-	gs.Uniform3fvUP(location, udataVec3, unsafe.Pointer(&ms.udata))
+	gs.Uniform3fvUP(location, standardVec3Count, unsafe.Pointer(&ms.udata))
 }

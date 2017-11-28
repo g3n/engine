@@ -5,6 +5,8 @@
 package material
 
 import (
+	"unsafe"
+
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/math32"
 )
@@ -50,6 +52,7 @@ func (pm *Point) SetRotationZ(rot float32) {
 // which uses this material
 func (pm *Point) RenderSetup(gs *gls.GLS) {
 
-	//	pm.Material.RenderSetup(gs)
-	//	pm.uni.Transfer(gs)
+	pm.Material.RenderSetup(gs)
+	location := pm.uni.Location(gs)
+	gs.Uniform3fvUP(location, standardVec3Count, unsafe.Pointer(&pm.udata))
 }

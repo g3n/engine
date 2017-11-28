@@ -58,6 +58,6 @@ func (la *Ambient) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo, idx int) {
 
 	color := la.color
 	color.MultiplyScalar(la.intensity)
-	location := la.uni.Location(gs)
+	location := la.uni.LocationIdx(gs, int32(idx))
 	gs.Uniform3f(location, color.R, color.G, color.B)
 }
