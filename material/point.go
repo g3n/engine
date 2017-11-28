@@ -21,9 +21,9 @@ func NewPoint(color *math32.Color) *Point {
 	pm.Standard.Init("point", color)
 
 	// Sets uniform's initial values
-	pm.uni.SetColor(vEmissive, color)
-	pm.uni.SetPos(pSize, 1.0)
-	pm.uni.SetPos(pRotationZ, 0)
+	pm.udata.emissive = *color
+	pm.udata.psize = 1.0
+	pm.udata.protationZ = 0
 	return pm
 }
 
@@ -31,25 +31,25 @@ func NewPoint(color *math32.Color) *Point {
 // The default is {0,0,0}
 func (pm *Point) SetEmissiveColor(color *math32.Color) {
 
-	pm.uni.SetColor(vEmissive, color)
+	pm.udata.emissive = *color
 }
 
 // SetSize sets the point size
 func (pm *Point) SetSize(size float32) {
 
-	pm.uni.SetPos(pSize, size)
+	pm.udata.psize = size
 }
 
 // SetRotationZ sets the point rotation around the Z axis.
 func (pm *Point) SetRotationZ(rot float32) {
 
-	pm.uni.SetPos(pRotationZ, rot)
+	pm.udata.protationZ = rot
 }
 
 // RenderSetup is called by the engine before drawing the object
 // which uses this material
 func (pm *Point) RenderSetup(gs *gls.GLS) {
 
-	pm.Material.RenderSetup(gs)
-	pm.uni.Transfer(gs)
+	//	pm.Material.RenderSetup(gs)
+	//	pm.uni.Transfer(gs)
 }
