@@ -127,14 +127,14 @@ const include_material_source = `//
 uniform vec3 Material[6];
 // Macros to access elements inside the MatTexinfo array
 // Each texture uses 3 vec2 elements.
-#define MatAmbientColor		Material[0]
+#define MatAmbientColor     Material[0]
 #define MatDiffuseColor     Material[1]
 #define MatSpecularColor    Material[2]
 #define MatEmissiveColor    Material[3]
 #define MatShininess        Material[4].x
 #define MatOpacity          Material[4].y
-#define MatPointSize		Material[4].z
-#define MatPointRotationZ	Material[5].x
+#define MatPointSize        Material[4].z
+#define MatPointRotationZ   Material[5].x
 
 #if MAT_TEXTURES > 0
     // Texture unit sampler array
@@ -142,12 +142,26 @@ uniform vec3 Material[6];
     // Texture parameters (3*vec2 per texture)
     uniform mat3 MatTexinfo[MAT_TEXTURES];
     // Macros to access elements inside the MatTexinfo array
-    #define MatTexOffset(a)		MatTexinfo[a][0].xy
-    #define MatTexRepeat(a)		MatTexinfo[a][1].xy
-    #define MatTexFlipY(a)		bool(MatTexinfo[a][2].x)
-    #define MatTexVisible(a)	bool(MatTexinfo[a][2].y)
+    #define MatTexOffset(a)     MatTexinfo[a][0].xy
+    #define MatTexRepeat(a)     MatTexinfo[a][1].xy
+    #define MatTexFlipY(a)      bool(MatTexinfo[a][2].x)
+    #define MatTexVisible(a)    bool(MatTexinfo[a][2].y)
 #endif
 
+// GLSL 3.30 does not allow indexing texture sampler with non constant values.
+// This macro is used to mix the texture with the specified index with the material color.
+// It should be called for each texture index. It uses two externally defined variables:
+// vec4 texColor
+// vec4 texMixed
+#define MIX_TEXTURE(i)                                                                       \
+    if (MatTexVisible(i)) {                                                                  \
+        texColor = texture(MatTexture[i], FragTexcoord * MatTexRepeat(i) + MatTexOffset(i)); \
+        if (i == 0) {                                                                        \
+            texMixed = texColor;                                                             \
+        } else {                                                                             \
+            texMixed = mix(texMixed, texColor, texColor.a);                                  \
+        }                                                                                    \
+    }
 
 `
 
@@ -239,20 +253,18 @@ out vec4 FragColor;
 
 void main() {
 
-    vec4 texCombined = vec4(1);
-    #if MAT_TEXTURES > 0
-    // Combine all texture colors and opacity
-    for (int i = 0; i < MAT_TEXTURES; i++) {
-        if (MatTexVisible(i) == false) {
-            continue;
-        }
-        vec4 texcolor = texture(MatTexture[i], FragTexcoord * MatTexRepeat(i) + MatTexOffset(i));
-        if (i == 0) {
-            texCombined = texcolor;
-        } else {
-            texCombined = mix(texCombined, texcolor, texcolor.a);
-        }
-    }
+    // Mix material color with textures colors
+    vec4 texMixed = vec4(1);
+    vec4 texColor;
+    #if MAT_TEXTURES==1
+        MIX_TEXTURE(0)
+    #elif MAT_TEXTURES==2
+        MIX_TEXTURE(0)
+        MIX_TEXTURE(1)
+    #elif MAT_TEXTURES==3
+        MIX_TEXTURE(0)
+        MIX_TEXTURE(1)
+        MIX_TEXTURE(2)
     #endif
 
     vec4 colorAmbDiff;
@@ -264,11 +276,8 @@ void main() {
         colorAmbDiff = vec4(ColorBackAmbdiff, MatOpacity);
         colorSpec = vec4(ColorBackSpec, 0);
     }
-    FragColor = min(colorAmbDiff * texCombined + colorSpec, vec4(1));
+    FragColor = min(colorAmbDiff * texMixed + colorSpec, vec4(1));
 }
-
-
-
 
 `
 
@@ -534,25 +543,23 @@ out vec4 FragColor;
 
 void main() {
 
-    // Combine all texture colors
-    vec4 texCombined = vec4(1);
-    #if MAT_TEXTURES>0
-    for (int i = 0; i < MAT_TEXTURES; i++) {
-        if (MatTexVisible(i) == false) {
-            continue;
-        }
-        vec4 texcolor = texture(MatTexture[i], FragTexcoord * MatTexRepeat(i) + MatTexOffset(i));
-        if (i == 0) {
-            texCombined = texcolor;
-        } else {
-            texCombined = mix(texCombined, texcolor, texcolor.a);
-        }
-    }
+    // Mix material color with textures colors
+    vec4 texMixed = vec4(1);
+    vec4 texColor;
+    #if MAT_TEXTURES==1
+        MIX_TEXTURE(0)
+    #elif MAT_TEXTURES==2
+        MIX_TEXTURE(0)
+        MIX_TEXTURE(1)
+    #elif MAT_TEXTURES==3
+        MIX_TEXTURE(0)
+        MIX_TEXTURE(1)
+        MIX_TEXTURE(2)
     #endif
 
     // Combine material with texture colors
-    vec4 matDiffuse = vec4(MatDiffuseColor, MatOpacity) * texCombined;
-    vec4 matAmbient = vec4(MatAmbientColor, MatOpacity) * texCombined;
+    vec4 matDiffuse = vec4(MatDiffuseColor, MatOpacity) * texMixed;
+    vec4 matAmbient = vec4(MatAmbientColor, MatOpacity) * texMixed;
 
     // Inverts the fragment normal if not FrontFacing
     vec3 fragNormal = Normal;

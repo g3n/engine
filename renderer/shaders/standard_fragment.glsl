@@ -16,20 +16,18 @@ out vec4 FragColor;
 
 void main() {
 
-    vec4 texCombined = vec4(1);
-    #if MAT_TEXTURES > 0
-    // Combine all texture colors and opacity
-    for (int i = 0; i < MAT_TEXTURES; i++) {
-        if (MatTexVisible(i) == false) {
-            continue;
-        }
-        vec4 texcolor = texture(MatTexture[i], FragTexcoord * MatTexRepeat(i) + MatTexOffset(i));
-        if (i == 0) {
-            texCombined = texcolor;
-        } else {
-            texCombined = mix(texCombined, texcolor, texcolor.a);
-        }
-    }
+    // Mix material color with textures colors
+    vec4 texMixed = vec4(1);
+    vec4 texColor;
+    #if MAT_TEXTURES==1
+        MIX_TEXTURE(0)
+    #elif MAT_TEXTURES==2
+        MIX_TEXTURE(0)
+        MIX_TEXTURE(1)
+    #elif MAT_TEXTURES==3
+        MIX_TEXTURE(0)
+        MIX_TEXTURE(1)
+        MIX_TEXTURE(2)
     #endif
 
     vec4 colorAmbDiff;
@@ -41,9 +39,6 @@ void main() {
         colorAmbDiff = vec4(ColorBackAmbdiff, MatOpacity);
         colorSpec = vec4(ColorBackSpec, 0);
     }
-    FragColor = min(colorAmbDiff * texCombined + colorSpec, vec4(1));
+    FragColor = min(colorAmbDiff * texMixed + colorSpec, vec4(1));
 }
-
-
-
 

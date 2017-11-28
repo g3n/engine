@@ -17,25 +17,23 @@ out vec4 FragColor;
 
 void main() {
 
-    // Combine all texture colors
-    vec4 texCombined = vec4(1);
-    #if MAT_TEXTURES>0
-    for (int i = 0; i < MAT_TEXTURES; i++) {
-        if (MatTexVisible(i) == false) {
-            continue;
-        }
-        vec4 texcolor = texture(MatTexture[i], FragTexcoord * MatTexRepeat(i) + MatTexOffset(i));
-        if (i == 0) {
-            texCombined = texcolor;
-        } else {
-            texCombined = mix(texCombined, texcolor, texcolor.a);
-        }
-    }
+    // Mix material color with textures colors
+    vec4 texMixed = vec4(1);
+    vec4 texColor;
+    #if MAT_TEXTURES==1
+        MIX_TEXTURE(0)
+    #elif MAT_TEXTURES==2
+        MIX_TEXTURE(0)
+        MIX_TEXTURE(1)
+    #elif MAT_TEXTURES==3
+        MIX_TEXTURE(0)
+        MIX_TEXTURE(1)
+        MIX_TEXTURE(2)
     #endif
 
     // Combine material with texture colors
-    vec4 matDiffuse = vec4(MatDiffuseColor, MatOpacity) * texCombined;
-    vec4 matAmbient = vec4(MatAmbientColor, MatOpacity) * texCombined;
+    vec4 matDiffuse = vec4(MatDiffuseColor, MatOpacity) * texMixed;
+    vec4 matAmbient = vec4(MatAmbientColor, MatOpacity) * texMixed;
 
     // Inverts the fragment normal if not FrontFacing
     vec3 fragNormal = Normal;
