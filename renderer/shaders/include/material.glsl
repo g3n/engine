@@ -6,8 +6,8 @@ uniform vec3 Material[6];
 // Each texture uses 3 vec2 elements.
 #define MatAmbientColor		Material[0]
 #define MatDiffuseColor     Material[1]
-#define MatEmissiveColor    Material[2]
-#define MatSpecularColor    Material[3]
+#define MatSpecularColor    Material[2]
+#define MatEmissiveColor    Material[3]
 #define MatShininess        Material[4].x
 #define MatOpacity          Material[4].y
 #define MatPointSize		Material[4].z

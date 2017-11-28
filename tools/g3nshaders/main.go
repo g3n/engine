@@ -2,6 +2,13 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// g3nshaders reads shaders files with ".glsl" extensions and generates
+// a Go file containing strings with the content of these files.
+// Also it builds maps associating include and shader names to its respective
+// source strings.
+// Usage:
+// 		g3nshaders -in=<input_dir> -out<output_gofile> -v
+// It is normally invoked by "go generate" inside the "shaders" directory
 package main
 
 import (
@@ -10,6 +17,7 @@ import (
 	"fmt"
 	"go/format"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -96,13 +104,15 @@ type progInfo struct {
 
 // templInfo contains all information needed for the template expansion
 type templInfo struct {
-	Pkg      string
-	Includes []fileInfo
-	Shaders  []fileInfo
-	Programs map[string]progInfo
+	Count    int                 // number of shader files processed
+	Pkg      string              // name of the package for the generated output file
+	Includes []fileInfo          // list of include files found
+	Shaders  []fileInfo          // list of shader files found
+	Programs map[string]progInfo // map of shader programs found
 }
 
-var templData templInfo
+var templData templInfo // global template data
+var logger *log.Logger  // global logger
 
 func main() {
 
@@ -116,6 +126,9 @@ func main() {
 		return
 	}
 
+	// Creates logger
+	logger = log.New(os.Stdout, "G3NSHADERS ", log.Ldate|log.Ltime)
+
 	// Initialize template data
 	templData.Pkg = *oPackage
 	templData.Programs = make(map[string]progInfo)
@@ -123,6 +136,10 @@ func main() {
 	// Process the current directory and its subdirectories recursively
 	// appending information into templData
 	processDir(*oInp, false)
+	if templData.Count == 0 {
+		log.Print("No shader files found")
+		return
+	}
 
 	// Generates output file from TEMPLATE
 	generate(*oOut)
@@ -131,20 +148,20 @@ func main() {
 // processDir processes recursively all shaders files in the specified directory
 func processDir(dir string, include bool) {
 
-	// Open directory
+	// Open directory to process
 	f, err := os.Open(dir)
 	if err != nil {
 		panic(err)
 	}
 	defer f.Close()
 
-	// Read all fileinfos
+	// Read all file entries from the directory
 	finfos, err := f.Readdir(0)
 	if err != nil {
 		panic(err)
 	}
 
-	// Process subdirectory recursively or process file
+	// Process all directory entries.
 	for _, fi := range finfos {
 		if fi.IsDir() {
 			dirInclude := include
@@ -167,10 +184,11 @@ func processFile(file string, include bool) {
 	// Ignore file if it has not the shader extension
 	fext := filepath.Ext(file)
 	if fext != SHADEREXT {
-		if *oVerbose {
-			fmt.Printf("Ignored file (not shader): %s\n", file)
-		}
 		return
+	}
+
+	if *oVerbose {
+		logger.Printf("Processing: %s", file)
 	}
 
 	// Get the file base name and its name with the extension
@@ -182,12 +200,12 @@ func processFile(file string, include bool) {
 	if !include {
 		parts := strings.Split(string(fname), "_")
 		if len(parts) < 2 {
-			fmt.Printf("Ignored file (INVALID NAME): %s\n", file)
+			logger.Print("   IGNORED: file does not have a valid shader name")
 			return
 		}
 		stype := parts[len(parts)-1]
 		if !shaderTypes[stype] {
-			fmt.Printf("Ignored file (INVALID SHADER TYPE): %s\n", file)
+			logger.Print("   IGNORED: invalid shader type")
 			return
 		}
 		sname := strings.Join(parts[:len(parts)-1], "_")
@@ -229,13 +247,15 @@ func processFile(file string, include bool) {
 			Source: string(data),
 		})
 	}
-	if *oVerbose {
-		fmt.Printf("%s (%v bytes)\n", file, len(data))
-	}
+	templData.Count++
 }
 
 // generate generates output go file with shaders sources from TEMPLATE
 func generate(file string) {
+
+	if *oVerbose {
+		logger.Printf("Generating: %s", file)
+	}
 
 	// Parses the template
 	tmpl := template.New("tmpl")

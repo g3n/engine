@@ -6,7 +6,7 @@
 package shaders
 
 // Generates shaders sources from this directory and include directory *.glsl files
-//go:generate g3nshaders -in=. -out=sources.go -pkg=shaders
+//go:generate g3nshaders -in=. -out=sources.go -pkg=shaders -v
 
 // ProgramInfo contains information for a registered shader program
 type ProgramInfo struct {
