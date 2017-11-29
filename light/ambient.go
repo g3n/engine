@@ -14,7 +14,7 @@ type Ambient struct {
 	core.Node              // Embedded node
 	color     math32.Color // Light color
 	intensity float32      // Light intensity
-	uni       gls.Uniform2 // Uniform location cache
+	uni       gls.Uniform  // Uniform location cache
 }
 
 // NewAmbient returns a pointer to a new ambient color with the specified

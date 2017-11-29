@@ -13,8 +13,8 @@ import (
 )
 
 type Sprite struct {
-	Graphic              // Embedded graphic
-	uniMVPM gls.Uniform2 // Model view projection matrix uniform location cache
+	Graphic             // Embedded graphic
+	uniMVPM gls.Uniform // Model view projection matrix uniform location cache
 }
 
 // NewSprite creates and returns a pointer to a sprite with the specified dimensions and material

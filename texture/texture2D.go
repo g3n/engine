@@ -18,25 +18,25 @@ import (
 )
 
 type Texture2D struct {
-	gs           *gls.GLS     // Pointer to OpenGL state
-	refcount     int          // Current number of references
-	texname      uint32       // Texture handle
-	magFilter    uint32       // magnification filter
-	minFilter    uint32       // minification filter
-	wrapS        uint32       // wrap mode for s coordinate
-	wrapT        uint32       // wrap mode for t coordinate
-	iformat      int32        // internal format
-	width        int32        // texture width in pixels
-	height       int32        // texture height in pixels
-	format       uint32       // format of the pixel data
-	formatType   uint32       // type of the pixel data
-	updateData   bool         // texture data needs to be sent
-	updateParams bool         // texture parameters needs to be sent
-	genMipmap    bool         // generate mipmaps flag
-	data         interface{}  // array with texture data
-	uniUnit      gls.Uniform2 // Texture unit uniform location cache
-	uniInfo      gls.Uniform2 // Texture info uniform location cache
-	udata        struct {     // Combined uniform data in 3 vec2:
+	gs           *gls.GLS    // Pointer to OpenGL state
+	refcount     int         // Current number of references
+	texname      uint32      // Texture handle
+	magFilter    uint32      // magnification filter
+	minFilter    uint32      // minification filter
+	wrapS        uint32      // wrap mode for s coordinate
+	wrapT        uint32      // wrap mode for t coordinate
+	iformat      int32       // internal format
+	width        int32       // texture width in pixels
+	height       int32       // texture height in pixels
+	format       uint32      // format of the pixel data
+	formatType   uint32      // type of the pixel data
+	updateData   bool        // texture data needs to be sent
+	updateParams bool        // texture parameters needs to be sent
+	genMipmap    bool        // generate mipmaps flag
+	data         interface{} // array with texture data
+	uniUnit      gls.Uniform // Texture unit uniform location cache
+	uniInfo      gls.Uniform // Texture info uniform location cache
+	udata        struct {    // Combined uniform data in 3 vec2:
 		offsetX float32
 		offsetY float32
 		repeatX float32

@@ -16,7 +16,7 @@ type Directional struct {
 	core.Node              // Embedded node
 	color     math32.Color // Light color
 	intensity float32      // Light intensity
-	uni       gls.Uniform2 // Uniform location cache
+	uni       gls.Uniform  // Uniform location cache
 	udata     struct {     // Combined uniform data in 2 vec3:
 		color    math32.Color   // Light color
 		position math32.Vector3 // Light position

@@ -438,7 +438,7 @@ type chartScaleX struct {
 	chart     *Chart        // Container chart
 	lines     int           // Number of vertical lines
 	mat       chartMaterial // Chart material
-	uniBounds gls.Uniform2  // Bounds uniform location cache
+	uniBounds gls.Uniform   // Bounds uniform location cache
 }
 
 // newChartScaleX creates and returns a pointer to a new chartScaleX for the specified
@@ -517,7 +517,7 @@ type chartScaleY struct {
 	chart     *Chart        // Container chart
 	lines     int           // Number of horizontal lines
 	mat       chartMaterial // Chart material
-	uniBounds gls.Uniform2  // Bounds uniform location cache
+	uniBounds gls.Uniform   // Bounds uniform location cache
 }
 
 // newChartScaleY creates and returns a pointer to a new chartScaleY for the specified
@@ -604,7 +604,7 @@ type Graph struct {
 	mat       chartMaterial // Chart material
 	vbo       *gls.VBO
 	positions math32.ArrayF32
-	uniBounds gls.Uniform2 // Bounds uniform location cache
+	uniBounds gls.Uniform // Bounds uniform location cache
 }
 
 // newGraph creates and returns a pointer to a new graph for the specified chart
@@ -711,7 +711,7 @@ func (lg *Graph) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 type chartMaterial struct {
 	material.Material              // Embedded material
 	color             math32.Color // emissive color
-	uniColor          gls.Uniform2 // color uniform location cache
+	uniColor          gls.Uniform  // color uniform location cache
 }
 
 func (cm *chartMaterial) Init(color *math32.Color) {

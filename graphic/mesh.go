@@ -13,10 +13,10 @@ import (
 )
 
 type Mesh struct {
-	Graphic              // Embedded graphic
-	uniMVM  gls.Uniform2 // Model view matrix uniform location cache
-	uniMVPM gls.Uniform2 // Model view projection matrix uniform cache
-	uniNM   gls.Uniform2 // Normal matrix uniform cache
+	Graphic             // Embedded graphic
+	uniMVM  gls.Uniform // Model view matrix uniform location cache
+	uniMVPM gls.Uniform // Model view projection matrix uniform cache
+	uniNM   gls.Uniform // Normal matrix uniform cache
 }
 
 // NewMesh creates and returns a pointer to a mesh with the specified geometry and material

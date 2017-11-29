@@ -14,9 +14,9 @@ import (
 // ambient, diffuse, specular and emissive lights.
 // The lighting calculation is implemented in the vertex shader.
 type Standard struct {
-	Material              // Embedded material
-	uni      gls.Uniform2 // Uniform location cache
-	udata    struct {     // Combined uniform data in 6 vec3:
+	Material             // Embedded material
+	uni      gls.Uniform // Uniform location cache
+	udata    struct {    // Combined uniform data in 6 vec3:
 		ambient    math32.Color // Ambient color reflectivity
 		diffuse    math32.Color // Diffuse color reflectivity
 		specular   math32.Color // Specular color reflectivity

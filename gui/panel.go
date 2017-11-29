@@ -75,8 +75,8 @@ type Panel struct {
 	cursorEnter      bool               // mouse enter dispatched
 	layout           ILayout            // current layout for children
 	layoutParams     interface{}        // current layout parameters used by container panel
-	uniMatrix        gls.Uniform2       // model matrix uniform location cache
-	uniPanel         gls.Uniform2       // panel parameters uniform location cache
+	uniMatrix        gls.Uniform        // model matrix uniform location cache
+	uniPanel         gls.Uniform        // panel parameters uniform location cache
 	udata            struct {           // Combined uniform data 8 * vec4
 		bounds        math32.Vector4 // panel bounds in texture coordinates
 		borders       math32.Vector4 // panel borders in texture coordinates

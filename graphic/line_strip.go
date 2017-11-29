@@ -13,8 +13,8 @@ import (
 )
 
 type LineStrip struct {
-	Graphic              // Embedded graphic object
-	uniMVP  gls.Uniform2 // Model view projection matrix uniform location cache
+	Graphic             // Embedded graphic object
+	uniMVP  gls.Uniform // Model view projection matrix uniform location cache
 }
 
 // NewLineStrip creates and returns a pointer to a new LineStrip graphic

@@ -14,8 +14,8 @@ import (
 
 // Lines is a Graphic which is rendered as a collection of independent lines
 type Lines struct {
-	Graphic              // Embedded graphic object
-	uniMVP  gls.Uniform2 // Model view projection matrix uniform location cache
+	Graphic             // Embedded graphic object
+	uniMVP  gls.Uniform // Model view projection matrix uniform location cache
 }
 
 func (l *Lines) Init(igeom geometry.IGeometry, imat material.IMaterial) {

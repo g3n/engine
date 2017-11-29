@@ -20,10 +20,10 @@ type SkyboxData struct {
 }
 
 type Skybox struct {
-	Graphic              // embedded graphic object
-	uniMVM  gls.Uniform2 // model view matrix uniform location cache
-	uniMVPM gls.Uniform2 // model view projection matrix uniform cache
-	uniNM   gls.Uniform2 // normal matrix uniform cache
+	Graphic             // embedded graphic object
+	uniMVM  gls.Uniform // model view matrix uniform location cache
+	uniMVPM gls.Uniform // model view projection matrix uniform cache
+	uniNM   gls.Uniform // normal matrix uniform cache
 }
 
 // NewSkybox creates and returns a pointer to a skybox with the specified textures

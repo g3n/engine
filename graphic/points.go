@@ -13,8 +13,8 @@ import (
 )
 
 type Points struct {
-	Graphic              // Embedded graphic
-	uniMVPM gls.Uniform2 // Model view projection matrix uniform location cache
+	Graphic             // Embedded graphic
+	uniMVPM gls.Uniform // Model view projection matrix uniform location cache
 }
 
 // NewPoints creates and returns a graphic points object with the specified
