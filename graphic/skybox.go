@@ -20,10 +20,10 @@ type SkyboxData struct {
 }
 
 type Skybox struct {
-	Graphic                     // embedded graphic object
-	mvm     gls.UniformMatrix4f // model view matrix uniform
-	mvpm    gls.UniformMatrix4f // model view projection matrix uniform
-	nm      gls.UniformMatrix3f // normal matrix uniform
+	Graphic              // embedded graphic object
+	uniMVM  gls.Uniform2 // model view matrix uniform location cache
+	uniMVPM gls.Uniform2 // model view projection matrix uniform cache
+	uniNM   gls.Uniform2 // normal matrix uniform cache
 }
 
 // NewSkybox creates and returns a pointer to a skybox with the specified textures
@@ -47,9 +47,9 @@ func NewSkybox(data SkyboxData) (*Skybox, error) {
 	}
 
 	// Creates uniforms
-	skybox.mvm.Init("ModelViewMatrix")
-	skybox.mvpm.Init("MVP")
-	skybox.nm.Init("NormalMatrix")
+	skybox.uniMVM.Init("ModelViewMatrix")
+	skybox.uniMVPM.Init("MVP")
+	skybox.uniNM.Init("NormalMatrix")
 
 	return skybox, nil
 }
@@ -72,19 +72,20 @@ func (skybox *Skybox) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 	mvm[13] = 0
 	mvm[14] = 0
 	// mvm.ExtractRotation(&rinfo.ViewMatrix) // TODO <- ExtractRotation does not work as expected?
-	skybox.mvm.SetMatrix4(&mvm)
-	skybox.mvm.Transfer(gs)
+
+	// Transfer mvp uniform
+	location := skybox.uniMVM.Location(gs)
+	gs.UniformMatrix4fv(location, 1, false, &mvm[0])
 
 	// Calculates model view projection matrix and updates uniform
 	var mvpm math32.Matrix4
 	mvpm.MultiplyMatrices(&rinfo.ProjMatrix, &mvm)
-	skybox.mvpm.SetMatrix4(&mvpm)
-	skybox.mvpm.Transfer(gs)
+	location = skybox.uniMVPM.Location(gs)
+	gs.UniformMatrix4fv(location, 1, false, &mvpm[0])
 
 	// Calculates normal matrix and updates uniform
 	var nm math32.Matrix3
 	nm.GetNormalMatrix(&mvm)
-	skybox.nm.SetMatrix3(&nm)
-	skybox.nm.Transfer(gs)
-
+	location = skybox.uniNM.Location(gs)
+	gs.UniformMatrix3fv(location, 1, false, &nm[0])
 }

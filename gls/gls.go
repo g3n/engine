@@ -583,9 +583,9 @@ func (gs *GLS) Uniform1fv(location int32, count int32, v []float32) {
 	gs.stats.Unisets++
 }
 
-func (gs *GLS) Uniform2fv(location int32, count int32, v []float32) {
+func (gs *GLS) Uniform2fv(location int32, count int32, v *float32) {
 
-	C.glUniform2fv(C.GLint(location), C.GLsizei(count), (*C.GLfloat)(&v[0]))
+	C.glUniform2fv(C.GLint(location), C.GLsizei(count), (*C.GLfloat)(v))
 	gs.stats.Unisets++
 }
 
@@ -595,9 +595,9 @@ func (gs *GLS) Uniform2fvUP(location int32, count int32, v unsafe.Pointer) {
 	gs.stats.Unisets++
 }
 
-func (gs *GLS) Uniform3fv(location int32, count int32, v []float32) {
+func (gs *GLS) Uniform3fv(location int32, count int32, v *float32) {
 
-	C.glUniform3fv(C.GLint(location), C.GLsizei(count), (*C.GLfloat)(&v[0]))
+	C.glUniform3fv(C.GLint(location), C.GLsizei(count), (*C.GLfloat)(v))
 	gs.stats.Unisets++
 }
 
@@ -610,6 +610,12 @@ func (gs *GLS) Uniform3fvUP(location int32, count int32, v unsafe.Pointer) {
 func (gs *GLS) Uniform4fv(location int32, count int32, v []float32) {
 
 	C.glUniform4fv(C.GLint(location), C.GLsizei(count), (*C.GLfloat)(&v[0]))
+	gs.stats.Unisets++
+}
+
+func (gs *GLS) Uniform4fvUP(location int32, count int32, v unsafe.Pointer) {
+
+	C.glUniform4fv(C.GLint(location), C.GLsizei(count), (*C.GLfloat)(v))
 	gs.stats.Unisets++
 }
 

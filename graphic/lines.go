@@ -14,15 +14,15 @@ import (
 
 // Lines is a Graphic which is rendered as a collection of independent lines
 type Lines struct {
-	Graphic
-	mvpm gls.UniformMatrix4f // Model view projection matrix uniform
+	Graphic              // Embedded graphic object
+	uniMVP  gls.Uniform2 // Model view projection matrix uniform location cache
 }
 
 func (l *Lines) Init(igeom geometry.IGeometry, imat material.IMaterial) {
 
 	l.Graphic.Init(igeom, gls.LINES)
 	l.AddMaterial(l, imat, 0, 0)
-	l.mvpm.Init("MVP")
+	l.uniMVP.Init("MVP")
 }
 
 func NewLines(igeom geometry.IGeometry, imat material.IMaterial) *Lines {
@@ -40,8 +40,10 @@ func (l *Lines) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 	var mvpm math32.Matrix4
 	mvpm.MultiplyMatrices(&rinfo.ViewMatrix, &mw)
 	mvpm.MultiplyMatrices(&rinfo.ProjMatrix, &mvpm)
-	l.mvpm.SetMatrix4(&mvpm)
-	l.mvpm.Transfer(gs)
+
+	// Transfer mvpm uniform
+	location := l.uniMVP.Location(gs)
+	gs.UniformMatrix4fv(location, 1, false, &mvpm[0])
 }
 
 // Raycast satisfies the INode interface and checks the intersections

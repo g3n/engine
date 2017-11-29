@@ -13,10 +13,10 @@ import (
 )
 
 type Mesh struct {
-	Graphic                     // Embedded graphic
-	mvm     gls.UniformMatrix4f // Model view matrix uniform
-	mvpm    gls.UniformMatrix4f // Model view projection matrix uniform
-	nm      gls.UniformMatrix3f // Normal matrix uniform
+	Graphic              // Embedded graphic
+	uniMVM  gls.Uniform2 // Model view matrix uniform location cache
+	uniMVPM gls.Uniform2 // Model view projection matrix uniform cache
+	uniNM   gls.Uniform2 // Normal matrix uniform cache
 }
 
 // NewMesh creates and returns a pointer to a mesh with the specified geometry and material
@@ -34,9 +34,9 @@ func (m *Mesh) Init(igeom geometry.IGeometry, imat material.IMaterial) {
 	m.Graphic.Init(igeom, gls.TRIANGLES)
 
 	// Initialize uniforms
-	m.mvm.Init("ModelViewMatrix")
-	m.mvpm.Init("MVP")
-	m.nm.Init("NormalMatrix")
+	m.uniMVM.Init("ModelViewMatrix")
+	m.uniMVPM.Init("MVP")
+	m.uniNM.Init("NormalMatrix")
 
 	// Adds single material if not nil
 	if imat != nil {
@@ -60,24 +60,24 @@ func (m *Mesh) AddGroupMaterial(imat material.IMaterial, gindex int) {
 // the model matrices.
 func (m *Mesh) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 
-	// Calculates model view matrix and updates uniform
+	// Calculates model view matrix and transfer uniform
 	mw := m.MatrixWorld()
 	var mvm math32.Matrix4
 	mvm.MultiplyMatrices(&rinfo.ViewMatrix, &mw)
-	m.mvm.SetMatrix4(&mvm)
-	m.mvm.Transfer(gs)
+	location := m.uniMVM.Location(gs)
+	gs.UniformMatrix4fv(location, 1, false, &mvm[0])
 
 	// Calculates model view projection matrix and updates uniform
 	var mvpm math32.Matrix4
 	mvpm.MultiplyMatrices(&rinfo.ProjMatrix, &mvm)
-	m.mvpm.SetMatrix4(&mvpm)
-	m.mvpm.Transfer(gs)
+	location = m.uniMVPM.Location(gs)
+	gs.UniformMatrix4fv(location, 1, false, &mvpm[0])
 
 	// Calculates normal matrix and updates uniform
 	var nm math32.Matrix3
 	nm.GetNormalMatrix(&mvm)
-	m.nm.SetMatrix3(&nm)
-	m.nm.Transfer(gs)
+	location = m.uniNM.Location(gs)
+	gs.UniformMatrix3fv(location, 1, false, &nm[0])
 }
 
 // Raycast checks intersections between this geometry and the specified raycaster

@@ -13,8 +13,8 @@ import (
 )
 
 type Points struct {
-	Graphic                     // Embedded graphic
-	mvpm    gls.UniformMatrix4f // Model view projection matrix uniform
+	Graphic              // Embedded graphic
+	uniMVPM gls.Uniform2 // Model view projection matrix uniform location cache
 }
 
 // NewPoints creates and returns a graphic points object with the specified
@@ -26,20 +26,22 @@ func NewPoints(igeom geometry.IGeometry, imat material.IMaterial) *Points {
 	if imat != nil {
 		p.AddMaterial(p, imat, 0, 0)
 	}
-	p.mvpm.Init("MVP")
+	p.uniMVPM.Init("MVP")
 	return p
 }
 
 // RenderSetup is called by the engine before rendering this graphic
 func (p *Points) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 
-	// Calculates model view projection matrix and updates uniform
+	// Calculates model view projection matrix
 	mw := p.MatrixWorld()
 	var mvpm math32.Matrix4
 	mvpm.MultiplyMatrices(&rinfo.ViewMatrix, &mw)
 	mvpm.MultiplyMatrices(&rinfo.ProjMatrix, &mvpm)
-	p.mvpm.SetMatrix4(&mvpm)
-	p.mvpm.Transfer(gs)
+
+	// Transfer model view projection matrix uniform
+	location := p.uniMVPM.Location(gs)
+	gs.UniformMatrix4fv(location, 1, false, &mvpm[0])
 }
 
 // Raycast satisfies the INode interface and checks the intersections

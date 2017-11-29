@@ -13,8 +13,8 @@ import (
 )
 
 type LineStrip struct {
-	Graphic
-	mvpm gls.UniformMatrix4f // Model view projection matrix uniform
+	Graphic              // Embedded graphic object
+	uniMVP  gls.Uniform2 // Model view projection matrix uniform location cache
 }
 
 // NewLineStrip creates and returns a pointer to a new LineStrip graphic
@@ -24,7 +24,7 @@ func NewLineStrip(igeom geometry.IGeometry, imat material.IMaterial) *LineStrip 
 	l := new(LineStrip)
 	l.Graphic.Init(igeom, gls.LINE_STRIP)
 	l.AddMaterial(l, imat, 0, 0)
-	l.mvpm.Init("MVP")
+	l.uniMVP.Init("MVP")
 	return l
 }
 
@@ -36,8 +36,10 @@ func (l *LineStrip) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 	var mvpm math32.Matrix4
 	mvpm.MultiplyMatrices(&rinfo.ViewMatrix, &mw)
 	mvpm.MultiplyMatrices(&rinfo.ProjMatrix, &mvpm)
-	l.mvpm.SetMatrix4(&mvpm)
-	l.mvpm.Transfer(gs)
+
+	// Transfer mvpm uniform
+	location := l.uniMVP.Location(gs)
+	gs.UniformMatrix4fv(location, 1, false, &mvpm[0])
 }
 
 // Raycast satisfies the INode interface and checks the intersections

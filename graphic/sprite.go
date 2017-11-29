@@ -13,8 +13,8 @@ import (
 )
 
 type Sprite struct {
-	Graphic                     // Embedded graphic
-	mvpm    gls.UniformMatrix4f // Model view projection matrix uniform
+	Graphic              // Embedded graphic
+	uniMVPM gls.Uniform2 // Model view projection matrix uniform location cache
 }
 
 // NewSprite creates and returns a pointer to a sprite with the specified dimensions and material
@@ -51,7 +51,7 @@ func NewSprite(width, height float32, imat material.IMaterial) *Sprite {
 	s.Graphic.Init(geom, gls.TRIANGLES)
 	s.AddMaterial(s, imat, 0, 0)
 
-	s.mvpm.Init("MVP")
+	s.uniMVPM.Init("MVP")
 	return s
 }
 
@@ -79,8 +79,8 @@ func (s *Sprite) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 	// Calculates final MVP and updates uniform
 	var mvpm math32.Matrix4
 	mvpm.MultiplyMatrices(&rinfo.ProjMatrix, &mvm_new)
-	s.mvpm.SetMatrix4(&mvpm)
-	s.mvpm.Transfer(gs)
+	location := s.uniMVPM.Location(gs)
+	gs.UniformMatrix4fv(location, 1, false, &mvpm[0])
 }
 
 // Raycast checks intersections between this geometry and the specified raycaster
