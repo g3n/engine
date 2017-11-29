@@ -58,6 +58,14 @@ const (
 func NewChart(width, height float32) *Chart {
 
 	ch := new(Chart)
+	ch.Init(width, height)
+	return ch
+}
+
+// Init initializes a new chart with the specified width and height
+// It is normally used to initialize a Chart embedded in a struct
+func (ch *Chart) Init(width float32, height float32) {
+
 	ch.Panel.Initialize(width, height)
 	ch.left = 40
 	ch.bottom = 20
@@ -73,7 +81,6 @@ func NewChart(width, height float32) *Chart {
 	ch.fontSizeX = 14
 	ch.fontSizeY = 14
 	ch.Subscribe(OnResize, ch.onResize)
-	return ch
 }
 
 // SetTitle sets the chart title text and font size.
