@@ -143,7 +143,6 @@ uniform vec3 Material[6];
     // Texture parameters (3*vec2 per texture)
     uniform vec2 MatTexinfo[3*MAT_TEXTURES];
     // Macros to access elements inside the MatTexinfo array
-    // Each texture uses 3 vec2 elements.
     #define MatTexOffset(a)		MatTexinfo[(3*a)]
     #define MatTexRepeat(a)		MatTexinfo[(3*a)+1]
     #define MatTexFlipY(a)		bool(MatTexinfo[(3*a)+2].x)

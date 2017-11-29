@@ -339,10 +339,11 @@ func (t *Texture2D) RenderSetup(gs *gls.GLS, idx int) {
 	// Transfer texture unit uniform
 	location := t.uniUnit.LocationIdx(gs, int32(idx))
 	gs.Uniform1i(location, int32(idx))
+	log.Error("unit location:%v", location)
 
 	// Transfer texture info combined uniform
 	const vec2count = 3
 	location = t.uniInfo.LocationIdx(gs, vec2count*int32(idx))
-	log.Error("location:%v count:%v udata:%v", location, vec2count, t.udata)
+	log.Error("info location:%v count:%v udata:%v", location, vec2count, t.udata)
 	gs.Uniform2fvUP(location, vec2count, unsafe.Pointer(&t.udata))
 }
