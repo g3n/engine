@@ -73,7 +73,6 @@ func (ld *Directional) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo, idx int)
 	ld.WorldPosition(&pos)
 	pos4 := math32.Vector4{pos.X, pos.Y, pos.Z, 0.0}
 	pos4.ApplyMatrix4(&rinfo.ViewMatrix)
-	//ld.uni.SetVector3(dirPosition, &math32.Vector3{pos4.X, pos4.Y, pos4.Z})
 	ld.udata.position.X = pos4.X
 	ld.udata.position.Y = pos4.Y
 	ld.udata.position.Z = pos4.Z
