@@ -589,6 +589,12 @@ func (gs *GLS) Uniform2fv(location int32, count int32, v []float32) {
 	gs.stats.Unisets++
 }
 
+func (gs *GLS) Uniform2fvUP(location int32, count int32, v unsafe.Pointer) {
+
+	C.glUniform2fv(C.GLint(location), C.GLsizei(count), (*C.GLfloat)(v))
+	gs.stats.Unisets++
+}
+
 func (gs *GLS) Uniform3fv(location int32, count int32, v []float32) {
 
 	C.glUniform3fv(C.GLint(location), C.GLsizei(count), (*C.GLfloat)(&v[0]))

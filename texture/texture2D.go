@@ -6,44 +6,45 @@ package texture
 
 import (
 	"fmt"
-	"github.com/g3n/engine/gls"
 	"image"
 	"image/draw"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
 	"os"
+	"unsafe"
+
+	"github.com/g3n/engine/gls"
 )
 
 type Texture2D struct {
-	gs           *gls.GLS            // Pointer to OpenGL state
-	refcount     int                 // Current number of references
-	texname      uint32              // Texture handle
-	magFilter    uint32              // magnification filter
-	minFilter    uint32              // minification filter
-	wrapS        uint32              // wrap mode for s coordinate
-	wrapT        uint32              // wrap mode for t coordinate
-	iformat      int32               // internal format
-	width        int32               // texture width in pixels
-	height       int32               // texture height in pixels
-	format       uint32              // format of the pixel data
-	formatType   uint32              // type of the pixel data
-	updateData   bool                // texture data needs to be sent
-	updateParams bool                // texture parameters needs to be sent
-	genMipmap    bool                // generate mipmaps flag
-	data         interface{}         // array with texture data
-	uTexture     gls.Uniform1i       // Texture unit uniform
-	uTexinfo     gls.UniformMatrix3f // uniform 3x3 array with texture info
+	gs           *gls.GLS     // Pointer to OpenGL state
+	refcount     int          // Current number of references
+	texname      uint32       // Texture handle
+	magFilter    uint32       // magnification filter
+	minFilter    uint32       // minification filter
+	wrapS        uint32       // wrap mode for s coordinate
+	wrapT        uint32       // wrap mode for t coordinate
+	iformat      int32        // internal format
+	width        int32        // texture width in pixels
+	height       int32        // texture height in pixels
+	format       uint32       // format of the pixel data
+	formatType   uint32       // type of the pixel data
+	updateData   bool         // texture data needs to be sent
+	updateParams bool         // texture parameters needs to be sent
+	genMipmap    bool         // generate mipmaps flag
+	data         interface{}  // array with texture data
+	uniUnit      gls.Uniform2 // Texture unit uniform location cache
+	uniInfo      gls.Uniform2 // Texture info uniform location cache
+	udata        struct {     // Combined uniform data in 3 vec2:
+		offsetX float32
+		offsetY float32
+		repeatX float32
+		repeatY float32
+		flipY   float32
+		visible float32
+	}
 }
-
-const (
-	iOffsetX = 0
-	iOffsetY = 1
-	iRepeatX = 3
-	iRepeatY = 4
-	iFlipY   = 6
-	iVisible = 7
-)
 
 func newTexture2D() *Texture2D {
 
@@ -60,15 +61,12 @@ func newTexture2D() *Texture2D {
 	t.genMipmap = true
 
 	// Initialize Uniform elements
-	t.uTexture.Init("MatTexture")
-	t.uTexinfo.Init("MatTexinfo")
-	t.uTexinfo.Set(iOffsetX, 0)
-	t.uTexinfo.Set(iOffsetY, 0)
-	t.uTexinfo.Set(iRepeatX, 1)
-	t.uTexinfo.Set(iRepeatY, 1)
-	t.uTexinfo.Set(iFlipY, 1)
-	t.uTexinfo.Set(iVisible, 1)
-
+	t.uniUnit.Init("MatTexture")
+	t.uniInfo.Init("MatTexinfo")
+	t.SetOffset(0, 0)
+	t.SetRepeat(0, 0)
+	t.SetFlipY(true)
+	t.SetVisible(true)
 	return t
 }
 
@@ -170,16 +168,16 @@ func (t *Texture2D) SetData(width, height int, format int, formatType, iformat i
 func (t *Texture2D) SetVisible(state bool) {
 
 	if state {
-		t.uTexinfo.Set(iVisible, 1)
+		t.udata.visible = 1
 	} else {
-		t.uTexinfo.Set(iVisible, 0)
+		t.udata.visible = 0
 	}
 }
 
 // Visible returns the current visibility state of the texture
 func (t *Texture2D) Visible() bool {
 
-	if t.uTexinfo.Get(iVisible) == 0 {
+	if t.udata.visible == 0 {
 		return false
 	} else {
 		return true
@@ -221,36 +219,36 @@ func (t *Texture2D) SetWrapT(wrapT uint32) {
 // SetRepeat set the repeat factor
 func (t *Texture2D) SetRepeat(x, y float32) {
 
-	t.uTexinfo.Set(iRepeatX, x)
-	t.uTexinfo.Set(iRepeatY, y)
+	t.udata.repeatX = x
+	t.udata.repeatY = y
 }
 
 // Repeat returns the current X and Y repeat factors
 func (t *Texture2D) Repeat() (float32, float32) {
 
-	return t.uTexinfo.Get(iRepeatX), t.uTexinfo.Get(iRepeatY)
+	return t.udata.repeatX, t.udata.repeatY
 }
 
 // SetOffset sets the offset factor
 func (t *Texture2D) SetOffset(x, y float32) {
 
-	t.uTexinfo.Set(iOffsetX, x)
-	t.uTexinfo.Set(iOffsetY, y)
+	t.udata.offsetX = x
+	t.udata.offsetY = y
 }
 
 // Offset returns the current X and Y offset factors
 func (t *Texture2D) Offset() (float32, float32) {
 
-	return t.uTexinfo.Get(iOffsetX), t.uTexinfo.Get(iOffsetY)
+	return t.udata.offsetX, t.udata.offsetY
 }
 
 // SetFlipY set the state for flipping the Y coordinate
 func (t *Texture2D) SetFlipY(state bool) {
 
 	if state {
-		t.uTexinfo.Set(iFlipY, 1)
+		t.udata.flipY = 1
 	} else {
-		t.uTexinfo.Set(iFlipY, 0)
+		t.udata.flipY = 0
 	}
 }
 
@@ -338,8 +336,13 @@ func (t *Texture2D) RenderSetup(gs *gls.GLS, idx int) {
 		t.updateParams = false
 	}
 
-	// Transfer uniforms
-	t.uTexture.Set(int32(idx))
-	t.uTexture.TransferIdx(gs, idx)
-	t.uTexinfo.TransferIdx(gs, idx)
+	// Transfer texture unit uniform
+	location := t.uniUnit.LocationIdx(gs, int32(idx))
+	gs.Uniform1i(location, int32(idx))
+
+	// Transfer texture info combined uniform
+	const vec2count = 3
+	location = t.uniInfo.LocationIdx(gs, vec2count*int32(idx))
+	log.Error("location:%v count:%v udata:%v", location, vec2count, t.udata)
+	gs.Uniform2fvUP(location, vec2count, unsafe.Pointer(&t.udata))
 }
