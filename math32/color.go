@@ -117,6 +117,15 @@ func (c *Color) Clone() *Color {
 	return NewColor(c.R, c.G, c.B)
 }
 
+//
+// ColorToValue returns the integer value of the color with
+// the specified name. If name not found returns 0.
+//
+func ColorUint(name string) uint {
+
+	return colorKeywords[name]
+}
+
 var colorKeywords = map[string]uint{
 	"aliceblue":            0xF0F8FF,
 	"antiquewhite":         0xFAEBD7,
