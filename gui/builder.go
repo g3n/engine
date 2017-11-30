@@ -17,14 +17,14 @@ import (
 
 // Builder builds GUI objects from a declarative description in YAML format
 type Builder struct {
-	panels  []IPanel // first level panels
-	mapPath map[string]IPanel
+	desc   map[string]*panelDesc
+	panels []IPanel // first level panels
 }
 
 type panelDesc struct {
 	Type        string
-	Posx        float32
-	Posy        float32
+	Posx        *float32
+	Posy        *float32
 	Width       float32
 	Height      float32
 	Margins     string
@@ -49,9 +49,15 @@ type layoutAttr struct {
 }
 
 const (
-	descPanel = "Panel"
-	descLabel = "Label"
-	descEdit  = "Edit"
+	descPanel        = "Panel"
+	descLabel        = "Label"
+	descEdit         = "Edit"
+	fieldMargins     = "margins"
+	fieldBorders     = "borders"
+	fieldBorderColor = "bordercolor"
+	fieldPaddings    = "paddings"
+	fieldColor       = "color"
+	objSingle        = "--single--"
 )
 
 //
@@ -139,18 +145,18 @@ func (b *Builder) Label(path string) (*Label, error) {
 //
 // build builds gui objects from the specified description and its children recursively
 //
-func (b *Builder) build(pd *panelDesc, name string, parent *Panel) (IPanel, error) {
+func (b *Builder) build(pd *panelDesc, pname string, parent *Panel) (IPanel, error) {
 
 	fmt.Printf("\n%+v\n\n", pd)
 	var err error
 	var pan IPanel
 	switch pd.Type {
 	case descPanel:
-		pan, err = b.buildPanel(pd)
+		pan, err = b.buildPanel(pd, pname)
 	case descLabel:
-		pan, err = b.buildLabel(pd)
+		pan, err = b.buildLabel(pd, pname)
 	case descEdit:
-		pan, err = b.buildEdit(pd)
+		pan, err = b.buildEdit(pd, pname)
 	default:
 		err = fmt.Errorf("Invalid panel type:%s", pd.Type)
 	}
@@ -163,13 +169,13 @@ func (b *Builder) build(pd *panelDesc, name string, parent *Panel) (IPanel, erro
 	return pan, nil
 }
 
-func (b *Builder) buildPanel(pd *panelDesc) (IPanel, error) {
+func (b *Builder) buildPanel(pd *panelDesc, pname string) (IPanel, error) {
 
 	log.Error("buildPanel:[%s]", pd.Borders)
 	pan := NewPanel(pd.Width, pd.Height)
 
 	// Set margin sizes
-	bs, err := b.parseBorderSizes(pd.Margins)
+	bs, err := b.parseBorderSizes(pname, fieldMargins, pd.Margins)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +184,7 @@ func (b *Builder) buildPanel(pd *panelDesc) (IPanel, error) {
 	}
 
 	// Set border sizes
-	bs, err = b.parseBorderSizes(pd.Borders)
+	bs, err = b.parseBorderSizes(pname, fieldBorders, pd.Borders)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +193,7 @@ func (b *Builder) buildPanel(pd *panelDesc) (IPanel, error) {
 	}
 
 	// Set border color
-	c, err := b.parseColor(pd.BorderColor)
+	c, err := b.parseColor(pname, fieldBorderColor, pd.BorderColor)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +202,7 @@ func (b *Builder) buildPanel(pd *panelDesc) (IPanel, error) {
 	}
 
 	// Set paddings sizes
-	bs, err = b.parseBorderSizes(pd.Paddings)
+	bs, err = b.parseBorderSizes(pname, fieldPaddings, pd.Paddings)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +211,7 @@ func (b *Builder) buildPanel(pd *panelDesc) (IPanel, error) {
 	}
 
 	// Set color
-	c, err = b.parseColor(pd.Color)
+	c, err = b.parseColor(pname, fieldColor, pd.Color)
 	if err != nil {
 		return nil, err
 	}
@@ -216,61 +222,25 @@ func (b *Builder) buildPanel(pd *panelDesc) (IPanel, error) {
 	return pan, nil
 }
 
-func (b *Builder) buildLabel(pa *panelDesc) (IPanel, error) {
+func (b *Builder) buildLabel(pa *panelDesc, name string) (IPanel, error) {
 
 	label := NewLabel("df")
 
 	return label, nil
 }
 
-func (b *Builder) buildEdit(pa *panelDesc) (IPanel, error) {
+func (b *Builder) buildEdit(pa *panelDesc, name string) (IPanel, error) {
 
 	return nil, nil
-}
-
-//
-// parseFloats parses a string with a list of floats with the specified size
-// and returns a slice. The specified size is 0 any number of floats is allowed.
-// The individual values can be separated by spaces or commas
-//
-func (b *Builder) parseFloats(field string, min, max int) ([]float32, error) {
-
-	// Checks if field is empty
-	field = strings.Trim(field, " ")
-	if field == "" {
-		return nil, nil
-	}
-
-	// Separate individual fields
-	var parts []string
-	if strings.Index(field, ",") < 0 {
-		parts = strings.Split(field, " ")
-	} else {
-		parts = strings.Split(field, ",")
-	}
-	if len(parts) < min || len(parts) > max {
-		return nil, fmt.Errorf("Invalid number(%d) of float32 fields in:[%s]", len(parts), field)
-	}
-
-	// Parse each field value and appends to slice
-	var values []float32
-	for i := 0; i < len(parts); i++ {
-		val, err := strconv.ParseFloat(parts[i], 32)
-		if err != nil {
-			return nil, fmt.Errorf("Error parsing float32 field:[%s]: %s", field, err)
-		}
-		values = append(values, float32(val))
-	}
-	return values, nil
 }
 
 //
 // parseBorderSizes parses a string field which can contain one float value or
 // float values. In the first case all borders has the same width
 //
-func (b *Builder) parseBorderSizes(field string) (*BorderSizes, error) {
+func (b *Builder) parseBorderSizes(pname, fname, field string) (*BorderSizes, error) {
 
-	va, err := b.parseFloats(field, 1, 4)
+	va, err := b.parseFloats(pname, fname, field, 1, 4)
 	if va == nil || err != nil {
 		return nil, err
 	}
@@ -281,10 +251,10 @@ func (b *Builder) parseBorderSizes(field string) (*BorderSizes, error) {
 }
 
 //
-// parseColor parses a field which can contain a color name or
+// parseColor parses a string field which can contain a color name or
 // a list of 3 or 4 float values for the color components
 //
-func (b *Builder) parseColor(field string) (*math32.Color4, error) {
+func (b *Builder) parseColor(pname, fname, field string) (*math32.Color4, error) {
 
 	// Checks if field is empty
 	field = strings.Trim(field, " ")
@@ -301,7 +271,7 @@ func (b *Builder) parseColor(field string) (*math32.Color4, error) {
 	}
 
 	// Accept 3 or 4 floats values
-	va, err := b.parseFloats(field, 3, 4)
+	va, err := b.parseFloats(pname, fname, field, 3, 4)
 	if err != nil {
 		return nil, err
 	}
@@ -309,4 +279,45 @@ func (b *Builder) parseColor(field string) (*math32.Color4, error) {
 		return &math32.Color4{va[0], va[1], va[2], 1}, nil
 	}
 	return &math32.Color4{va[0], va[1], va[2], va[3]}, nil
+}
+
+//
+// parseFloats parses a string with a list of floats with the specified size
+// and returns a slice. The specified size is 0 any number of floats is allowed.
+// The individual values can be separated by spaces or commas
+//
+func (b *Builder) parseFloats(pname, fname, field string, min, max int) ([]float32, error) {
+
+	// Checks if field is empty
+	field = strings.Trim(field, " ")
+	if field == "" {
+		return nil, nil
+	}
+
+	// Separate individual fields
+	var parts []string
+	if strings.Index(field, ",") < 0 {
+		parts = strings.Split(field, " ")
+	} else {
+		parts = strings.Split(field, ",")
+	}
+	if len(parts) < min || len(parts) > max {
+		return nil, b.err(pname, fname, "Invalid number of float32 values")
+	}
+
+	// Parse each field value and appends to slice
+	var values []float32
+	for i := 0; i < len(parts); i++ {
+		val, err := strconv.ParseFloat(parts[i], 32)
+		if err != nil {
+			return nil, fmt.Errorf("Error parsing float32 field:[%s]: %s", field, err)
+		}
+		values = append(values, float32(val))
+	}
+	return values, nil
+}
+
+func (b *Builder) err(pname, fname, msg string) error {
+
+	return fmt.Errorf("Error in object:%s field:%s -> %s", pname, fname, msg)
 }
