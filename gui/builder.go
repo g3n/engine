@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -23,8 +24,9 @@ type Builder struct {
 
 type panelDesc struct {
 	Type        string
-	Posx        *float32
-	Posy        *float32
+	Name        string
+	Posx        float32
+	Posy        float32
 	Width       float32
 	Height      float32
 	Margins     string
@@ -38,10 +40,10 @@ type panelDesc struct {
 	Children    []panelDesc
 	Layout      layoutAttr
 	Text        string
-	FontSize    float32
-	FontDPI     float32
+	FontSize    *float32
+	FontDPI     *float32
 	PlaceHolder string
-	MaxLength   uint
+	MaxLength   *uint
 }
 
 type layoutAttr struct {
@@ -57,7 +59,6 @@ const (
 	fieldBorderColor = "bordercolor"
 	fieldPaddings    = "paddings"
 	fieldColor       = "color"
-	objSingle        = "--single--"
 )
 
 //
@@ -71,10 +72,10 @@ func NewBuilder() *Builder {
 }
 
 //
-// BuildFromData builds gui objects from the specified description
-// in YAML format
+// ParseString parses a string with gui objects descriptions in YAML format
+// It there was a previously parsed description, it is cleared.
 //
-func (b *Builder) BuildFromString(desc string) error {
+func (b *Builder) ParseString(desc string) error {
 
 	// Try assuming the description contains a single root panel
 	var pd panelDesc
@@ -83,36 +84,28 @@ func (b *Builder) BuildFromString(desc string) error {
 		return err
 	}
 	if pd.Type != "" {
-		pan, err := b.build(&pd, "", nil)
-		if err != nil {
-			return err
-		}
-		b.panels = append(b.panels, pan)
+		b.desc = make(map[string]*panelDesc)
+		b.desc[""] = &pd
+		fmt.Printf("\n%+v\n", b.desc)
 		return nil
 	}
 
 	// Try assuming the description is a map of panels
-	var pdm map[string]panelDesc
+	var pdm map[string]*panelDesc
 	err = yaml.Unmarshal([]byte(desc), &pdm)
 	if err != nil {
 		return err
 	}
-	// Builds each panel in the map
-	for name, pd := range pdm {
-		pan, err := b.build(&pd, name, nil)
-		if err != nil {
-			return err
-		}
-		b.panels = append(b.panels, pan)
-	}
+	b.desc = pdm
+	fmt.Printf("\n%+v\n", b.desc)
 	return nil
 }
 
 //
-// BuildFromFile builds gui objects from the specified file which
+// ParseFile builds gui objects from the specified file which
 // must contain objects descriptions in YAML format
 //
-func (b *Builder) BuildFromFile(filepath string) error {
+func (b *Builder) ParseFile(filepath string) error {
 
 	// Reads all file data
 	f, err := os.Open(filepath)
@@ -129,17 +122,38 @@ func (b *Builder) BuildFromFile(filepath string) error {
 	}
 
 	// Parses file data
-	return b.BuildFromString(string(data))
+	return b.ParseString(string(data))
 }
 
-func (b *Builder) Panels() []IPanel {
+//
+// Names returns a sorted list of names of top level previously parsed objects.
+// If there is only a single object with no name, its name is returned
+// as an empty string
+//
+func (b *Builder) Names() []string {
 
-	return b.panels
+	var objs []string
+	for name, _ := range b.desc {
+		objs = append(objs, name)
+	}
+	sort.Strings(objs)
+	return objs
 }
 
-func (b *Builder) Label(path string) (*Label, error) {
+//
+// Build builds a gui object and all its children recursively.
+// The specified name should be a top level name from a
+// from a previously parsed description
+// If the descriptions contains a single object with no name,
+// It should be specified the empty string to build this object.
+//
+func (b *Builder) Build(name string) (IPanel, error) {
 
-	return nil, nil
+	pd, ok := b.desc[name]
+	if !ok {
+		return nil, fmt.Errorf("Object name:%s not found", name)
+	}
+	return b.build(pd, name, nil)
 }
 
 //
@@ -173,6 +187,7 @@ func (b *Builder) buildPanel(pd *panelDesc, pname string) (IPanel, error) {
 
 	log.Error("buildPanel:[%s]", pd.Borders)
 	pan := NewPanel(pd.Width, pd.Height)
+	pan.SetPosition(pd.Posx, pd.Posy)
 
 	// Set margin sizes
 	bs, err := b.parseBorderSizes(pname, fieldMargins, pd.Margins)
@@ -219,12 +234,17 @@ func (b *Builder) buildPanel(pd *panelDesc, pname string) (IPanel, error) {
 		pan.SetColor4(c)
 	}
 
+	// Children
+	for i := 0; i < len(pd.Children); i++ {
+
+	}
+
 	return pan, nil
 }
 
-func (b *Builder) buildLabel(pa *panelDesc, name string) (IPanel, error) {
+func (b *Builder) buildLabel(pd *panelDesc, name string) (IPanel, error) {
 
-	label := NewLabel("df")
+	label := NewLabel(pd.Text)
 
 	return label, nil
 }
