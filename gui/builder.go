@@ -22,6 +22,22 @@ type Builder struct {
 	panels []IPanel // first level panels
 }
 
+type panelStyle struct {
+	Borders     string
+	Paddings    string
+	BorderColor string
+	BgColor     string
+	FgColor     string
+}
+
+type panelStyles struct {
+	Normal   panelStyle
+	Over     panelStyle
+	Focus    panelStyle
+	Pressed  panelStyle
+	Disabled panelStyle
+}
+
 type panelDesc struct {
 	Type        string
 	Name        string
@@ -37,8 +53,9 @@ type panelDesc struct {
 	Enabled     bool
 	Visible     bool
 	Renderable  bool
-	Children    []panelDesc
+	Children    []*panelDesc
 	Layout      layoutAttr
+	Styles      *panelStyles
 	Text        string
 	FontSize    *float32
 	FontDPI     *float32
@@ -51,9 +68,9 @@ type layoutAttr struct {
 }
 
 const (
-	descPanel        = "Panel"
-	descLabel        = "Label"
-	descEdit         = "Edit"
+	descTypePanel    = "Panel"
+	descTypeLabel    = "Label"
+	descTypeEdit     = "Edit"
 	fieldMargins     = "margins"
 	fieldBorders     = "borders"
 	fieldBorderColor = "bordercolor"
@@ -165,11 +182,11 @@ func (b *Builder) build(pd *panelDesc, pname string, parent *Panel) (IPanel, err
 	var err error
 	var pan IPanel
 	switch pd.Type {
-	case descPanel:
+	case descTypePanel:
 		pan, err = b.buildPanel(pd, pname)
-	case descLabel:
+	case descTypeLabel:
 		pan, err = b.buildLabel(pd, pname)
-	case descEdit:
+	case descTypeEdit:
 		pan, err = b.buildEdit(pd, pname)
 	default:
 		err = fmt.Errorf("Invalid panel type:%s", pd.Type)
@@ -236,7 +253,11 @@ func (b *Builder) buildPanel(pd *panelDesc, pname string) (IPanel, error) {
 
 	// Children
 	for i := 0; i < len(pd.Children); i++ {
-
+		child, err := b.build(pd.Children[i], pname, pan)
+		if err != nil {
+			return nil, err
+		}
+		pan.Add(child)
 	}
 
 	return pan, nil
@@ -245,6 +266,8 @@ func (b *Builder) buildPanel(pd *panelDesc, pname string) (IPanel, error) {
 func (b *Builder) buildLabel(pd *panelDesc, name string) (IPanel, error) {
 
 	label := NewLabel(pd.Text)
+	label.SetPosition(pd.Posx, pd.Posy)
+	log.Error("label pos:%v", label.Position())
 
 	return label, nil
 }
