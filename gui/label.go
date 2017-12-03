@@ -162,6 +162,23 @@ func (l *Label) FontSize() float64 {
 	return l.fontSize
 }
 
+// SetFontDPI sets the font dots per inch
+func (l *Label) SetFontDPI(dpi float64) *Label {
+
+	l.fontDPI = dpi
+	l.SetText(l.currentText)
+	return l
+}
+
+// SetLineSpacing sets the spacing between lines.
+// The default value is 1.0
+func (l *Label) SetLineSpacing(spacing float64) *Label {
+
+	l.lineSpacing = spacing
+	l.SetText(l.currentText)
+	return l
+}
+
 // setTextCaret sets the label text and draws a caret at the
 // specified line and column.
 // It is normally used by the Edit widget.

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -18,8 +19,8 @@ import (
 
 // Builder builds GUI objects from a declarative description in YAML format
 type Builder struct {
-	desc   map[string]*panelDesc
-	panels []IPanel // first level panels
+	desc    map[string]*panelDesc // parsed descriptions
+	imgpath string                // base path for image panels files
 }
 
 type panelStyle struct {
@@ -39,28 +40,33 @@ type panelStyles struct {
 }
 
 type panelDesc struct {
-	Type        string
-	Name        string
-	Posx        float32
-	Posy        float32
-	Width       float32
-	Height      float32
-	Margins     string
-	Borders     string
-	BorderColor string
-	Paddings    string
-	Color       string
-	Enabled     bool
-	Visible     bool
-	Renderable  bool
-	Children    []*panelDesc
-	Layout      layoutAttr
-	Styles      *panelStyles
-	Text        string
-	FontSize    *float32
-	FontDPI     *float32
-	PlaceHolder string
-	MaxLength   *uint
+	Type         string   // Gui object type: Panel, Label, Edit, etc ...
+	Name         string   // Optional name for identification
+	Position     string   // Optional position as: x y | x,y
+	Width        float32  // Optional width (default = 0)
+	Height       float32  // Optional height (default = 0)
+	AspectWidth  *float32 // Optional aspectwidth (default = nil)
+	AspectHeight *float32 // Optional aspectwidth (default = nil)
+	Margins      string   // Optional margins as 1 or 4 float values
+	Borders      string   // Optional borders as 1 or 4 float values
+	BorderColor  string   // Optional border color as name or 3 or 4 float values
+	Paddings     string   // Optional paddings as 1 or 4 float values
+	Color        string   // Optional color as 1 or 4 float values
+	Enabled      bool
+	Visible      bool
+	Renderable   bool
+	Imagefile    string // Optional image filepath for ImagePanel
+	Children     []*panelDesc
+	Layout       layoutAttr
+	Styles       *panelStyles
+	Text         string
+	BgColor      string
+	FontColor    string // Optional
+	FontSize     *float32
+	FontDPI      *float32
+	LineSpacing  *float32
+	PlaceHolder  string
+	MaxLength    *uint
 }
 
 type layoutAttr struct {
@@ -68,14 +74,15 @@ type layoutAttr struct {
 }
 
 const (
-	descTypePanel    = "Panel"
-	descTypeLabel    = "Label"
-	descTypeEdit     = "Edit"
-	fieldMargins     = "margins"
-	fieldBorders     = "borders"
-	fieldBorderColor = "bordercolor"
-	fieldPaddings    = "paddings"
-	fieldColor       = "color"
+	descTypePanel      = "Panel"
+	descTypeImagePanel = "ImagePanel"
+	descTypeLabel      = "Label"
+	descTypeEdit       = "Edit"
+	fieldMargins       = "margins"
+	fieldBorders       = "borders"
+	fieldBorderColor   = "bordercolor"
+	fieldPaddings      = "paddings"
+	fieldColor         = "color"
 )
 
 //
@@ -83,9 +90,7 @@ const (
 //
 func NewBuilder() *Builder {
 
-	b := new(Builder)
-
-	return b
+	return new(Builder)
 }
 
 //
@@ -170,117 +175,222 @@ func (b *Builder) Build(name string) (IPanel, error) {
 	if !ok {
 		return nil, fmt.Errorf("Object name:%s not found", name)
 	}
-	return b.build(pd, name, nil)
+	return b.build(pd, nil)
+}
+
+// Sets the path for image panels relative image files
+func (b *Builder) SetImagepath(path string) {
+
+	b.imgpath = path
 }
 
 //
-// build builds gui objects from the specified description and its children recursively
+// build builds the gui object from the specified description.
+// All its children are also built recursively
+// Returns the built object or an error
 //
-func (b *Builder) build(pd *panelDesc, pname string, parent *Panel) (IPanel, error) {
+func (b *Builder) build(pd *panelDesc, iparent IPanel) (IPanel, error) {
 
 	fmt.Printf("\n%+v\n\n", pd)
 	var err error
 	var pan IPanel
 	switch pd.Type {
 	case descTypePanel:
-		pan, err = b.buildPanel(pd, pname)
+		pan, err = b.buildPanel(pd)
+	case descTypeImagePanel:
+		pan, err = b.buildImagePanel(pd)
 	case descTypeLabel:
-		pan, err = b.buildLabel(pd, pname)
+		pan, err = b.buildLabel(pd)
 	case descTypeEdit:
-		pan, err = b.buildEdit(pd, pname)
+		pan, err = b.buildEdit(pd)
 	default:
 		err = fmt.Errorf("Invalid panel type:%s", pd.Type)
 	}
 	if err != nil {
 		return nil, err
 	}
-	if parent != nil {
-		parent.Add(pan)
+	if iparent != nil {
+		iparent.GetPanel().Add(pan)
 	}
 	return pan, nil
 }
 
-func (b *Builder) buildPanel(pd *panelDesc, pname string) (IPanel, error) {
+// buildPanel builds a gui object of type: "Panel"
+func (b *Builder) buildPanel(pd *panelDesc) (IPanel, error) {
 
-	log.Error("buildPanel:[%s]", pd.Borders)
+	// Builds panel and set common attributes
 	pan := NewPanel(pd.Width, pd.Height)
-	pan.SetPosition(pd.Posx, pd.Posy)
-
-	// Set margin sizes
-	bs, err := b.parseBorderSizes(pname, fieldMargins, pd.Margins)
+	err := b.setCommon(pd, pan)
 	if err != nil {
 		return nil, err
 	}
-	if bs != nil {
-		pan.SetMarginsFrom(bs)
-	}
 
-	// Set border sizes
-	bs, err = b.parseBorderSizes(pname, fieldBorders, pd.Borders)
-	if err != nil {
-		return nil, err
-	}
-	if bs != nil {
-		pan.SetBordersFrom(bs)
-	}
-
-	// Set border color
-	c, err := b.parseColor(pname, fieldBorderColor, pd.BorderColor)
-	if err != nil {
-		return nil, err
-	}
-	if c != nil {
-		pan.SetBordersColor4(c)
-	}
-
-	// Set paddings sizes
-	bs, err = b.parseBorderSizes(pname, fieldPaddings, pd.Paddings)
-	if err != nil {
-		return nil, err
-	}
-	if bs != nil {
-		pan.SetPaddingsFrom(bs)
-	}
-
-	// Set color
-	c, err = b.parseColor(pname, fieldColor, pd.Color)
-	if err != nil {
-		return nil, err
-	}
-	if c != nil {
-		pan.SetColor4(c)
-	}
-
-	// Children
+	// Builds panel children recursively
 	for i := 0; i < len(pd.Children); i++ {
-		child, err := b.build(pd.Children[i], pname, pan)
+		child, err := b.build(pd.Children[i], pan)
 		if err != nil {
 			return nil, err
 		}
 		pan.Add(child)
 	}
-
 	return pan, nil
 }
 
-func (b *Builder) buildLabel(pd *panelDesc, name string) (IPanel, error) {
+// buildImagePanel builds a gui object of type: "ImagePanel"
+func (b *Builder) buildImagePanel(pd *panelDesc) (IPanel, error) {
 
+	// Imagefile must be supplied
+	if pd.Imagefile == "" {
+		return nil, b.err(pd.Name, "Imagefile", "Imagefile must be supplied")
+	}
+
+	// If path is not absolute join with user supplied image base path
+	path := pd.Imagefile
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(b.imgpath, path)
+	}
+
+	// Builds panel and set common attributes
+	panel, err := NewImage(path)
+	if err != nil {
+		return nil, err
+	}
+	err = b.setCommon(pd, panel)
+	if err != nil {
+		return nil, err
+	}
+
+	// AspectWidth and AspectHeight attributes
+	if pd.AspectWidth != nil {
+		panel.SetContentAspectWidth(*pd.AspectWidth)
+	}
+	if pd.AspectHeight != nil {
+		panel.SetContentAspectHeight(*pd.AspectHeight)
+	}
+
+	// Builds panel children recursively
+	for i := 0; i < len(pd.Children); i++ {
+		child, err := b.build(pd.Children[i], panel)
+		if err != nil {
+			return nil, err
+		}
+		panel.Add(child)
+	}
+	return panel, nil
+}
+
+func (b *Builder) buildLabel(pd *panelDesc) (IPanel, error) {
+
+	// Builds panel and set common attributes
 	label := NewLabel(pd.Text)
-	label.SetPosition(pd.Posx, pd.Posy)
-	log.Error("label pos:%v", label.Position())
+	err := b.setCommon(pd, label)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set optional background color
+	c, err := b.parseColor(pd.Name, "bgcolor", pd.BgColor)
+	if err != nil {
+		return nil, err
+	}
+	if c != nil {
+		label.SetBgColor4(c)
+	}
+
+	// Set optional font color
+	c, err = b.parseColor(pd.Name, "fontcolor", pd.FontColor)
+	if err != nil {
+		return nil, err
+	}
+	if c != nil {
+		label.SetColor4(c)
+	}
+
+	// Sets optional font size
+	if pd.FontSize != nil {
+		label.SetFontSize(float64(*pd.FontSize))
+	}
+
+	// Sets optional font dpi
+	if pd.FontDPI != nil {
+		label.SetFontDPI(float64(*pd.FontDPI))
+	}
+
+	// Sets optional line spacing
+	if pd.LineSpacing != nil {
+		label.SetLineSpacing(float64(*pd.LineSpacing))
+	}
 
 	return label, nil
 }
 
-func (b *Builder) buildEdit(pa *panelDesc, name string) (IPanel, error) {
+func (b *Builder) buildEdit(pa *panelDesc) (IPanel, error) {
 
 	return nil, nil
 }
 
-//
+// setCommon sets the common attributes in the description to the specified panel
+func (b *Builder) setCommon(pd *panelDesc, ipan IPanel) error {
+
+	// Set optional position
+	panel := ipan.GetPanel()
+	if pd.Position != "" {
+		va, err := b.parseFloats(pd.Name, "position", pd.Position, 2, 2)
+		if va == nil || err != nil {
+			return err
+		}
+		panel.SetPosition(va[0], va[1])
+	}
+
+	// Set optional margin sizes
+	bs, err := b.parseBorderSizes(pd.Name, fieldMargins, pd.Margins)
+	if err != nil {
+		return err
+	}
+	if bs != nil {
+		panel.SetMarginsFrom(bs)
+	}
+
+	// Set optional border sizes
+	bs, err = b.parseBorderSizes(pd.Name, fieldBorders, pd.Borders)
+	if err != nil {
+		return err
+	}
+	if bs != nil {
+		panel.SetBordersFrom(bs)
+	}
+
+	// Set optional border color
+	c, err := b.parseColor(pd.Name, fieldBorderColor, pd.BorderColor)
+	if err != nil {
+		return err
+	}
+	if c != nil {
+		panel.SetBordersColor4(c)
+	}
+
+	// Set optional paddings sizes
+	bs, err = b.parseBorderSizes(pd.Name, fieldPaddings, pd.Paddings)
+	if err != nil {
+		return err
+	}
+	if bs != nil {
+		panel.SetPaddingsFrom(bs)
+	}
+
+	// Set optional color
+	c, err = b.parseColor(pd.Name, fieldColor, pd.Color)
+	if err != nil {
+		return err
+	}
+	if c != nil {
+		panel.SetColor4(c)
+	}
+	return nil
+}
+
 // parseBorderSizes parses a string field which can contain one float value or
 // float values. In the first case all borders has the same width
-//
 func (b *Builder) parseBorderSizes(pname, fname, field string) (*BorderSizes, error) {
 
 	va, err := b.parseFloats(pname, fname, field, 1, 4)
@@ -340,7 +450,7 @@ func (b *Builder) parseFloats(pname, fname, field string, min, max int) ([]float
 	// Separate individual fields
 	var parts []string
 	if strings.Index(field, ",") < 0 {
-		parts = strings.Split(field, " ")
+		parts = strings.Fields(field)
 	} else {
 		parts = strings.Split(field, ",")
 	}
@@ -351,7 +461,7 @@ func (b *Builder) parseFloats(pname, fname, field string, min, max int) ([]float
 	// Parse each field value and appends to slice
 	var values []float32
 	for i := 0; i < len(parts); i++ {
-		val, err := strconv.ParseFloat(parts[i], 32)
+		val, err := strconv.ParseFloat(strings.Trim(parts[i], " "), 32)
 		if err != nil {
 			return nil, fmt.Errorf("Error parsing float32 field:[%s]: %s", field, err)
 		}
