@@ -21,6 +21,37 @@ import (
 type Builder struct {
 	desc    map[string]*panelDesc // parsed descriptions
 	imgpath string                // base path for image panels files
+	objpath strStack              // current object stack
+}
+
+type strStack struct {
+	stack []string
+}
+
+func (ss *strStack) clear() {
+
+	ss.stack = []string{}
+}
+func (ss *strStack) push(v string) {
+
+	ss.stack = append(ss.stack, v)
+}
+
+func (ss *strStack) pop() string {
+
+	if len(ss.stack) == 0 {
+		return ""
+	}
+	length := len(ss.stack)
+	v := ss.stack[length-1]
+	ss.stack = ss.stack[:length-1]
+	log.Error("pop--------->%v", ss.stack)
+	return v
+}
+
+func (ss *strStack) path() string {
+
+	return strings.Join(ss.stack, "/")
 }
 
 type panelStyle struct {
@@ -55,18 +86,19 @@ type panelDesc struct {
 	Enabled      bool
 	Visible      bool
 	Renderable   bool
-	Imagefile    string // Optional image filepath for ImagePanel
+	Imagefile    string // For Panel, Button
 	Children     []*panelDesc
 	Layout       layoutAttr
 	Styles       *panelStyles
-	Text         string
-	BgColor      string
-	FontColor    string // Optional
-	FontSize     *float32
-	FontDPI      *float32
-	LineSpacing  *float32
-	PlaceHolder  string
-	MaxLength    *uint
+	Text         string   // Label, Button
+	BgColor      string   // Label
+	FontColor    string   // Label
+	FontSize     *float32 // Label
+	FontDPI      *float32 // Label
+	LineSpacing  *float32 // Label
+	PlaceHolder  string   // Edit
+	MaxLength    *uint    // Edit
+	Icon         string   // Button
 }
 
 type layoutAttr struct {
@@ -77,26 +109,25 @@ const (
 	descTypePanel      = "Panel"
 	descTypeImagePanel = "ImagePanel"
 	descTypeLabel      = "Label"
+	descTypeIconLabel  = "IconLabel"
+	descTypeButton     = "Button"
 	descTypeEdit       = "Edit"
 	fieldMargins       = "margins"
 	fieldBorders       = "borders"
 	fieldBorderColor   = "bordercolor"
 	fieldPaddings      = "paddings"
 	fieldColor         = "color"
+	fieldBgColor       = "bgcolor"
 )
 
-//
 // NewBuilder creates and returns a pointer to a new gui Builder object
-//
 func NewBuilder() *Builder {
 
 	return new(Builder)
 }
 
-//
 // ParseString parses a string with gui objects descriptions in YAML format
 // It there was a previously parsed description, it is cleared.
-//
 func (b *Builder) ParseString(desc string) error {
 
 	// Try assuming the description contains a single root panel
@@ -108,7 +139,6 @@ func (b *Builder) ParseString(desc string) error {
 	if pd.Type != "" {
 		b.desc = make(map[string]*panelDesc)
 		b.desc[""] = &pd
-		fmt.Printf("\n%+v\n", b.desc)
 		return nil
 	}
 
@@ -119,14 +149,11 @@ func (b *Builder) ParseString(desc string) error {
 		return err
 	}
 	b.desc = pdm
-	fmt.Printf("\n%+v\n", b.desc)
 	return nil
 }
 
-//
 // ParseFile builds gui objects from the specified file which
 // must contain objects descriptions in YAML format
-//
 func (b *Builder) ParseFile(filepath string) error {
 
 	// Reads all file data
@@ -147,34 +174,35 @@ func (b *Builder) ParseFile(filepath string) error {
 	return b.ParseString(string(data))
 }
 
-//
 // Names returns a sorted list of names of top level previously parsed objects.
+// Only objects with defined types are returned.
 // If there is only a single object with no name, its name is returned
 // as an empty string
-//
 func (b *Builder) Names() []string {
 
 	var objs []string
-	for name, _ := range b.desc {
-		objs = append(objs, name)
+	for name, pd := range b.desc {
+		if pd.Type != "" {
+			objs = append(objs, name)
+		}
 	}
 	sort.Strings(objs)
 	return objs
 }
 
-//
 // Build builds a gui object and all its children recursively.
 // The specified name should be a top level name from a
 // from a previously parsed description
 // If the descriptions contains a single object with no name,
 // It should be specified the empty string to build this object.
-//
 func (b *Builder) Build(name string) (IPanel, error) {
 
 	pd, ok := b.desc[name]
 	if !ok {
 		return nil, fmt.Errorf("Object name:%s not found", name)
 	}
+	b.objpath.clear()
+	b.objpath.push(pd.Name)
 	return b.build(pd, nil)
 }
 
@@ -184,14 +212,11 @@ func (b *Builder) SetImagepath(path string) {
 	b.imgpath = path
 }
 
-//
 // build builds the gui object from the specified description.
 // All its children are also built recursively
 // Returns the built object or an error
-//
 func (b *Builder) build(pd *panelDesc, iparent IPanel) (IPanel, error) {
 
-	fmt.Printf("\n%+v\n\n", pd)
 	var err error
 	var pan IPanel
 	switch pd.Type {
@@ -201,6 +226,10 @@ func (b *Builder) build(pd *panelDesc, iparent IPanel) (IPanel, error) {
 		pan, err = b.buildImagePanel(pd)
 	case descTypeLabel:
 		pan, err = b.buildLabel(pd)
+	case descTypeIconLabel:
+		pan, err = b.buildLabel(pd)
+	case descTypeButton:
+		pan, err = b.buildButton(pd)
 	case descTypeEdit:
 		pan, err = b.buildEdit(pd)
 	default:
@@ -227,7 +256,9 @@ func (b *Builder) buildPanel(pd *panelDesc) (IPanel, error) {
 
 	// Builds panel children recursively
 	for i := 0; i < len(pd.Children); i++ {
+		b.objpath.push(pd.Children[i].Name)
 		child, err := b.build(pd.Children[i], pan)
+		b.objpath.pop()
 		if err != nil {
 			return nil, err
 		}
@@ -241,7 +272,7 @@ func (b *Builder) buildImagePanel(pd *panelDesc) (IPanel, error) {
 
 	// Imagefile must be supplied
 	if pd.Imagefile == "" {
-		return nil, b.err(pd.Name, "Imagefile", "Imagefile must be supplied")
+		return nil, b.err("Imagefile", "Imagefile must be supplied")
 	}
 
 	// If path is not absolute join with user supplied image base path
@@ -270,7 +301,9 @@ func (b *Builder) buildImagePanel(pd *panelDesc) (IPanel, error) {
 
 	// Builds panel children recursively
 	for i := 0; i < len(pd.Children); i++ {
+		b.objpath.push(pd.Children[i].Name)
 		child, err := b.build(pd.Children[i], panel)
+		b.objpath.pop()
 		if err != nil {
 			return nil, err
 		}
@@ -279,17 +312,26 @@ func (b *Builder) buildImagePanel(pd *panelDesc) (IPanel, error) {
 	return panel, nil
 }
 
+// buildLabel builds a gui object of type: "Label"
 func (b *Builder) buildLabel(pd *panelDesc) (IPanel, error) {
 
-	// Builds panel and set common attributes
-	label := NewLabel(pd.Text)
+	var label *Label
+	if pd.Type == descTypeLabel {
+		label = NewLabel(pd.Text)
+	} else {
+		icons, err := b.parseIconNames(pd.Name, "text", pd.Text)
+		if err != nil {
+			return nil, err
+		}
+		label = NewIconLabel(icons)
+	}
 	err := b.setCommon(pd, label)
 	if err != nil {
 		return nil, err
 	}
 
 	// Set optional background color
-	c, err := b.parseColor(pd.Name, "bgcolor", pd.BgColor)
+	c, err := b.parseColor(pd.Name, fieldBgColor, pd.BgColor)
 	if err != nil {
 		return nil, err
 	}
@@ -324,6 +366,49 @@ func (b *Builder) buildLabel(pd *panelDesc) (IPanel, error) {
 	return label, nil
 }
 
+// buildButtonl builds a gui object of type: "Button"
+func (b *Builder) buildButton(pd *panelDesc) (IPanel, error) {
+
+	// Builds button and set commont attributes
+	button := NewButton(pd.Text)
+	err := b.setCommon(pd, button)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sets optional icon
+	if pd.Icon != "" {
+		cp, err := b.parseIconName(pd.Name, "icon", pd.Icon)
+		if err != nil {
+			return nil, err
+		}
+		button.SetIcon(int(cp))
+	}
+
+	// Sets optional image from file
+	// If path is not absolute join with user supplied image base path
+	if pd.Imagefile != "" {
+		path := pd.Imagefile
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(b.imgpath, path)
+		}
+		err := button.SetImage(path)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Sets optional styles
+	if pd.Styles != nil {
+		err := b.setStyles(pd.Name, pd.Styles, button)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return button, nil
+}
+
+// buildEdit builds a gui object of type: "Edit"
 func (b *Builder) buildEdit(pa *panelDesc) (IPanel, error) {
 
 	return nil, nil
@@ -389,6 +474,11 @@ func (b *Builder) setCommon(pd *panelDesc, ipan IPanel) error {
 	return nil
 }
 
+func (b *Builder) setStyles(pname string, ps *panelStyles, ipan IPanel) error {
+
+	return nil
+}
+
 // parseBorderSizes parses a string field which can contain one float value or
 // float values. In the first case all borders has the same width
 func (b *Builder) parseBorderSizes(pname, fname, field string) (*BorderSizes, error) {
@@ -403,10 +493,8 @@ func (b *Builder) parseBorderSizes(pname, fname, field string) (*BorderSizes, er
 	return &BorderSizes{va[0], va[1], va[2], va[3]}, nil
 }
 
-//
 // parseColor parses a string field which can contain a color name or
 // a list of 3 or 4 float values for the color components
-//
 func (b *Builder) parseColor(pname, fname, field string) (*math32.Color4, error) {
 
 	// Checks if field is empty
@@ -415,12 +503,23 @@ func (b *Builder) parseColor(pname, fname, field string) (*math32.Color4, error)
 		return nil, nil
 	}
 
-	// Checks if field is a color name
-	value := math32.ColorUint(field)
-	if value != 0 {
-		var c math32.Color
-		c.SetName(field)
-		return &math32.Color4{c.R, c.G, c.B, 1}, nil
+	// If string has 1 or 2 fields it must be a color name and optional alpha
+	parts := strings.Fields(field)
+	if len(parts) == 1 || len(parts) == 2 {
+		// First part must be a color name
+		if !math32.IsColor(parts[0]) {
+			return nil, b.err(fname, fmt.Sprintf("Invalid color name:%s", parts[0]))
+		}
+		c := math32.ColorName(parts[0])
+		c4 := math32.Color4{c.R, c.G, c.B, 1}
+		if len(parts) == 2 {
+			val, err := strconv.ParseFloat(parts[1], 32)
+			if err != nil {
+				return nil, b.err(fname, fmt.Sprintf("Invalid float32 value:%s", parts[1]))
+			}
+			c4.A = float32(val)
+		}
+		return &c4, nil
 	}
 
 	// Accept 3 or 4 floats values
@@ -434,11 +533,36 @@ func (b *Builder) parseColor(pname, fname, field string) (*math32.Color4, error)
 	return &math32.Color4{va[0], va[1], va[2], va[3]}, nil
 }
 
-//
+// parseIconNames parses a string with a list of icon names or codepoints and
+// returns a string with the icons codepoints encoded in UTF8
+func (b *Builder) parseIconNames(pname, fname, field string) (string, error) {
+
+	text := ""
+	parts := strings.Fields(field)
+	for i := 0; i < len(parts); i++ {
+		cp, err := b.parseIconName(pname, fname, parts[i])
+		if err != nil {
+			return "", err
+		}
+		text = text + string(cp)
+	}
+	return text, nil
+}
+
+// parseIconName parses a string with an icon name or codepoint in hex
+// and returns the icon codepoints value and an error
+func (b *Builder) parseIconName(pname, fname, field string) (uint, error) {
+
+	cp, err := strconv.ParseUint(field, 16, 32)
+	if err != nil {
+		return 0, b.err(fname, fmt.Sprintf("Invalid icon codepoint value/name:%v", field))
+	}
+	return uint(cp), nil
+}
+
 // parseFloats parses a string with a list of floats with the specified size
 // and returns a slice. The specified size is 0 any number of floats is allowed.
 // The individual values can be separated by spaces or commas
-//
 func (b *Builder) parseFloats(pname, fname, field string, min, max int) ([]float32, error) {
 
 	// Checks if field is empty
@@ -455,7 +579,7 @@ func (b *Builder) parseFloats(pname, fname, field string, min, max int) ([]float
 		parts = strings.Split(field, ",")
 	}
 	if len(parts) < min || len(parts) > max {
-		return nil, b.err(pname, fname, "Invalid number of float32 values")
+		return nil, b.err(fname, "Invalid number of float32 values")
 	}
 
 	// Parse each field value and appends to slice
@@ -463,14 +587,14 @@ func (b *Builder) parseFloats(pname, fname, field string, min, max int) ([]float
 	for i := 0; i < len(parts); i++ {
 		val, err := strconv.ParseFloat(strings.Trim(parts[i], " "), 32)
 		if err != nil {
-			return nil, fmt.Errorf("Error parsing float32 field:[%s]: %s", field, err)
+			return nil, b.err(fname, err.Error())
 		}
 		values = append(values, float32(val))
 	}
 	return values, nil
 }
 
-func (b *Builder) err(pname, fname, msg string) error {
+func (b *Builder) err(fname, msg string) error {
 
-	return fmt.Errorf("Error in object:%s field:%s -> %s", pname, fname, msg)
+	return fmt.Errorf("Error in object:%s field:%s -> %s", b.objpath.path(), fname, msg)
 }

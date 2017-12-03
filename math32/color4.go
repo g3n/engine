@@ -47,11 +47,11 @@ func (c *Color4) SetHex(value uint) *Color4 {
 }
 
 // SetName sets the color RGB components from the
-// specified HTML color name
-// Alpha component is not modified
+// specified standard web color name
 func (c *Color4) SetName(name string) *Color4 {
 
-	return c.SetHex(colorKeywords[name])
+	*c = Color4Name(name, 1)
+	return c
 }
 
 func (c *Color4) Add(other *Color4) *Color4 {
