@@ -105,8 +105,11 @@ func Decode(objpath string, mtlpath string) (*Decoder, error) {
 	defer fmtl.Close()
 
 	dec, err := DecodeReader(fobj, fmtl)
+	if err != nil {
+		return nil, err
+	}
 	dec.mtlDir = filepath.Dir(objpath)
-	return dec, err
+	return dec, nil
 }
 
 // DecodeReader decodes the specified obj and mtl readers returning a decoder
@@ -322,7 +325,7 @@ func (dec *Decoder) parse(reader io.Reader, parseLine func(string) error) error 
 func (dec *Decoder) parseObjLine(line string) error {
 
 	// Ignore empty lines
-	fields := strings.Split(line, " ")
+	fields := strings.Fields(line)
 	if len(fields) == 0 {
 		return nil
 	}
@@ -591,7 +594,7 @@ mtl parse functions
 func (dec *Decoder) parseMtlLine(line string) error {
 
 	// Ignore empty lines
-	fields := strings.Split(line, " ")
+	fields := strings.Fields(line)
 	if len(fields) == 0 {
 		return nil
 	}
