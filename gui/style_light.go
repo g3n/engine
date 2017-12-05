@@ -408,7 +408,7 @@ func NewLightStyle() *Style {
 			BorderColor: borderColor,
 			BgColor:     bgColor,
 			FgColor:     fgColor,
-			Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
+			Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
 		},
 		Over: &FolderStyle{
 			Margins:     BorderSizes{0, 0, 0, 0},
@@ -417,7 +417,7 @@ func NewLightStyle() *Style {
 			BorderColor: borderColor,
 			BgColor:     bgColorOver,
 			FgColor:     fgColor,
-			Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
+			Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
 		},
 		Focus: &FolderStyle{
 			Margins:     BorderSizes{0, 0, 0, 0},
@@ -426,7 +426,7 @@ func NewLightStyle() *Style {
 			BorderColor: borderColor,
 			BgColor:     bgColorOver,
 			FgColor:     fgColor,
-			Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
+			Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
 		},
 		Disabled: &FolderStyle{
 			Margins:     BorderSizes{0, 0, 0, 0},
@@ -435,7 +435,7 @@ func NewLightStyle() *Style {
 			BorderColor: borderColor,
 			BgColor:     bgColorOver,
 			FgColor:     fgColor,
-			Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
+			Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
 		},
 	}
 
@@ -509,7 +509,7 @@ func NewLightStyle() *Style {
 				BorderColor: borderColor,
 				BgColor:     bgColor4,
 				FgColor:     fgColor,
-				Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
+				Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
 			},
 		},
 		Padlevel: 16.0,
@@ -524,7 +524,7 @@ func NewLightStyle() *Style {
 				BorderColor: math32.Color4{0, 0, 0, 0},
 				BgColor:     math32.Color{0, 0.5, 1},
 				FgColor:     fgColor,
-				Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
+				Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
 			},
 			Over: &FolderStyle{
 				Margins:     BorderSizes{0, 0, 0, 0},
@@ -533,7 +533,7 @@ func NewLightStyle() *Style {
 				BorderColor: math32.Color4{0, 0, 0, 0},
 				BgColor:     math32.Color{0, 0.5, 1},
 				FgColor:     fgColor,
-				Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
+				Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
 			},
 			Focus: &FolderStyle{
 				Margins:     BorderSizes{0, 0, 0, 0},
@@ -542,7 +542,7 @@ func NewLightStyle() *Style {
 				BorderColor: math32.Color4{0, 0, 0, 0},
 				BgColor:     math32.Color{0, 0.5, 1},
 				FgColor:     fgColor,
-				Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
+				Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
 			},
 			Disabled: &FolderStyle{
 				Margins:     BorderSizes{0, 0, 0, 0},
@@ -551,7 +551,7 @@ func NewLightStyle() *Style {
 				BorderColor: math32.Color4{0, 0, 0, 0},
 				BgColor:     math32.Color{0, 0.5, 1},
 				FgColor:     fgColor,
-				Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
+				Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
 			},
 		},
 		Tree: &TreeStyles{
@@ -624,7 +624,7 @@ func NewLightStyle() *Style {
 					BorderColor: borderColor,
 					BgColor:     bgColor4,
 					FgColor:     fgColor,
-					Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
+					Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
 				},
 			},
 			Padlevel: 2.0,

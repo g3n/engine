@@ -153,21 +153,21 @@ const templText = `//
 package {{.Packname}}
 const (
 	{{range .Consts}}
-		{{.Name}} = {{.Value}}
+		{{.Name}} = string({{.Value}})
 	{{- end}}
 )
 
 // IconCodepoint returns the codepoint for the specified icon name.
 // Returns 0 if the name not found
-func Codepoint(name string) uint {
+func Codepoint(name string) string {
 
 	return name2Codepoint[name]
 }
 
 // Maps icon name to codepoint
-var name2Codepoint = map[string]uint{
+var name2Codepoint = map[string]string{
 	{{range .Consts}}
-		"{{.Name}}": {{.Value}},	
+		"{{.Name}}": string({{.Value}}),	
 	{{- end}}
 }
 `

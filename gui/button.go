@@ -83,9 +83,9 @@ func NewButton(text string) *Button {
 
 // SetIcon sets the button icon from the default Icon font.
 // If there is currently a selected image, it is removed
-func (b *Button) SetIcon(icode int) {
+func (b *Button) SetIcon(icode string) {
 
-	ico := NewLabel(string(icode), true)
+	ico := NewLabel(icode, true)
 	if b.image != nil {
 		b.Panel.Remove(b.image)
 		b.image = nil

@@ -1,7 +1,6 @@
 // Copyright 2016 The G3N Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-
 package gui
 
 import (
@@ -15,6 +14,7 @@ import (
 
 	"github.com/g3n/engine/gui/assets/icon"
 	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/window"
 	"gopkg.in/yaml.v2"
 )
 
@@ -25,22 +25,13 @@ type Builder struct {
 	objpath strStack              // stack of object names being built
 }
 
-type panelStyle struct {
-	Borders     string
-	Paddings    string
-	BorderColor string
-	BgColor     string
-	FgColor     string
+// descLayout describes all layout types
+type descLayout struct {
+	Type    string // HBox, VBox, Dock
+	Spacing float32
 }
 
-type panelStyles struct {
-	Normal   *panelStyle
-	Over     *panelStyle
-	Focus    *panelStyle
-	Pressed  *panelStyle
-	Disabled *panelStyle
-}
-
+// descPanel describes all panel types
 type panelDesc struct {
 	Type         string   // Gui object type: Panel, Label, Edit, etc ...
 	Name         string   // Optional name for identification
@@ -57,25 +48,25 @@ type panelDesc struct {
 	Enabled      bool
 	Visible      bool
 	Renderable   bool
-	Imagefile    string // For Panel, Button
-	Children     []*panelDesc
-	Layout       layoutAttr
-	Styles       *panelStyles
-	Text         string   // Label, Button
-	Icons        string   // Label
-	BgColor      string   // Label
-	FontColor    string   // Label
-	FontSize     *float32 // Label
-	FontDPI      *float32 // Label
-	LineSpacing  *float32 // Label
-	PlaceHolder  string   // Edit
-	MaxLength    *uint    // Edit
-	Icon         string   // Button
-	Group        string   // RadioButton
-}
-
-type layoutAttr struct {
-	Type string
+	Imagefile    string       // For Panel, Button
+	Children     []*panelDesc // Panel
+	Layout       descLayout
+	Text         string       // Label, Button
+	Icons        string       // Label
+	BgColor      string       // Label
+	FontColor    string       // Label
+	FontSize     *float32     // Label
+	FontDPI      *float32     // Label
+	LineSpacing  *float32     // Label
+	PlaceHolder  string       // Edit
+	MaxLength    *uint        // Edit
+	Icon         string       // Button
+	Group        string       // RadioButton
+	ImageLabel   *panelDesc   // DropDown
+	Items        []*panelDesc // Menu, MenuBar
+	Shortcut     string       // Menu
+	Value        *float32     // Slider
+	ScaleFactor  *float32     // Slider
 }
 
 const (
@@ -89,6 +80,11 @@ const (
 	descTypeEdit        = "Edit"
 	descTypeVList       = "VList"
 	descTypeHList       = "HList"
+	descTypeDropDown    = "DropDown"
+	descTypeHSlider     = "HSlider"
+	descTypeVSlider     = "VSlider"
+	descTypeMenuBar     = "MenuBar"
+	descTypeMenu        = "Menu"
 	fieldMargins        = "margins"
 	fieldBorders        = "borders"
 	fieldBorderColor    = "bordercolor"
@@ -129,8 +125,8 @@ func (b *Builder) ParseString(desc string) error {
 	return nil
 }
 
-// ParseFile builds gui objects from the specified file which
-// must contain objects descriptions in YAML format
+// ParseFile parses a file with gui objects descriptions in YAML format
+// It there was a previously parsed description, it is cleared.
 func (b *Builder) ParseFile(filepath string) error {
 
 	// Reads all file data
@@ -217,6 +213,16 @@ func (b *Builder) build(pd *panelDesc, iparent IPanel) (IPanel, error) {
 		pan, err = b.buildVList(pd)
 	case descTypeHList:
 		pan, err = b.buildHList(pd)
+	case descTypeDropDown:
+		pan, err = b.buildDropDown(pd)
+	case descTypeHSlider:
+		pan, err = b.buildSlider(pd, true)
+	case descTypeVSlider:
+		pan, err = b.buildSlider(pd, false)
+	case descTypeMenuBar:
+		pan, err = b.buildMenu(pd, false, true)
+	case descTypeMenu:
+		pan, err = b.buildMenu(pd, false, false)
 	default:
 		err = fmt.Errorf("Invalid panel type:%s", pd.Type)
 	}
@@ -391,7 +397,7 @@ func (b *Builder) buildButton(pd *panelDesc) (IPanel, error) {
 		if err != nil {
 			return nil, err
 		}
-		button.SetIcon(int(cp))
+		button.SetIcon(cp)
 	}
 
 	// Sets optional image from file
@@ -499,18 +505,138 @@ func (b *Builder) buildHList(pd *panelDesc) (IPanel, error) {
 	return list, nil
 }
 
+// buildDropDown builds a gui object of type: DropDown
+func (b *Builder) buildDropDown(pd *panelDesc) (IPanel, error) {
+
+	var imglabel *ImageLabel
+	if pd.ImageLabel != nil {
+		pd.ImageLabel.Type = descTypeImageLabel
+		ipan, err := b.build(pd.ImageLabel, nil)
+		if err != nil {
+			return nil, err
+		}
+		imglabel = ipan.(*ImageLabel)
+	} else {
+		imglabel = NewImageLabel("")
+	}
+
+	// Builds drop down and set common attributes
+	dd := NewDropDown(pd.Width, imglabel)
+	err := b.setCommon(pd, dd)
+	if err != nil {
+		return nil, err
+	}
+
+	// Builds drop down children
+	for i := 0; i < len(pd.Children); i++ {
+		pdchild := pd.Children[i]
+		pdchild.Type = descTypeImageLabel
+		b.objpath.push(pdchild.Name)
+		child, err := b.build(pdchild, dd)
+		b.objpath.pop()
+		if err != nil {
+			return nil, err
+		}
+		dd.Add(child.(*ImageLabel))
+	}
+	return dd, nil
+}
+
+// buildSlider builds a gui object of type: HSlider or VSlider
+func (b *Builder) buildSlider(pd *panelDesc, horiz bool) (IPanel, error) {
+
+	// Builds slider and sets its position
+	var slider *Slider
+	if horiz {
+		slider = NewHSlider(pd.Width, pd.Height)
+		log.Error("slider:%v/%v", pd.Width, pd.Height)
+	} else {
+		slider = NewVSlider(pd.Width, pd.Height)
+	}
+	err := b.setPosition(pd, slider)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sets optional text
+	if pd.Text != "" {
+		slider.SetText(pd.Text)
+	}
+	// Sets optional scale factor
+	if pd.ScaleFactor != nil {
+		slider.SetScaleFactor(*pd.ScaleFactor)
+	}
+	// Sets optional value
+	if pd.Value != nil {
+		slider.SetValue(*pd.Value)
+	}
+	return slider, nil
+}
+
+// buildMenu builds a gui object of type: Menu or MenuBar from the
+// specified panel descriptor.
+func (b *Builder) buildMenu(pd *panelDesc, child, bar bool) (IPanel, error) {
+
+	// Builds menu bar or menu
+	var menu *Menu
+	if bar {
+		menu = NewMenuBar()
+	} else {
+		menu = NewMenu()
+	}
+	// Only sets position for top level menus
+	if !child {
+		err := b.setPosition(pd, menu)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Builds and adds menu items
+	for i := 0; i < len(pd.Items); i++ {
+		item := pd.Items[i]
+		// Item is another menu
+		if item.Type == descTypeMenu {
+			subm, err := b.buildMenu(item, true, false)
+			if err != nil {
+				return nil, err
+			}
+			menu.AddMenu(item.Text, subm.(*Menu))
+			continue
+		}
+		// Item is a separator
+		if item.Type == "Separator" {
+			menu.AddSeparator()
+			continue
+		}
+		// Item must be a menu option
+		mi := menu.AddOption(item.Text)
+		// Set item optional icon(s)
+		icons, err := b.parseIconNames("icon", item.Icon)
+		if err != nil {
+			return nil, err
+		}
+		if icons != "" {
+			mi.SetIcon(string(icons))
+		}
+		// Sets optional menu item shortcut
+		err = b.setMenuShortcut(mi, "shortcut", item.Shortcut)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return menu, nil
+}
+
 // setCommon sets the common attributes in the description to the specified panel
 func (b *Builder) setCommon(pd *panelDesc, ipan IPanel) error {
 
 	// Set optional position
-	panel := ipan.GetPanel()
-	if pd.Position != "" {
-		va, err := b.parseFloats("position", pd.Position, 2, 2)
-		if va == nil || err != nil {
-			return err
-		}
-		panel.SetPosition(va[0], va[1])
+	err := b.setPosition(pd, ipan)
+	if err != nil {
+		return err
 	}
+	panel := ipan.GetPanel()
 
 	// Set optional margin sizes
 	bs, err := b.parseBorderSizes(fieldMargins, pd.Margins)
@@ -557,6 +683,51 @@ func (b *Builder) setCommon(pd *panelDesc, ipan IPanel) error {
 		panel.SetColor4(c)
 	}
 	return nil
+}
+
+// Sets the panel optional position from the specified panel descriptor
+func (b *Builder) setPosition(pd *panelDesc, ipan IPanel) error {
+
+	if pd.Position == "" {
+		return nil
+	}
+	va, err := b.parseFloats("position", pd.Position, 2, 2)
+	if va == nil || err != nil {
+		return err
+	}
+	ipan.GetPanel().SetPosition(va[0], va[1])
+	return nil
+}
+
+func (b *Builder) setMenuShortcut(mi *MenuItem, fname, field string) error {
+
+	field = strings.Trim(field, " ")
+	if field == "" {
+		return nil
+	}
+	parts := strings.Split(field, "+")
+	var mods window.ModifierKey
+	for i := 0; i < len(parts)-1; i++ {
+		switch parts[i] {
+		case "Shift":
+			mods |= window.ModShift
+		case "Ctrl":
+			mods |= window.ModControl
+		case "Alt":
+			mods |= window.ModAlt
+		default:
+			return b.err(fname, "Invalid shortcut:"+field)
+		}
+	}
+	// The last part must be a key
+	key := parts[len(parts)-1]
+	for kcode, kname := range mapKeyText {
+		if kname == key {
+			mi.SetShortcut(mods, kcode)
+			return nil
+		}
+	}
+	return b.err(fname, "Invalid shortcut:"+field)
 }
 
 // parseBorderSizes parses a string field which can contain one float value or
@@ -631,20 +802,20 @@ func (b *Builder) parseIconNames(fname, field string) (string, error) {
 
 // parseIconName parses a string with an icon name or codepoint in hex
 // and returns the icon codepoints value and an error
-func (b *Builder) parseIconName(fname, field string) (uint, error) {
+func (b *Builder) parseIconName(fname, field string) (string, error) {
 
 	// Try name first
 	cp := icon.Codepoint(field)
-	if cp != 0 {
+	if cp != "" {
 		return cp, nil
 	}
 
 	// Try to parse as hex value
 	cp2, err := strconv.ParseUint(field, 16, 32)
 	if err != nil {
-		return 0, b.err(fname, fmt.Sprintf("Invalid icon codepoint value/name:%v", field))
+		return "", b.err(fname, fmt.Sprintf("Invalid icon codepoint value/name:%v", field))
 	}
-	return uint(cp2), nil
+	return string(cp2), nil
 }
 
 // parseFloats parses a string with a list of floats with the specified size

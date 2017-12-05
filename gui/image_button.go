@@ -106,7 +106,7 @@ func (b *ImageButton) SetText(text string) {
 }
 
 // SetIcon sets the icon
-func (b *ImageButton) SetIcon(icode int) {
+func (b *ImageButton) SetIcon(icode string) {
 
 	if b.iconLabel == false && b.label != nil {
 		b.Panel.Remove(b.label)
@@ -117,10 +117,10 @@ func (b *ImageButton) SetIcon(icode int) {
 	b.iconLabel = true
 	if b.label == nil {
 		// Create icon
-		b.label = NewLabel(string(icode), true)
+		b.label = NewLabel(icode, true)
 		b.Panel.Add(b.label)
 	} else {
-		b.label.SetText(string(icode))
+		b.label.SetText(icode)
 	}
 	b.recalc()
 }

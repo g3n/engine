@@ -596,7 +596,7 @@ func newMenuItem(text string, styles *MenuItemStyles) *MenuItem {
 
 // SetIcon sets the left icon of this menu item
 // If an image was previously set it is replaced by this icon
-func (mi *MenuItem) SetIcon(icode int) *MenuItem {
+func (mi *MenuItem) SetIcon(icon string) *MenuItem {
 
 	// Remove and dispose previous icon
 	if mi.licon != nil {
@@ -605,7 +605,7 @@ func (mi *MenuItem) SetIcon(icode int) *MenuItem {
 		mi.licon = nil
 	}
 	// Sets the new icon
-	mi.licon = NewLabel(string(icode), true)
+	mi.licon = NewLabel(icon, true)
 	mi.Panel.Add(mi.licon)
 	mi.update()
 	return mi

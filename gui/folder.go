@@ -25,7 +25,7 @@ type FolderStyle struct {
 	BorderColor math32.Color4
 	BgColor     math32.Color
 	FgColor     math32.Color
-	Icons       [2]int
+	Icons       [2]string
 }
 
 type FolderStyles struct {

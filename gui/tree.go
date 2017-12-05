@@ -31,7 +31,7 @@ type TreeNodeStyle struct {
 	BorderColor math32.Color4
 	BgColor     math32.Color4
 	FgColor     math32.Color
-	Icons       [2]int
+	Icons       [2]string
 }
 
 type TreeNode struct {
