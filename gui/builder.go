@@ -290,7 +290,7 @@ func (b *Builder) buildLabel(pd *panelDesc) (IPanel, error) {
 	if pd.Type == descTypeLabel {
 		label = NewLabel(pd.Text)
 	} else {
-		icons, err := b.parseIconNames(pd.Name, "text", pd.Text)
+		icons, err := b.parseIconNames("text", pd.Text)
 		if err != nil {
 			return nil, err
 		}
@@ -302,7 +302,7 @@ func (b *Builder) buildLabel(pd *panelDesc) (IPanel, error) {
 	}
 
 	// Set optional background color
-	c, err := b.parseColor(pd.Name, fieldBgColor, pd.BgColor)
+	c, err := b.parseColor(fieldBgColor, pd.BgColor)
 	if err != nil {
 		return nil, err
 	}
@@ -311,7 +311,7 @@ func (b *Builder) buildLabel(pd *panelDesc) (IPanel, error) {
 	}
 
 	// Set optional font color
-	c, err = b.parseColor(pd.Name, "fontcolor", pd.FontColor)
+	c, err = b.parseColor("fontcolor", pd.FontColor)
 	if err != nil {
 		return nil, err
 	}
@@ -349,7 +349,7 @@ func (b *Builder) buildButton(pd *panelDesc) (IPanel, error) {
 
 	// Sets optional icon
 	if pd.Icon != "" {
-		cp, err := b.parseIconName(pd.Name, "icon", pd.Icon)
+		cp, err := b.parseIconName("icon", pd.Icon)
 		if err != nil {
 			return nil, err
 		}
@@ -371,7 +371,9 @@ func (b *Builder) buildButton(pd *panelDesc) (IPanel, error) {
 
 	// Sets optional styles
 	if pd.Styles != nil {
-		err := b.setStyles(pd.Name, pd.Styles, button)
+		//bstyles := &StyleDefault.Button
+
+		err := b.setStyles(pd.Styles, button)
 		if err != nil {
 			return nil, err
 		}
@@ -391,7 +393,7 @@ func (b *Builder) setCommon(pd *panelDesc, ipan IPanel) error {
 	// Set optional position
 	panel := ipan.GetPanel()
 	if pd.Position != "" {
-		va, err := b.parseFloats(pd.Name, "position", pd.Position, 2, 2)
+		va, err := b.parseFloats("position", pd.Position, 2, 2)
 		if va == nil || err != nil {
 			return err
 		}
@@ -399,7 +401,7 @@ func (b *Builder) setCommon(pd *panelDesc, ipan IPanel) error {
 	}
 
 	// Set optional margin sizes
-	bs, err := b.parseBorderSizes(pd.Name, fieldMargins, pd.Margins)
+	bs, err := b.parseBorderSizes(fieldMargins, pd.Margins)
 	if err != nil {
 		return err
 	}
@@ -408,7 +410,7 @@ func (b *Builder) setCommon(pd *panelDesc, ipan IPanel) error {
 	}
 
 	// Set optional border sizes
-	bs, err = b.parseBorderSizes(pd.Name, fieldBorders, pd.Borders)
+	bs, err = b.parseBorderSizes(fieldBorders, pd.Borders)
 	if err != nil {
 		return err
 	}
@@ -417,7 +419,7 @@ func (b *Builder) setCommon(pd *panelDesc, ipan IPanel) error {
 	}
 
 	// Set optional border color
-	c, err := b.parseColor(pd.Name, fieldBorderColor, pd.BorderColor)
+	c, err := b.parseColor(fieldBorderColor, pd.BorderColor)
 	if err != nil {
 		return err
 	}
@@ -426,7 +428,7 @@ func (b *Builder) setCommon(pd *panelDesc, ipan IPanel) error {
 	}
 
 	// Set optional paddings sizes
-	bs, err = b.parseBorderSizes(pd.Name, fieldPaddings, pd.Paddings)
+	bs, err = b.parseBorderSizes(fieldPaddings, pd.Paddings)
 	if err != nil {
 		return err
 	}
@@ -435,7 +437,7 @@ func (b *Builder) setCommon(pd *panelDesc, ipan IPanel) error {
 	}
 
 	// Set optional color
-	c, err = b.parseColor(pd.Name, fieldColor, pd.Color)
+	c, err = b.parseColor(fieldColor, pd.Color)
 	if err != nil {
 		return err
 	}
@@ -445,16 +447,16 @@ func (b *Builder) setCommon(pd *panelDesc, ipan IPanel) error {
 	return nil
 }
 
-func (b *Builder) setStyles(pname string, ps *panelStyles, ipan IPanel) error {
+func (b *Builder) setStyles(ps *panelStyles, ipan IPanel) error {
 
 	return nil
 }
 
 // parseBorderSizes parses a string field which can contain one float value or
 // float values. In the first case all borders has the same width
-func (b *Builder) parseBorderSizes(pname, fname, field string) (*BorderSizes, error) {
+func (b *Builder) parseBorderSizes(fname, field string) (*BorderSizes, error) {
 
-	va, err := b.parseFloats(pname, fname, field, 1, 4)
+	va, err := b.parseFloats(fname, field, 1, 4)
 	if va == nil || err != nil {
 		return nil, err
 	}
@@ -466,7 +468,7 @@ func (b *Builder) parseBorderSizes(pname, fname, field string) (*BorderSizes, er
 
 // parseColor parses a string field which can contain a color name or
 // a list of 3 or 4 float values for the color components
-func (b *Builder) parseColor(pname, fname, field string) (*math32.Color4, error) {
+func (b *Builder) parseColor(fname, field string) (*math32.Color4, error) {
 
 	// Checks if field is empty
 	field = strings.Trim(field, " ")
@@ -494,7 +496,7 @@ func (b *Builder) parseColor(pname, fname, field string) (*math32.Color4, error)
 	}
 
 	// Accept 3 or 4 floats values
-	va, err := b.parseFloats(pname, fname, field, 3, 4)
+	va, err := b.parseFloats(fname, field, 3, 4)
 	if err != nil {
 		return nil, err
 	}
@@ -506,12 +508,12 @@ func (b *Builder) parseColor(pname, fname, field string) (*math32.Color4, error)
 
 // parseIconNames parses a string with a list of icon names or codepoints and
 // returns a string with the icons codepoints encoded in UTF8
-func (b *Builder) parseIconNames(pname, fname, field string) (string, error) {
+func (b *Builder) parseIconNames(fname, field string) (string, error) {
 
 	text := ""
 	parts := strings.Fields(field)
 	for i := 0; i < len(parts); i++ {
-		cp, err := b.parseIconName(pname, fname, parts[i])
+		cp, err := b.parseIconName(fname, parts[i])
 		if err != nil {
 			return "", err
 		}
@@ -522,7 +524,7 @@ func (b *Builder) parseIconNames(pname, fname, field string) (string, error) {
 
 // parseIconName parses a string with an icon name or codepoint in hex
 // and returns the icon codepoints value and an error
-func (b *Builder) parseIconName(pname, fname, field string) (uint, error) {
+func (b *Builder) parseIconName(fname, field string) (uint, error) {
 
 	// Try name first
 	cp := icon.Codepoint(field)
@@ -541,7 +543,7 @@ func (b *Builder) parseIconName(pname, fname, field string) (uint, error) {
 // parseFloats parses a string with a list of floats with the specified size
 // and returns a slice. The specified size is 0 any number of floats is allowed.
 // The individual values can be separated by spaces or commas
-func (b *Builder) parseFloats(pname, fname, field string, min, max int) ([]float32, error) {
+func (b *Builder) parseFloats(fname, field string, min, max int) ([]float32, error) {
 
 	// Checks if field is empty
 	field = strings.Trim(field, " ")
