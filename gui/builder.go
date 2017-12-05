@@ -20,7 +20,7 @@ import (
 
 // Builder builds GUI objects from a declarative description in YAML format
 type Builder struct {
-	desc    map[string]*panelDesc // parsed descriptions
+	desc    map[string]*descPanel // parsed descriptions
 	imgpath string                // base path for image panels files
 	objpath strStack              // stack of object names being built
 }
@@ -32,7 +32,7 @@ type descLayout struct {
 }
 
 // descPanel describes all panel types
-type panelDesc struct {
+type descPanel struct {
 	Type         string   // Gui object type: Panel, Label, Edit, etc ...
 	Name         string   // Optional name for identification
 	Position     string   // Optional position as: x y | x,y
@@ -45,12 +45,12 @@ type panelDesc struct {
 	BorderColor  string   // Optional border color as name or 3 or 4 float values
 	Paddings     string   // Optional paddings as 1 or 4 float values
 	Color        string   // Optional color as 1 or 4 float values
-	Enabled      bool
-	Visible      bool
-	Renderable   bool
+	Enabled      *bool
+	Visible      *bool
+	Renderable   *bool
 	Imagefile    string       // For Panel, Button
-	Children     []*panelDesc // Panel
-	Layout       descLayout
+	Children     []*descPanel // Panel
+	Layout       *descLayout  // Optional pointer to layout
 	Text         string       // Label, Button
 	Icons        string       // Label
 	BgColor      string       // Label
@@ -62,8 +62,8 @@ type panelDesc struct {
 	MaxLength    *uint        // Edit
 	Icon         string       // Button
 	Group        string       // RadioButton
-	ImageLabel   *panelDesc   // DropDown
-	Items        []*panelDesc // Menu, MenuBar
+	ImageLabel   *descPanel   // DropDown
+	Items        []*descPanel // Menu, MenuBar
 	Shortcut     string       // Menu
 	Value        *float32     // Slider
 	ScaleFactor  *float32     // Slider
@@ -83,6 +83,8 @@ const (
 	descTypeDropDown    = "DropDown"
 	descTypeHSlider     = "HSlider"
 	descTypeVSlider     = "VSlider"
+	descTypeHSplitter   = "HSplitter"
+	descTypeVSplitter   = "VSplitter"
 	descTypeMenuBar     = "MenuBar"
 	descTypeMenu        = "Menu"
 	fieldMargins        = "margins"
@@ -91,6 +93,22 @@ const (
 	fieldPaddings       = "paddings"
 	fieldColor          = "color"
 	fieldBgColor        = "bgcolor"
+)
+
+const (
+	aPOS         = 1 << iota                          // attribute position
+	aSIZE        = 1 << iota                          // attribute size
+	aNAME        = 1 << iota                          // attribute name
+	aMARGINS     = 1 << iota                          // attribute margins widths
+	aBORDERS     = 1 << iota                          // attribute borders widths
+	aBORDERCOLOR = 1 << iota                          // attribute border color
+	aPADDINGS    = 1 << iota                          // attribute paddings widths
+	aCOLOR       = 1 << iota                          // attribute panel bgcolor
+	aENABLED     = 1 << iota                          // attribute enabled for events
+	aRENDER      = 1 << iota                          // attribute renderable
+	aVISIBLE     = 1 << iota                          // attribute visible
+	asPANEL      = 0xFF                               // attribute set for panels
+	asWIDGET     = aPOS | aNAME | aENABLED | aVISIBLE // attribute set for widgets
 )
 
 // NewBuilder creates and returns a pointer to a new gui Builder object
@@ -104,24 +122,24 @@ func NewBuilder() *Builder {
 func (b *Builder) ParseString(desc string) error {
 
 	// Try assuming the description contains a single root panel
-	var pd panelDesc
-	err := yaml.Unmarshal([]byte(desc), &pd)
+	var dp descPanel
+	err := yaml.Unmarshal([]byte(desc), &dp)
 	if err != nil {
 		return err
 	}
-	if pd.Type != "" {
-		b.desc = make(map[string]*panelDesc)
-		b.desc[""] = &pd
+	if dp.Type != "" {
+		b.desc = make(map[string]*descPanel)
+		b.desc[""] = &dp
 		return nil
 	}
 
 	// Try assuming the description is a map of panels
-	var pdm map[string]*panelDesc
-	err = yaml.Unmarshal([]byte(desc), &pdm)
+	var dpm map[string]*descPanel
+	err = yaml.Unmarshal([]byte(desc), &dpm)
 	if err != nil {
 		return err
 	}
-	b.desc = pdm
+	b.desc = dpm
 	return nil
 }
 
@@ -188,7 +206,7 @@ func (b *Builder) SetImagepath(path string) {
 // build builds the gui object from the specified description.
 // All its children are also built recursively
 // Returns the built object or an error
-func (b *Builder) build(pd *panelDesc, iparent IPanel) (IPanel, error) {
+func (b *Builder) build(pd *descPanel, iparent IPanel) (IPanel, error) {
 
 	var err error
 	var pan IPanel
@@ -215,10 +233,17 @@ func (b *Builder) build(pd *panelDesc, iparent IPanel) (IPanel, error) {
 		pan, err = b.buildHList(pd)
 	case descTypeDropDown:
 		pan, err = b.buildDropDown(pd)
+
 	case descTypeHSlider:
 		pan, err = b.buildSlider(pd, true)
 	case descTypeVSlider:
 		pan, err = b.buildSlider(pd, false)
+
+	case descTypeHSplitter:
+		pan, err = b.buildSplitter(pd, true)
+	case descTypeVSplitter:
+		pan, err = b.buildSplitter(pd, false)
+
 	case descTypeMenuBar:
 		pan, err = b.buildMenu(pd, false, true)
 	case descTypeMenu:
@@ -236,11 +261,11 @@ func (b *Builder) build(pd *panelDesc, iparent IPanel) (IPanel, error) {
 }
 
 // buildPanel builds a gui object of type: "Panel"
-func (b *Builder) buildPanel(pd *panelDesc) (IPanel, error) {
+func (b *Builder) buildPanel(pd *descPanel) (IPanel, error) {
 
 	// Builds panel and set common attributes
 	pan := NewPanel(pd.Width, pd.Height)
-	err := b.setCommon(pd, pan)
+	err := b.setCommon(pd, pan, asPANEL)
 	if err != nil {
 		return nil, err
 	}
@@ -259,7 +284,7 @@ func (b *Builder) buildPanel(pd *panelDesc) (IPanel, error) {
 }
 
 // buildImagePanel builds a gui object of type: "ImagePanel"
-func (b *Builder) buildImagePanel(pd *panelDesc) (IPanel, error) {
+func (b *Builder) buildImagePanel(pd *descPanel) (IPanel, error) {
 
 	// Imagefile must be supplied
 	if pd.Imagefile == "" {
@@ -277,7 +302,7 @@ func (b *Builder) buildImagePanel(pd *panelDesc) (IPanel, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = b.setCommon(pd, panel)
+	err = b.setCommon(pd, panel, asPANEL)
 	if err != nil {
 		return nil, err
 	}
@@ -304,7 +329,7 @@ func (b *Builder) buildImagePanel(pd *panelDesc) (IPanel, error) {
 }
 
 // buildLabel builds a gui object of type: "Label"
-func (b *Builder) buildLabel(pd *panelDesc) (IPanel, error) {
+func (b *Builder) buildLabel(pd *descPanel) (IPanel, error) {
 
 	// Builds label with icon or text font
 	var label *Label
@@ -318,7 +343,7 @@ func (b *Builder) buildLabel(pd *panelDesc) (IPanel, error) {
 		label = NewLabel(pd.Text)
 	}
 	// Sets common attributes
-	err = b.setCommon(pd, label)
+	err = b.setCommon(pd, label, asPANEL)
 	if err != nil {
 		return nil, err
 	}
@@ -360,11 +385,11 @@ func (b *Builder) buildLabel(pd *panelDesc) (IPanel, error) {
 }
 
 // buildImageLabel builds a gui object of type: ImageLabel
-func (b *Builder) buildImageLabel(pd *panelDesc) (IPanel, error) {
+func (b *Builder) buildImageLabel(pd *descPanel) (IPanel, error) {
 
 	// Builds image label and set common attributes
 	imglabel := NewImageLabel(pd.Text)
-	err := b.setCommon(pd, imglabel)
+	err := b.setCommon(pd, imglabel, asPANEL)
 	if err != nil {
 		return nil, err
 	}
@@ -382,11 +407,11 @@ func (b *Builder) buildImageLabel(pd *panelDesc) (IPanel, error) {
 }
 
 // buildButton builds a gui object of type: Button
-func (b *Builder) buildButton(pd *panelDesc) (IPanel, error) {
+func (b *Builder) buildButton(pd *descPanel) (IPanel, error) {
 
 	// Builds button and set commont attributes
 	button := NewButton(pd.Text)
-	err := b.setCommon(pd, button)
+	err := b.setCommon(pd, button, asWIDGET)
 	if err != nil {
 		return nil, err
 	}
@@ -417,11 +442,11 @@ func (b *Builder) buildButton(pd *panelDesc) (IPanel, error) {
 }
 
 // buildCheckBox builds a gui object of type: CheckBox
-func (b *Builder) buildCheckBox(pd *panelDesc) (IPanel, error) {
+func (b *Builder) buildCheckBox(pd *descPanel) (IPanel, error) {
 
 	// Builds check box and set commont attributes
 	cb := NewCheckBox(pd.Text)
-	err := b.setCommon(pd, cb)
+	err := b.setCommon(pd, cb, asWIDGET)
 	if err != nil {
 		return nil, err
 	}
@@ -430,11 +455,11 @@ func (b *Builder) buildCheckBox(pd *panelDesc) (IPanel, error) {
 }
 
 // buildRadioButton builds a gui object of type: RadioButton
-func (b *Builder) buildRadioButton(pd *panelDesc) (IPanel, error) {
+func (b *Builder) buildRadioButton(pd *descPanel) (IPanel, error) {
 
 	// Builds check box and set commont attributes
 	rb := NewRadioButton(pd.Text)
-	err := b.setCommon(pd, rb)
+	err := b.setCommon(pd, rb, asWIDGET)
 	if err != nil {
 		return nil, err
 	}
@@ -447,11 +472,11 @@ func (b *Builder) buildRadioButton(pd *panelDesc) (IPanel, error) {
 }
 
 // buildEdit builds a gui object of type: "Edit"
-func (b *Builder) buildEdit(pd *panelDesc) (IPanel, error) {
+func (b *Builder) buildEdit(pd *descPanel) (IPanel, error) {
 
 	// Builds button and set commont attributes
 	edit := NewEdit(int(pd.Width), pd.PlaceHolder)
-	err := b.setCommon(pd, edit)
+	err := b.setCommon(pd, edit, asWIDGET)
 	if err != nil {
 		return nil, err
 	}
@@ -460,11 +485,11 @@ func (b *Builder) buildEdit(pd *panelDesc) (IPanel, error) {
 }
 
 // buildVList builds a gui object of type: VList
-func (b *Builder) buildVList(pd *panelDesc) (IPanel, error) {
+func (b *Builder) buildVList(pd *descPanel) (IPanel, error) {
 
 	// Builds list and set commont attributes
 	list := NewVList(pd.Width, pd.Height)
-	err := b.setCommon(pd, list)
+	err := b.setCommon(pd, list, asWIDGET)
 	if err != nil {
 		return nil, err
 	}
@@ -483,11 +508,11 @@ func (b *Builder) buildVList(pd *panelDesc) (IPanel, error) {
 }
 
 // buildHList builds a gui object of type: VList
-func (b *Builder) buildHList(pd *panelDesc) (IPanel, error) {
+func (b *Builder) buildHList(pd *descPanel) (IPanel, error) {
 
 	// Builds list and set commont attributes
 	list := NewHList(pd.Width, pd.Height)
-	err := b.setCommon(pd, list)
+	err := b.setCommon(pd, list, asWIDGET)
 	if err != nil {
 		return nil, err
 	}
@@ -506,7 +531,7 @@ func (b *Builder) buildHList(pd *panelDesc) (IPanel, error) {
 }
 
 // buildDropDown builds a gui object of type: DropDown
-func (b *Builder) buildDropDown(pd *panelDesc) (IPanel, error) {
+func (b *Builder) buildDropDown(pd *descPanel) (IPanel, error) {
 
 	var imglabel *ImageLabel
 	if pd.ImageLabel != nil {
@@ -522,7 +547,7 @@ func (b *Builder) buildDropDown(pd *panelDesc) (IPanel, error) {
 
 	// Builds drop down and set common attributes
 	dd := NewDropDown(pd.Width, imglabel)
-	err := b.setCommon(pd, dd)
+	err := b.setCommon(pd, dd, asWIDGET)
 	if err != nil {
 		return nil, err
 	}
@@ -543,7 +568,7 @@ func (b *Builder) buildDropDown(pd *panelDesc) (IPanel, error) {
 }
 
 // buildSlider builds a gui object of type: HSlider or VSlider
-func (b *Builder) buildSlider(pd *panelDesc, horiz bool) (IPanel, error) {
+func (b *Builder) buildSlider(pd *descPanel, horiz bool) (IPanel, error) {
 
 	// Builds slider and sets its position
 	var slider *Slider
@@ -553,7 +578,7 @@ func (b *Builder) buildSlider(pd *panelDesc, horiz bool) (IPanel, error) {
 	} else {
 		slider = NewVSlider(pd.Width, pd.Height)
 	}
-	err := b.setPosition(pd, slider)
+	err := b.setCommon(pd, slider, asWIDGET)
 	if err != nil {
 		return nil, err
 	}
@@ -573,9 +598,26 @@ func (b *Builder) buildSlider(pd *panelDesc, horiz bool) (IPanel, error) {
 	return slider, nil
 }
 
+// buildSplitter builds a gui object of type: HSplitterr or VSplitter
+func (b *Builder) buildSplitter(pd *descPanel, horiz bool) (IPanel, error) {
+
+	// Builds splitter and sets its common attributes
+	var splitter *Splitter
+	if horiz {
+		splitter = NewHSplitter(pd.Width, pd.Height)
+	} else {
+		splitter = NewVSplitter(pd.Width, pd.Height)
+	}
+	err := b.setCommon(pd, splitter, asWIDGET)
+	if err != nil {
+		return nil, err
+	}
+	return splitter, nil
+}
+
 // buildMenu builds a gui object of type: Menu or MenuBar from the
 // specified panel descriptor.
-func (b *Builder) buildMenu(pd *panelDesc, child, bar bool) (IPanel, error) {
+func (b *Builder) buildMenu(pd *descPanel, child, bar bool) (IPanel, error) {
 
 	// Builds menu bar or menu
 	var menu *Menu
@@ -584,9 +626,9 @@ func (b *Builder) buildMenu(pd *panelDesc, child, bar bool) (IPanel, error) {
 	} else {
 		menu = NewMenu()
 	}
-	// Only sets position for top level menus
+	// Only sets attribs for top level menus
 	if !child {
-		err := b.setPosition(pd, menu)
+		err := b.setCommon(pd, menu, asWIDGET)
 		if err != nil {
 			return nil, err
 		}
@@ -629,73 +671,85 @@ func (b *Builder) buildMenu(pd *panelDesc, child, bar bool) (IPanel, error) {
 }
 
 // setCommon sets the common attributes in the description to the specified panel
-func (b *Builder) setCommon(pd *panelDesc, ipan IPanel) error {
+func (b *Builder) setCommon(pd *descPanel, ipan IPanel, attr uint) error {
 
-	// Set optional position
-	err := b.setPosition(pd, ipan)
-	if err != nil {
-		return err
-	}
 	panel := ipan.GetPanel()
+	// Set optional position
+	if attr&aPOS != 0 && pd.Position != "" {
+		va, err := b.parseFloats("position", pd.Position, 2, 2)
+		if va == nil || err != nil {
+			return err
+		}
+		panel.SetPosition(va[0], va[1])
+	}
 
 	// Set optional margin sizes
-	bs, err := b.parseBorderSizes(fieldMargins, pd.Margins)
-	if err != nil {
-		return err
-	}
-	if bs != nil {
-		panel.SetMarginsFrom(bs)
+	if attr&aMARGINS != 0 {
+		bs, err := b.parseBorderSizes(fieldMargins, pd.Margins)
+		if err != nil {
+			return err
+		}
+		if bs != nil {
+			panel.SetMarginsFrom(bs)
+		}
 	}
 
 	// Set optional border sizes
-	bs, err = b.parseBorderSizes(fieldBorders, pd.Borders)
-	if err != nil {
-		return err
-	}
-	if bs != nil {
-		panel.SetBordersFrom(bs)
+	if attr&aBORDERS != 0 {
+		bs, err := b.parseBorderSizes(fieldBorders, pd.Borders)
+		if err != nil {
+			return err
+		}
+		if bs != nil {
+			panel.SetBordersFrom(bs)
+		}
 	}
 
 	// Set optional border color
-	c, err := b.parseColor(fieldBorderColor, pd.BorderColor)
-	if err != nil {
-		return err
-	}
-	if c != nil {
-		panel.SetBordersColor4(c)
+	if attr&aBORDERCOLOR != 0 {
+		c, err := b.parseColor(fieldBorderColor, pd.BorderColor)
+		if err != nil {
+			return err
+		}
+		if c != nil {
+			panel.SetBordersColor4(c)
+		}
 	}
 
 	// Set optional paddings sizes
-	bs, err = b.parseBorderSizes(fieldPaddings, pd.Paddings)
-	if err != nil {
-		return err
-	}
-	if bs != nil {
-		panel.SetPaddingsFrom(bs)
+	if attr&aPADDINGS != 0 {
+		bs, err := b.parseBorderSizes(fieldPaddings, pd.Paddings)
+		if err != nil {
+			return err
+		}
+		if bs != nil {
+			panel.SetPaddingsFrom(bs)
+		}
 	}
 
 	// Set optional color
-	c, err = b.parseColor(fieldColor, pd.Color)
-	if err != nil {
-		return err
+	if attr&aCOLOR != 0 {
+		c, err := b.parseColor(fieldColor, pd.Color)
+		if err != nil {
+			return err
+		}
+		if c != nil {
+			panel.SetColor4(c)
+		}
 	}
-	if c != nil {
-		panel.SetColor4(c)
-	}
-	return nil
-}
 
-// Sets the panel optional position from the specified panel descriptor
-func (b *Builder) setPosition(pd *panelDesc, ipan IPanel) error {
-
-	if pd.Position == "" {
-		return nil
+	if attr&aNAME != 0 && pd.Name != "" {
+		panel.SetName(pd.Name)
 	}
-	va, err := b.parseFloats("position", pd.Position, 2, 2)
-	if va == nil || err != nil {
-		return err
+	if attr&aVISIBLE != 0 && pd.Visible != nil {
+		panel.SetVisible(*pd.Visible)
 	}
-	ipan.GetPanel().SetPosition(va[0], va[1])
+	if attr&aENABLED != 0 && pd.Enabled != nil {
+		panel.SetEnabled(*pd.Enabled)
+	}
+	if attr&aRENDER != 0 && pd.Renderable != nil {
+		panel.SetRenderable(*pd.Renderable)
+	}
 	return nil
 }
 
