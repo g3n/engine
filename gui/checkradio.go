@@ -94,7 +94,7 @@ func newCheckRadio(check bool, text string) *CheckRadio {
 	cb.Panel.Add(cb.Label)
 
 	// Creates icon label
-	cb.icon = NewIconLabel(" ")
+	cb.icon = NewLabel(" ", true)
 	cb.Panel.Add(cb.icon)
 
 	cb.recalc()

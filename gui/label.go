@@ -11,6 +11,8 @@ import (
 	"github.com/g3n/engine/texture"
 )
 
+// Label is a panel which contains a texture for rendering text
+// The content size of the label panel is the exact size of texture
 type Label struct {
 	Panel       // Embedded panel
 	fontSize    float64
@@ -24,22 +26,27 @@ type Label struct {
 }
 
 // NewLabel creates and returns a label panel with the specified text
-// drawn using the current default font.
-func NewLabel(msg string) *Label {
+// drawn using the current default text font.
+// If icon is true the text is drawn using the default icon font
+func NewLabel(msg string, icon ...bool) *Label {
 
 	l := new(Label)
-	l.initialize(msg, StyleDefault().Font)
+	if len(icon) > 0 && icon[0] {
+		l.initialize(msg, StyleDefault().FontIcon)
+	} else {
+		l.initialize(msg, StyleDefault().Font)
+	}
 	return l
 }
 
-// NewIconLabel creates and returns a label panel using the specified text
-// drawn using the default icon font.
-func NewIconLabel(msg string) *Label {
-
-	l := new(Label)
-	l.initialize(msg, StyleDefault().FontIcon)
-	return l
-}
+//// NewIconLabel creates and returns a label panel using the specified text
+//// drawn using the default icon font.
+//func NewIconLabel(msg string) *Label {
+//
+//	l := new(Label)
+//	l.initialize(msg, StyleDefault().FontIcon)
+//	return l
+//}
 
 // initialize initializes this label and is normally used by other
 // gui types which contains a label.
@@ -146,6 +153,13 @@ func (l *Label) SetBgColor4(color *math32.Color4) *Label {
 func (l *Label) BgColor() math32.Color4 {
 
 	return l.bgColor
+}
+
+// SetFont sets this label text or icon font
+func (l *Label) SetFont(f *text.Font) {
+
+	l.font = f
+	l.SetText(l.currentText)
 }
 
 // SetFontSize sets label font size

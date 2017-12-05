@@ -58,7 +58,7 @@ func NewDropDown(width float32, item *ImageLabel) *DropDown {
 	dd.Panel.Add(dd.litem)
 
 	// Create icon
-	dd.icon = NewIconLabel(" ")
+	dd.icon = NewLabel(" ", true)
 	dd.icon.SetFontSize(StyleDefault().Font.Size() * 1.3)
 	dd.icon.SetText(string(icon.ArrowDropDown))
 	dd.Panel.Add(dd.icon)

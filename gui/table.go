@@ -259,7 +259,7 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 		c.resize = cdesc.Resize
 		// Adds optional sort icon
 		if c.sort != TableSortNone {
-			c.ricon = NewIconLabel(string(tableSortedNoneIcon))
+			c.ricon = NewLabel(string(tableSortedNoneIcon), true)
 			c.Add(c.ricon)
 			c.ricon.Subscribe(OnMouseDown, func(evname string, ev interface{}) {
 				t.onRicon(evname, c)

@@ -117,7 +117,7 @@ func (b *ImageButton) SetIcon(icode int) {
 	b.iconLabel = true
 	if b.label == nil {
 		// Create icon
-		b.label = NewIconLabel(string(icode))
+		b.label = NewLabel(string(icode), true)
 		b.Panel.Add(b.label)
 	} else {
 		b.label.SetText(string(icode))

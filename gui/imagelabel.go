@@ -21,12 +21,12 @@ import (
 
 ****************************************/
 
+// ImageLabel is a panel which can contain an Image or Icon plus a Label side by side.
 type ImageLabel struct {
 	Panel        // Embedded panel
 	label Label  // internal label
 	image *Image // optional internal image
 	icon  *Label // optional internal icon label
-	icode int    // icon code (if icon is set)
 }
 
 // ImageLabel style
@@ -71,19 +71,18 @@ func (il *ImageLabel) Text() string {
 
 // SetIcon sets the image label icon from the default Icon font.
 // If there is currently a selected image, it is removed
-func (il *ImageLabel) SetIcon(icode int) {
+func (il *ImageLabel) SetIcon(icon string) {
 
 	if il.image != nil {
 		il.Panel.Remove(il.image)
 		il.image = nil
 	}
 	if il.icon == nil {
-		il.icon = NewIconLabel(string(icode))
+		il.icon = NewLabel(icon, true)
 		il.icon.SetFontSize(il.label.FontSize() * 1.4)
 		il.Panel.Add(il.icon)
 	}
-	il.icon.SetText(string(icode))
-	il.icode = icode
+	il.icon.SetText(icon)
 	il.recalc()
 }
 
@@ -184,7 +183,7 @@ func (il *ImageLabel) CopyFields(other *ImageLabel) {
 
 	il.label.SetText(other.label.Text())
 	if other.icon != nil {
-		il.SetIcon(other.icode)
+		il.SetIcon(other.icon.Text())
 	}
 	if other.image != nil {
 		// TODO li.SetImage(other.image.Clone())

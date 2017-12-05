@@ -62,6 +62,7 @@ type panelDesc struct {
 	Layout       layoutAttr
 	Styles       *panelStyles
 	Text         string   // Label, Button
+	Icons        string   // Label
 	BgColor      string   // Label
 	FontColor    string   // Label
 	FontSize     *float32 // Label
@@ -81,7 +82,7 @@ const (
 	descTypePanel       = "Panel"
 	descTypeImagePanel  = "ImagePanel"
 	descTypeLabel       = "Label"
-	descTypeIconLabel   = "IconLabel"
+	descTypeImageLabel  = "ImageLabel"
 	descTypeButton      = "Button"
 	descTypeCheckBox    = "CheckBox"
 	descTypeRadioButton = "RadioButton"
@@ -202,8 +203,8 @@ func (b *Builder) build(pd *panelDesc, iparent IPanel) (IPanel, error) {
 		pan, err = b.buildImagePanel(pd)
 	case descTypeLabel:
 		pan, err = b.buildLabel(pd)
-	case descTypeIconLabel:
-		pan, err = b.buildLabel(pd)
+	case descTypeImageLabel:
+		pan, err = b.buildImageLabel(pd)
 	case descTypeButton:
 		pan, err = b.buildButton(pd)
 	case descTypeCheckBox:
@@ -299,17 +300,19 @@ func (b *Builder) buildImagePanel(pd *panelDesc) (IPanel, error) {
 // buildLabel builds a gui object of type: "Label"
 func (b *Builder) buildLabel(pd *panelDesc) (IPanel, error) {
 
+	// Builds label with icon or text font
 	var label *Label
-	if pd.Type == descTypeLabel {
-		label = NewLabel(pd.Text)
-	} else {
-		icons, err := b.parseIconNames("text", pd.Text)
-		if err != nil {
-			return nil, err
-		}
-		label = NewIconLabel(icons)
+	icons, err := b.parseIconNames("icons", pd.Icons)
+	if err != nil {
+		return nil, err
 	}
-	err := b.setCommon(pd, label)
+	if icons != "" {
+		label = NewLabel(icons, true)
+	} else {
+		label = NewLabel(pd.Text)
+	}
+	// Sets common attributes
+	err = b.setCommon(pd, label)
 	if err != nil {
 		return nil, err
 	}
@@ -348,6 +351,28 @@ func (b *Builder) buildLabel(pd *panelDesc) (IPanel, error) {
 	}
 
 	return label, nil
+}
+
+// buildImageLabel builds a gui object of type: ImageLabel
+func (b *Builder) buildImageLabel(pd *panelDesc) (IPanel, error) {
+
+	// Builds image label and set common attributes
+	imglabel := NewImageLabel(pd.Text)
+	err := b.setCommon(pd, imglabel)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sets optional icon(s)
+	icons, err := b.parseIconNames("icons", pd.Icons)
+	if err != nil {
+		return nil, err
+	}
+	if icons != "" {
+		imglabel.SetIcon(icons)
+	}
+
+	return imglabel, nil
 }
 
 // buildButton builds a gui object of type: Button
