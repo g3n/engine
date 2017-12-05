@@ -5,7 +5,7 @@
 package gui
 
 import (
-	"github.com/g3n/engine/gui/assets"
+	"github.com/g3n/engine/gui/assets/icon"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 	"time"
@@ -206,7 +206,7 @@ func (m *Menu) AddMenu(text string, subm *Menu) *MenuItem {
 	mi.submenu.autoOpen = true
 	mi.menu = m
 	if !m.bar {
-		mi.ricon = NewIconLabel(string(assets.PlayArrow))
+		mi.ricon = NewIconLabel(string(icon.PlayArrow))
 		mi.Panel.Add(mi.ricon)
 	}
 	mi.Panel.Add(mi.submenu)

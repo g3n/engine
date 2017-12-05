@@ -5,7 +5,7 @@
 package gui
 
 import (
-	"github.com/g3n/engine/gui/assets"
+	"github.com/g3n/engine/gui/assets/icon"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 )
@@ -60,7 +60,7 @@ func NewDropDown(width float32, item *ImageLabel) *DropDown {
 	// Create icon
 	dd.icon = NewIconLabel(" ")
 	dd.icon.SetFontSize(StyleDefault.Font.Size() * 1.3)
-	dd.icon.SetText(string(assets.ArrowDropDown))
+	dd.icon.SetText(string(icon.ArrowDropDown))
 	dd.Panel.Add(dd.icon)
 
 	/// Create list

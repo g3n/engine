@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/g3n/engine/gui/assets/icon"
 	"github.com/g3n/engine/math32"
 	"gopkg.in/yaml.v2"
 )
@@ -21,37 +22,7 @@ import (
 type Builder struct {
 	desc    map[string]*panelDesc // parsed descriptions
 	imgpath string                // base path for image panels files
-	objpath strStack              // current object stack
-}
-
-type strStack struct {
-	stack []string
-}
-
-func (ss *strStack) clear() {
-
-	ss.stack = []string{}
-}
-func (ss *strStack) push(v string) {
-
-	ss.stack = append(ss.stack, v)
-}
-
-func (ss *strStack) pop() string {
-
-	if len(ss.stack) == 0 {
-		return ""
-	}
-	length := len(ss.stack)
-	v := ss.stack[length-1]
-	ss.stack = ss.stack[:length-1]
-	log.Error("pop--------->%v", ss.stack)
-	return v
-}
-
-func (ss *strStack) path() string {
-
-	return strings.Join(ss.stack, "/")
+	objpath strStack              // stack of object names being built
 }
 
 type panelStyle struct {
@@ -553,11 +524,18 @@ func (b *Builder) parseIconNames(pname, fname, field string) (string, error) {
 // and returns the icon codepoints value and an error
 func (b *Builder) parseIconName(pname, fname, field string) (uint, error) {
 
-	cp, err := strconv.ParseUint(field, 16, 32)
+	// Try name first
+	cp := icon.Codepoint(field)
+	if cp != 0 {
+		return cp, nil
+	}
+
+	// Try to parse as hex value
+	cp2, err := strconv.ParseUint(field, 16, 32)
 	if err != nil {
 		return 0, b.err(fname, fmt.Sprintf("Invalid icon codepoint value/name:%v", field))
 	}
-	return uint(cp), nil
+	return uint(cp2), nil
 }
 
 // parseFloats parses a string with a list of floats with the specified size
@@ -594,7 +572,45 @@ func (b *Builder) parseFloats(pname, fname, field string, min, max int) ([]float
 	return values, nil
 }
 
+// err creates and returns an error for the current object, field name and with the specified message
 func (b *Builder) err(fname, msg string) error {
 
 	return fmt.Errorf("Error in object:%s field:%s -> %s", b.objpath.path(), fname, msg)
+}
+
+// strStack is a stack of strings
+type strStack struct {
+	stack []string
+}
+
+// clear removes all elements from the stack
+func (ss *strStack) clear() {
+
+	ss.stack = []string{}
+}
+
+// push pushes a string to the top of the stack
+func (ss *strStack) push(v string) {
+
+	ss.stack = append(ss.stack, v)
+}
+
+// pop removes and returns the string at the top of the stack.
+// Returns an empty string if the stack is empty
+func (ss *strStack) pop() string {
+
+	if len(ss.stack) == 0 {
+		return ""
+	}
+	length := len(ss.stack)
+	v := ss.stack[length-1]
+	ss.stack = ss.stack[:length-1]
+	return v
+}
+
+// path returns a string composed of all the strings in the
+// stack separated by a forward slash.
+func (ss *strStack) path() string {
+
+	return strings.Join(ss.stack, "/")
 }

@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/g3n/engine/gui/assets"
+	"github.com/g3n/engine/gui/assets/icon"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 )
@@ -43,9 +43,9 @@ const (
 )
 
 const (
-	tableSortedNoneIcon = assets.SwapVert
-	tableSortedAscIcon  = assets.ArrowDownward
-	tableSortedDescIcon = assets.ArrowUpward
+	tableSortedNoneIcon = icon.SwapVert
+	tableSortedAscIcon  = icon.ArrowDownward
+	tableSortedDescIcon = icon.ArrowUpward
 	tableSortedNone     = 0
 	tableSortedAsc      = 1
 	tableSortedDesc     = 2

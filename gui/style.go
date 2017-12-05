@@ -6,6 +6,7 @@ package gui
 
 import (
 	"github.com/g3n/engine/gui/assets"
+	"github.com/g3n/engine/gui/assets/icon"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/text"
 )
@@ -449,7 +450,7 @@ func setupDefaultStyle() {
 			BorderColor: borderColor,
 			BgColor:     bgColor,
 			FgColor:     fgColor,
-			Icons:       [2]int{assets.ExpandMore, assets.ExpandLess},
+			Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
 		},
 		Over: &FolderStyle{
 			Margins:     BorderSizes{0, 0, 0, 0},
@@ -458,7 +459,7 @@ func setupDefaultStyle() {
 			BorderColor: borderColor,
 			BgColor:     bgColorOver,
 			FgColor:     fgColor,
-			Icons:       [2]int{assets.ExpandMore, assets.ExpandLess},
+			Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
 		},
 		Focus: &FolderStyle{
 			Margins:     BorderSizes{0, 0, 0, 0},
@@ -467,7 +468,7 @@ func setupDefaultStyle() {
 			BorderColor: borderColor,
 			BgColor:     bgColorOver,
 			FgColor:     fgColor,
-			Icons:       [2]int{assets.ExpandMore, assets.ExpandLess},
+			Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
 		},
 		Disabled: &FolderStyle{
 			Margins:     BorderSizes{0, 0, 0, 0},
@@ -476,7 +477,7 @@ func setupDefaultStyle() {
 			BorderColor: borderColor,
 			BgColor:     bgColorOver,
 			FgColor:     fgColor,
-			Icons:       [2]int{assets.ExpandMore, assets.ExpandLess},
+			Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
 		},
 	}
 
@@ -550,7 +551,7 @@ func setupDefaultStyle() {
 				BorderColor: borderColor,
 				BgColor:     bgColor4,
 				FgColor:     fgColor,
-				Icons:       [2]int{assets.ExpandMore, assets.ExpandLess},
+				Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
 			},
 		},
 		Padlevel: 16.0,
@@ -565,7 +566,7 @@ func setupDefaultStyle() {
 				BorderColor: math32.Color4{0, 0, 0, 0},
 				BgColor:     math32.Color{0, 0.5, 1},
 				FgColor:     fgColor,
-				Icons:       [2]int{assets.ExpandMore, assets.ExpandLess},
+				Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
 			},
 			Over: &FolderStyle{
 				Margins:     BorderSizes{0, 0, 0, 0},
@@ -574,7 +575,7 @@ func setupDefaultStyle() {
 				BorderColor: math32.Color4{0, 0, 0, 0},
 				BgColor:     math32.Color{0, 0.5, 1},
 				FgColor:     fgColor,
-				Icons:       [2]int{assets.ExpandMore, assets.ExpandLess},
+				Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
 			},
 			Focus: &FolderStyle{
 				Margins:     BorderSizes{0, 0, 0, 0},
@@ -583,7 +584,7 @@ func setupDefaultStyle() {
 				BorderColor: math32.Color4{0, 0, 0, 0},
 				BgColor:     math32.Color{0, 0.5, 1},
 				FgColor:     fgColor,
-				Icons:       [2]int{assets.ExpandMore, assets.ExpandLess},
+				Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
 			},
 			Disabled: &FolderStyle{
 				Margins:     BorderSizes{0, 0, 0, 0},
@@ -592,7 +593,7 @@ func setupDefaultStyle() {
 				BorderColor: math32.Color4{0, 0, 0, 0},
 				BgColor:     math32.Color{0, 0.5, 1},
 				FgColor:     fgColor,
-				Icons:       [2]int{assets.ExpandMore, assets.ExpandLess},
+				Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
 			},
 		},
 		Tree: &TreeStyles{
@@ -665,7 +666,7 @@ func setupDefaultStyle() {
 					BorderColor: borderColor,
 					BgColor:     bgColor4,
 					FgColor:     fgColor,
-					Icons:       [2]int{assets.ExpandMore, assets.ExpandLess},
+					Icons:       [2]int{icon.ExpandMore, icon.ExpandLess},
 				},
 			},
 			Padlevel: 2.0,
