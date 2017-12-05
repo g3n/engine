@@ -55,7 +55,7 @@ type ButtonStyles struct {
 func NewButton(text string) *Button {
 
 	b := new(Button)
-	b.styles = &StyleDefault.Button
+	b.styles = &StyleDefault().Button
 
 	// Initializes the button panel
 	b.Panel = NewPanel(0, 0)

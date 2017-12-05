@@ -78,7 +78,7 @@ func newScrollBar(width, height float32, vertical bool) *ScrollBar {
 // initialize initializes this scrollbar
 func (sb *ScrollBar) initialize(width, height float32, vertical bool) {
 
-	sb.style = &StyleDefault.ScrollBar
+	sb.style = &StyleDefault().ScrollBar
 	sb.vertical = vertical
 	sb.Panel.Initialize(width, height)
 	sb.Panel.Subscribe(OnMouseDown, sb.onMouse)

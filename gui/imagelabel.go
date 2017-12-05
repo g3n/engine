@@ -49,7 +49,7 @@ func NewImageLabel(text string) *ImageLabel {
 	il.Panel.Subscribe(OnResize, func(evname string, ev interface{}) { il.recalc() })
 
 	// Initializes the label
-	il.label.initialize(text, StyleDefault.Font)
+	il.label.initialize(text, StyleDefault().Font)
 	il.label.Subscribe(OnResize, func(evname string, ev interface{}) { il.recalc() })
 	il.Panel.Add(&il.label)
 

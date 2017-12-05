@@ -37,7 +37,7 @@ func NewControlFolder(text string, width float32) *ControlFolder {
 // It is normally used when the control folder is embedded in another object
 func (f *ControlFolder) Initialize(text string, width float32) {
 
-	f.styles = &StyleDefault.ControlFolder
+	f.styles = &StyleDefault().ControlFolder
 	f.tree.Initialize(width, width)
 	f.tree.SetStyles(f.styles.Tree)
 	f.tree.SetAutoHeight(600)

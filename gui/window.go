@@ -74,7 +74,7 @@ const (
 func NewWindow(width, height float32) *Window {
 
 	w := new(Window)
-	w.styles = &StyleDefault.Window
+	w.styles = &StyleDefault().Window
 
 	w.Panel.Initialize(width, height)
 	w.Panel.Subscribe(OnMouseDown, w.onMouse)
@@ -281,7 +281,7 @@ func newWindowTitle(win *Window, text string) *WindowTitle {
 	wt.win = win
 
 	wt.Panel.Initialize(0, 0)
-	wt.label.initialize(text, StyleDefault.Font)
+	wt.label.initialize(text, StyleDefault().Font)
 	wt.Panel.Add(&wt.label)
 
 	wt.Subscribe(OnMouseDown, wt.onMouse)

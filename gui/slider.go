@@ -73,7 +73,7 @@ func newSlider(horiz bool, width, height float32) *Slider {
 
 	s := new(Slider)
 	s.horiz = horiz
-	s.styles = &StyleDefault.Slider
+	s.styles = &StyleDefault().Slider
 	s.scaleFactor = 1.0
 
 	// Initialize main panel

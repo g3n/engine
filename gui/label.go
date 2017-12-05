@@ -28,7 +28,7 @@ type Label struct {
 func NewLabel(msg string) *Label {
 
 	l := new(Label)
-	l.initialize(msg, StyleDefault.Font)
+	l.initialize(msg, StyleDefault().Font)
 	return l
 }
 
@@ -37,7 +37,7 @@ func NewLabel(msg string) *Label {
 func NewIconLabel(msg string) *Label {
 
 	l := new(Label)
-	l.initialize(msg, StyleDefault.FontIcon)
+	l.initialize(msg, StyleDefault().FontIcon)
 	return l
 }
 

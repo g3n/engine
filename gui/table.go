@@ -217,7 +217,7 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 
 	t := new(Table)
 	t.Panel.Initialize(width, height)
-	t.styles = &StyleDefault.Table
+	t.styles = &StyleDefault().Table
 	t.rowCursor = -1
 
 	// Initialize table header
@@ -722,7 +722,7 @@ func (t *Table) insertRow(row int, values map[string]interface{}) {
 		// Creates tableRow cell panel
 		cell := new(tableCell)
 		cell.Initialize(0, 0)
-		cell.label.initialize("", StyleDefault.Font)
+		cell.label.initialize("", StyleDefault().Font)
 		cell.Add(&cell.label)
 		trow.cells = append(trow.cells, cell)
 		trow.Panel.Add(cell)

@@ -65,7 +65,7 @@ func NewRadioButton(text string) *CheckRadio {
 func newCheckRadio(check bool, text string) *CheckRadio {
 
 	cb := new(CheckRadio)
-	cb.styles = &StyleDefault.CheckRadio
+	cb.styles = &StyleDefault().CheckRadio
 
 	// Adapts to specified type: CheckBox or RadioButton
 	cb.check = check

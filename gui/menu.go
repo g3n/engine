@@ -158,7 +158,7 @@ func NewMenu() *Menu {
 
 	m := new(Menu)
 	m.Panel.Initialize(0, 0)
-	m.styles = &StyleDefault.Menu
+	m.styles = &StyleDefault().Menu
 	m.items = make([]*MenuItem, 0)
 	m.Panel.Subscribe(OnCursorEnter, m.onCursor)
 	m.Panel.Subscribe(OnCursor, m.onCursor)
