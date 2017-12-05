@@ -34,11 +34,11 @@ type panelStyle struct {
 }
 
 type panelStyles struct {
-	Normal   panelStyle
-	Over     panelStyle
-	Focus    panelStyle
-	Pressed  panelStyle
-	Disabled panelStyle
+	Normal   *panelStyle
+	Over     *panelStyle
+	Focus    *panelStyle
+	Pressed  *panelStyle
+	Disabled *panelStyle
 }
 
 type panelDesc struct {
@@ -70,6 +70,7 @@ type panelDesc struct {
 	PlaceHolder  string   // Edit
 	MaxLength    *uint    // Edit
 	Icon         string   // Button
+	Group        string   // RadioButton
 }
 
 type layoutAttr struct {
@@ -77,18 +78,22 @@ type layoutAttr struct {
 }
 
 const (
-	descTypePanel      = "Panel"
-	descTypeImagePanel = "ImagePanel"
-	descTypeLabel      = "Label"
-	descTypeIconLabel  = "IconLabel"
-	descTypeButton     = "Button"
-	descTypeEdit       = "Edit"
-	fieldMargins       = "margins"
-	fieldBorders       = "borders"
-	fieldBorderColor   = "bordercolor"
-	fieldPaddings      = "paddings"
-	fieldColor         = "color"
-	fieldBgColor       = "bgcolor"
+	descTypePanel       = "Panel"
+	descTypeImagePanel  = "ImagePanel"
+	descTypeLabel       = "Label"
+	descTypeIconLabel   = "IconLabel"
+	descTypeButton      = "Button"
+	descTypeCheckBox    = "CheckBox"
+	descTypeRadioButton = "RadioButton"
+	descTypeEdit        = "Edit"
+	descTypeVList       = "VList"
+	descTypeHList       = "HList"
+	fieldMargins        = "margins"
+	fieldBorders        = "borders"
+	fieldBorderColor    = "bordercolor"
+	fieldPaddings       = "paddings"
+	fieldColor          = "color"
+	fieldBgColor        = "bgcolor"
 )
 
 // NewBuilder creates and returns a pointer to a new gui Builder object
@@ -201,8 +206,16 @@ func (b *Builder) build(pd *panelDesc, iparent IPanel) (IPanel, error) {
 		pan, err = b.buildLabel(pd)
 	case descTypeButton:
 		pan, err = b.buildButton(pd)
+	case descTypeCheckBox:
+		pan, err = b.buildCheckBox(pd)
+	case descTypeRadioButton:
+		pan, err = b.buildRadioButton(pd)
 	case descTypeEdit:
 		pan, err = b.buildEdit(pd)
+	case descTypeVList:
+		pan, err = b.buildVList(pd)
+	case descTypeHList:
+		pan, err = b.buildHList(pd)
 	default:
 		err = fmt.Errorf("Invalid panel type:%s", pd.Type)
 	}
@@ -337,7 +350,7 @@ func (b *Builder) buildLabel(pd *panelDesc) (IPanel, error) {
 	return label, nil
 }
 
-// buildButtonl builds a gui object of type: "Button"
+// buildButton builds a gui object of type: Button
 func (b *Builder) buildButton(pd *panelDesc) (IPanel, error) {
 
 	// Builds button and set commont attributes
@@ -369,22 +382,96 @@ func (b *Builder) buildButton(pd *panelDesc) (IPanel, error) {
 		}
 	}
 
-	// Sets optional styles
-	if pd.Styles != nil {
-		//bstyles := &StyleDefault.Button
-
-		err := b.setStyles(pd.Styles, button)
-		if err != nil {
-			return nil, err
-		}
-	}
 	return button, nil
 }
 
-// buildEdit builds a gui object of type: "Edit"
-func (b *Builder) buildEdit(pa *panelDesc) (IPanel, error) {
+// buildCheckBox builds a gui object of type: CheckBox
+func (b *Builder) buildCheckBox(pd *panelDesc) (IPanel, error) {
 
-	return nil, nil
+	// Builds check box and set commont attributes
+	cb := NewCheckBox(pd.Text)
+	err := b.setCommon(pd, cb)
+	if err != nil {
+		return nil, err
+	}
+
+	return cb, nil
+}
+
+// buildRadioButton builds a gui object of type: RadioButton
+func (b *Builder) buildRadioButton(pd *panelDesc) (IPanel, error) {
+
+	// Builds check box and set commont attributes
+	rb := NewRadioButton(pd.Text)
+	err := b.setCommon(pd, rb)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sets optional radio button group
+	if pd.Group != "" {
+		rb.SetGroup(pd.Group)
+	}
+	return rb, nil
+}
+
+// buildEdit builds a gui object of type: "Edit"
+func (b *Builder) buildEdit(pd *panelDesc) (IPanel, error) {
+
+	// Builds button and set commont attributes
+	edit := NewEdit(int(pd.Width), pd.PlaceHolder)
+	err := b.setCommon(pd, edit)
+	if err != nil {
+		return nil, err
+	}
+	edit.SetText(pd.Text)
+	return edit, nil
+}
+
+// buildVList builds a gui object of type: VList
+func (b *Builder) buildVList(pd *panelDesc) (IPanel, error) {
+
+	// Builds list and set commont attributes
+	list := NewVList(pd.Width, pd.Height)
+	err := b.setCommon(pd, list)
+	if err != nil {
+		return nil, err
+	}
+
+	// Builds list children
+	for i := 0; i < len(pd.Children); i++ {
+		b.objpath.push(pd.Children[i].Name)
+		child, err := b.build(pd.Children[i], list)
+		b.objpath.pop()
+		if err != nil {
+			return nil, err
+		}
+		list.Add(child)
+	}
+	return list, nil
+}
+
+// buildHList builds a gui object of type: VList
+func (b *Builder) buildHList(pd *panelDesc) (IPanel, error) {
+
+	// Builds list and set commont attributes
+	list := NewHList(pd.Width, pd.Height)
+	err := b.setCommon(pd, list)
+	if err != nil {
+		return nil, err
+	}
+
+	// Builds list children
+	for i := 0; i < len(pd.Children); i++ {
+		b.objpath.push(pd.Children[i].Name)
+		child, err := b.build(pd.Children[i], list)
+		b.objpath.pop()
+		if err != nil {
+			return nil, err
+		}
+		list.Add(child)
+	}
+	return list, nil
 }
 
 // setCommon sets the common attributes in the description to the specified panel
@@ -444,11 +531,6 @@ func (b *Builder) setCommon(pd *panelDesc, ipan IPanel) error {
 	if c != nil {
 		panel.SetColor4(c)
 	}
-	return nil
-}
-
-func (b *Builder) setStyles(ps *panelStyles, ipan IPanel) error {
-
 	return nil
 }
 
