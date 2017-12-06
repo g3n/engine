@@ -22,13 +22,20 @@ import (
 type Builder struct {
 	desc    map[string]*descPanel // parsed descriptions
 	imgpath string                // base path for image panels files
-	objpath strStack              // stack of object names being built
+	objpath strStack              // stack of object names being built (used for error messages)
 }
 
 // descLayout describes all layout types
 type descLayout struct {
-	Type    string // HBox, VBox, Dock
-	Spacing float32
+	Type    string   // HBox, VBox, Dock
+	Spacing *float32 // spacing in pixels
+	Align   string   // alignment type
+}
+
+// descLayoutParam describes all layout parameters types
+type descLayoutParams struct {
+	Expand *float32 // expand factor
+	Align  string
 }
 
 // descPanel describes all panel types
@@ -48,45 +55,50 @@ type descPanel struct {
 	Enabled      *bool
 	Visible      *bool
 	Renderable   *bool
-	Imagefile    string       // For Panel, Button
-	Children     []*descPanel // Panel
-	Layout       *descLayout  // Optional pointer to layout
-	Text         string       // Label, Button
-	Icons        string       // Label
-	BgColor      string       // Label
-	FontColor    string       // Label
-	FontSize     *float32     // Label
-	FontDPI      *float32     // Label
-	LineSpacing  *float32     // Label
-	PlaceHolder  string       // Edit
-	MaxLength    *uint        // Edit
-	Icon         string       // Button
-	Group        string       // RadioButton
-	ImageLabel   *descPanel   // DropDown
-	Items        []*descPanel // Menu, MenuBar
-	Shortcut     string       // Menu
-	Value        *float32     // Slider
-	ScaleFactor  *float32     // Slider
+	Imagefile    string            // For Panel, Button
+	Layout       *descLayout       // Optional pointer to layout
+	LayoutParams *descLayoutParams // Optional layout parameters
+	Text         string            // Label, Button
+	Icons        string            // Label
+	BgColor      string            // Label
+	FontColor    string            // Label
+	FontSize     *float32          // Label
+	FontDPI      *float32          // Label
+	LineSpacing  *float32          // Label
+	PlaceHolder  string            // Edit
+	MaxLength    *uint             // Edit
+	Icon         string            // Button
+	Group        string            // RadioButton
+	ImageLabel   *descPanel        // DropDown
+	Items        []*descPanel      // Menu, MenuBar
+	Shortcut     string            // Menu
+	Value        *float32          // Slider
+	ScaleFactor  *float32          // Slider
+	parent       *descPanel        // used internally
 }
 
 const (
-	descTypePanel       = "Panel"
-	descTypeImagePanel  = "ImagePanel"
-	descTypeLabel       = "Label"
-	descTypeImageLabel  = "ImageLabel"
-	descTypeButton      = "Button"
-	descTypeCheckBox    = "CheckBox"
-	descTypeRadioButton = "RadioButton"
-	descTypeEdit        = "Edit"
-	descTypeVList       = "VList"
-	descTypeHList       = "HList"
-	descTypeDropDown    = "DropDown"
-	descTypeHSlider     = "HSlider"
-	descTypeVSlider     = "VSlider"
-	descTypeHSplitter   = "HSplitter"
-	descTypeVSplitter   = "VSplitter"
-	descTypeMenuBar     = "MenuBar"
-	descTypeMenu        = "Menu"
+	descTypePanel       = "panel"
+	descTypeImagePanel  = "imagepanel"
+	descTypeLabel       = "label"
+	descTypeImageLabel  = "imagelabel"
+	descTypeButton      = "button"
+	descTypeCheckBox    = "checkbox"
+	descTypeRadioButton = "radiobutton"
+	descTypeEdit        = "edit"
+	descTypeVList       = "vlist"
+	descTypeHList       = "hlist"
+	descTypeDropDown    = "dropdown"
+	descTypeHSlider     = "hslider"
+	descTypeVSlider     = "vslider"
+	descTypeHSplitter   = "hsplitter"
+	descTypeVSplitter   = "vsplitter"
+	descTypeTree        = "tree"
+	descTypeTreeNode    = "node"
+	descTypeMenuBar     = "menubar"
+	descTypeMenu        = "menu"
+	descTypeHBoxLayout  = "hbox"
+	descTypeVBoxLayout  = "vbox"
 	fieldMargins        = "margins"
 	fieldBorders        = "borders"
 	fieldBorderColor    = "bordercolor"
@@ -111,6 +123,18 @@ const (
 	asWIDGET     = aPOS | aNAME | aENABLED | aVISIBLE // attribute set for widgets
 )
 
+// maps align name with align parameter
+var mapAlignName = map[string]Align{
+	"none":   AlignNone,
+	"left":   AlignLeft,
+	"right":  AlignRight,
+	"width":  AlignWidth,
+	"top":    AlignTop,
+	"bottom": AlignBottom,
+	"height": AlignHeight,
+	"center": AlignCenter,
+}
+
 // NewBuilder creates and returns a pointer to a new gui Builder object
 func NewBuilder() *Builder {
 
@@ -130,6 +154,7 @@ func (b *Builder) ParseString(desc string) error {
 	if dp.Type != "" {
 		b.desc = make(map[string]*descPanel)
 		b.desc[""] = &dp
+		b.setupDescTree(&dp)
 		return nil
 	}
 
@@ -140,6 +165,9 @@ func (b *Builder) ParseString(desc string) error {
 		return err
 	}
 	b.desc = dpm
+	for _, v := range dpm {
+		b.setupDescTree(v)
+	}
 	return nil
 }
 
@@ -233,17 +261,16 @@ func (b *Builder) build(pd *descPanel, iparent IPanel) (IPanel, error) {
 		pan, err = b.buildHList(pd)
 	case descTypeDropDown:
 		pan, err = b.buildDropDown(pd)
-
 	case descTypeHSlider:
 		pan, err = b.buildSlider(pd, true)
 	case descTypeVSlider:
 		pan, err = b.buildSlider(pd, false)
-
 	case descTypeHSplitter:
 		pan, err = b.buildSplitter(pd, true)
 	case descTypeVSplitter:
 		pan, err = b.buildSplitter(pd, false)
-
+	case descTypeTree:
+		pan, err = b.buildTree(pd)
 	case descTypeMenuBar:
 		pan, err = b.buildMenu(pd, false, true)
 	case descTypeMenu:
@@ -261,19 +288,20 @@ func (b *Builder) build(pd *descPanel, iparent IPanel) (IPanel, error) {
 }
 
 // buildPanel builds a gui object of type: "Panel"
-func (b *Builder) buildPanel(pd *descPanel) (IPanel, error) {
+func (b *Builder) buildPanel(dp *descPanel) (IPanel, error) {
 
 	// Builds panel and set common attributes
-	pan := NewPanel(pd.Width, pd.Height)
-	err := b.setCommon(pd, pan, asPANEL)
+	pan := NewPanel(dp.Width, dp.Height)
+	err := b.setCommon(dp, pan, asPANEL)
 	if err != nil {
 		return nil, err
 	}
 
 	// Builds panel children recursively
-	for i := 0; i < len(pd.Children); i++ {
-		b.objpath.push(pd.Children[i].Name)
-		child, err := b.build(pd.Children[i], pan)
+	for i := 0; i < len(dp.Items); i++ {
+		item := dp.Items[i]
+		b.objpath.push(item.Name)
+		child, err := b.build(item, pan)
 		b.objpath.pop()
 		if err != nil {
 			return nil, err
@@ -316,9 +344,10 @@ func (b *Builder) buildImagePanel(pd *descPanel) (IPanel, error) {
 	}
 
 	// Builds panel children recursively
-	for i := 0; i < len(pd.Children); i++ {
-		b.objpath.push(pd.Children[i].Name)
-		child, err := b.build(pd.Children[i], panel)
+	for i := 0; i < len(pd.Items); i++ {
+		item := pd.Items[i]
+		b.objpath.push(item.Name)
+		child, err := b.build(item, panel)
 		b.objpath.pop()
 		if err != nil {
 			return nil, err
@@ -495,9 +524,10 @@ func (b *Builder) buildVList(pd *descPanel) (IPanel, error) {
 	}
 
 	// Builds list children
-	for i := 0; i < len(pd.Children); i++ {
-		b.objpath.push(pd.Children[i].Name)
-		child, err := b.build(pd.Children[i], list)
+	for i := 0; i < len(pd.Items); i++ {
+		item := pd.Items[i]
+		b.objpath.push(item.Name)
+		child, err := b.build(item, list)
 		b.objpath.pop()
 		if err != nil {
 			return nil, err
@@ -518,9 +548,10 @@ func (b *Builder) buildHList(pd *descPanel) (IPanel, error) {
 	}
 
 	// Builds list children
-	for i := 0; i < len(pd.Children); i++ {
-		b.objpath.push(pd.Children[i].Name)
-		child, err := b.build(pd.Children[i], list)
+	for i := 0; i < len(pd.Items); i++ {
+		item := pd.Items[i]
+		b.objpath.push(item.Name)
+		child, err := b.build(item, list)
 		b.objpath.pop()
 		if err != nil {
 			return nil, err
@@ -553,11 +584,11 @@ func (b *Builder) buildDropDown(pd *descPanel) (IPanel, error) {
 	}
 
 	// Builds drop down children
-	for i := 0; i < len(pd.Children); i++ {
-		pdchild := pd.Children[i]
-		pdchild.Type = descTypeImageLabel
-		b.objpath.push(pdchild.Name)
-		child, err := b.build(pdchild, dd)
+	for i := 0; i < len(pd.Items); i++ {
+		item := pd.Items[i]
+		item.Type = descTypeImageLabel
+		b.objpath.push(item.Name)
+		child, err := b.build(item, dd)
 		b.objpath.pop()
 		if err != nil {
 			return nil, err
@@ -574,7 +605,6 @@ func (b *Builder) buildSlider(pd *descPanel, horiz bool) (IPanel, error) {
 	var slider *Slider
 	if horiz {
 		slider = NewHSlider(pd.Width, pd.Height)
-		log.Error("slider:%v/%v", pd.Width, pd.Height)
 	} else {
 		slider = NewVSlider(pd.Width, pd.Height)
 	}
@@ -613,6 +643,57 @@ func (b *Builder) buildSplitter(pd *descPanel, horiz bool) (IPanel, error) {
 		return nil, err
 	}
 	return splitter, nil
+}
+
+// buildTree builds a gui object of type: Tree
+func (b *Builder) buildTree(dp *descPanel) (IPanel, error) {
+
+	// Builds tree and sets its common attributes
+	tree := NewTree(dp.Width, dp.Height)
+	err := b.setCommon(dp, tree, asWIDGET)
+	if err != nil {
+		return nil, err
+	}
+
+	// Internal function to build tree nodes recursively
+	var buildItems func(dp *descPanel, pnode *TreeNode) error
+	buildItems = func(dp *descPanel, pnode *TreeNode) error {
+		for i := 0; i < len(dp.Items); i++ {
+			item := dp.Items[i]
+			// Item is a tree node
+			if item.Type == "" || item.Type == descTypeTreeNode {
+				var node *TreeNode
+				if pnode == nil {
+					node = tree.AddNode(item.Text)
+				} else {
+					node = pnode.AddNode(item.Text)
+				}
+				err := buildItems(item, node)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+			// Other controls
+			ipan, err := b.build(item, nil)
+			if err != nil {
+				return err
+			}
+			if pnode == nil {
+				tree.Add(ipan)
+			} else {
+				pnode.Add(ipan)
+			}
+		}
+		return nil
+	}
+
+	// Build nodes
+	err = buildItems(dp, nil)
+	if err != nil {
+		return nil, err
+	}
+	return tree, nil
 }
 
 // buildMenu builds a gui object of type: Menu or MenuBar from the
@@ -750,6 +831,119 @@ func (b *Builder) setCommon(pd *descPanel, ipan IPanel, attr uint) error {
 	if attr&aRENDER != 0 && pd.Renderable != nil {
 		panel.SetRenderable(*pd.Renderable)
 	}
+
+	err := b.setLayoutParams(pd, ipan)
+	if err != nil {
+		return err
+	}
+	return b.setLayout(pd, ipan)
+}
+
+// setLayoutParams sets the optional layout params attribute for specified the panel
+func (b *Builder) setLayoutParams(dp *descPanel, ipan IPanel) error {
+
+	// If layout params not declared, nothing to do
+	if dp.LayoutParams == nil {
+		return nil
+	}
+
+	// Get the parent layout
+	if dp.parent == nil {
+		return b.err("layoutparams", "No parent defined")
+	}
+	playout := dp.parent.Layout
+	if playout == nil {
+		return b.err("layoutparams", "Parent does not have layout")
+	}
+	panel := ipan.GetPanel()
+	dlp := dp.LayoutParams
+
+	// HBoxLayout parameters
+	if playout.Type == descTypeHBoxLayout {
+		// Creates layout parameter
+		params := HBoxLayoutParams{Expand: 0, AlignV: AlignTop}
+		// Sets optional expand parameter
+		if dlp.Expand != nil {
+			params.Expand = *dlp.Expand
+		}
+		// Sets optional align parameter
+		if dlp.Align != "" {
+			align, ok := mapAlignName[dlp.Align]
+			if !ok {
+				return b.err("align", "Invalid align name:"+dlp.Align)
+			}
+			params.AlignV = align
+		}
+		panel.SetLayoutParams(&params)
+		return nil
+	}
+
+	// VBoxLayout parameters
+	if playout.Type == descTypeVBoxLayout {
+		// Creates layout parameter
+		params := VBoxLayoutParams{Expand: 0, AlignH: AlignLeft}
+		// Sets optional expand parameter
+		if dlp.Expand != nil {
+			params.Expand = *dlp.Expand
+		}
+		// Sets optional align parameter
+		if dlp.Align != "" {
+			align, ok := mapAlignName[dlp.Align]
+			if !ok {
+				return b.err("align", "Invalid align name:"+dlp.Align)
+			}
+			params.AlignH = align
+		}
+		panel.SetLayoutParams(&params)
+		return nil
+	}
+
+	return b.err("layoutparams", "Invalid parent layout:"+playout.Type)
+}
+
+// setLayout sets the optional panel layout and layout parameters
+func (b *Builder) setLayout(dp *descPanel, ipan IPanel) error {
+
+	// If layout types not declared, nothing to do
+	if dp.Layout == nil {
+		return nil
+	}
+	dl := dp.Layout
+
+	// HBox layout
+	if dl.Type == descTypeHBoxLayout {
+		hbl := NewHBoxLayout()
+		if dl.Spacing != nil {
+			hbl.SetSpacing(*dl.Spacing)
+		}
+		if dl.Align != "" {
+			align, ok := mapAlignName[dl.Align]
+			if !ok {
+				return b.err("align", "Invalid align name:"+dl.Align)
+			}
+			hbl.SetAlignH(align)
+		}
+		ipan.GetPanel().SetLayout(hbl)
+		return nil
+	}
+
+	// VBox layout
+	if dl.Type == descTypeVBoxLayout {
+		vbl := NewVBoxLayout()
+		if dl.Spacing != nil {
+			vbl.SetSpacing(*dl.Spacing)
+		}
+		if dl.Align != "" {
+			align, ok := mapAlignName[dl.Align]
+			if !ok {
+				return b.err("align", "Invalid align name:"+dl.Align)
+			}
+			vbl.SetAlignV(align)
+		}
+		ipan.GetPanel().SetLayout(vbl)
+		return nil
+	}
+
 	return nil
 }
 
@@ -910,6 +1104,20 @@ func (b *Builder) parseFloats(fname, field string, min, max int) ([]float32, err
 func (b *Builder) err(fname, msg string) error {
 
 	return fmt.Errorf("Error in object:%s field:%s -> %s", b.objpath.path(), fname, msg)
+}
+
+// setupDescTree sets the types of all description tree elements to lower case and
+// sets the items "parent" attribute pointing the respective parent description
+func (b *Builder) setupDescTree(dp *descPanel) {
+
+	dp.Type = strings.ToLower(dp.Type)
+	if dp.Layout != nil {
+		dp.Layout.Type = strings.ToLower(dp.Layout.Type)
+	}
+	for i := 0; i < len(dp.Items); i++ {
+		dp.Items[i].parent = dp
+		b.setupDescTree(dp.Items[i])
+	}
 }
 
 // strStack is a stack of strings
