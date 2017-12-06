@@ -34,8 +34,13 @@ type descLayout struct {
 
 // descLayoutParam describes all layout parameters types
 type descLayoutParams struct {
-	Expand *float32 // expand factor
-	Align  string
+	Expand  *float32 // HBox, VBox expand factor
+	Align   string   // HBox, VBox align
+	Row     int      // Grid layout row
+	Col     int      // Grid layout col
+	ColSpan int      // Grid layout colspan
+	AlignH  string   // horizontal alignment
+	AlignV  string   // vertical alignment
 }
 
 // descPanel describes all panel types
@@ -99,6 +104,7 @@ const (
 	descTypeMenu        = "menu"
 	descTypeHBoxLayout  = "hbox"
 	descTypeVBoxLayout  = "vbox"
+	descTypeGridLayout  = "grid"
 	fieldMargins        = "margins"
 	fieldBorders        = "borders"
 	fieldBorderColor    = "bordercolor"
@@ -898,6 +904,41 @@ func (b *Builder) setLayoutParams(dp *descPanel, ipan IPanel) error {
 		return nil
 	}
 
+	// GridLayout parameters
+	if playout.Type == descTypeGridLayout {
+		// Creates layout parameter
+		params := GridLayoutParams{
+			Row:     0,
+			Col:     0,
+			ColSpan: 0,
+			AlignH:  AlignCenter,
+			AlignV:  AlignCenter,
+		}
+		// Sets row parameter
+		params.Row = dlp.Row
+		params.Col = dlp.Col
+		params.ColSpan = dlp.ColSpan
+		// Sets optional alignh parameter
+		if dlp.AlignH != "" {
+			align, ok := mapAlignName[dlp.AlignH]
+			if !ok {
+				return b.err("alignh", "Invalid align name:"+dlp.AlignH)
+			}
+			params.AlignH = align
+		}
+		// Sets optional alignv parameter
+		if dlp.AlignV != "" {
+			align, ok := mapAlignName[dlp.AlignV]
+			if !ok {
+				return b.err("alignv", "Invalid align name:"+dlp.AlignV)
+			}
+			params.AlignV = align
+		}
+		panel.SetLayoutParams(&params)
+		log.Error("set grid parameters:%v", params)
+		return nil
+	}
+
 	return b.err("layoutparams", "Invalid parent layout:"+playout.Type)
 }
 
@@ -909,6 +950,7 @@ func (b *Builder) setLayout(dp *descPanel, ipan IPanel) error {
 		return nil
 	}
 	dl := dp.Layout
+	panel := ipan.GetPanel()
 
 	// HBox layout
 	if dl.Type == descTypeHBoxLayout {
@@ -923,7 +965,7 @@ func (b *Builder) setLayout(dp *descPanel, ipan IPanel) error {
 			}
 			hbl.SetAlignH(align)
 		}
-		ipan.GetPanel().SetLayout(hbl)
+		panel.SetLayout(hbl)
 		return nil
 	}
 
@@ -940,11 +982,19 @@ func (b *Builder) setLayout(dp *descPanel, ipan IPanel) error {
 			}
 			vbl.SetAlignV(align)
 		}
-		ipan.GetPanel().SetLayout(vbl)
+		panel.SetLayout(vbl)
 		return nil
 	}
 
-	return nil
+	// Grid layout
+	if dl.Type == descTypeGridLayout {
+		log.Error("set grid layout")
+		grl := NewGridLayout()
+		panel.SetLayout(grl)
+		return nil
+	}
+
+	return b.err("layout", "Invalid layout type:"+dl.Type)
 }
 
 func (b *Builder) setMenuShortcut(mi *MenuItem, fname, field string) error {
