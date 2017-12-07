@@ -27,15 +27,17 @@ type Builder struct {
 
 // descLayout describes all layout types
 type descLayout struct {
-	Type    string   // HBox, VBox, Dock
-	Spacing *float32 // spacing in pixels
-	Align   string   // alignment type
+	Type      string  // HBox, VBox, Dock
+	Spacing   float32 // spacing in pixels
+	AlignH    string  // HBox group alignment type
+	AlignV    string  // VBox group alignment type
+	MinHeight bool    // HBox, VBox minimum height flag
+	MinWidth  bool    // HBox, VBox minimum width flag
 }
 
 // descLayoutParam describes all layout parameters types
 type descLayoutParams struct {
 	Expand  *float32 // HBox, VBox expand factor
-	Align   string   // HBox, VBox align
 	Row     int      // Grid layout row
 	Col     int      // Grid layout col
 	ColSpan int      // Grid layout colspan
@@ -74,6 +76,7 @@ type descPanel struct {
 	MaxLength    *uint             // Edit
 	Icon         string            // Button
 	Group        string            // RadioButton
+	Checked      bool              // CheckBox, RadioButton
 	ImageLabel   *descPanel        // DropDown
 	Items        []*descPanel      // Menu, MenuBar
 	Shortcut     string            // Menu
@@ -485,7 +488,7 @@ func (b *Builder) buildCheckBox(pd *descPanel) (IPanel, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	cb.SetValue(pd.Checked)
 	return cb, nil
 }
 
@@ -503,6 +506,7 @@ func (b *Builder) buildRadioButton(pd *descPanel) (IPanel, error) {
 	if pd.Group != "" {
 		rb.SetGroup(pd.Group)
 	}
+	rb.SetValue(pd.Checked)
 	return rb, nil
 }
 
@@ -873,10 +877,10 @@ func (b *Builder) setLayoutParams(dp *descPanel, ipan IPanel) error {
 			params.Expand = *dlp.Expand
 		}
 		// Sets optional align parameter
-		if dlp.Align != "" {
-			align, ok := mapAlignName[dlp.Align]
+		if dlp.AlignV != "" {
+			align, ok := mapAlignName[dlp.AlignV]
 			if !ok {
-				return b.err("align", "Invalid align name:"+dlp.Align)
+				return b.err("align", "Invalid align name:"+dlp.AlignV)
 			}
 			params.AlignV = align
 		}
@@ -893,10 +897,10 @@ func (b *Builder) setLayoutParams(dp *descPanel, ipan IPanel) error {
 			params.Expand = *dlp.Expand
 		}
 		// Sets optional align parameter
-		if dlp.Align != "" {
-			align, ok := mapAlignName[dlp.Align]
+		if dlp.AlignH != "" {
+			align, ok := mapAlignName[dlp.AlignH]
 			if !ok {
-				return b.err("align", "Invalid align name:"+dlp.Align)
+				return b.err("align", "Invalid align name:"+dlp.AlignH)
 			}
 			params.AlignH = align
 		}
@@ -955,16 +959,16 @@ func (b *Builder) setLayout(dp *descPanel, ipan IPanel) error {
 	// HBox layout
 	if dl.Type == descTypeHBoxLayout {
 		hbl := NewHBoxLayout()
-		if dl.Spacing != nil {
-			hbl.SetSpacing(*dl.Spacing)
-		}
-		if dl.Align != "" {
-			align, ok := mapAlignName[dl.Align]
+		hbl.SetSpacing(dl.Spacing)
+		if dl.AlignH != "" {
+			align, ok := mapAlignName[dl.AlignH]
 			if !ok {
-				return b.err("align", "Invalid align name:"+dl.Align)
+				return b.err("align", "Invalid align name:"+dl.AlignV)
 			}
 			hbl.SetAlignH(align)
 		}
+		hbl.SetMinHeight(dl.MinHeight)
+		hbl.SetMinWidth(dl.MinWidth)
 		panel.SetLayout(hbl)
 		return nil
 	}
@@ -972,16 +976,16 @@ func (b *Builder) setLayout(dp *descPanel, ipan IPanel) error {
 	// VBox layout
 	if dl.Type == descTypeVBoxLayout {
 		vbl := NewVBoxLayout()
-		if dl.Spacing != nil {
-			vbl.SetSpacing(*dl.Spacing)
-		}
-		if dl.Align != "" {
-			align, ok := mapAlignName[dl.Align]
+		vbl.SetSpacing(dl.Spacing)
+		if dl.AlignV != "" {
+			align, ok := mapAlignName[dl.AlignV]
 			if !ok {
-				return b.err("align", "Invalid align name:"+dl.Align)
+				return b.err("align", "Invalid align name:"+dl.AlignV)
 			}
 			vbl.SetAlignV(align)
 		}
+		vbl.SetMinHeight(dl.MinHeight)
+		vbl.SetMinWidth(dl.MinWidth)
 		panel.SetLayout(vbl)
 		return nil
 	}

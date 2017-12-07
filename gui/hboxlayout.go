@@ -4,27 +4,28 @@
 
 package gui
 
-/*
-HBoxLayout implements a panel layout which arranges the panel children horizontally.
-The children can be separated by a space in pixels set by SetSpacing().
-The whole group of children can be aligned horizontally by SetAlignH() which can
-accept the following types of alignment:
-
-	AlignLeft: Try to align the group of children to the left if the panel width is
-	greater the the sum of the children widths + spacing.
-
-	AlignRight: Try to align the group of children to the right if the panel width is
-	greater the the sum of the children widths + spacing.
-
-	AlignCenter: Try to align the group of children in the center if the panel width is
-	greater the the sum of the children widths + spacing.
-
-	AlignWidth - Try to align the individual children with the same same space between each other.
-	Each individual child can be aligned vertically by SetLayoutParameters()
-
-If the layout method SetMinHeight(true) is called, the panel minimum height will be the
-height of the child with the largest height.
-*/
+// HBoxLayout implements a panel layout which arranges the panel children horizontally.
+// The children can be separated by a space in pixels set by SetSpacing().
+// The whole group of children can be aligned horizontally by SetAlignH() which can
+// accept the following types of alignment:
+//
+// 	AlignLeft: Try to align the group of children to the left if the panel width is
+// 	greater the the sum of the children widths + spacing.
+//
+// 	AlignRight: Try to align the group of children to the right if the panel width is
+// 	greater the the sum of the children widths + spacing.
+//
+// 	AlignCenter: Try to align the group of children in the center if the panel width is
+// 	greater the the sum of the children widths + spacing.
+//
+// 	AlignWidth - Try to align the individual children with the same same space between each other.
+// 	Each individual child can be aligned vertically by SetLayoutParameters()
+//
+// If the layout method SetMinHeight(true) is called, the panel minimum content height will be the
+// height of the child with the largest height.
+//
+// If the layout method SetMinWidth(true) is called, the panel minimum content width will be the
+// sum of its children's widths plus the spacing.
 type HBoxLayout struct {
 	pan       IPanel
 	spacing   float32
@@ -33,7 +34,7 @@ type HBoxLayout struct {
 	minWidth  bool
 }
 
-// HBoxLayoutParameters specify the vertical alignment of each individual child.
+// HBoxLayoutParams specify the vertical alignment of each individual child.
 type HBoxLayoutParams struct {
 	Expand float32 // item expand horizontally factor (0 - no expand)
 	AlignV Align   // item vertical alignment
@@ -57,7 +58,7 @@ func (bl *HBoxLayout) SetSpacing(spacing float32) {
 }
 
 // SetAlignH sets the horizontal alignment of the whole group of items
-// inside the parent panel and updates the layout if possible.
+// inside the parent panel and updates the layout.
 // This only has any effect if there are no expanded items.
 func (bl *HBoxLayout) SetAlignH(align Align) {
 
@@ -94,44 +95,55 @@ func (bl *HBoxLayout) Recalc(ipan IPanel) {
 		return
 	}
 
-	// If minHeight set, sets the panel content height to the height of the heighest child.
-	newHeight := float32(0)
+	// If minHeight is set, get the maximum height of all the panel's children
+	// and if the panel content height is less than this maximum, set its content height to this value.
 	if bl.minHeight {
+		var maxHeight float32
 		for _, ichild := range parent.Children() {
 			child := ichild.(IPanel).GetPanel()
-			if child.Height() > newHeight {
-				newHeight = child.Height()
+			if !child.Visible() {
+				continue
+			}
+			if child.Height() > maxHeight {
+				maxHeight = child.Height()
 			}
 		}
-		if parent.ContentHeight() < newHeight {
-			parent.SetContentHeight(newHeight)
+		if parent.ContentHeight() < maxHeight {
+			parent.setContentSize(parent.ContentWidth(), maxHeight, false)
 		}
 	}
 
-	// If minWidth set, sets the panel content width to the sum of children widths plus spacing
-	newWidth := float32(0)
+	// If minWidth is set, get the sum of widths of this panel's children plus the spacings.
+	// If the panel content width is less than this width, set its content width to this value.
 	if bl.minWidth {
+		var totalWidth float32
 		for _, ichild := range parent.Children() {
 			child := ichild.(IPanel).GetPanel()
-			newWidth += child.Width()
+			if !child.Visible() {
+				continue
+			}
+			totalWidth += child.Width()
 		}
 		// Adds spacing
-		newWidth += bl.spacing * float32(len(parent.Children())-1)
-		if parent.ContentWidth() < newWidth {
-			parent.SetContentWidth(newWidth)
+		totalWidth += bl.spacing * float32(len(parent.Children())-1)
+		if parent.ContentWidth() < totalWidth {
+			parent.setContentSize(totalWidth, parent.ContentHeight(), false)
 		}
 	}
 
 	// Calculates the total width, expanded width, fixed width and
 	// the sum of the expand factor for all items.
-	var twidth float32 = 0
-	var ewidth float32 = 0
-	var fwidth float32 = 0
-	var texpand float32 = 0
+	var twidth float32
+	var ewidth float32
+	var fwidth float32
+	var texpand float32
 	ecount := 0
 	paramsDef := HBoxLayoutParams{Expand: 0, AlignV: AlignTop}
 	for pos, obj := range parent.Children() {
 		pan := obj.(IPanel).GetPanel()
+		if !pan.Visible() {
+			continue
+		}
 		// Get item layout parameters or use default
 		params := paramsDef
 		if pan.layoutParams != nil {
@@ -161,13 +173,16 @@ func (bl *HBoxLayout) Recalc(ipan IPanel) {
 
 	// If there is at least on expanded item, all free space will be occupied
 	spaceMiddle := bl.spacing
-	var posX float32 = 0
+	var posX float32
 	if texpand > 0 {
 		// If there is free space, distribute space between expanded items
 		totalSpace := parent.ContentWidth() - twidth
 		if totalSpace > 0 {
 			for _, obj := range parent.Children() {
 				pan := obj.(IPanel).GetPanel()
+				if !pan.Visible() {
+					continue
+				}
 				// Get item layout parameters or use default
 				params := paramsDef
 				if pan.layoutParams != nil {
@@ -182,6 +197,9 @@ func (bl *HBoxLayout) Recalc(ipan IPanel) {
 		} else {
 			for _, obj := range parent.Children() {
 				pan := obj.(IPanel).GetPanel()
+				if !pan.Visible() {
+					continue
+				}
 				// Get item layout parameters or use default
 				params := paramsDef
 				if pan.layoutParams != nil {
@@ -222,6 +240,9 @@ func (bl *HBoxLayout) Recalc(ipan IPanel) {
 	height := parent.ContentHeight()
 	for pos, obj := range parent.Children() {
 		pan := obj.(IPanel).GetPanel()
+		if !pan.Visible() {
+			continue
+		}
 		// Get item layout parameters or use default
 		params := paramsDef
 		if pan.layoutParams != nil {
