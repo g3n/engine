@@ -910,36 +910,36 @@ func (b *Builder) setLayoutParams(dp *descPanel, ipan IPanel) error {
 
 	// GridLayout parameters
 	if playout.Type == descTypeGridLayout {
-		// Creates layout parameter
-		params := GridLayoutParams{
-			Row:     0,
-			Col:     0,
-			ColSpan: 0,
-			AlignH:  AlignCenter,
-			AlignV:  AlignCenter,
-		}
-		// Sets row parameter
-		params.Row = dlp.Row
-		params.Col = dlp.Col
-		params.ColSpan = dlp.ColSpan
-		// Sets optional alignh parameter
-		if dlp.AlignH != "" {
-			align, ok := mapAlignName[dlp.AlignH]
-			if !ok {
-				return b.err("alignh", "Invalid align name:"+dlp.AlignH)
-			}
-			params.AlignH = align
-		}
-		// Sets optional alignv parameter
-		if dlp.AlignV != "" {
-			align, ok := mapAlignName[dlp.AlignV]
-			if !ok {
-				return b.err("alignv", "Invalid align name:"+dlp.AlignV)
-			}
-			params.AlignV = align
-		}
-		panel.SetLayoutParams(&params)
-		log.Error("set grid parameters:%v", params)
+		//		// Creates layout parameter
+		//		params := GridLayoutParams{
+		//			Row:     0,
+		//			Col:     0,
+		//			ColSpan: 0,
+		//			AlignH:  AlignCenter,
+		//			AlignV:  AlignCenter,
+		//		}
+		//		// Sets row parameter
+		//		params.Row = dlp.Row
+		//		params.Col = dlp.Col
+		//		params.ColSpan = dlp.ColSpan
+		//		// Sets optional alignh parameter
+		//		if dlp.AlignH != "" {
+		//			align, ok := mapAlignName[dlp.AlignH]
+		//			if !ok {
+		//				return b.err("alignh", "Invalid align name:"+dlp.AlignH)
+		//			}
+		//			params.AlignH = align
+		//		}
+		//		// Sets optional alignv parameter
+		//		if dlp.AlignV != "" {
+		//			align, ok := mapAlignName[dlp.AlignV]
+		//			if !ok {
+		//				return b.err("alignv", "Invalid align name:"+dlp.AlignV)
+		//			}
+		//			params.AlignV = align
+		//		}
+		//		panel.SetLayoutParams(&params)
+		//		log.Error("set grid parameters:%v", params)
 		return nil
 	}
 
@@ -991,12 +991,12 @@ func (b *Builder) setLayout(dp *descPanel, ipan IPanel) error {
 	}
 
 	// Grid layout
-	if dl.Type == descTypeGridLayout {
-		log.Error("set grid layout")
-		grl := NewGridLayout()
-		panel.SetLayout(grl)
-		return nil
-	}
+	//	if dl.Type == descTypeGridLayout {
+	//		log.Error("set grid layout")
+	//		grl := NewGridLayout()
+	//		panel.SetLayout(grl)
+	//		return nil
+	//	}
 
 	return b.err("layout", "Invalid layout type:"+dl.Type)
 }
