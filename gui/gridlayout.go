@@ -14,8 +14,6 @@ type GridLayout struct {
 	columns []colInfo // columns alignment info
 	alignh  Align     // global cell horizontal alignment
 	alignv  Align     // global cell vertical alignment
-	spaceh  float32   // space between rows
-	specev  float32   // space between columns
 	expandh bool      // expand horizontally flag
 	expandv bool      // expand vertically flag
 }

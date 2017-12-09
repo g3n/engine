@@ -25,21 +25,22 @@ type Builder struct {
 	objpath strStack              // stack of object names being built (used for error messages)
 }
 
-// descLayout describes all layout types
+// descLayout contains all layout attributes
 type descLayout struct {
-	Type      string  // HBox, VBox, Dock
-	Spacing   float32 // spacing in pixels
+	Type      string  // Type of the layout: HBox, VBox, Grid, Dock, others...
+	Cols      int     // Number of columns for Grid layout
+	Spacing   float32 // Spacing in pixels for HBox and VBox
 	AlignH    string  // HBox group alignment type
 	AlignV    string  // VBox group alignment type
 	MinHeight bool    // HBox, VBox minimum height flag
 	MinWidth  bool    // HBox, VBox minimum width flag
+	ExpandH   bool    // Grid
+	ExpandV   bool    // Grid
 }
 
 // descLayoutParam describes all layout parameters types
 type descLayoutParams struct {
 	Expand  *float32 // HBox, VBox expand factor
-	Row     int      // Grid layout row
-	Col     int      // Grid layout col
 	ColSpan int      // Grid layout colspan
 	AlignH  string   // horizontal alignment
 	AlignV  string   // vertical alignment
@@ -50,8 +51,8 @@ type descPanel struct {
 	Type         string   // Gui object type: Panel, Label, Edit, etc ...
 	Name         string   // Optional name for identification
 	Position     string   // Optional position as: x y | x,y
-	Width        float32  // Optional width (default = 0)
-	Height       float32  // Optional height (default = 0)
+	Width        *float32 // Optional width (default = 0)
+	Height       *float32 // Optional height (default = 0)
 	AspectWidth  *float32 // Optional aspectwidth (default = nil)
 	AspectHeight *float32 // Optional aspectwidth (default = nil)
 	Margins      string   // Optional margins as 1 or 4 float values
@@ -117,19 +118,20 @@ const (
 )
 
 const (
-	aPOS         = 1 << iota                          // attribute position
-	aSIZE        = 1 << iota                          // attribute size
-	aNAME        = 1 << iota                          // attribute name
-	aMARGINS     = 1 << iota                          // attribute margins widths
-	aBORDERS     = 1 << iota                          // attribute borders widths
-	aBORDERCOLOR = 1 << iota                          // attribute border color
-	aPADDINGS    = 1 << iota                          // attribute paddings widths
-	aCOLOR       = 1 << iota                          // attribute panel bgcolor
-	aENABLED     = 1 << iota                          // attribute enabled for events
-	aRENDER      = 1 << iota                          // attribute renderable
-	aVISIBLE     = 1 << iota                          // attribute visible
-	asPANEL      = 0xFF                               // attribute set for panels
-	asWIDGET     = aPOS | aNAME | aENABLED | aVISIBLE // attribute set for widgets
+	aPOS         = 1 << iota                                  // attribute position
+	aSIZE        = 1 << iota                                  // attribute size
+	aNAME        = 1 << iota                                  // attribute name
+	aMARGINS     = 1 << iota                                  // attribute margins widths
+	aBORDERS     = 1 << iota                                  // attribute borders widths
+	aBORDERCOLOR = 1 << iota                                  // attribute border color
+	aPADDINGS    = 1 << iota                                  // attribute paddings widths
+	aCOLOR       = 1 << iota                                  // attribute panel bgcolor
+	aENABLED     = 1 << iota                                  // attribute enabled for events
+	aRENDER      = 1 << iota                                  // attribute renderable
+	aVISIBLE     = 1 << iota                                  // attribute visible
+	asPANEL      = 0xFF                                       // attribute set for panels
+	asWIDGET     = aPOS | aNAME | aENABLED | aVISIBLE         // attribute set for widgets
+	asBUTTON     = aPOS | aSIZE | aNAME | aENABLED | aVISIBLE // attribute set for buttons
 )
 
 // maps align name with align parameter
@@ -299,9 +301,10 @@ func (b *Builder) build(pd *descPanel, iparent IPanel) (IPanel, error) {
 // buildPanel builds a gui object of type: "Panel"
 func (b *Builder) buildPanel(dp *descPanel) (IPanel, error) {
 
-	// Builds panel and set common attributes
-	pan := NewPanel(dp.Width, dp.Height)
-	err := b.setCommon(dp, pan, asPANEL)
+	// Builds panel and set attributes
+	width, height := b.size(dp)
+	pan := NewPanel(width, height)
+	err := b.setAttribs(dp, pan, asPANEL)
 	if err != nil {
 		return nil, err
 	}
@@ -339,7 +342,7 @@ func (b *Builder) buildImagePanel(pd *descPanel) (IPanel, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = b.setCommon(pd, panel, asPANEL)
+	err = b.setAttribs(pd, panel, asPANEL)
 	if err != nil {
 		return nil, err
 	}
@@ -381,7 +384,7 @@ func (b *Builder) buildLabel(pd *descPanel) (IPanel, error) {
 		label = NewLabel(pd.Text)
 	}
 	// Sets common attributes
-	err = b.setCommon(pd, label, asPANEL)
+	err = b.setAttribs(pd, label, asPANEL)
 	if err != nil {
 		return nil, err
 	}
@@ -427,7 +430,7 @@ func (b *Builder) buildImageLabel(pd *descPanel) (IPanel, error) {
 
 	// Builds image label and set common attributes
 	imglabel := NewImageLabel(pd.Text)
-	err := b.setCommon(pd, imglabel, asPANEL)
+	err := b.setAttribs(pd, imglabel, asPANEL)
 	if err != nil {
 		return nil, err
 	}
@@ -449,7 +452,7 @@ func (b *Builder) buildButton(pd *descPanel) (IPanel, error) {
 
 	// Builds button and set commont attributes
 	button := NewButton(pd.Text)
-	err := b.setCommon(pd, button, asWIDGET)
+	err := b.setAttribs(pd, button, asBUTTON)
 	if err != nil {
 		return nil, err
 	}
@@ -484,7 +487,7 @@ func (b *Builder) buildCheckBox(pd *descPanel) (IPanel, error) {
 
 	// Builds check box and set commont attributes
 	cb := NewCheckBox(pd.Text)
-	err := b.setCommon(pd, cb, asWIDGET)
+	err := b.setAttribs(pd, cb, asWIDGET)
 	if err != nil {
 		return nil, err
 	}
@@ -497,7 +500,7 @@ func (b *Builder) buildRadioButton(pd *descPanel) (IPanel, error) {
 
 	// Builds check box and set commont attributes
 	rb := NewRadioButton(pd.Text)
-	err := b.setCommon(pd, rb, asWIDGET)
+	err := b.setAttribs(pd, rb, asWIDGET)
 	if err != nil {
 		return nil, err
 	}
@@ -511,31 +514,33 @@ func (b *Builder) buildRadioButton(pd *descPanel) (IPanel, error) {
 }
 
 // buildEdit builds a gui object of type: "Edit"
-func (b *Builder) buildEdit(pd *descPanel) (IPanel, error) {
+func (b *Builder) buildEdit(dp *descPanel) (IPanel, error) {
 
-	// Builds button and set commont attributes
-	edit := NewEdit(int(pd.Width), pd.PlaceHolder)
-	err := b.setCommon(pd, edit, asWIDGET)
+	// Builds button and set attributes
+	width, _ := b.size(dp)
+	edit := NewEdit(int(width), dp.PlaceHolder)
+	err := b.setAttribs(dp, edit, asWIDGET)
 	if err != nil {
 		return nil, err
 	}
-	edit.SetText(pd.Text)
+	edit.SetText(dp.Text)
 	return edit, nil
 }
 
 // buildVList builds a gui object of type: VList
-func (b *Builder) buildVList(pd *descPanel) (IPanel, error) {
+func (b *Builder) buildVList(dp *descPanel) (IPanel, error) {
 
 	// Builds list and set commont attributes
-	list := NewVList(pd.Width, pd.Height)
-	err := b.setCommon(pd, list, asWIDGET)
+	width, height := b.size(dp)
+	list := NewVList(width, height)
+	err := b.setAttribs(dp, list, asWIDGET)
 	if err != nil {
 		return nil, err
 	}
 
 	// Builds list children
-	for i := 0; i < len(pd.Items); i++ {
-		item := pd.Items[i]
+	for i := 0; i < len(dp.Items); i++ {
+		item := dp.Items[i]
 		b.objpath.push(item.Name)
 		child, err := b.build(item, list)
 		b.objpath.pop()
@@ -548,18 +553,19 @@ func (b *Builder) buildVList(pd *descPanel) (IPanel, error) {
 }
 
 // buildHList builds a gui object of type: VList
-func (b *Builder) buildHList(pd *descPanel) (IPanel, error) {
+func (b *Builder) buildHList(dp *descPanel) (IPanel, error) {
 
 	// Builds list and set commont attributes
-	list := NewHList(pd.Width, pd.Height)
-	err := b.setCommon(pd, list, asWIDGET)
+	width, height := b.size(dp)
+	list := NewHList(width, height)
+	err := b.setAttribs(dp, list, asWIDGET)
 	if err != nil {
 		return nil, err
 	}
 
 	// Builds list children
-	for i := 0; i < len(pd.Items); i++ {
-		item := pd.Items[i]
+	for i := 0; i < len(dp.Items); i++ {
+		item := dp.Items[i]
 		b.objpath.push(item.Name)
 		child, err := b.build(item, list)
 		b.objpath.pop()
@@ -574,6 +580,8 @@ func (b *Builder) buildHList(pd *descPanel) (IPanel, error) {
 // buildDropDown builds a gui object of type: DropDown
 func (b *Builder) buildDropDown(pd *descPanel) (IPanel, error) {
 
+	// If image label attribute defined use it, otherwise
+	// uses default value.
 	var imglabel *ImageLabel
 	if pd.ImageLabel != nil {
 		pd.ImageLabel.Type = descTypeImageLabel
@@ -587,8 +595,9 @@ func (b *Builder) buildDropDown(pd *descPanel) (IPanel, error) {
 	}
 
 	// Builds drop down and set common attributes
-	dd := NewDropDown(pd.Width, imglabel)
-	err := b.setCommon(pd, dd, asWIDGET)
+	width, _ := b.size(pd)
+	dd := NewDropDown(width, imglabel)
+	err := b.setAttribs(pd, dd, asWIDGET)
 	if err != nil {
 		return nil, err
 	}
@@ -612,13 +621,14 @@ func (b *Builder) buildDropDown(pd *descPanel) (IPanel, error) {
 func (b *Builder) buildSlider(pd *descPanel, horiz bool) (IPanel, error) {
 
 	// Builds slider and sets its position
+	width, height := b.size(pd)
 	var slider *Slider
 	if horiz {
-		slider = NewHSlider(pd.Width, pd.Height)
+		slider = NewHSlider(width, height)
 	} else {
-		slider = NewVSlider(pd.Width, pd.Height)
+		slider = NewVSlider(width, height)
 	}
-	err := b.setCommon(pd, slider, asWIDGET)
+	err := b.setAttribs(pd, slider, asWIDGET)
 	if err != nil {
 		return nil, err
 	}
@@ -642,13 +652,14 @@ func (b *Builder) buildSlider(pd *descPanel, horiz bool) (IPanel, error) {
 func (b *Builder) buildSplitter(pd *descPanel, horiz bool) (IPanel, error) {
 
 	// Builds splitter and sets its common attributes
+	width, height := b.size(pd)
 	var splitter *Splitter
 	if horiz {
-		splitter = NewHSplitter(pd.Width, pd.Height)
+		splitter = NewHSplitter(width, height)
 	} else {
-		splitter = NewVSplitter(pd.Width, pd.Height)
+		splitter = NewVSplitter(width, height)
 	}
-	err := b.setCommon(pd, splitter, asWIDGET)
+	err := b.setAttribs(pd, splitter, asWIDGET)
 	if err != nil {
 		return nil, err
 	}
@@ -659,8 +670,9 @@ func (b *Builder) buildSplitter(pd *descPanel, horiz bool) (IPanel, error) {
 func (b *Builder) buildTree(dp *descPanel) (IPanel, error) {
 
 	// Builds tree and sets its common attributes
-	tree := NewTree(dp.Width, dp.Height)
-	err := b.setCommon(dp, tree, asWIDGET)
+	width, height := b.size(dp)
+	tree := NewTree(width, height)
+	err := b.setAttribs(dp, tree, asWIDGET)
 	if err != nil {
 		return nil, err
 	}
@@ -719,7 +731,7 @@ func (b *Builder) buildMenu(pd *descPanel, child, bar bool) (IPanel, error) {
 	}
 	// Only sets attribs for top level menus
 	if !child {
-		err := b.setCommon(pd, menu, asWIDGET)
+		err := b.setAttribs(pd, menu, asWIDGET)
 		if err != nil {
 			return nil, err
 		}
@@ -761,8 +773,9 @@ func (b *Builder) buildMenu(pd *descPanel, child, bar bool) (IPanel, error) {
 	return menu, nil
 }
 
-// setCommon sets the common attributes in the description to the specified panel
-func (b *Builder) setCommon(pd *descPanel, ipan IPanel, attr uint) error {
+// setAttribs sets common attributes from the description to the specified panel
+// The attributes which are set can be specified by the specified bitmask.
+func (b *Builder) setAttribs(pd *descPanel, ipan IPanel, attr uint) error {
 
 	panel := ipan.GetPanel()
 	// Set optional position
@@ -772,6 +785,16 @@ func (b *Builder) setCommon(pd *descPanel, ipan IPanel, attr uint) error {
 			return err
 		}
 		panel.SetPosition(va[0], va[1])
+	}
+
+	// Set optional size
+	if attr&aSIZE != 0 {
+		if pd.Width != nil {
+			panel.SetWidth(*pd.Width)
+		}
+		if pd.Height != nil {
+			panel.SetHeight(*pd.Height)
+		}
 	}
 
 	// Set optional margin sizes
@@ -910,36 +933,31 @@ func (b *Builder) setLayoutParams(dp *descPanel, ipan IPanel) error {
 
 	// GridLayout parameters
 	if playout.Type == descTypeGridLayout {
-		//		// Creates layout parameter
-		//		params := GridLayoutParams{
-		//			Row:     0,
-		//			Col:     0,
-		//			ColSpan: 0,
-		//			AlignH:  AlignCenter,
-		//			AlignV:  AlignCenter,
-		//		}
-		//		// Sets row parameter
-		//		params.Row = dlp.Row
-		//		params.Col = dlp.Col
-		//		params.ColSpan = dlp.ColSpan
-		//		// Sets optional alignh parameter
-		//		if dlp.AlignH != "" {
-		//			align, ok := mapAlignName[dlp.AlignH]
-		//			if !ok {
-		//				return b.err("alignh", "Invalid align name:"+dlp.AlignH)
-		//			}
-		//			params.AlignH = align
-		//		}
-		//		// Sets optional alignv parameter
-		//		if dlp.AlignV != "" {
-		//			align, ok := mapAlignName[dlp.AlignV]
-		//			if !ok {
-		//				return b.err("alignv", "Invalid align name:"+dlp.AlignV)
-		//			}
-		//			params.AlignV = align
-		//		}
-		//		panel.SetLayoutParams(&params)
-		//		log.Error("set grid parameters:%v", params)
+		// Creates layout parameter
+		params := GridLayoutParams{
+			ColSpan: 0,
+			AlignH:  AlignNone,
+			AlignV:  AlignNone,
+		}
+		log.Error("colspan:%v", dlp.ColSpan)
+		params.ColSpan = dlp.ColSpan
+		// Sets optional alignh parameter
+		if dlp.AlignH != "" {
+			align, ok := mapAlignName[dlp.AlignH]
+			if !ok {
+				return b.err("alignh", "Invalid align name:"+dlp.AlignH)
+			}
+			params.AlignH = align
+		}
+		// Sets optional alignv parameter
+		if dlp.AlignV != "" {
+			align, ok := mapAlignName[dlp.AlignV]
+			if !ok {
+				return b.err("alignv", "Invalid align name:"+dlp.AlignV)
+			}
+			params.AlignV = align
+		}
+		panel.SetLayoutParams(&params)
 		return nil
 	}
 
@@ -991,12 +1009,35 @@ func (b *Builder) setLayout(dp *descPanel, ipan IPanel) error {
 	}
 
 	// Grid layout
-	//	if dl.Type == descTypeGridLayout {
-	//		log.Error("set grid layout")
-	//		grl := NewGridLayout()
-	//		panel.SetLayout(grl)
-	//		return nil
-	//	}
+	if dl.Type == descTypeGridLayout {
+		log.Error("set grid layout")
+		// Number of columns
+		if dl.Cols == 0 {
+			return b.err("cols", "Invalid number of columns:"+dl.AlignH)
+		}
+		grl := NewGridLayout(dl.Cols)
+		// Global horizontal alignment
+		if dl.AlignH != "" {
+			alignh, ok := mapAlignName[dl.AlignH]
+			if !ok {
+				return b.err("alignh", "Invalid horizontal align:"+dl.AlignH)
+			}
+			grl.SetAlignH(alignh)
+		}
+		// Global vertical alignment
+		if dl.AlignV != "" {
+			alignv, ok := mapAlignName[dl.AlignV]
+			if !ok {
+				return b.err("alignv", "Invalid vertical align:"+dl.AlignH)
+			}
+			grl.SetAlignV(alignv)
+		}
+		// Expansion flags
+		grl.SetExpandH(dl.ExpandH)
+		grl.SetExpandV(dl.ExpandV)
+		panel.SetLayout(grl)
+		return nil
+	}
 
 	return b.err("layout", "Invalid layout type:"+dl.Type)
 }
@@ -1172,6 +1213,20 @@ func (b *Builder) setupDescTree(dp *descPanel) {
 		dp.Items[i].parent = dp
 		b.setupDescTree(dp.Items[i])
 	}
+}
+
+// Returns the width and height attributes of the specified descriptor
+// if defined or the defaul value (0).
+func (b *Builder) size(dp *descPanel) (float32, float32) {
+
+	var width, height float32
+	if dp.Width != nil {
+		width = *dp.Width
+	}
+	if dp.Height != nil {
+		height = *dp.Height
+	}
+	return width, height
 }
 
 // strStack is a stack of strings
