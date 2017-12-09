@@ -10,11 +10,14 @@ package gui
 // The height of each row is determined by the height of the heightest child in the row.
 // The width of each column is determined by the width of the widest child in the column
 type GridLayout struct {
-	columns []colInfo
-	alignh  Align   // global cell horizontal alignment
-	alignv  Align   // global cell vertical alignment
-	spaceh  float32 // space between rows
-	specev  float32 // space between columns
+	pan     IPanel    // parent panel
+	columns []colInfo // columns alignment info
+	alignh  Align     // global cell horizontal alignment
+	alignv  Align     // global cell vertical alignment
+	spaceh  float32   // space between rows
+	specev  float32   // space between columns
+	expandh bool      // expand horizontally flag
+	expandv bool      // expand vertically flag
 }
 
 // GridLayoutParams describes layout parameter for an specific child
@@ -26,9 +29,8 @@ type GridLayoutParams struct {
 
 // colInfo keeps information about each grid column
 type colInfo struct {
-	width  float32 // column width
-	alignh *Align  // optional column horizontal alignment
-	alignv *Align  // optional column vertical alignment
+	alignh *Align // optional column horizontal alignment
+	alignv *Align // optional column vertical alignment
 }
 
 // NewGridLayout creates and returns a pointer of a new grid layout
@@ -47,6 +49,7 @@ func NewGridLayout(ncols int) *GridLayout {
 func (g *GridLayout) SetAlignV(align Align) {
 
 	g.alignv = align
+	g.Recalc(g.pan)
 }
 
 // SetAlignH sets the horizontal alignment for all the grid cells
@@ -54,6 +57,21 @@ func (g *GridLayout) SetAlignV(align Align) {
 func (g *GridLayout) SetAlignH(align Align) {
 
 	g.alignh = align
+	g.Recalc(g.pan)
+}
+
+// SetExpandH sets it the columns should expand horizontally if possible
+func (g *GridLayout) SetExpandH(expand bool) {
+
+	g.expandh = expand
+	g.Recalc(g.pan)
+}
+
+// SetExpandV sets it the rowss should expand vertically if possible
+func (g *GridLayout) SetExpandV(expand bool) {
+
+	g.expandv = expand
+	g.Recalc(g.pan)
 }
 
 // SetColAlignV sets the vertical alignment for all the cells of
@@ -67,6 +85,7 @@ func (g *GridLayout) SetColAlignV(col int, align Align) {
 		g.columns[col].alignv = new(Align)
 	}
 	*g.columns[col].alignv = align
+	g.Recalc(g.pan)
 }
 
 // SetColAlignH sets the horizontal alignment for all the cells of
@@ -80,6 +99,7 @@ func (g *GridLayout) SetColAlignH(col int, align Align) {
 		g.columns[col].alignh = new(Align)
 	}
 	*g.columns[col].alignh = align
+	g.Recalc(g.pan)
 }
 
 // Recalc sets the position and sizes of all of the panel's children.
@@ -88,13 +108,20 @@ func (g *GridLayout) SetColAlignH(col int, align Align) {
 func (g *GridLayout) Recalc(ipan IPanel) {
 
 	type cell struct {
-		panel  *Panel
-		params *GridLayoutParams
+		panel     *Panel           // pointer to cell panel
+		params    GridLayoutParams // copy of params or default
+		paramsDef bool             // true if parameters are default
 	}
 
 	type row struct {
-		cells  []*cell
-		height float32
+		cells  []*cell // array of row cells
+		height float32 // row height
+	}
+
+	// Saves the received panel
+	g.pan = ipan
+	if g.pan == nil {
+		return
 	}
 
 	// Builds array of child rows
@@ -112,11 +139,17 @@ func (g *GridLayout) Recalc(ipan IPanel) {
 		ip := child.layoutParams
 		var params *GridLayoutParams
 		var ok bool
+		var paramsDef bool
 		if ip != nil {
 			params, ok = child.layoutParams.(*GridLayoutParams)
 			if !ok {
 				panic("layoutParams is not GridLayoutParams")
 			}
+			paramsDef = false
+		} else {
+			params = &GridLayoutParams{}
+			paramsDef = true
+
 		}
 		// If first column, creates row and appends to rows
 		if icol == 0 {
@@ -125,27 +158,18 @@ func (g *GridLayout) Recalc(ipan IPanel) {
 			rows = append(rows, r)
 		}
 		// Set current child panel to current cells
-		rows[irow].cells[icol] = &cell{child, params}
-		// Checks child panel colspan layout params
-		coljump := 1
-		if params != nil && params.ColSpan > 0 {
-			coljump += params.ColSpan
-		}
+		rows[irow].cells[icol] = &cell{child, *params, paramsDef}
 		// Updates next cell column and row
-		icol += coljump
+		icol += 1 + params.ColSpan
 		if icol >= len(g.columns) {
 			irow++
 			icol = 0
 		}
 	}
 
-	// Resets columns widths
-	for i := 0; i < len(g.columns); i++ {
-		g.columns[i].width = 0
-	}
-
 	// Sets the height of each row to the height of the heightest child
 	// Sets the width of each column to the width of the widest column
+	colWidths := make([]float32, len(g.columns))
 	for i := 0; i < len(rows); i++ {
 		r := &rows[i]
 		r.height = 0
@@ -156,8 +180,44 @@ func (g *GridLayout) Recalc(ipan IPanel) {
 			if cell.panel.Height() > r.height {
 				r.height = cell.panel.Height()
 			}
-			if cell.panel.Width() > g.columns[ci].width {
-				g.columns[ci].width = cell.panel.Width()
+			// If cell span columns, ignore this cell when computing column width
+			if cell.params.ColSpan > 0 {
+				continue
+			}
+			if cell.panel.Width() > colWidths[ci] {
+				colWidths[ci] = cell.panel.Width()
+			}
+		}
+	}
+
+	// If expand horizontally set, distribute available space between all columns
+	if g.expandh {
+		var twidth float32
+		for i := 0; i < len(colWidths); i++ {
+			twidth += colWidths[i]
+		}
+		space := pan.ContentWidth() - twidth
+		if space > 0 {
+			colspace := space / float32(len(colWidths))
+			for i := 0; i < len(colWidths); i++ {
+				colWidths[i] += colspace
+			}
+		}
+	}
+
+	// If expand vertically set, distribute available space between all rows
+	if g.expandv {
+		// Calculates the sum of all row heights
+		var theight float32
+		for _, r := range rows {
+			theight += r.height
+		}
+		// If space available distribute between all rows
+		space := pan.ContentHeight() - theight
+		if space > 0 {
+			rowspace := space / float32(len(rows))
+			for i := 0; i < len(rows); i++ {
+				rows[i].height += rowspace
 			}
 		}
 	}
@@ -170,23 +230,30 @@ func (g *GridLayout) Recalc(ipan IPanel) {
 			if cell == nil {
 				continue
 			}
-			colWidth := g.columns[ci].width
 			colspan := 0
 			// Default grid cell alignment
 			alignv := g.alignv
 			alignh := g.alignh
-			// If column has aligment:
+			// If column has alignment, use them
 			if g.columns[ci].alignv != nil {
 				alignv = *g.columns[ci].alignv
 			}
 			if g.columns[ci].alignh != nil {
 				alignh = *g.columns[ci].alignh
 			}
-			// If cell has layout parameters:
-			if cell.params != nil {
+			// If cell has layout parameters, use them
+			if !cell.paramsDef {
+				alignh = cell.params.AlignH
 				alignv = cell.params.AlignV
-				alignv = cell.params.AlignH
 				colspan = cell.params.ColSpan
+			}
+			// Calculates the available width for the cell considering colspan
+			var cellWidth float32
+			for i := ci; i < ci+colspan+1; i++ {
+				if i >= len(colWidths) {
+					break
+				}
+				cellWidth += colWidths[i]
 			}
 			// Determines child panel horizontal position
 			px := cellx
@@ -194,9 +261,15 @@ func (g *GridLayout) Recalc(ipan IPanel) {
 			case AlignNone:
 			case AlignLeft:
 			case AlignRight:
-				px += float32(colWidth) - cell.panel.Width()
+				space := cellWidth - cell.panel.Width()
+				if space > 0 {
+					px += space
+				}
 			case AlignCenter:
-				px += (float32(colWidth) - cell.panel.Width()) / 2
+				space := (cellWidth - cell.panel.Width()) / 2
+				if space > 0 {
+					px += space
+				}
 			default:
 				panic("Invalid horizontal alignment")
 			}
@@ -206,21 +279,22 @@ func (g *GridLayout) Recalc(ipan IPanel) {
 			case AlignNone:
 			case AlignTop:
 			case AlignBottom:
-				py += r.height - cell.panel.Height()
+				space := r.height - cell.panel.Height()
+				if space > 0 {
+					py += space
+				}
 			case AlignCenter:
-				py += (r.height - cell.panel.Height()) / 2
+				space := (r.height - cell.panel.Height()) / 2
+				if space > 0 {
+					py += space
+				}
 			default:
 				panic("Invalid vertical alignment")
 			}
 			// Sets child panel position
 			cell.panel.SetPosition(px, py)
 			// Advances to next row cell considering colspan
-			for i := ci; i < ci+colspan+1; i++ {
-				if i >= len(g.columns) {
-					break
-				}
-				cellx += g.columns[i].width
-			}
+			cellx += cellWidth
 		}
 		celly += r.height
 	}

@@ -583,6 +583,12 @@ func (p *Panel) SetLayoutParams(params interface{}) {
 	p.layoutParams = params
 }
 
+// LayoutParams returns this panel current layout parameters
+func (p *Panel) LayoutParams() interface{} {
+
+	return p.layoutParams
+}
+
 // ContentCoords converts the specified window absolute coordinates in pixels
 // (as informed by OnMouse event) to this panel internal content area pixel coordinates
 func (p *Panel) ContentCoords(wx, wy float32) (float32, float32) {
