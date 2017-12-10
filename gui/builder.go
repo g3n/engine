@@ -44,6 +44,7 @@ type descLayoutParams struct {
 	ColSpan int      // Grid layout colspan
 	AlignH  string   // horizontal alignment
 	AlignV  string   // vertical alignment
+	Edge    string   // Dock layout edge: top,right,bottom,left,center
 }
 
 // descPanel describes all panel types
@@ -83,6 +84,8 @@ type descPanel struct {
 	Shortcut     string            // Menu
 	Value        *float32          // Slider
 	ScaleFactor  *float32          // Slider
+	Title        string            // Window
+	Resizable    string            // Window resizable borders
 	parent       *descPanel        // used internally
 }
 
@@ -106,9 +109,11 @@ const (
 	descTypeTreeNode    = "node"
 	descTypeMenuBar     = "menubar"
 	descTypeMenu        = "menu"
+	descTypeWindow      = "window"
 	descTypeHBoxLayout  = "hbox"
 	descTypeVBoxLayout  = "vbox"
 	descTypeGridLayout  = "grid"
+	descTypeDockLayout  = "dock"
 	fieldMargins        = "margins"
 	fieldBorders        = "borders"
 	fieldBorderColor    = "bordercolor"
@@ -144,6 +149,24 @@ var mapAlignName = map[string]Align{
 	"bottom": AlignBottom,
 	"height": AlignHeight,
 	"center": AlignCenter,
+}
+
+// maps edge name (dock layout) with edge parameter
+var mapEdgeName = map[string]int{
+	"top":    DockTop,
+	"right":  DockRight,
+	"bottom": DockBottom,
+	"left":   DockLeft,
+	"center": DockCenter,
+}
+
+// maps resize border name (window) with parameter value
+var mapResizable = map[string]Resizable{
+	"top":    ResizeTop,
+	"right":  ResizeRight,
+	"bottom": ResizeBottom,
+	"left":   ResizeLeft,
+	"all":    ResizeAll,
 }
 
 // NewBuilder creates and returns a pointer to a new gui Builder object
@@ -286,6 +309,8 @@ func (b *Builder) build(pd *descPanel, iparent IPanel) (IPanel, error) {
 		pan, err = b.buildMenu(pd, false, true)
 	case descTypeMenu:
 		pan, err = b.buildMenu(pd, false, false)
+	case descTypeWindow:
+		pan, err = b.buildWindow(pd)
 	default:
 		err = fmt.Errorf("Invalid panel type:%s", pd.Type)
 	}
@@ -773,6 +798,49 @@ func (b *Builder) buildMenu(pd *descPanel, child, bar bool) (IPanel, error) {
 	return menu, nil
 }
 
+// buildWindow builds a gui object of type: Window from the
+// specified panel descriptor.
+func (b *Builder) buildWindow(dp *descPanel) (IPanel, error) {
+
+	// Builds window and sets its common attributes
+	width, height := b.size(dp)
+	win := NewWindow(width, height)
+	err := b.setAttribs(dp, win, asWIDGET)
+	if err != nil {
+		return nil, err
+	}
+
+	// Title attribute
+	win.SetTitle(dp.Title)
+
+	// Parse resizable borders
+	if dp.Resizable != "" {
+		parts := strings.Fields(dp.Resizable)
+		var res Resizable
+		for _, name := range parts {
+			v, ok := mapResizable[name]
+			if !ok {
+				return nil, b.err("resizable", "Invalid resizable name:"+name)
+			}
+			res |= v
+		}
+		win.SetResizable(res)
+	}
+
+	// Builds window client panel children recursively
+	for i := 0; i < len(dp.Items); i++ {
+		item := dp.Items[i]
+		b.objpath.push(item.Name)
+		child, err := b.build(item, win)
+		b.objpath.pop()
+		if err != nil {
+			return nil, err
+		}
+		win.Add(child)
+	}
+	return win, nil
+}
+
 // setAttribs sets common attributes from the description to the specified panel
 // The attributes which are set can be specified by the specified bitmask.
 func (b *Builder) setAttribs(pd *descPanel, ipan IPanel, attr uint) error {
@@ -960,6 +1028,19 @@ func (b *Builder) setLayoutParams(dp *descPanel, ipan IPanel) error {
 		return nil
 	}
 
+	// DockLayout parameters
+	if playout.Type == descTypeDockLayout {
+		if dlp.Edge != "" {
+			edge, ok := mapEdgeName[dlp.Edge]
+			if !ok {
+				return b.err("edge", "Invalid edge name:"+dlp.Edge)
+			}
+			params := DockLayoutParams{Edge: edge}
+			panel.SetLayoutParams(&params)
+			return nil
+		}
+	}
+
 	return b.err("layoutparams", "Invalid parent layout:"+playout.Type)
 }
 
@@ -1034,6 +1115,13 @@ func (b *Builder) setLayout(dp *descPanel, ipan IPanel) error {
 		grl.SetExpandH(dl.ExpandH)
 		grl.SetExpandV(dl.ExpandV)
 		panel.SetLayout(grl)
+		return nil
+	}
+
+	// Dock layout
+	if dl.Type == descTypeDockLayout {
+		dockl := NewDockLayout()
+		panel.SetLayout(dockl)
 		return nil
 	}
 
