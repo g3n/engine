@@ -168,6 +168,7 @@ func (g *GridLayout) Recalc(ipan IPanel) {
 	// Sets the height of each row to the height of the heightest child
 	// Sets the width of each column to the width of the widest column
 	colWidths := make([]float32, len(g.columns))
+	spanWidths := make([]float32, len(g.columns))
 	for i := 0; i < len(rows); i++ {
 		r := &rows[i]
 		r.height = 0
@@ -178,13 +179,23 @@ func (g *GridLayout) Recalc(ipan IPanel) {
 			if cell.panel.Height() > r.height {
 				r.height = cell.panel.Height()
 			}
-			// If cell span columns, ignore this cell when computing column width
+			// If this cell span columns compare with other span cell widths
 			if cell.params.ColSpan > 0 {
-				continue
+				if cell.panel.Width() > spanWidths[ci] {
+					spanWidths[ci] = cell.panel.Width()
+				}
+			} else {
+				if cell.panel.Width() > colWidths[ci] {
+					colWidths[ci] = cell.panel.Width()
+				}
 			}
-			if cell.panel.Width() > colWidths[ci] {
-				colWidths[ci] = cell.panel.Width()
-			}
+		}
+	}
+	// The final width for each column is the maximum no span column width
+	// but if it is zero, is the maximum span column width
+	for i := 0; i < len(colWidths); i++ {
+		if colWidths[i] == 0 {
+			colWidths[i] = spanWidths[i]
 		}
 	}
 

@@ -939,7 +939,6 @@ func (b *Builder) setLayoutParams(dp *descPanel, ipan IPanel) error {
 			AlignH:  AlignNone,
 			AlignV:  AlignNone,
 		}
-		log.Error("colspan:%v", dlp.ColSpan)
 		params.ColSpan = dlp.ColSpan
 		// Sets optional alignh parameter
 		if dlp.AlignH != "" {
@@ -1010,7 +1009,6 @@ func (b *Builder) setLayout(dp *descPanel, ipan IPanel) error {
 
 	// Grid layout
 	if dl.Type == descTypeGridLayout {
-		log.Error("set grid layout")
 		// Number of columns
 		if dl.Cols == 0 {
 			return b.err("cols", "Invalid number of columns:"+dl.AlignH)
