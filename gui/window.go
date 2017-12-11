@@ -119,10 +119,9 @@ func (w *Window) Add(ichild IPanel) *Window {
 }
 
 // SetLayout set the layout of this window content area
-func (w *Window) SetLayout(layout ILayout) *Window {
+func (w *Window) SetLayout(layout ILayout) {
 
 	w.client.SetLayout(layout)
-	return w
 }
 
 // onMouse process subscribed mouse events over the window

@@ -49,21 +49,21 @@ type descLayoutParams struct {
 
 // descPanel describes all panel types
 type descPanel struct {
-	Type         string   // Gui object type: Panel, Label, Edit, etc ...
-	Name         string   // Optional name for identification
-	Position     string   // Optional position as: x y | x,y
-	Width        *float32 // Optional width (default = 0)
-	Height       *float32 // Optional height (default = 0)
-	AspectWidth  *float32 // Optional aspectwidth (default = nil)
-	AspectHeight *float32 // Optional aspectwidth (default = nil)
-	Margins      string   // Optional margins as 1 or 4 float values
-	Borders      string   // Optional borders as 1 or 4 float values
-	BorderColor  string   // Optional border color as name or 3 or 4 float values
-	Paddings     string   // Optional paddings as 1 or 4 float values
-	Color        string   // Optional color as 1 or 4 float values
-	Enabled      *bool
-	Visible      *bool
-	Renderable   *bool
+	Type         string            // Gui object type: Panel, Label, Edit, etc ...
+	Name         string            // Optional name for identification
+	Position     string            // Optional position as: x y | x,y
+	Width        *float32          // Optional width (default = 0)
+	Height       *float32          // Optional height (default = 0)
+	AspectWidth  *float32          // Optional aspectwidth (default = nil)
+	AspectHeight *float32          // Optional aspectwidth (default = nil)
+	Margins      string            // Optional margins as 1 or 4 float values
+	Borders      string            // Optional borders as 1 or 4 float values
+	BorderColor  string            // Optional border color as name or 3 or 4 float values
+	Paddings     string            // Optional paddings as 1 or 4 float values
+	Color        string            // Optional color as 1 or 4 float values
+	Enabled      *bool             // All:
+	Visible      *bool             // All:
+	Renderable   *bool             // All:
 	Imagefile    string            // For Panel, Button
 	Layout       *descLayout       // Optional pointer to layout
 	LayoutParams *descLayoutParams // Optional layout parameters
@@ -86,6 +86,9 @@ type descPanel struct {
 	ScaleFactor  *float32          // Slider
 	Title        string            // Window
 	Resizable    string            // Window resizable borders
+	P0           *descPanel        // Splitter panel 0
+	P1           *descPanel        // Splitter panel 1
+	Split        *float32          // Splitter split value
 	parent       *descPanel        // used internally
 }
 
@@ -469,6 +472,19 @@ func (b *Builder) buildImageLabel(pd *descPanel) (IPanel, error) {
 		imglabel.SetIcon(icons)
 	}
 
+	// Sets optional image from file
+	// If path is not absolute join with user supplied image base path
+	if pd.Imagefile != "" {
+		path := pd.Imagefile
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(b.imgpath, path)
+		}
+		err := imglabel.SetImageFromFile(path)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return imglabel, nil
 }
 
@@ -688,6 +704,36 @@ func (b *Builder) buildSplitter(pd *descPanel, horiz bool) (IPanel, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Optional split value
+	if pd.Split != nil {
+		splitter.SetSplit(*pd.Split)
+	}
+
+	// Splitter panel 0 attributes and items
+	if pd.P0 != nil {
+		err := b.setAttribs(pd.P0, &splitter.P0, asPANEL)
+		if err != nil {
+			return nil, err
+		}
+		err = b.addPanelItems(pd.P0, &splitter.P0)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Splitter panel 1 attributes and items
+	if pd.P1 != nil {
+		err := b.setAttribs(pd.P1, &splitter.P1, asPANEL)
+		if err != nil {
+			return nil, err
+		}
+		err = b.addPanelItems(pd.P1, &splitter.P1)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return splitter, nil
 }
 
@@ -839,6 +885,23 @@ func (b *Builder) buildWindow(dp *descPanel) (IPanel, error) {
 		win.Add(child)
 	}
 	return win, nil
+}
+
+// addPanelItems adds the items in the panel descriptor to the specified panel
+func (b *Builder) addPanelItems(dp *descPanel, ipan IPanel) error {
+
+	pan := ipan.GetPanel()
+	for i := 0; i < len(dp.Items); i++ {
+		item := dp.Items[i]
+		b.objpath.push(item.Name)
+		child, err := b.build(item, pan)
+		b.objpath.pop()
+		if err != nil {
+			return err
+		}
+		pan.Add(child)
+	}
+	return nil
 }
 
 // setAttribs sets common attributes from the description to the specified panel
@@ -1052,7 +1115,6 @@ func (b *Builder) setLayout(dp *descPanel, ipan IPanel) error {
 		return nil
 	}
 	dl := dp.Layout
-	panel := ipan.GetPanel()
 
 	// HBox layout
 	if dl.Type == descTypeHBoxLayout {
@@ -1067,7 +1129,7 @@ func (b *Builder) setLayout(dp *descPanel, ipan IPanel) error {
 		}
 		hbl.SetMinHeight(dl.MinHeight)
 		hbl.SetMinWidth(dl.MinWidth)
-		panel.SetLayout(hbl)
+		ipan.SetLayout(hbl)
 		return nil
 	}
 
@@ -1084,7 +1146,7 @@ func (b *Builder) setLayout(dp *descPanel, ipan IPanel) error {
 		}
 		vbl.SetMinHeight(dl.MinHeight)
 		vbl.SetMinWidth(dl.MinWidth)
-		panel.SetLayout(vbl)
+		ipan.SetLayout(vbl)
 		return nil
 	}
 
@@ -1114,14 +1176,14 @@ func (b *Builder) setLayout(dp *descPanel, ipan IPanel) error {
 		// Expansion flags
 		grl.SetExpandH(dl.ExpandH)
 		grl.SetExpandV(dl.ExpandV)
-		panel.SetLayout(grl)
+		ipan.SetLayout(grl)
 		return nil
 	}
 
 	// Dock layout
 	if dl.Type == descTypeDockLayout {
 		dockl := NewDockLayout()
-		panel.SetLayout(dockl)
+		ipan.SetLayout(dockl)
 		return nil
 	}
 
@@ -1298,6 +1360,15 @@ func (b *Builder) setupDescTree(dp *descPanel) {
 	for i := 0; i < len(dp.Items); i++ {
 		dp.Items[i].parent = dp
 		b.setupDescTree(dp.Items[i])
+	}
+	// Special case for splitter
+	if dp.P0 != nil {
+		dp.P0.parent = dp
+		b.setupDescTree(dp.P0)
+	}
+	if dp.P1 != nil {
+		dp.P1.parent = dp
+		b.setupDescTree(dp.P1)
 	}
 }
 

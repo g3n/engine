@@ -46,6 +46,7 @@ type IPanel interface {
 	SetRoot(*Root)
 	LostKeyFocus()
 	TotalHeight() float32
+	SetLayout(ILayout)
 }
 
 // Panel is 2D rectangular graphic which by default has a quad (2 triangles) geometry.
