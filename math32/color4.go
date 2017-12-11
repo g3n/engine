@@ -1,11 +1,13 @@
 // Copyright 2016 The G3N Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-
 package math32
 
-import ()
+import (
+	"strings"
+)
 
+// Type Color4 describes an RGBA color
 type Color4 struct {
 	R float32
 	G float32
@@ -13,16 +15,25 @@ type Color4 struct {
 	A float32
 }
 
-var Black4 = Color4{0, 0, 0, 1}
-var White4 = Color4{1, 1, 1, 1}
-var Red4 = Color4{1, 0, 0, 1}
-var Green4 = Color4{0, 1, 0, 1}
-var Blue4 = Color4{0, 0, 1, 1}
-var Gray4 = Color4{0.5, 0.5, 0.5, 1}
+// NewColor4 creates and returns a pointer to a new Color4
+// with the specified standard web color name (case insensitive)
+// and specified alpha channel value.
+// Returns nil if the specified color name not found
+func NewColor4(name string, alpha float32) *Color4 {
 
-func NewColor4(r, g, b, a float32) *Color4 {
+	c, ok := mapColorNames[strings.ToLower(name)]
+	if !ok {
+		return nil
+	}
+	return &Color4{c.R, c.G, c.B, alpha}
+}
 
-	return &Color4{R: r, G: g, B: b, A: a}
+// Color4Name returns a Color4 with the specified standard web color name
+// and specified alpha channel.
+func Color4Name(name string, alpha float32) Color4 {
+
+	c := mapColorNames[name]
+	return Color4{c.R, c.G, c.B, alpha}
 }
 
 // Set sets this color individual R,G,B,A components

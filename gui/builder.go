@@ -1249,10 +1249,10 @@ func (b *Builder) parseColor(fname, field string) (*math32.Color4, error) {
 	parts := strings.Fields(field)
 	if len(parts) == 1 || len(parts) == 2 {
 		// First part must be a color name
-		if !math32.IsColor(parts[0]) {
+		c, ok := math32.IsColorName(parts[0])
+		if !ok {
 			return nil, b.err(fname, fmt.Sprintf("Invalid color name:%s", parts[0]))
 		}
-		c := math32.ColorName(parts[0])
 		c4 := math32.Color4{c.R, c.G, c.B, 1}
 		if len(parts) == 2 {
 			val, err := strconv.ParseFloat(parts[1], 32)

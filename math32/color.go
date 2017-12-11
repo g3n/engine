@@ -1,29 +1,37 @@
 // Copyright 2016 The G3N Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-
 package math32
 
-import ()
+import (
+	"strings"
+)
 
+// Type color describes an RGB color
 type Color struct {
 	R float32
 	G float32
 	B float32
 }
 
-var Black = Color{0, 0, 0}
-var White = Color{1, 1, 1}
-var Red = Color{1, 0, 0}
-var Green = Color{0, 1, 0}
-var Blue = Color{0, 0, 1}
-var Gray = Color{0.5, 0.5, 0.5}
+// New creates and returns a pointer to a new Color
+// with the specified web standard color name (case insensitive).
+// Returns nil if the color name not found
+func NewColor(name string) *Color {
 
-// NewColor creates and returns a pointer to a new color
-// with the specified RGB components
-func NewColor(r, g, b float32) *Color {
+	c, ok := mapColorNames[strings.ToLower(name)]
+	if !ok {
+		return nil
+	}
+	return &c
+}
 
-	return &Color{R: r, G: g, B: b}
+// Name returns a Color with the specified standard web color
+// name (case insensitive).
+// Returns black color if the specified color name not found
+func ColorName(name string) Color {
+
+	return mapColorNames[strings.ToLower(name)]
 }
 
 // NewColorHex creates and returns a pointer to a new color
@@ -56,7 +64,10 @@ func (c *Color) SetHex(value uint) *Color {
 // specified standard web color name
 func (c *Color) SetName(name string) *Color {
 
-	*c = colorNames[name]
+	color, ok := mapColorNames[strings.ToLower(name)]
+	if ok {
+		*c = color
+	}
 	return c
 }
 
@@ -113,31 +124,15 @@ func (c *Color) Equals(other *Color) bool {
 	return (c.R == other.R) && (c.G == other.G) && (c.B == other.B)
 }
 
-// IsColor returns true if the specified name is a standard web color name
-func IsColor(name string) bool {
+func IsColorName(name string) (Color, bool) {
 
-	_, ok := colorNames[name]
-	return ok
-
+	c, ok := mapColorNames[strings.ToLower(name)]
+	return c, ok
 }
 
-// ColorName returns a Color with the specified standard web color name.
-func ColorName(name string) Color {
-
-	return colorNames[name]
-}
-
-// Color4Name returns a Color4 with the specified standard web color name
-// and specified alpha channel.
-func Color4Name(name string, alpha float32) Color4 {
-
-	c := colorNames[name]
-	return Color4{c.R, c.G, c.B, alpha}
-}
-
-// colorNames maps standard web color names to a Vector3 with
-// the color's RGB component values
-var colorNames = map[string]Color{
+// mapColorNames maps standard web color names to a Color with
+// the standard web color's RGB component values
+var mapColorNames = map[string]Color{
 	"aliceblue":            Color{0.941, 0.973, 1.000},
 	"antiquewhite":         Color{0.980, 0.922, 0.843},
 	"aqua":                 Color{0.000, 1.000, 1.000},

@@ -39,15 +39,6 @@ func NewLabel(msg string, icon ...bool) *Label {
 	return l
 }
 
-//// NewIconLabel creates and returns a label panel using the specified text
-//// drawn using the default icon font.
-//func NewIconLabel(msg string) *Label {
-//
-//	l := new(Label)
-//	l.initialize(msg, StyleDefault().FontIcon)
-//	return l
-//}
-
 // initialize initializes this label and is normally used by other
 // gui types which contains a label.
 func (l *Label) initialize(msg string, font *text.Font) {
@@ -58,7 +49,7 @@ func (l *Label) initialize(msg string, font *text.Font) {
 	l.fontDPI = 72
 	l.lineSpacing = 1.0
 	l.bgColor = math32.Color4{0, 0, 0, 0}
-	l.fgColor = math32.Black4
+	l.fgColor = math32.Color4{0, 0, 0, 1}
 	l.SetText(msg)
 }
 

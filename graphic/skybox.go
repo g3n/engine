@@ -39,7 +39,7 @@ func NewSkybox(data SkyboxData) (*Skybox, error) {
 		if err != nil {
 			return nil, err
 		}
-		matFace := material.NewStandard(math32.NewColor(1, 1, 1))
+		matFace := material.NewStandard(math32.NewColor("white"))
 		matFace.AddTexture(tex)
 		matFace.SetSide(material.SideBack)
 		matFace.SetUseLights(material.UseLightAmbient)
