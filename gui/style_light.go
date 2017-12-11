@@ -27,8 +27,8 @@ func NewLightStyle() *Style {
 	font.SetLineSpacing(1.0)
 	font.SetSize(14)
 	font.SetDPI(72)
-	font.SetFgColor4(&math32.Color4{0, 0, 0, 1})
-	font.SetBgColor4(&math32.Color4{1, 1, 1, 0})
+	font.SetFgColor4(math32.NewColor4("black"))
+	font.SetBgColor4(math32.NewColor4("black", 0))
 	s.Font = font
 
 	// Creates icon font
@@ -40,13 +40,13 @@ func NewLightStyle() *Style {
 	fontIcon.SetLineSpacing(1.0)
 	fontIcon.SetSize(14)
 	fontIcon.SetDPI(72)
-	fontIcon.SetFgColor4(&math32.Color4{0, 0, 0, 1})
-	fontIcon.SetBgColor4(&math32.Color4{1, 1, 1, 1})
+	fontIcon.SetFgColor4(math32.NewColor4("black"))
+	fontIcon.SetBgColor4(math32.NewColor4("white", 0))
 	s.FontIcon = fontIcon
 
 	borderSizes := BorderSizes{1, 1, 1, 1}
-	borderColor := math32.Color4{0, 0, 0, 1}
-	borderColorDis := math32.Color4{0.4, 0.4, 0.4, 1}
+	borderColor := math32.Color4Name("DimGray")
+	borderColorDis := math32.Color4Name("LightGray")
 
 	bgColor := math32.Color{0.85, 0.85, 0.85}
 	bgColor4 := math32.Color4{0, 0, 0, 0}

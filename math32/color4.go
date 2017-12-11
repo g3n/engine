@@ -17,23 +17,31 @@ type Color4 struct {
 
 // NewColor4 creates and returns a pointer to a new Color4
 // with the specified standard web color name (case insensitive)
-// and specified alpha channel value.
+// and an optional alpha channel value.
 // Returns nil if the specified color name not found
-func NewColor4(name string, alpha float32) *Color4 {
+func NewColor4(name string, alpha ...float32) *Color4 {
 
 	c, ok := mapColorNames[strings.ToLower(name)]
 	if !ok {
 		return nil
 	}
-	return &Color4{c.R, c.G, c.B, alpha}
+	a := float32(1)
+	if len(alpha) > 0 {
+		a = alpha[0]
+	}
+	return &Color4{c.R, c.G, c.B, a}
 }
 
 // Color4Name returns a Color4 with the specified standard web color name
-// and specified alpha channel.
-func Color4Name(name string, alpha float32) Color4 {
+// and an optional alpha channel value.
+func Color4Name(name string, alpha ...float32) Color4 {
 
-	c := mapColorNames[name]
-	return Color4{c.R, c.G, c.B, alpha}
+	c := mapColorNames[strings.ToLower(name)]
+	a := float32(1)
+	if len(alpha) > 0 {
+		a = alpha[0]
+	}
+	return Color4{c.R, c.G, c.B, a}
 }
 
 // Set sets this color individual R,G,B,A components
@@ -79,6 +87,7 @@ func (c *Color4) MultiplyScalar(v float32) *Color4 {
 	c.R *= v
 	c.G *= v
 	c.B *= v
+	c.A *= v
 	return c
 }
 

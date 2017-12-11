@@ -47,7 +47,7 @@ type descLayoutParams struct {
 	Edge    string   // Dock layout edge: top,right,bottom,left,center
 }
 
-// descPanel describes all panel types
+// descPanel describes all panel attributes
 type descPanel struct {
 	Type         string            // Gui object type: Panel, Label, Edit, etc ...
 	Name         string            // Optional name for identification
