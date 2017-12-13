@@ -14,115 +14,141 @@ import (
 
 	"github.com/g3n/engine/gui/assets/icon"
 	"github.com/g3n/engine/math32"
-	"github.com/g3n/engine/window"
 	"gopkg.in/yaml.v2"
 )
 
 // Builder builds GUI objects from a declarative description in YAML format
 type Builder struct {
-	desc    map[string]*descPanel // parsed descriptions
-	imgpath string                // base path for image panels files
-	objpath strStack              // stack of object names being built (used for error messages)
+	am       map[string]interface{}     // parsed map with gui object atttributes
+	imgpath  string                     // base path for image panels files
+	builders map[string]BuilderFunc     // map of builder functions by type
+	attribs  map[string]AttribCheckFunc // map of attribute name with check functions
 }
 
-// descLayout contains all layout attributes
-type descLayout struct {
-	Type      string  // Type of the layout: HBox, VBox, Grid, Dock, others...
-	Cols      int     // Number of columns for Grid layout
-	Spacing   float32 // Spacing in pixels for HBox and VBox
-	AlignH    string  // HBox group alignment type
-	AlignV    string  // VBox group alignment type
-	MinHeight bool    // HBox, VBox minimum height flag
-	MinWidth  bool    // HBox, VBox minimum width flag
-	ExpandH   bool    // Grid
-	ExpandV   bool    // Grid
-}
+type BuilderFunc func(*Builder, map[string]interface{}) (IPanel, error)
 
-// descLayoutParam describes all layout parameters types
-type descLayoutParams struct {
-	Expand  *float32 // HBox, VBox expand factor
-	ColSpan int      // Grid layout colspan
-	AlignH  string   // horizontal alignment
-	AlignV  string   // vertical alignment
-	Edge    string   // Dock layout edge: top,right,bottom,left,center
-}
+//// descLayout contains all layout attributes
+//type descLayout struct {
+//	Type      string  // Type of the layout: HBox, VBox, Grid, Dock, others...
+//	Cols      int     // Number of columns for Grid layout
+//	Spacing   float32 // Spacing in pixels for HBox and VBox
+//	AlignH    string  // HBox group alignment type
+//	AlignV    string  // VBox group alignment type
+//	MinHeight bool    // HBox, VBox minimum height flag
+//	MinWidth  bool    // HBox, VBox minimum width flag
+//	ExpandH   bool    // Grid
+//	ExpandV   bool    // Grid
+//}
+//
+//// descLayoutParam describes all layout parameters types
+//type descLayoutParams struct {
+//	Expand  *float32 // HBox, VBox expand factor
+//	ColSpan int      // Grid layout colspan
+//	AlignH  string   // horizontal alignment
+//	AlignV  string   // vertical alignment
+//	Edge    string   // Dock layout edge: top,right,bottom,left,center
+//}
 
-// descPanel describes all panel attributes
-type descPanel struct {
-	Type         string            // Gui object type: Panel, Label, Edit, etc ...
-	Name         string            // Optional name for identification
-	Position     string            // Optional position as: x y | x,y
-	Width        *float32          // Optional width (default = 0)
-	Height       *float32          // Optional height (default = 0)
-	AspectWidth  *float32          // Optional aspectwidth (default = nil)
-	AspectHeight *float32          // Optional aspectwidth (default = nil)
-	Margins      string            // Optional margins as 1 or 4 float values
-	Borders      string            // Optional borders as 1 or 4 float values
-	BorderColor  string            // Optional border color as name or 3 or 4 float values
-	Paddings     string            // Optional paddings as 1 or 4 float values
-	Color        string            // Optional color as 1 or 4 float values
-	Enabled      *bool             // All:
-	Visible      *bool             // All:
-	Renderable   *bool             // All:
-	Imagefile    string            // For Panel, Button
-	Layout       *descLayout       // Optional pointer to layout
-	LayoutParams *descLayoutParams // Optional layout parameters
-	Text         string            // Label, Button
-	Icons        string            // Label
-	BgColor      string            // Label
-	FontColor    string            // Label
-	FontSize     *float32          // Label
-	FontDPI      *float32          // Label
-	LineSpacing  *float32          // Label
-	PlaceHolder  string            // Edit
-	MaxLength    *uint             // Edit
-	Icon         string            // Button
-	Group        string            // RadioButton
-	Checked      bool              // CheckBox, RadioButton
-	ImageLabel   *descPanel        // DropDown
-	Items        []*descPanel      // Menu, MenuBar
-	Shortcut     string            // Menu
-	Value        *float32          // Slider
-	ScaleFactor  *float32          // Slider
-	Title        string            // Window
-	Resizable    string            // Window resizable borders
-	P0           *descPanel        // Splitter panel 0
-	P1           *descPanel        // Splitter panel 1
-	Split        *float32          // Splitter split value
-	parent       *descPanel        // used internally
-}
+//// descPanel describes all panel attributes
+//type descPanel struct {
+//	Type         string            // Gui object type: Panel, Label, Edit, etc ...
+//	Name         string            // Optional name for identification
+//	Position     string            // Optional position as: x y | x,y
+//	Width        *float32          // Optional width (default = 0)
+//	Height       *float32          // Optional height (default = 0)
+//	AspectWidth  *float32          // Optional aspectwidth (default = nil)
+//	AspectHeight *float32          // Optional aspectwidth (default = nil)
+//	Margins      string            // Optional margins as 1 or 4 float values
+//	Borders      string            // Optional borders as 1 or 4 float values
+//	BorderColor  string            // Optional border color as name or 3 or 4 float values
+//	Paddings     string            // Optional paddings as 1 or 4 float values
+//	Color        string            // Optional color as 1 or 4 float values
+//	Enabled      *bool             // All:
+//	Visible      *bool             // All:
+//	Renderable   *bool             // All:
+//	Imagefile    string            // For Panel, Button
+//	Layout       *descLayout       // Optional pointer to layout
+//	LayoutParams *descLayoutParams // Optional layout parameters
+//	Text         string            // Label, Button
+//	Icons        string            // Label
+//	BgColor      string            // Label
+//	FontColor    string            // Label
+//	FontSize     *float32          // Label
+//	FontDPI      *float32          // Label
+//	LineSpacing  *float32          // Label
+//	PlaceHolder  string            // Edit
+//	MaxLength    *uint             // Edit
+//	Icon         string            // Button
+//	Group        string            // RadioButton
+//	Checked      bool              // CheckBox, RadioButton
+//	ImageLabel   *descPanel        // DropDown
+//	Items        []*descPanel      // Menu, MenuBar
+//	Shortcut     string            // Menu
+//	Value        *float32          // Slider
+//	ScaleFactor  *float32          // Slider
+//	Title        string            // Window
+//	Resizable    string            // Window resizable borders
+//	P0           *descPanel        // Splitter panel 0
+//	P1           *descPanel        // Splitter panel 1
+//	Split        *float32          // Splitter split value
+//	parent       *descPanel        // used internally
+//}
 
+// Panel and layout types
 const (
-	descTypePanel       = "panel"
-	descTypeImagePanel  = "imagepanel"
-	descTypeLabel       = "label"
-	descTypeImageLabel  = "imagelabel"
-	descTypeButton      = "button"
-	descTypeCheckBox    = "checkbox"
-	descTypeRadioButton = "radiobutton"
-	descTypeEdit        = "edit"
-	descTypeVList       = "vlist"
-	descTypeHList       = "hlist"
-	descTypeDropDown    = "dropdown"
-	descTypeHSlider     = "hslider"
-	descTypeVSlider     = "vslider"
-	descTypeHSplitter   = "hsplitter"
-	descTypeVSplitter   = "vsplitter"
-	descTypeTree        = "tree"
-	descTypeTreeNode    = "node"
-	descTypeMenuBar     = "menubar"
-	descTypeMenu        = "menu"
-	descTypeWindow      = "window"
-	descTypeHBoxLayout  = "hbox"
-	descTypeVBoxLayout  = "vbox"
-	descTypeGridLayout  = "grid"
-	descTypeDockLayout  = "dock"
-	fieldMargins        = "margins"
-	fieldBorders        = "borders"
-	fieldBorderColor    = "bordercolor"
-	fieldPaddings       = "paddings"
-	fieldColor          = "color"
-	fieldBgColor        = "bgcolor"
+	TypePanel       = "panel"
+	TypeImagePanel  = "imagepanel"
+	TypeLabel       = "label"
+	TypeImageLabel  = "imagelabel"
+	TypeButton      = "button"
+	TypeCheckBox    = "checkbox"
+	TypeRadioButton = "radiobutton"
+	TypeEdit        = "edit"
+	TypeVList       = "vlist"
+	TypeHList       = "hlist"
+	TypeDropDown    = "dropdown"
+	TypeHSlider     = "hslider"
+	TypeVSlider     = "vslider"
+	TypeHSplitter   = "hsplitter"
+	TypeVSplitter   = "vsplitter"
+	TypeTree        = "tree"
+	TypeTreeNode    = "node"
+	TypeMenuBar     = "menubar"
+	TypeMenu        = "menu"
+	TypeWindow      = "window"
+	TypeHBoxLayout  = "hbox"
+	TypeVBoxLayout  = "vbox"
+	TypeGridLayout  = "grid"
+	TypeDockLayout  = "dock"
+)
+
+// Common attribute names
+const (
+	AttribAspectHeight = "aspectheight" // float32
+	AttribAspectWidth  = "aspectwidth"  // float32
+	AttribBgColor      = "bgcolor"      // Color4
+	AttribBorders      = "borders"      // BorderSizes
+	AttribBorderColor  = "bordercolor"  // Color4
+	AttribColor        = "color"        // Color4
+	AttribEnabled      = "enabled"      // bool
+	AttribFontColor    = "fontcolor"    // Color4
+	AttribFontDPI      = "fontdpi"      // float32
+	AttribFontSize     = "fontsize"     // float32
+	AttribHeight       = "height"       // float32
+	AttribIcons        = "icons"        // string
+	AttribImageFile    = "imagefile"    // string
+	AttribItems        = "items"        // []map[string]interface{}
+	AttribLineSpacing  = "linespacing"  // float32
+	AttribMargins      = "margins"      // BorderSizes
+	AttribName         = "name"         // string
+	AttribPaddings     = "paddings"     // BorderSizes
+	AttribPlaceHolder  = "placeholder"  // string
+	AttribPosition     = "position"     // []float32
+	AttribRender       = "render"       // bool
+	AttribText         = "text"         // string
+	AttribType         = "type"         // string
+	AttribWidth        = "width"        // float32
+	AttribVisible      = "visible"      // bool
 )
 
 const (
@@ -172,39 +198,135 @@ var mapResizable = map[string]Resizable{
 	"all":    ResizeAll,
 }
 
+type AttribCheckFunc func(b *Builder, am map[string]interface{}, fname string) error
+
 // NewBuilder creates and returns a pointer to a new gui Builder object
 func NewBuilder() *Builder {
 
-	return new(Builder)
+	b := new(Builder)
+	// Sets map of object type to builder function
+	b.builders = map[string]BuilderFunc{
+		TypePanel:      buildPanel,
+		TypeImagePanel: buildImagePanel,
+		TypeLabel:      buildLabel,
+		TypeImageLabel: buildImageLabel,
+		TypeButton:     buildButton,
+		TypeEdit:       buildEdit,
+	}
+	// Sets map of attribute name to check function
+	b.attribs = map[string]AttribCheckFunc{
+		AttribAspectWidth:  AttribCheckFloat,
+		AttribAspectHeight: AttribCheckFloat,
+		AttribHeight:       AttribCheckFloat,
+		AttribMargins:      AttribCheckBorderSizes,
+		AttribBgColor:      AttribCheckColor,
+		AttribBorders:      AttribCheckBorderSizes,
+		AttribBorderColor:  AttribCheckColor,
+		AttribColor:        AttribCheckColor,
+		AttribEnabled:      AttribCheckBool,
+		AttribFontColor:    AttribCheckColor,
+		AttribFontDPI:      AttribCheckFloat,
+		AttribFontSize:     AttribCheckFloat,
+		AttribIcons:        AttribCheckIcons,
+		AttribImageFile:    AttribCheckString,
+		AttribItems:        AttribCheckListMap,
+		AttribLineSpacing:  AttribCheckFloat,
+		AttribName:         AttribCheckString,
+		AttribPaddings:     AttribCheckBorderSizes,
+		AttribPlaceHolder:  AttribCheckString,
+		AttribPosition:     AttribCheckPosition,
+		AttribRender:       AttribCheckBool,
+		AttribText:         AttribCheckString,
+		AttribType:         AttribCheckString,
+		AttribVisible:      AttribCheckBool,
+		AttribWidth:        AttribCheckFloat,
+	}
+	return b
 }
 
 // ParseString parses a string with gui objects descriptions in YAML format
 // It there was a previously parsed description, it is cleared.
 func (b *Builder) ParseString(desc string) error {
 
-	// Try assuming the description contains a single root panel
-	var dp descPanel
-	err := yaml.Unmarshal([]byte(desc), &dp)
+	// Parses descriptor string in YAML format saving result in
+	// a map of interface{} to interface{} as YAML allows numeric keys.
+	var mii map[interface{}]interface{}
+	err := yaml.Unmarshal([]byte(desc), &mii)
 	if err != nil {
 		return err
-	}
-	if dp.Type != "" {
-		b.desc = make(map[string]*descPanel)
-		b.desc[""] = &dp
-		b.setupDescTree(&dp)
-		return nil
 	}
 
-	// Try assuming the description is a map of panels
-	var dpm map[string]*descPanel
-	err = yaml.Unmarshal([]byte(desc), &dpm)
+	// Internal function which converts map[interface{}]interface{} to
+	// map[string]interface{} recursively and lower case of all map keys.
+	// It also sets a field named "_parent", which pointer to the parent map
+	// This field causes a circular reference in the result map which prevents
+	// the use of Go's Printf to print the result map.
+	var visitor func(v, par interface{}) (interface{}, error)
+	visitor = func(v, par interface{}) (interface{}, error) {
+
+		switch vt := v.(type) {
+		case []interface{}:
+			ls := []interface{}{}
+			for _, item := range vt {
+				ci, err := visitor(item, par)
+				if err != nil {
+					return nil, err
+				}
+				ls = append(ls, ci)
+			}
+			return ls, nil
+
+		case map[interface{}]interface{}:
+			ms := make(map[string]interface{})
+			for k, v := range vt {
+				// Checks key
+				ks, ok := k.(string)
+				if !ok {
+					return nil, fmt.Errorf("Keys must be strings")
+				}
+				ks = strings.ToLower(ks)
+				// Checks value
+				vi, err := visitor(v, ms)
+				if err != nil {
+					return nil, err
+				}
+				ms[ks] = vi
+				// If not parent panel, Checks attribute
+				if par != nil {
+					// Get attribute check function
+					acf, ok := b.attribs[ks]
+					if !ok {
+						return nil, fmt.Errorf("Invalid attribute:%s", ks)
+					}
+					// Checks attribute
+					err = acf(b, ms, ks)
+					if err != nil {
+						return nil, err
+					}
+				}
+			}
+			if par != nil {
+				ms["_parent"] = par
+			}
+			return ms, nil
+
+		default:
+			return v, nil
+		}
+		return nil, nil
+	}
+
+	// Get map[string]interface{} with lower case keys from parsed descritor
+	res, err := visitor(mii, nil)
 	if err != nil {
 		return err
 	}
-	b.desc = dpm
-	for _, v := range dpm {
-		b.setupDescTree(v)
+	msi, ok := res.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("Parsed result is not a map")
 	}
+	b.am = msi
+	b.debugPrint(b.am, 1)
 	return nil
 }
 
@@ -237,10 +359,12 @@ func (b *Builder) ParseFile(filepath string) error {
 func (b *Builder) Names() []string {
 
 	var objs []string
-	for name, pd := range b.desc {
-		if pd.Type != "" {
-			objs = append(objs, name)
-		}
+	if b.am[AttribType] != nil {
+		objs = append(objs, "")
+		return objs
+	}
+	for name, _ := range b.am {
+		objs = append(objs, name)
 	}
 	sort.Strings(objs)
 	return objs
@@ -253,13 +377,18 @@ func (b *Builder) Names() []string {
 // It should be specified the empty string to build this object.
 func (b *Builder) Build(name string) (IPanel, error) {
 
-	pd, ok := b.desc[name]
+	// Only one object
+	if name == "" {
+		if b.am[AttribName] != nil {
+		}
+		return b.build(b.am, nil)
+	}
+	// Map of gui objects
+	am, ok := b.am[name]
 	if !ok {
 		return nil, fmt.Errorf("Object name:%s not found", name)
 	}
-	b.objpath.clear()
-	b.objpath.push(pd.Name)
-	return b.build(pd, nil)
+	return b.build(am.(map[string]interface{}), nil)
 }
 
 // Sets the path for image panels relative image files
@@ -268,190 +397,440 @@ func (b *Builder) SetImagepath(path string) {
 	b.imgpath = path
 }
 
+func (b *Builder) AddBuilder(typename string, bf BuilderFunc) {
+
+	b.builders[typename] = bf
+}
+
 // build builds the gui object from the specified description.
 // All its children are also built recursively
 // Returns the built object or an error
-func (b *Builder) build(pd *descPanel, iparent IPanel) (IPanel, error) {
+func (b *Builder) build(pd map[string]interface{}, iparent IPanel) (IPanel, error) {
 
-	var err error
-	var pan IPanel
-	switch pd.Type {
-	case descTypePanel:
-		pan, err = b.buildPanel(pd)
-	case descTypeImagePanel:
-		pan, err = b.buildImagePanel(pd)
-	case descTypeLabel:
-		pan, err = b.buildLabel(pd)
-	case descTypeImageLabel:
-		pan, err = b.buildImageLabel(pd)
-	case descTypeButton:
-		pan, err = b.buildButton(pd)
-	case descTypeCheckBox:
-		pan, err = b.buildCheckBox(pd)
-	case descTypeRadioButton:
-		pan, err = b.buildRadioButton(pd)
-	case descTypeEdit:
-		pan, err = b.buildEdit(pd)
-	case descTypeVList:
-		pan, err = b.buildVList(pd)
-	case descTypeHList:
-		pan, err = b.buildHList(pd)
-	case descTypeDropDown:
-		pan, err = b.buildDropDown(pd)
-	case descTypeHSlider:
-		pan, err = b.buildSlider(pd, true)
-	case descTypeVSlider:
-		pan, err = b.buildSlider(pd, false)
-	case descTypeHSplitter:
-		pan, err = b.buildSplitter(pd, true)
-	case descTypeVSplitter:
-		pan, err = b.buildSplitter(pd, false)
-	case descTypeTree:
-		pan, err = b.buildTree(pd)
-	case descTypeMenuBar:
-		pan, err = b.buildMenu(pd, false, true)
-	case descTypeMenu:
-		pan, err = b.buildMenu(pd, false, false)
-	case descTypeWindow:
-		pan, err = b.buildWindow(pd)
-	default:
-		err = fmt.Errorf("Invalid panel type:%s", pd.Type)
+	// Get panel type name
+	if pd["type"] == nil {
+		return nil, fmt.Errorf("Type not specified")
 	}
+	typename, ok := pd["type"].(string)
+	if !ok {
+		return nil, fmt.Errorf("Type must be a string")
+	}
+	typename = strings.ToLower(typename)
+
+	// Get builder function for this type name
+	builder := b.builders[typename]
+	if builder == nil {
+		return nil, fmt.Errorf("Invalid type:%v", pd["type"])
+	}
+
+	// Builds panel
+	pan, err := builder(b, pd)
 	if err != nil {
 		return nil, err
 	}
+	// Adds built panel to parent
 	if iparent != nil {
 		iparent.GetPanel().Add(pan)
 	}
 	return pan, nil
 }
 
-// buildPanel builds a gui object of type: "Panel"
-func (b *Builder) buildPanel(dp *descPanel) (IPanel, error) {
+// buildPanel builds an object of type Panel
+func buildPanel(b *Builder, am map[string]interface{}) (IPanel, error) {
 
-	// Builds panel and set attributes
-	width, height := b.size(dp)
-	pan := NewPanel(width, height)
-	err := b.setAttribs(dp, pan, asPANEL)
+	pan := NewPanel(0, 0)
+	err := b.setAttribs(am, pan, asPANEL)
 	if err != nil {
 		return nil, err
 	}
 
-	// Builds panel children recursively
-	for i := 0; i < len(dp.Items); i++ {
-		item := dp.Items[i]
-		b.objpath.push(item.Name)
-		child, err := b.build(item, pan)
-		b.objpath.pop()
-		if err != nil {
-			return nil, err
+	// Builds children recursively
+	if am[AttribItems] != nil {
+		items := am[AttribItems].([]map[string]interface{})
+		for i := 0; i < len(items); i++ {
+			item := items[i]
+			child, err := b.build(item, pan)
+			if err != nil {
+				return nil, err
+			}
+			pan.Add(child)
 		}
-		pan.Add(child)
 	}
 	return pan, nil
 }
 
-// buildImagePanel builds a gui object of type: "ImagePanel"
-func (b *Builder) buildImagePanel(pd *descPanel) (IPanel, error) {
+// buildImagePanel builds a gui object of type ImagePanel
+func buildImagePanel(b *Builder, am map[string]interface{}) (IPanel, error) {
 
-	// Imagefile must be supplied
-	if pd.Imagefile == "" {
-		return nil, b.err("Imagefile", "Imagefile must be supplied")
+	// Checks imagefile attribute
+	if am[AttribImageFile] == nil {
+		return nil, b.err(am, AttribImageFile, "Must be supplied")
 	}
 
 	// If path is not absolute join with user supplied image base path
-	path := pd.Imagefile
-	if !filepath.IsAbs(path) {
-		path = filepath.Join(b.imgpath, path)
+	imagefile := am[AttribImageFile].(string)
+	if !filepath.IsAbs(imagefile) {
+		imagefile = filepath.Join(b.imgpath, imagefile)
 	}
 
 	// Builds panel and set common attributes
-	panel, err := NewImage(path)
+	panel, err := NewImage(imagefile)
 	if err != nil {
 		return nil, err
 	}
-	err = b.setAttribs(pd, panel, asPANEL)
+	err = b.setAttribs(am, panel, asPANEL)
 	if err != nil {
 		return nil, err
 	}
 
-	// AspectWidth and AspectHeight attributes
-	if pd.AspectWidth != nil {
-		panel.SetContentAspectWidth(*pd.AspectWidth)
-	}
-	if pd.AspectHeight != nil {
-		panel.SetContentAspectHeight(*pd.AspectHeight)
+	// Sets optional AspectWidth attribute
+	if aw := am[AttribAspectWidth]; aw != nil {
+		panel.SetContentAspectWidth(aw.(float32))
 	}
 
-	// Builds panel children recursively
-	for i := 0; i < len(pd.Items); i++ {
-		item := pd.Items[i]
-		b.objpath.push(item.Name)
-		child, err := b.build(item, panel)
-		b.objpath.pop()
-		if err != nil {
-			return nil, err
+	// Sets optional AspectHeight attribute
+	if ah := am[AttribAspectHeight]; ah != nil {
+		panel.SetContentAspectHeight(ah.(float32))
+	}
+
+	// Builds children recursively
+	if am[AttribItems] != nil {
+		items := am[AttribItems].([]map[string]interface{})
+		for i := 0; i < len(items); i++ {
+			item := items[i]
+			child, err := b.build(item, panel)
+			if err != nil {
+				return nil, err
+			}
+			panel.Add(child)
 		}
-		panel.Add(child)
 	}
 	return panel, nil
 }
 
-// buildLabel builds a gui object of type: "Label"
-func (b *Builder) buildLabel(pd *descPanel) (IPanel, error) {
+// buildLabel builds a gui object of type Label
+func buildLabel(b *Builder, am map[string]interface{}) (IPanel, error) {
 
-	// Builds label with icon or text font
 	var label *Label
-	icons, err := b.parseIconNames("icons", pd.Icons)
-	if err != nil {
-		return nil, err
-	}
-	if icons != "" {
-		label = NewLabel(icons, true)
+	if am[AttribIcons] != nil {
+		label = NewLabel(am[AttribIcons].(string), true)
+	} else if am[AttribText] != nil {
+		label = NewLabel(am[AttribText].(string))
 	} else {
-		label = NewLabel(pd.Text)
+		label = NewLabel("")
 	}
+
 	// Sets common attributes
-	err = b.setAttribs(pd, label, asPANEL)
+	err := b.setAttribs(am, label, asPANEL)
 	if err != nil {
 		return nil, err
 	}
 
 	// Set optional background color
-	c, err := b.parseColor(fieldBgColor, pd.BgColor)
-	if err != nil {
-		return nil, err
-	}
-	if c != nil {
-		label.SetBgColor4(c)
+	if bgc := am[AttribBgColor]; bgc != nil {
+		label.SetBgColor4(bgc.(*math32.Color4))
 	}
 
 	// Set optional font color
-	c, err = b.parseColor("fontcolor", pd.FontColor)
-	if err != nil {
-		return nil, err
-	}
-	if c != nil {
-		label.SetColor4(c)
+	if fc := am[AttribFontColor]; fc != nil {
+		label.SetColor4(fc.(*math32.Color4))
 	}
 
 	// Sets optional font size
-	if pd.FontSize != nil {
-		label.SetFontSize(float64(*pd.FontSize))
+	if fs := am[AttribFontSize]; fs != nil {
+		label.SetFontSize(float64(fs.(float32)))
 	}
 
 	// Sets optional font dpi
-	if pd.FontDPI != nil {
-		label.SetFontDPI(float64(*pd.FontDPI))
+	if fdpi := am[AttribFontDPI]; fdpi != nil {
+		label.SetFontDPI(float64(fdpi.(float32)))
 	}
 
 	// Sets optional line spacing
-	if pd.LineSpacing != nil {
-		label.SetLineSpacing(float64(*pd.LineSpacing))
+	if ls := am[AttribLineSpacing]; ls != nil {
+		label.SetLineSpacing(float64(ls.(float32)))
 	}
 
 	return label, nil
 }
+
+// buildImageLabel builds a gui object of type: ImageLabel
+func buildImageLabel(b *Builder, am map[string]interface{}) (IPanel, error) {
+
+	// Builds image label and set common attributes
+	var text string
+	if am[AttribText] != nil {
+		text = am[AttribText].(string)
+	}
+	imglabel := NewImageLabel(text)
+	err := b.setAttribs(am, imglabel, asPANEL)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sets optional icon(s)
+	if icons := am[AttribIcons]; icons != nil {
+		imglabel.SetIcon(icons.(string))
+	}
+
+	// Sets optional image from file
+	// If path is not absolute join with user supplied image base path
+	if imgf := am[AttribImageFile]; imgf != nil {
+		path := imgf.(string)
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(b.imgpath, path)
+		}
+		err := imglabel.SetImageFromFile(path)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return imglabel, nil
+}
+
+// buildButton builds a gui object of type: Button
+func buildButton(b *Builder, am map[string]interface{}) (IPanel, error) {
+
+	// Builds button and set commont attributes
+	var text string
+	if am[AttribText] != nil {
+		text = am[AttribText].(string)
+	}
+	button := NewButton(text)
+	err := b.setAttribs(am, button, asBUTTON)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sets optional icon
+	if icons := am[AttribIcons]; icons != nil {
+		button.SetIcon(icons.(string))
+	}
+
+	// Sets optional image from file
+	// If path is not absolute join with user supplied image base path
+	if imgf := am[AttribImageFile]; imgf != nil {
+		path := imgf.(string)
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(b.imgpath, path)
+		}
+		err := button.SetImage(path)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return button, nil
+}
+
+// buildEdit builds a gui object of type: "Edit"
+func buildEdit(b *Builder, am map[string]interface{}) (IPanel, error) {
+
+	// Builds button and set attributes
+	var width float32
+	var placeholder string
+	if aw := am[AttribWidth]; aw != nil {
+		width = aw.(float32)
+	}
+	if ph := am[AttribPlaceHolder]; ph != nil {
+		placeholder = ph.(string)
+	}
+	edit := NewEdit(int(width), placeholder)
+	err := b.setAttribs(am, edit, asWIDGET)
+	if err != nil {
+		return nil, err
+	}
+	return edit, nil
+}
+
+func AttribCheckListMap(b *Builder, am map[string]interface{}, fname string) error {
+
+	v := am[fname]
+	if v == nil {
+		return nil
+	}
+	li, ok := v.([]interface{})
+	if !ok {
+		return b.err(am, fname, "Not a list")
+	}
+	lmsi := make([]map[string]interface{}, 0)
+	for i := 0; i < len(li); i++ {
+		item := li[i]
+		msi, ok := item.(map[string]interface{})
+		if !ok {
+			return b.err(am, fname, "Item is not a map")
+		}
+		lmsi = append(lmsi, msi)
+	}
+	am[fname] = lmsi
+	return nil
+}
+
+func AttribCheckIcons(b *Builder, am map[string]interface{}, fname string) error {
+
+	v := am[fname]
+	if v == nil {
+		return nil
+	}
+	fs, ok := v.(string)
+	if !ok {
+		return b.err(am, fname, "Not a string")
+	}
+	text := ""
+	parts := strings.Fields(fs)
+	for i := 0; i < len(parts); i++ {
+		// Try name first
+		cp := icon.Codepoint(parts[i])
+		if cp != "" {
+			text += string(cp)
+			continue
+		}
+
+		// Try to parse as hex value
+		val, err := strconv.ParseUint(parts[i], 16, 32)
+		if err != nil {
+			return b.err(am, fname, fmt.Sprintf("Invalid icon codepoint value/name:%v", parts[i]))
+		}
+		text += string(val)
+	}
+	am[fname] = text
+	return nil
+}
+
+func AttribCheckColor(b *Builder, am map[string]interface{}, fname string) error {
+
+	// Checks if field is nil
+	v := am[fname]
+	if v == nil {
+		return nil
+	}
+
+	// Converts to string
+	fs, ok := v.(string)
+	if !ok {
+		return b.err(am, fname, "Not a string")
+	}
+
+	// Checks if string field is empty
+	fs = strings.Trim(fs, " ")
+	if fs == "" {
+		return nil
+	}
+
+	// If string has 1 or 2 fields it must be a color name and optional alpha
+	parts := strings.Fields(fs)
+	if len(parts) == 1 || len(parts) == 2 {
+		// First part must be a color name
+		c, ok := math32.IsColorName(parts[0])
+		if !ok {
+			return b.err(am, fname, fmt.Sprintf("Invalid color name:%s", parts[0]))
+		}
+		c4 := math32.Color4{c.R, c.G, c.B, 1}
+		if len(parts) == 2 {
+			val, err := strconv.ParseFloat(parts[1], 32)
+			if err != nil {
+				return b.err(am, fname, fmt.Sprintf("Invalid float32 value:%s", parts[1]))
+			}
+			c4.A = float32(val)
+		}
+		am[fname] = &c4
+		return nil
+	}
+
+	// Accept 3 or 4 floats values
+	va, err := b.parseFloats(am, fname, 3, 4)
+	if err != nil {
+		return err
+	}
+	if len(va) == 3 {
+		am[fname] = &math32.Color4{va[0], va[1], va[2], 1}
+		return nil
+	}
+	am[fname] = &math32.Color4{va[0], va[1], va[2], va[3]}
+	return nil
+}
+
+func AttribCheckBorderSizes(b *Builder, am map[string]interface{}, fname string) error {
+
+	va, err := b.parseFloats(am, fname, 1, 4)
+	if err != nil {
+		return err
+	}
+	if va == nil {
+		return nil
+	}
+	if len(va) == 1 {
+		am[fname] = &BorderSizes{va[0], va[0], va[0], va[0]}
+		return nil
+	}
+	am[fname] = &BorderSizes{va[0], va[1], va[2], va[3]}
+	return nil
+}
+
+func AttribCheckPosition(b *Builder, am map[string]interface{}, fname string) error {
+
+	v := am[fname]
+	if v == nil {
+		return nil
+	}
+	af, err := b.parseFloats(am, fname, 2, 2)
+	if err != nil {
+		return err
+	}
+	am[fname] = af
+	return nil
+}
+
+func AttribCheckFloat(b *Builder, am map[string]interface{}, fname string) error {
+
+	v := am[fname]
+	if v == nil {
+		return nil
+	}
+	switch n := v.(type) {
+	case int:
+		am[fname] = float32(n)
+		return nil
+	case float64:
+		am[fname] = float32(n)
+		return nil
+	default:
+		return b.err(am, fname, fmt.Sprintf("Not a number:%T", v))
+	}
+	return nil
+}
+
+func AttribCheckString(b *Builder, am map[string]interface{}, fname string) error {
+
+	v := am[fname]
+	if v == nil {
+		return nil
+	}
+	s, ok := v.(string)
+	if !ok {
+		return b.err(am, fname, "Not a string")
+	}
+	am[fname] = s
+	return nil
+}
+
+func AttribCheckBool(b *Builder, am map[string]interface{}, fname string) error {
+
+	v := am[fname]
+	if v == nil {
+		return nil
+	}
+	bv, ok := v.(bool)
+	if !ok {
+		return b.err(am, fname, "Not a bool")
+	}
+	am[fname] = bv
+	return nil
+}
+
+/***
+
 
 // buildImageLabel builds a gui object of type: ImageLabel
 func (b *Builder) buildImageLabel(pd *descPanel) (IPanel, error) {
@@ -1107,6 +1486,7 @@ func (b *Builder) setLayoutParams(dp *descPanel, ipan IPanel) error {
 	return b.err("layoutparams", "Invalid parent layout:"+playout.Type)
 }
 
+
 // setLayout sets the optional panel layout and layout parameters
 func (b *Builder) setLayout(dp *descPanel, ipan IPanel) error {
 
@@ -1189,146 +1569,148 @@ func (b *Builder) setLayout(dp *descPanel, ipan IPanel) error {
 
 	return b.err("layout", "Invalid layout type:"+dl.Type)
 }
+****/
 
-func (b *Builder) setMenuShortcut(mi *MenuItem, fname, field string) error {
+// setAttribs sets common attributes from the description to the specified panel
+// The attributes which are set can be specified by the specified bitmask.
+func (b *Builder) setAttribs(am map[string]interface{}, ipan IPanel, attr uint) error {
 
-	field = strings.Trim(field, " ")
-	if field == "" {
-		return nil
+	panel := ipan.GetPanel()
+	// Set optional position
+	if attr&aPOS != 0 && am[AttribPosition] != nil {
+		va := am[AttribPosition].([]float32)
+		panel.SetPosition(va[0], va[1])
 	}
-	parts := strings.Split(field, "+")
-	var mods window.ModifierKey
-	for i := 0; i < len(parts)-1; i++ {
-		switch parts[i] {
-		case "Shift":
-			mods |= window.ModShift
-		case "Ctrl":
-			mods |= window.ModControl
-		case "Alt":
-			mods |= window.ModAlt
-		default:
-			return b.err(fname, "Invalid shortcut:"+field)
-		}
+
+	// Set optional panel width
+	if attr&aSIZE != 0 && am[AttribWidth] != nil {
+		panel.SetWidth(am[AttribWidth].(float32))
 	}
-	// The last part must be a key
-	key := parts[len(parts)-1]
-	for kcode, kname := range mapKeyText {
-		if kname == key {
-			mi.SetShortcut(mods, kcode)
-			return nil
-		}
+
+	// Sets optional panel height
+	if attr&aSIZE != 0 && am[AttribHeight] != nil {
+		panel.SetHeight(am[AttribHeight].(float32))
 	}
-	return b.err(fname, "Invalid shortcut:"+field)
+
+	// Set optional margin sizes
+	if attr&aMARGINS != 0 && am[AttribMargins] != nil {
+		panel.SetMarginsFrom(am[AttribMargins].(*BorderSizes))
+	}
+
+	// Set optional border sizes
+	if attr&aBORDERS != 0 && am[AttribBorders] != nil {
+		panel.SetBordersFrom(am[AttribBorders].(*BorderSizes))
+	}
+
+	// Set optional border color
+	if attr&aBORDERCOLOR != 0 && am[AttribBorderColor] != nil {
+		panel.SetBordersColor4(am[AttribBorderColor].(*math32.Color4))
+	}
+
+	// Set optional paddings sizes
+	if attr&aPADDINGS != 0 && am[AttribPaddings] != nil {
+		panel.SetPaddingsFrom(am[AttribPaddings].(*BorderSizes))
+	}
+
+	// Set optional panel color
+	if attr&aCOLOR != 0 && am[AttribColor] != nil {
+		panel.SetColor4(am[AttribColor].(*math32.Color4))
+	}
+
+	if attr&aNAME != 0 && am[AttribName] != nil {
+		panel.SetName(am[AttribName].(string))
+	}
+
+	if attr&aVISIBLE != 0 && am[AttribVisible] != nil {
+		panel.SetVisible(am[AttribVisible].(bool))
+	}
+
+	if attr&aENABLED != 0 && am[AttribEnabled] != nil {
+		panel.SetEnabled(am[AttribEnabled].(bool))
+	}
+	if attr&aRENDER != 0 && am[AttribRender] != nil {
+		panel.SetRenderable(am[AttribRender].(bool))
+	}
+
+	//	err := b.setLayoutParams(am, ipan)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	return b.setLayout(am, ipan)
+	return nil
 }
 
-// parseBorderSizes parses a string field which can contain one float value or
-// float values. In the first case all borders has the same width
-func (b *Builder) parseBorderSizes(fname, field string) (*BorderSizes, error) {
-
-	va, err := b.parseFloats(fname, field, 1, 4)
-	if va == nil || err != nil {
-		return nil, err
-	}
-	if len(va) == 1 {
-		return &BorderSizes{va[0], va[0], va[0], va[0]}, nil
-	}
-	return &BorderSizes{va[0], va[1], va[2], va[3]}, nil
-}
-
-// parseColor parses a string field which can contain a color name or
-// a list of 3 or 4 float values for the color components
-func (b *Builder) parseColor(fname, field string) (*math32.Color4, error) {
-
-	// Checks if field is empty
-	field = strings.Trim(field, " ")
-	if field == "" {
-		return nil, nil
-	}
-
-	// If string has 1 or 2 fields it must be a color name and optional alpha
-	parts := strings.Fields(field)
-	if len(parts) == 1 || len(parts) == 2 {
-		// First part must be a color name
-		c, ok := math32.IsColorName(parts[0])
-		if !ok {
-			return nil, b.err(fname, fmt.Sprintf("Invalid color name:%s", parts[0]))
-		}
-		c4 := math32.Color4{c.R, c.G, c.B, 1}
-		if len(parts) == 2 {
-			val, err := strconv.ParseFloat(parts[1], 32)
-			if err != nil {
-				return nil, b.err(fname, fmt.Sprintf("Invalid float32 value:%s", parts[1]))
-			}
-			c4.A = float32(val)
-		}
-		return &c4, nil
-	}
-
-	// Accept 3 or 4 floats values
-	va, err := b.parseFloats(fname, field, 3, 4)
-	if err != nil {
-		return nil, err
-	}
-	if len(va) == 3 {
-		return &math32.Color4{va[0], va[1], va[2], 1}, nil
-	}
-	return &math32.Color4{va[0], va[1], va[2], va[3]}, nil
-}
-
-// parseIconNames parses a string with a list of icon names or codepoints and
-// returns a string with the icons codepoints encoded in UTF8
-func (b *Builder) parseIconNames(fname, field string) (string, error) {
-
-	text := ""
-	parts := strings.Fields(field)
-	for i := 0; i < len(parts); i++ {
-		cp, err := b.parseIconName(fname, parts[i])
-		if err != nil {
-			return "", err
-		}
-		text = text + string(cp)
-	}
-	return text, nil
-}
-
-// parseIconName parses a string with an icon name or codepoint in hex
-// and returns the icon codepoints value and an error
-func (b *Builder) parseIconName(fname, field string) (string, error) {
-
-	// Try name first
-	cp := icon.Codepoint(field)
-	if cp != "" {
-		return cp, nil
-	}
-
-	// Try to parse as hex value
-	cp2, err := strconv.ParseUint(field, 16, 32)
-	if err != nil {
-		return "", b.err(fname, fmt.Sprintf("Invalid icon codepoint value/name:%v", field))
-	}
-	return string(cp2), nil
-}
+//func (b *Builder) setMenuShortcut(mi *MenuItem, fname, field string) error {
+//
+//	field = strings.Trim(field, " ")
+//	if field == "" {
+//		return nil
+//	}
+//	parts := strings.Split(field, "+")
+//	var mods window.ModifierKey
+//	for i := 0; i < len(parts)-1; i++ {
+//		switch parts[i] {
+//		case "Shift":
+//			mods |= window.ModShift
+//		case "Ctrl":
+//			mods |= window.ModControl
+//		case "Alt":
+//			mods |= window.ModAlt
+//		default:
+//			return b.err(am, fname, "Invalid shortcut:"+field)
+//		}
+//	}
+//	// The last part must be a key
+//	key := parts[len(parts)-1]
+//	for kcode, kname := range mapKeyText {
+//		if kname == key {
+//			mi.SetShortcut(mods, kcode)
+//			return nil
+//		}
+//	}
+//	return b.err(fname, "Invalid shortcut:"+field)
+//}
 
 // parseFloats parses a string with a list of floats with the specified size
 // and returns a slice. The specified size is 0 any number of floats is allowed.
 // The individual values can be separated by spaces or commas
-func (b *Builder) parseFloats(fname, field string, min, max int) ([]float32, error) {
+func (b *Builder) parseFloats(am map[string]interface{}, fname string, min, max int) ([]float32, error) {
 
 	// Checks if field is empty
-	field = strings.Trim(field, " ")
-	if field == "" {
+	v := am[fname]
+	if v == nil {
+		return nil, nil
+	}
+
+	// If field has only one value, it is an int or a float64
+	switch ft := v.(type) {
+	case int:
+		return []float32{float32(ft)}, nil
+	case float64:
+		return []float32{float32(ft)}, nil
+	}
+
+	// Converts to string
+	fs, ok := v.(string)
+	if !ok {
+		return nil, b.err(am, fname, "Not a string")
+	}
+
+	// Checks if string field is empty
+	fs = strings.Trim(fs, " ")
+	if fs == "" {
 		return nil, nil
 	}
 
 	// Separate individual fields
 	var parts []string
-	if strings.Index(field, ",") < 0 {
-		parts = strings.Fields(field)
+	if strings.Index(fs, ",") < 0 {
+		parts = strings.Fields(fs)
 	} else {
-		parts = strings.Split(field, ",")
+		parts = strings.Split(fs, ",")
 	}
 	if len(parts) < min || len(parts) > max {
-		return nil, b.err(fname, "Invalid number of float32 values")
+		return nil, b.err(am, fname, "Invalid number of float32 values")
 	}
 
 	// Parse each field value and appends to slice
@@ -1336,7 +1718,7 @@ func (b *Builder) parseFloats(fname, field string, min, max int) ([]float32, err
 	for i := 0; i < len(parts); i++ {
 		val, err := strconv.ParseFloat(strings.Trim(parts[i], " "), 32)
 		if err != nil {
-			return nil, b.err(fname, err.Error())
+			return nil, b.err(am, fname, err.Error())
 		}
 		values = append(values, float32(val))
 	}
@@ -1344,81 +1726,32 @@ func (b *Builder) parseFloats(fname, field string, min, max int) ([]float32, err
 }
 
 // err creates and returns an error for the current object, field name and with the specified message
-func (b *Builder) err(fname, msg string) error {
+func (b *Builder) err(am map[string]interface{}, fname, msg string) error {
 
-	return fmt.Errorf("Error in object:%s field:%s -> %s", b.objpath.path(), fname, msg)
+	return fmt.Errorf("Error in object:%s field:%s -> %s", am[AttribName], fname, msg)
 }
 
-// setupDescTree sets the types of all description tree elements to lower case and
-// sets the items "parent" attribute pointing the respective parent description
-func (b *Builder) setupDescTree(dp *descPanel) {
+// debugPrint prints the internal attribute map of the builder for debugging.
+// This map cannot be printed by fmt.Printf() because it has cycles.
+// A map contains a key: _parent, which pointer to is parent map, if any.
+func (b *Builder) debugPrint(v interface{}, level int) {
 
-	dp.Type = strings.ToLower(dp.Type)
-	if dp.Layout != nil {
-		dp.Layout.Type = strings.ToLower(dp.Layout.Type)
+	switch vt := v.(type) {
+	case map[string]interface{}:
+		level += 3
+		fmt.Printf("\n")
+		for mk, mv := range vt {
+			if mk == "_parent" {
+				continue
+			}
+			fmt.Printf("%s%s:", strings.Repeat(" ", level), mk)
+			b.debugPrint(mv, level)
+		}
+	case []map[string]interface{}:
+		for _, v := range vt {
+			b.debugPrint(v, level)
+		}
+	default:
+		fmt.Printf(" %v (%T)\n", vt, vt)
 	}
-	for i := 0; i < len(dp.Items); i++ {
-		dp.Items[i].parent = dp
-		b.setupDescTree(dp.Items[i])
-	}
-	// Special case for splitter
-	if dp.P0 != nil {
-		dp.P0.parent = dp
-		b.setupDescTree(dp.P0)
-	}
-	if dp.P1 != nil {
-		dp.P1.parent = dp
-		b.setupDescTree(dp.P1)
-	}
-}
-
-// Returns the width and height attributes of the specified descriptor
-// if defined or the defaul value (0).
-func (b *Builder) size(dp *descPanel) (float32, float32) {
-
-	var width, height float32
-	if dp.Width != nil {
-		width = *dp.Width
-	}
-	if dp.Height != nil {
-		height = *dp.Height
-	}
-	return width, height
-}
-
-// strStack is a stack of strings
-type strStack struct {
-	stack []string
-}
-
-// clear removes all elements from the stack
-func (ss *strStack) clear() {
-
-	ss.stack = []string{}
-}
-
-// push pushes a string to the top of the stack
-func (ss *strStack) push(v string) {
-
-	ss.stack = append(ss.stack, v)
-}
-
-// pop removes and returns the string at the top of the stack.
-// Returns an empty string if the stack is empty
-func (ss *strStack) pop() string {
-
-	if len(ss.stack) == 0 {
-		return ""
-	}
-	length := len(ss.stack)
-	v := ss.stack[length-1]
-	ss.stack = ss.stack[:length-1]
-	return v
-}
-
-// path returns a string composed of all the strings in the
-// stack separated by a forward slash.
-func (ss *strStack) path() string {
-
-	return strings.Join(ss.stack, "/")
 }
