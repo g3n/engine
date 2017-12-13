@@ -208,7 +208,7 @@ func (bl *VBoxLayout) Recalc(ipan IPanel) {
 		// Calculates initial y position which depends
 		// on the current horizontal alignment.
 		switch bl.alignV {
-		case AlignTop:
+		case AlignNone, AlignTop:
 			posY = 0
 		case AlignCenter:
 			posY = (parent.ContentHeight() - theight) / 2
@@ -239,7 +239,7 @@ func (bl *VBoxLayout) Recalc(ipan IPanel) {
 		}
 		cwidth := pan.Width()
 		switch params.AlignH {
-		case AlignLeft:
+		case AlignNone, AlignLeft:
 			posX = 0
 		case AlignCenter:
 			posX = (width - cwidth) / 2
