@@ -176,10 +176,13 @@ const (
 	AttribPlaceHolder  = "placeholder"  // string
 	AttribPosition     = "position"     // []float32
 	AttribRender       = "render"       // bool
+	AttribResizable    = "resizable"    // Resizable
 	AttribScaleFactor  = "scalefactor"  // float32
 	AttribShortcut     = "shortcut"     // []int
 	AttribSpacing      = "spacing"      // float32
+	AttribSplit        = "split"        // float32
 	AttribText         = "text"         // string
+	AttribTitle        = "title"        // string
 	AttribType         = "type"         // string
 	AttribWidth        = "width"        // float32
 	AttribValue        = "value"        // float32
@@ -264,6 +267,7 @@ func NewBuilder() *Builder {
 		TypeHSplitter:   buildSplitter,
 		TypeVSplitter:   buildSplitter,
 		TypeTree:        buildTree,
+		TypeWindow:      buildWindow,
 	}
 	// Sets map of layout type name to layout function
 	b.layouts = map[string]IBuilderLayout{
@@ -312,10 +316,13 @@ func NewBuilder() *Builder {
 		AttribPlaceHolder:  AttribCheckString,
 		AttribPosition:     AttribCheckPosition,
 		AttribRender:       AttribCheckBool,
+		AttribResizable:    AttribCheckResizable,
 		AttribScaleFactor:  AttribCheckFloat,
 		AttribShortcut:     AttribCheckMenuShortcut,
 		AttribSpacing:      AttribCheckFloat,
+		AttribSplit:        AttribCheckFloat,
 		AttribText:         AttribCheckString,
+		AttribTitle:        AttribCheckString,
 		AttribType:         AttribCheckStringLower,
 		AttribValue:        AttribCheckFloat,
 		AttribVisible:      AttribCheckBool,
@@ -991,8 +998,8 @@ func buildSplitter(b *Builder, am map[string]interface{}) (IPanel, error) {
 	}
 
 	// Sets optional split value
-	if iv := am[AttribValue]; iv != nil {
-		splitter.SetSplit(iv.(float32))
+	if v := am[AttribSplit]; v != nil {
+		splitter.SetSplit(v.(float32))
 	}
 
 	// Internal function to set each of the splitter's panel attributes and items
@@ -1105,6 +1112,41 @@ func buildTree(b *Builder, am map[string]interface{}) (IPanel, error) {
 	return tree, nil
 }
 
+// buildWindow builds a gui object of type: Window
+func buildWindow(b *Builder, am map[string]interface{}) (IPanel, error) {
+
+	// Builds window and sets its common attributes
+	win := NewWindow(0, 0)
+	err := b.setAttribs(am, win, asWIDGET)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sets optional title
+	if title := am[AttribTitle]; title != nil {
+		win.SetTitle(title.(string))
+	}
+
+	// Set optional resizable borders
+	if resiz := am[AttribResizable]; resiz != nil {
+		win.SetResizable(resiz.(Resizable))
+	}
+
+	// Builds window children
+	if v := am[AttribItems]; v != nil {
+		items := v.([]map[string]interface{})
+		for i := 0; i < len(items); i++ {
+			item := items[i]
+			child, err := b.build(item, win)
+			if err != nil {
+				return nil, err
+			}
+			win.Add(child)
+		}
+	}
+	return win, nil
+}
+
 // setLayout sets the optional layout of the specified panel
 func (b *Builder) setLayout(am map[string]interface{}, ipan IPanel) error {
 
@@ -1163,6 +1205,34 @@ func (b *Builder) setLayoutParams(am map[string]interface{}, ipan IPanel) error 
 		return err
 	}
 	ipan.GetPanel().SetLayoutParams(params)
+	return nil
+}
+
+func AttribCheckResizable(b *Builder, am map[string]interface{}, fname string) error {
+
+	// If attribute not found, ignore
+	v := am[fname]
+	if v == nil {
+		return nil
+	}
+
+	// Attribute must be string
+	vs, ok := v.(string)
+	if !ok {
+		return b.err(am, fname, "Invalid resizable attribute")
+	}
+
+	// Each string field must be a valid resizable name
+	parts := strings.Fields(vs)
+	var res Resizable
+	for _, name := range parts {
+		v, ok := mapResizable[name]
+		if !ok {
+			return b.err(am, fname, "Invalid resizable name:"+name)
+		}
+		res |= v
+	}
+	am[fname] = res
 	return nil
 }
 
@@ -2303,8 +2373,8 @@ func (b *Builder) setAttribs(am map[string]interface{}, ipan IPanel, attr uint) 
 		panel.SetRenderable(am[AttribRender].(bool))
 	}
 
-	// Sets optional layout
-	err := b.setLayout(am, panel)
+	// Sets optional layout (must pass IPanel not *Panel)
+	err := b.setLayout(am, ipan)
 	if err != nil {
 		return nil
 	}

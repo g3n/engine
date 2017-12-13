@@ -250,7 +250,7 @@ func (bl *HBoxLayout) Recalc(ipan IPanel) {
 		}
 		cheight := pan.Height()
 		switch params.AlignV {
-		case AlignTop:
+		case AlignNone, AlignTop:
 			posY = 0
 		case AlignCenter:
 			posY = (height - cheight) / 2
