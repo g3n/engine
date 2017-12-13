@@ -24,7 +24,13 @@ type Builder struct {
 	imgpath  string                     // base path for image panels files
 	builders map[string]BuilderFunc     // map of builder functions by type
 	attribs  map[string]AttribCheckFunc // map of attribute name with check functions
-	layouts  map[string]LayoutFunc      // map of layout type to layout func
+	layouts  map[string]IBuilderLayout  // map of layout type to layout builder
+}
+
+// IBuilderLayout is the interface for all layout builders
+type IBuilderLayout interface {
+	BuildLayout(b *Builder, am map[string]interface{}) (ILayout, error)
+	BuildParams(b *Builder, am map[string]interface{}) (interface{}, error)
 }
 
 // BuilderFunc is type for functions which build a gui object from an attribute map
@@ -140,8 +146,13 @@ const (
 	AttribBorderColor  = "bordercolor"  // Color4
 	AttribChecked      = "checked"      // bool
 	AttribColor        = "color"        // Color4
+	AttribCols         = "cols"         // Int
+	AttribColSpan      = "colspan"      // Int
+	AttribEdge         = "edge"         // int
 	AttribEnabled      = "enabled"      // bool
 	AttribExpand       = "expand"       // float32
+	AttribExpandh      = "expandh"      // bool
+	AttribExpandv      = "expandv"      // bool
 	AttribFontColor    = "fontcolor"    // Color4
 	AttribFontDPI      = "fontdpi"      // float32
 	AttribFontSize     = "fontsize"     // float32
@@ -154,6 +165,8 @@ const (
 	AttribLayout       = "layout"       // map[string]interface{}
 	AttribLayoutParams = "layoutparams" // map[string]interface{}
 	AttribLineSpacing  = "linespacing"  // float32
+	AttribMinHeight    = "minheight"    // bool
+	AttribMinWidth     = "minwidth"     // bool
 	AttribMargins      = "margins"      // BorderSizes
 	AttribName         = "name"         // string
 	AttribPaddings     = "paddings"     // BorderSizes
@@ -253,8 +266,11 @@ func NewBuilder() *Builder {
 		TypeTree:        buildTree,
 	}
 	// Sets map of layout type name to layout function
-	b.layouts = map[string]LayoutFunc{
-		TypeHBoxLayout: layoutHBox,
+	b.layouts = map[string]IBuilderLayout{
+		TypeHBoxLayout: &BuilderLayoutHBox{},
+		TypeVBoxLayout: &BuilderLayoutVBox{},
+		TypeGridLayout: &BuilderLayoutGrid{},
+		TypeDockLayout: &BuilderLayoutDock{},
 	}
 	// Sets map of attribute name to check function
 	b.attribs = map[string]AttribCheckFunc{
@@ -269,8 +285,13 @@ func NewBuilder() *Builder {
 		AttribBorderColor:  AttribCheckColor,
 		AttribChecked:      AttribCheckBool,
 		AttribColor:        AttribCheckColor,
+		AttribCols:         AttribCheckInt,
+		AttribColSpan:      AttribCheckInt,
+		AttribEdge:         AttribCheckEdge,
 		AttribEnabled:      AttribCheckBool,
 		AttribExpand:       AttribCheckFloat,
+		AttribExpandh:      AttribCheckBool,
+		AttribExpandv:      AttribCheckBool,
 		AttribFontColor:    AttribCheckColor,
 		AttribFontDPI:      AttribCheckFloat,
 		AttribFontSize:     AttribCheckFloat,
@@ -282,6 +303,8 @@ func NewBuilder() *Builder {
 		AttribLayout:       AttribCheckLayout,
 		AttribLayoutParams: AttribCheckMap,
 		AttribLineSpacing:  AttribCheckFloat,
+		AttribMinHeight:    AttribCheckBool,
+		AttribMinWidth:     AttribCheckBool,
 		AttribName:         AttribCheckString,
 		AttribPaddings:     AttribCheckBorderSizes,
 		AttribPanel0:       AttribCheckMap,
@@ -312,6 +335,19 @@ func (b *Builder) ParseString(desc string) error {
 	if err != nil {
 		return err
 	}
+
+	// If all the values of the top level map keys are other maps,
+	// then it is a description of several objects, otherwise it is
+	// a description of a single object.
+	single := false
+	for _, v := range mii {
+		_, ok := v.(map[interface{}]interface{})
+		if !ok {
+			single = true
+			break
+		}
+	}
+	log.Error("single:%v", single)
 
 	// Internal function which converts map[interface{}]interface{} to
 	// map[string]interface{} recursively and lower case of all map keys.
@@ -348,8 +384,8 @@ func (b *Builder) ParseString(desc string) error {
 					return nil, err
 				}
 				ms[ks] = vi
-				// If not parent panel, Checks attribute
-				if par != nil {
+				// If has panel has parent or is a single top level panel, checks attributes
+				if par != nil || single {
 					// Get attribute check function
 					acf, ok := b.attribs[ks]
 					if !ok {
@@ -383,7 +419,7 @@ func (b *Builder) ParseString(desc string) error {
 		return fmt.Errorf("Parsed result is not a map")
 	}
 	b.am = msi
-	b.debugPrint(b.am, 1)
+	//b.debugPrint(b.am, 1)
 	return nil
 }
 
@@ -436,8 +472,7 @@ func (b *Builder) Build(name string) (IPanel, error) {
 
 	// Only one object
 	if name == "" {
-		if b.am[AttribName] != nil {
-		}
+		log.Error("TYPE:---------->%T", b.am)
 		return b.build(b.am, nil)
 	}
 	// Map of gui objects
@@ -1070,6 +1105,7 @@ func buildTree(b *Builder, am map[string]interface{}) (IPanel, error) {
 	return tree, nil
 }
 
+// setLayout sets the optional layout of the specified panel
 func (b *Builder) setLayout(am map[string]interface{}, ipan IPanel) error {
 
 	// Get layout type
@@ -1083,14 +1119,14 @@ func (b *Builder) setLayout(am map[string]interface{}, ipan IPanel) error {
 		return b.err(am, AttribType, "Layout must have a type")
 	}
 
-	// Get layout buider function
-	lfunc := b.layouts[ltype.(string)]
-	if lfunc == nil {
+	// Get layout builder
+	lbuilder := b.layouts[ltype.(string)]
+	if lbuilder == nil {
 		return b.err(am, AttribType, "Invalid layout type")
 	}
 
-	// Builds layout and set to panel
-	layout, err := lfunc(b, lam)
+	// Builds layout builder and set to panel
+	layout, err := lbuilder.BuildLayout(b, lam)
 	if err != nil {
 		return err
 	}
@@ -1100,53 +1136,52 @@ func (b *Builder) setLayout(am map[string]interface{}, ipan IPanel) error {
 
 func (b *Builder) setLayoutParams(am map[string]interface{}, ipan IPanel) error {
 
-	//	// Get layout params attributes
-	//	lpi := am[AttribLayoutParam]
-	//	if lpi == nil {
-	//		return nil
-	//	}
-	//	lp := lpi.(map[string]interface{})
-	//
-	//	// Get layout type from parent
-	//	pi := am[AttribParent_]
-	//	if pi == nil {
-	//		return b.err(am, AttribType, "Panel has no parent")
-	//		return nil
-	//	}
-	//	par := pi.(map[string]interface{})
-	//	lai := par[AttribLayout]
-	//	if lai == nil {
-	//		return nil
-	//	}
-	//	lam := lai.(map[string]interface{})
-	//	ltype := lam[AttribType]
-	//	if ltype == nil {
-	//		return b.err(am, AttribType, "Layout must have a type")
-	//	}
+	// Get layout params attributes
+	lpi := am[AttribLayoutParams]
+	if lpi == nil {
+		return nil
+	}
+	lp := lpi.(map[string]interface{})
 
+	// Get layout type from parent
+	pi := am[AttribParent_]
+	if pi == nil {
+		return b.err(am, AttribType, "Panel has no parent")
+	}
+	par := pi.(map[string]interface{})
+	v := par[AttribLayout]
+	if v == nil {
+		return nil
+	}
+	playout := v.(map[string]interface{})
+	pltype := playout[AttribType].(string)
+
+	// Get layout builder and builds layout params
+	lbuilder := b.layouts[pltype]
+	params, err := lbuilder.BuildParams(b, lp)
+	if err != nil {
+		return err
+	}
+	ipan.GetPanel().SetLayoutParams(params)
 	return nil
 }
 
-func layoutHBox(b *Builder, am map[string]interface{}) (ILayout, error) {
+func AttribCheckEdge(b *Builder, am map[string]interface{}, fname string) error {
 
-	// Creates layout and sets optional spacing
-	l := NewHBoxLayout()
-	var spacing float32
-	if sp := am[AttribSpacing]; sp != nil {
-		spacing = sp.(float32)
+	v := am[fname]
+	if v == nil {
+		return nil
 	}
-	l.SetSpacing(spacing)
-
-	// Sets optional horizontal alignment
-	if ah := am[AttribAlignh]; ah != nil {
-		l.SetAlignH(ah.(Align))
+	vs, ok := v.(string)
+	if !ok {
+		return b.err(am, fname, "Invalid edge name")
 	}
-	// Sets optional minheight flag
-	//hbl.SetMinHeight(dl.MinHeight)
-
-	// Sets optional minwidth flag
-	//hbl.SetMinWidth(dl.MinWidth)
-	return l, nil
+	edge, ok := mapEdgeName[vs]
+	if !ok {
+		return b.err(am, fname, "Invalid edge name")
+	}
+	am[fname] = edge
+	return nil
 }
 
 func AttribCheckLayout(b *Builder, am map[string]interface{}, fname string) error {
@@ -1419,6 +1454,20 @@ func AttribCheckFloat(b *Builder, am map[string]interface{}, fname string) error
 	default:
 		return b.err(am, fname, fmt.Sprintf("Not a number:%T", v))
 	}
+	return nil
+}
+
+func AttribCheckInt(b *Builder, am map[string]interface{}, fname string) error {
+
+	v := am[fname]
+	if v == nil {
+		return nil
+	}
+	vint, ok := v.(int)
+	if !ok {
+		return b.err(am, fname, "Not an integer")
+	}
+	am[fname] = vint
 	return nil
 }
 
@@ -2259,10 +2308,10 @@ func (b *Builder) setAttribs(am map[string]interface{}, ipan IPanel, attr uint) 
 	if err != nil {
 		return nil
 	}
-	//		return err
-	//	}
-	//	return b.setLayout(am, ipan)
-	return nil
+
+	// Sets optional layout params
+	err = b.setLayoutParams(am, panel)
+	return err
 }
 
 //func (b *Builder) setMenuShortcut(mi *MenuItem, fname, field string) error {
