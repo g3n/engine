@@ -14,6 +14,7 @@ import (
 
 	"github.com/g3n/engine/gui/assets/icon"
 	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/window"
 	"gopkg.in/yaml.v2"
 )
 
@@ -23,9 +24,14 @@ type Builder struct {
 	imgpath  string                     // base path for image panels files
 	builders map[string]BuilderFunc     // map of builder functions by type
 	attribs  map[string]AttribCheckFunc // map of attribute name with check functions
+	layouts  map[string]LayoutFunc      // map of layout type to layout func
 }
 
+// BuilderFunc is type for functions which build a gui object from an attribute map
 type BuilderFunc func(*Builder, map[string]interface{}) (IPanel, error)
+
+// BuilderFunc is type for functions which builds a layout object from an attribute map
+type LayoutFunc func(*Builder, map[string]interface{}) (ILayout, error)
 
 //// descLayout contains all layout attributes
 //type descLayout struct {
@@ -111,6 +117,7 @@ const (
 	TypeVSlider     = "vslider"
 	TypeHSplitter   = "hsplitter"
 	TypeVSplitter   = "vsplitter"
+	TypeSeparator   = "separator"
 	TypeTree        = "tree"
 	TypeTreeNode    = "node"
 	TypeMenuBar     = "menubar"
@@ -124,30 +131,45 @@ const (
 
 // Common attribute names
 const (
+	AttribAlignv       = "alignv"       // Align
+	AttribAlignh       = "alignh"       // Align
 	AttribAspectHeight = "aspectheight" // float32
 	AttribAspectWidth  = "aspectwidth"  // float32
 	AttribBgColor      = "bgcolor"      // Color4
 	AttribBorders      = "borders"      // BorderSizes
 	AttribBorderColor  = "bordercolor"  // Color4
+	AttribChecked      = "checked"      // bool
 	AttribColor        = "color"        // Color4
 	AttribEnabled      = "enabled"      // bool
+	AttribExpand       = "expand"       // float32
 	AttribFontColor    = "fontcolor"    // Color4
 	AttribFontDPI      = "fontdpi"      // float32
 	AttribFontSize     = "fontsize"     // float32
+	AttribGroup        = "group"        // string
 	AttribHeight       = "height"       // float32
-	AttribIcons        = "icons"        // string
+	AttribIcon         = "icon"         // string
 	AttribImageFile    = "imagefile"    // string
+	AttribImageLabel   = "imagelabel"   // []map[string]interface{}
 	AttribItems        = "items"        // []map[string]interface{}
+	AttribLayout       = "layout"       // map[string]interface{}
+	AttribLayoutParams = "layoutparams" // map[string]interface{}
 	AttribLineSpacing  = "linespacing"  // float32
 	AttribMargins      = "margins"      // BorderSizes
 	AttribName         = "name"         // string
 	AttribPaddings     = "paddings"     // BorderSizes
+	AttribPanel0       = "panel0"       // map[string]interface{}
+	AttribPanel1       = "panel1"       // map[string]interface{}
+	AttribParent_      = "parent_"      // string (internal attribute)
 	AttribPlaceHolder  = "placeholder"  // string
 	AttribPosition     = "position"     // []float32
 	AttribRender       = "render"       // bool
+	AttribScaleFactor  = "scalefactor"  // float32
+	AttribShortcut     = "shortcut"     // []int
+	AttribSpacing      = "spacing"      // float32
 	AttribText         = "text"         // string
 	AttribType         = "type"         // string
 	AttribWidth        = "width"        // float32
+	AttribValue        = "value"        // float32
 	AttribVisible      = "visible"      // bool
 )
 
@@ -164,16 +186,21 @@ const (
 	aRENDER      = 1 << iota                                  // attribute renderable
 	aVISIBLE     = 1 << iota                                  // attribute visible
 	asPANEL      = 0xFF                                       // attribute set for panels
-	asWIDGET     = aPOS | aNAME | aENABLED | aVISIBLE         // attribute set for widgets
-	asBUTTON     = aPOS | aSIZE | aNAME | aENABLED | aVISIBLE // attribute set for buttons
+	asWIDGET     = aPOS | aNAME | aSIZE | aENABLED | aVISIBLE // attribute set for widgets
 )
 
 // maps align name with align parameter
-var mapAlignName = map[string]Align{
+var mapAlignh = map[string]Align{
 	"none":   AlignNone,
 	"left":   AlignLeft,
 	"right":  AlignRight,
 	"width":  AlignWidth,
+	"center": AlignCenter,
+}
+
+// maps align name with align parameter
+var mapAlignv = map[string]Align{
+	"none":   AlignNone,
 	"top":    AlignTop,
 	"bottom": AlignBottom,
 	"height": AlignHeight,
@@ -206,15 +233,33 @@ func NewBuilder() *Builder {
 	b := new(Builder)
 	// Sets map of object type to builder function
 	b.builders = map[string]BuilderFunc{
-		TypePanel:      buildPanel,
-		TypeImagePanel: buildImagePanel,
-		TypeLabel:      buildLabel,
-		TypeImageLabel: buildImageLabel,
-		TypeButton:     buildButton,
-		TypeEdit:       buildEdit,
+		TypePanel:       buildPanel,
+		TypeImagePanel:  buildImagePanel,
+		TypeLabel:       buildLabel,
+		TypeImageLabel:  buildImageLabel,
+		TypeButton:      buildButton,
+		TypeEdit:        buildEdit,
+		TypeCheckBox:    buildCheckBox,
+		TypeRadioButton: buildRadioButton,
+		TypeVList:       buildVList,
+		TypeHList:       buildHList,
+		TypeDropDown:    buildDropDown,
+		TypeMenu:        buildMenu,
+		TypeMenuBar:     buildMenu,
+		TypeHSlider:     buildSlider,
+		TypeVSlider:     buildSlider,
+		TypeHSplitter:   buildSplitter,
+		TypeVSplitter:   buildSplitter,
+		TypeTree:        buildTree,
+	}
+	// Sets map of layout type name to layout function
+	b.layouts = map[string]LayoutFunc{
+		TypeHBoxLayout: layoutHBox,
 	}
 	// Sets map of attribute name to check function
 	b.attribs = map[string]AttribCheckFunc{
+		AttribAlignv:       AttribCheckAlign,
+		AttribAlignh:       AttribCheckAlign,
 		AttribAspectWidth:  AttribCheckFloat,
 		AttribAspectHeight: AttribCheckFloat,
 		AttribHeight:       AttribCheckFloat,
@@ -222,22 +267,34 @@ func NewBuilder() *Builder {
 		AttribBgColor:      AttribCheckColor,
 		AttribBorders:      AttribCheckBorderSizes,
 		AttribBorderColor:  AttribCheckColor,
+		AttribChecked:      AttribCheckBool,
 		AttribColor:        AttribCheckColor,
 		AttribEnabled:      AttribCheckBool,
+		AttribExpand:       AttribCheckFloat,
 		AttribFontColor:    AttribCheckColor,
 		AttribFontDPI:      AttribCheckFloat,
 		AttribFontSize:     AttribCheckFloat,
-		AttribIcons:        AttribCheckIcons,
+		AttribGroup:        AttribCheckString,
+		AttribIcon:         AttribCheckIcons,
 		AttribImageFile:    AttribCheckString,
+		AttribImageLabel:   AttribCheckMap,
 		AttribItems:        AttribCheckListMap,
+		AttribLayout:       AttribCheckLayout,
+		AttribLayoutParams: AttribCheckMap,
 		AttribLineSpacing:  AttribCheckFloat,
 		AttribName:         AttribCheckString,
 		AttribPaddings:     AttribCheckBorderSizes,
+		AttribPanel0:       AttribCheckMap,
+		AttribPanel1:       AttribCheckMap,
 		AttribPlaceHolder:  AttribCheckString,
 		AttribPosition:     AttribCheckPosition,
 		AttribRender:       AttribCheckBool,
+		AttribScaleFactor:  AttribCheckFloat,
+		AttribShortcut:     AttribCheckMenuShortcut,
+		AttribSpacing:      AttribCheckFloat,
 		AttribText:         AttribCheckString,
-		AttribType:         AttribCheckString,
+		AttribType:         AttribCheckStringLower,
+		AttribValue:        AttribCheckFloat,
 		AttribVisible:      AttribCheckBool,
 		AttribWidth:        AttribCheckFloat,
 	}
@@ -258,7 +315,7 @@ func (b *Builder) ParseString(desc string) error {
 
 	// Internal function which converts map[interface{}]interface{} to
 	// map[string]interface{} recursively and lower case of all map keys.
-	// It also sets a field named "_parent", which pointer to the parent map
+	// It also sets a field named "parent_", which pointer to the parent map
 	// This field causes a circular reference in the result map which prevents
 	// the use of Go's Printf to print the result map.
 	var visitor func(v, par interface{}) (interface{}, error)
@@ -306,7 +363,7 @@ func (b *Builder) ParseString(desc string) error {
 				}
 			}
 			if par != nil {
-				ms["_parent"] = par
+				ms[AttribParent_] = par
 			}
 			return ms, nil
 
@@ -405,26 +462,23 @@ func (b *Builder) AddBuilder(typename string, bf BuilderFunc) {
 // build builds the gui object from the specified description.
 // All its children are also built recursively
 // Returns the built object or an error
-func (b *Builder) build(pd map[string]interface{}, iparent IPanel) (IPanel, error) {
+func (b *Builder) build(am map[string]interface{}, iparent IPanel) (IPanel, error) {
 
-	// Get panel type name
-	if pd["type"] == nil {
+	// Get panel type
+	itype := am[AttribType]
+	if itype == nil {
 		return nil, fmt.Errorf("Type not specified")
 	}
-	typename, ok := pd["type"].(string)
-	if !ok {
-		return nil, fmt.Errorf("Type must be a string")
-	}
-	typename = strings.ToLower(typename)
+	typename := itype.(string)
 
 	// Get builder function for this type name
 	builder := b.builders[typename]
 	if builder == nil {
-		return nil, fmt.Errorf("Invalid type:%v", pd["type"])
+		return nil, fmt.Errorf("Invalid type:%v", typename)
 	}
 
 	// Builds panel
-	pan, err := builder(b, pd)
+	pan, err := builder(b, am)
 	if err != nil {
 		return nil, err
 	}
@@ -512,8 +566,8 @@ func buildImagePanel(b *Builder, am map[string]interface{}) (IPanel, error) {
 func buildLabel(b *Builder, am map[string]interface{}) (IPanel, error) {
 
 	var label *Label
-	if am[AttribIcons] != nil {
-		label = NewLabel(am[AttribIcons].(string), true)
+	if am[AttribIcon] != nil {
+		label = NewLabel(am[AttribIcon].(string), true)
 	} else if am[AttribText] != nil {
 		label = NewLabel(am[AttribText].(string))
 	} else {
@@ -569,8 +623,8 @@ func buildImageLabel(b *Builder, am map[string]interface{}) (IPanel, error) {
 	}
 
 	// Sets optional icon(s)
-	if icons := am[AttribIcons]; icons != nil {
-		imglabel.SetIcon(icons.(string))
+	if icon := am[AttribIcon]; icon != nil {
+		imglabel.SetIcon(icon.(string))
 	}
 
 	// Sets optional image from file
@@ -598,14 +652,14 @@ func buildButton(b *Builder, am map[string]interface{}) (IPanel, error) {
 		text = am[AttribText].(string)
 	}
 	button := NewButton(text)
-	err := b.setAttribs(am, button, asBUTTON)
+	err := b.setAttribs(am, button, asWIDGET)
 	if err != nil {
 		return nil, err
 	}
 
-	// Sets optional icon
-	if icons := am[AttribIcons]; icons != nil {
-		button.SetIcon(icons.(string))
+	// Sets optional icon(s)
+	if icon := am[AttribIcon]; icon != nil {
+		button.SetIcon(icon.(string))
 	}
 
 	// Sets optional image from file
@@ -644,6 +698,547 @@ func buildEdit(b *Builder, am map[string]interface{}) (IPanel, error) {
 	return edit, nil
 }
 
+// buildCheckBox builds a gui object of type: CheckBox
+func buildCheckBox(b *Builder, am map[string]interface{}) (IPanel, error) {
+
+	// Builds check box and set commont attributes
+	var text string
+	if am[AttribText] != nil {
+		text = am[AttribText].(string)
+	}
+	cb := NewCheckBox(text)
+	err := b.setAttribs(am, cb, asWIDGET)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sets optional checked value
+	if checked := am[AttribChecked]; checked != nil {
+		cb.SetValue(checked.(bool))
+	}
+	return cb, nil
+}
+
+// buildRadioButton builds a gui object of type: RadioButton
+func buildRadioButton(b *Builder, am map[string]interface{}) (IPanel, error) {
+
+	// Builds check box and set commont attributes
+	var text string
+	if am[AttribText] != nil {
+		text = am[AttribText].(string)
+	}
+	rb := NewRadioButton(text)
+	err := b.setAttribs(am, rb, asWIDGET)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sets optional radio button group
+	if gr := am[AttribGroup]; gr != nil {
+		rb.SetGroup(gr.(string))
+	}
+
+	// Sets optional checked value
+	if checked := am[AttribChecked]; checked != nil {
+		rb.SetValue(checked.(bool))
+	}
+	return rb, nil
+}
+
+// buildVList builds a gui object of type: VList
+func buildVList(b *Builder, am map[string]interface{}) (IPanel, error) {
+
+	// Builds list and set commont attributes
+	list := NewVList(0, 0)
+	err := b.setAttribs(am, list, asWIDGET)
+	if err != nil {
+		return nil, err
+	}
+
+	// Builds children
+	if am[AttribItems] != nil {
+		items := am[AttribItems].([]map[string]interface{})
+		for i := 0; i < len(items); i++ {
+			item := items[i]
+			child, err := b.build(item, list)
+			if err != nil {
+				return nil, err
+			}
+			list.Add(child)
+		}
+	}
+	return list, nil
+}
+
+// buildHList builds a gui object of type: VList
+func buildHList(b *Builder, am map[string]interface{}) (IPanel, error) {
+
+	// Builds list and set commont attributes
+	list := NewHList(0, 0)
+	err := b.setAttribs(am, list, asWIDGET)
+	if err != nil {
+		return nil, err
+	}
+
+	// Builds children
+	if am[AttribItems] != nil {
+		items := am[AttribItems].([]map[string]interface{})
+		for i := 0; i < len(items); i++ {
+			item := items[i]
+			child, err := b.build(item, list)
+			if err != nil {
+				return nil, err
+			}
+			list.Add(child)
+		}
+	}
+	return list, nil
+}
+
+// buildDropDown builds a gui object of type: DropDown
+func buildDropDown(b *Builder, am map[string]interface{}) (IPanel, error) {
+
+	// If image label attribute defined use it, otherwise
+	// uses default value.
+	var imglabel *ImageLabel
+	if iv := am[AttribImageLabel]; iv != nil {
+		imgl := iv.(map[string]interface{})
+		imgl[AttribType] = TypeImageLabel
+		ipan, err := b.build(imgl, nil)
+		if err != nil {
+			return nil, err
+		}
+		imglabel = ipan.(*ImageLabel)
+	} else {
+		imglabel = NewImageLabel("")
+	}
+
+	// Builds drop down and set common attributes
+	dd := NewDropDown(0, imglabel)
+	err := b.setAttribs(am, dd, asWIDGET)
+	if err != nil {
+		return nil, err
+	}
+
+	// Builds children
+	if am[AttribItems] != nil {
+		items := am[AttribItems].([]map[string]interface{})
+		for i := 0; i < len(items); i++ {
+			item := items[i]
+			child, err := b.build(item, dd)
+			if err != nil {
+				return nil, err
+			}
+			dd.Add(child.(*ImageLabel))
+		}
+	}
+	return dd, nil
+}
+
+// buildMenu builds a gui object of type: Menu or MenuBar from the
+// specified panel descriptor.
+func buildMenu(b *Builder, am map[string]interface{}) (IPanel, error) {
+
+	// Builds menu bar or menu
+	var menu *Menu
+	if am[AttribType].(string) == TypeMenuBar {
+		menu = NewMenuBar()
+	} else {
+		menu = NewMenu()
+	}
+
+	// Only sets attribs for top level menus
+	if pi := am[AttribParent_]; pi != nil {
+		par := pi.(map[string]interface{})
+		ptype := ""
+		if ti := par[AttribType]; ti != nil {
+			ptype = ti.(string)
+		}
+		if ptype != TypeMenu && ptype != TypeMenuBar {
+			err := b.setAttribs(am, menu, asWIDGET)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	// Builds and adds menu items
+	if am[AttribItems] != nil {
+		items := am[AttribItems].([]map[string]interface{})
+		for i := 0; i < len(items); i++ {
+			// Get the item optional type and text
+			item := items[i]
+			itype := ""
+			itext := ""
+			if iv := item[AttribType]; iv != nil {
+				itype = iv.(string)
+			}
+			if iv := item[AttribText]; iv != nil {
+				itext = iv.(string)
+			}
+			// Item is another menu
+			if itype == TypeMenu {
+				subm, err := buildMenu(b, item)
+				if err != nil {
+					return nil, err
+				}
+				menu.AddMenu(itext, subm.(*Menu))
+				continue
+			}
+			// Item is a separator
+			if itext == TypeSeparator {
+				menu.AddSeparator()
+				continue
+			}
+			// Item must be a menu option
+			mi := menu.AddOption(itext)
+			// Set item optional icon(s)
+			if icon := item[AttribIcon]; icon != nil {
+				mi.SetIcon(icon.(string))
+			}
+			// Sets optional menu item shortcut
+			if sci := item[AttribShortcut]; sci != nil {
+				sc := sci.([]int)
+				mi.SetShortcut(window.ModifierKey(sc[0]), window.Key(sc[1]))
+			}
+		}
+	}
+	return menu, nil
+}
+
+// buildSlider builds a gui object of type: HSlider or VSlider
+func buildSlider(b *Builder, am map[string]interface{}) (IPanel, error) {
+
+	// Builds horizontal or vertical slider
+	var slider *Slider
+	if am[AttribType].(string) == TypeHSlider {
+		slider = NewHSlider(0, 0)
+	} else {
+		slider = NewVSlider(0, 0)
+	}
+
+	// Sets common attributes
+	err := b.setAttribs(am, slider, asWIDGET)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sets optional text
+	if itext := am[AttribText]; itext != nil {
+		slider.SetText(itext.(string))
+	}
+	// Sets optional scale factor
+	if isf := am[AttribScaleFactor]; isf != nil {
+		slider.SetScaleFactor(isf.(float32))
+	}
+	// Sets optional value
+	if iv := am[AttribValue]; iv != nil {
+		slider.SetValue(iv.(float32))
+	}
+	return slider, nil
+}
+
+// buildSplitter builds a gui object of type: HSplitterr or VSplitter
+func buildSplitter(b *Builder, am map[string]interface{}) (IPanel, error) {
+
+	// Builds horizontal or vertical splitter
+	var splitter *Splitter
+	if am[AttribType].(string) == TypeHSplitter {
+		splitter = NewHSplitter(0, 0)
+	} else {
+		splitter = NewVSplitter(0, 0)
+	}
+
+	// Sets common attributes
+	err := b.setAttribs(am, splitter, asWIDGET)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sets optional split value
+	if iv := am[AttribValue]; iv != nil {
+		splitter.SetSplit(iv.(float32))
+	}
+
+	// Internal function to set each of the splitter's panel attributes and items
+	setpan := func(attrib string, pan *Panel) error {
+
+		// Get internal panel attributes
+		ipattribs := am[attrib]
+		if ipattribs == nil {
+			return nil
+		}
+		pattr := ipattribs.(map[string]interface{})
+		// Set panel attributes
+		err := b.setAttribs(pattr, pan, asPANEL)
+		if err != nil {
+			return nil
+		}
+		// Builds panel children
+		if pattr[AttribItems] != nil {
+			items := pattr[AttribItems].([]map[string]interface{})
+			for i := 0; i < len(items); i++ {
+				item := items[i]
+				child, err := b.build(item, pan)
+				if err != nil {
+					return err
+				}
+				pan.Add(child)
+			}
+		}
+		return nil
+	}
+
+	// Set optional splitter panel's attributes
+	err = setpan(AttribPanel0, &splitter.P0)
+	if err != nil {
+		return nil, err
+	}
+	err = setpan(AttribPanel1, &splitter.P1)
+	if err != nil {
+		return nil, err
+	}
+
+	return splitter, nil
+}
+
+// buildTree builds a gui object of type: Tree
+func buildTree(b *Builder, am map[string]interface{}) (IPanel, error) {
+
+	// Builds tree and sets its common attributes
+	tree := NewTree(0, 0)
+	err := b.setAttribs(am, tree, asWIDGET)
+	if err != nil {
+		return nil, err
+	}
+
+	// Internal function to build tree nodes recursively
+	var buildItems func(am map[string]interface{}, pnode *TreeNode) error
+	buildItems = func(am map[string]interface{}, pnode *TreeNode) error {
+
+		v := am[AttribItems]
+		if v == nil {
+			return nil
+		}
+		items := v.([]map[string]interface{})
+
+		for i := 0; i < len(items); i++ {
+			// Get the item type
+			item := items[i]
+			itype := ""
+			if v := item[AttribType]; v != nil {
+				itype = v.(string)
+			}
+			itext := ""
+			if v := item[AttribText]; v != nil {
+				itext = v.(string)
+			}
+
+			// Item is a tree node
+			if itype == "" || itype == TypeTreeNode {
+				var node *TreeNode
+				if pnode == nil {
+					node = tree.AddNode(itext)
+				} else {
+					node = pnode.AddNode(itext)
+				}
+				err := buildItems(item, node)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+			// Other controls
+			ipan, err := b.build(item, nil)
+			if err != nil {
+				return err
+			}
+			if pnode == nil {
+				tree.Add(ipan)
+			} else {
+				pnode.Add(ipan)
+			}
+		}
+		return nil
+	}
+
+	// Build nodes
+	err = buildItems(am, nil)
+	if err != nil {
+		return nil, err
+	}
+	return tree, nil
+}
+
+func (b *Builder) setLayout(am map[string]interface{}, ipan IPanel) error {
+
+	// Get layout type
+	lai := am[AttribLayout]
+	if lai == nil {
+		return nil
+	}
+	lam := lai.(map[string]interface{})
+	ltype := lam[AttribType]
+	if ltype == nil {
+		return b.err(am, AttribType, "Layout must have a type")
+	}
+
+	// Get layout buider function
+	lfunc := b.layouts[ltype.(string)]
+	if lfunc == nil {
+		return b.err(am, AttribType, "Invalid layout type")
+	}
+
+	// Builds layout and set to panel
+	layout, err := lfunc(b, lam)
+	if err != nil {
+		return err
+	}
+	ipan.SetLayout(layout)
+	return nil
+}
+
+func (b *Builder) setLayoutParams(am map[string]interface{}, ipan IPanel) error {
+
+	//	// Get layout params attributes
+	//	lpi := am[AttribLayoutParam]
+	//	if lpi == nil {
+	//		return nil
+	//	}
+	//	lp := lpi.(map[string]interface{})
+	//
+	//	// Get layout type from parent
+	//	pi := am[AttribParent_]
+	//	if pi == nil {
+	//		return b.err(am, AttribType, "Panel has no parent")
+	//		return nil
+	//	}
+	//	par := pi.(map[string]interface{})
+	//	lai := par[AttribLayout]
+	//	if lai == nil {
+	//		return nil
+	//	}
+	//	lam := lai.(map[string]interface{})
+	//	ltype := lam[AttribType]
+	//	if ltype == nil {
+	//		return b.err(am, AttribType, "Layout must have a type")
+	//	}
+
+	return nil
+}
+
+func layoutHBox(b *Builder, am map[string]interface{}) (ILayout, error) {
+
+	// Creates layout and sets optional spacing
+	l := NewHBoxLayout()
+	var spacing float32
+	if sp := am[AttribSpacing]; sp != nil {
+		spacing = sp.(float32)
+	}
+	l.SetSpacing(spacing)
+
+	// Sets optional horizontal alignment
+	if ah := am[AttribAlignh]; ah != nil {
+		l.SetAlignH(ah.(Align))
+	}
+	// Sets optional minheight flag
+	//hbl.SetMinHeight(dl.MinHeight)
+
+	// Sets optional minwidth flag
+	//hbl.SetMinWidth(dl.MinWidth)
+	return l, nil
+}
+
+func AttribCheckLayout(b *Builder, am map[string]interface{}, fname string) error {
+
+	v := am[fname]
+	if v == nil {
+		return nil
+	}
+	msi, ok := v.(map[string]interface{})
+	if !ok {
+		return b.err(am, fname, "Not a map")
+	}
+	lti := msi[AttribType]
+	if lti == nil {
+		return b.err(am, fname, "Layout must have a type")
+	}
+	lfunc := b.layouts[lti.(string)]
+	if lfunc == nil {
+		return b.err(am, fname, "Invalid layout type")
+	}
+	return nil
+}
+
+func AttribCheckAlign(b *Builder, am map[string]interface{}, fname string) error {
+
+	v := am[fname]
+	if v == nil {
+		return nil
+	}
+	vs, ok := v.(string)
+	if !ok {
+		return b.err(am, fname, "Invalid alignment")
+	}
+	var align Align
+	if fname == AttribAlignh {
+		align, ok = mapAlignh[vs]
+	} else {
+		align, ok = mapAlignv[vs]
+	}
+	if !ok {
+		return b.err(am, fname, "Invalid alignment")
+	}
+	am[fname] = align
+	return nil
+}
+
+func AttribCheckMenuShortcut(b *Builder, am map[string]interface{}, fname string) error {
+
+	v := am[fname]
+	if v == nil {
+		return nil
+	}
+	vs, ok := v.(string)
+	if !ok {
+		return b.err(am, fname, "Not a string")
+	}
+	sc := strings.Trim(vs, " ")
+	if sc == "" {
+		return nil
+	}
+	parts := strings.Split(sc, "+")
+	var mods window.ModifierKey
+	for i := 0; i < len(parts)-1; i++ {
+		switch parts[i] {
+		case "Shift":
+			mods |= window.ModShift
+		case "Ctrl":
+			mods |= window.ModControl
+		case "Alt":
+			mods |= window.ModAlt
+		default:
+			return b.err(am, fname, "Invalid shortcut:"+sc)
+		}
+	}
+	// The last part must be a key
+	keyname := parts[len(parts)-1]
+	var keycode int
+	found := false
+	for kcode, kname := range mapKeyText {
+		if kname == keyname {
+			keycode = int(kcode)
+			found = true
+			break
+		}
+	}
+	if !found {
+		return b.err(am, fname, "Invalid shortcut:"+sc)
+	}
+	am[fname] = []int{int(mods), keycode}
+	return nil
+}
+
 func AttribCheckListMap(b *Builder, am map[string]interface{}, fname string) error {
 
 	v := am[fname]
@@ -664,6 +1259,20 @@ func AttribCheckListMap(b *Builder, am map[string]interface{}, fname string) err
 		lmsi = append(lmsi, msi)
 	}
 	am[fname] = lmsi
+	return nil
+}
+
+func AttribCheckMap(b *Builder, am map[string]interface{}, fname string) error {
+
+	v := am[fname]
+	if v == nil {
+		return nil
+	}
+	msi, ok := v.(map[string]interface{})
+	if !ok {
+		return b.err(am, fname, "Not a map")
+	}
+	am[fname] = msi
 	return nil
 }
 
@@ -779,6 +1388,18 @@ func AttribCheckPosition(b *Builder, am map[string]interface{}, fname string) er
 		return err
 	}
 	am[fname] = af
+	return nil
+}
+
+func AttribCheckStringLower(b *Builder, am map[string]interface{}, fname string) error {
+
+	err := AttribCheckString(b, am, fname)
+	if err != nil {
+		return err
+	}
+	if v := am[fname]; v != nil {
+		am[fname] = strings.ToLower(v.(string))
+	}
 	return nil
 }
 
@@ -1585,6 +2206,7 @@ func (b *Builder) setAttribs(am map[string]interface{}, ipan IPanel, attr uint) 
 	// Set optional panel width
 	if attr&aSIZE != 0 && am[AttribWidth] != nil {
 		panel.SetWidth(am[AttribWidth].(float32))
+		log.Error("set width:%v", am[AttribWidth])
 	}
 
 	// Sets optional panel height
@@ -1632,8 +2254,11 @@ func (b *Builder) setAttribs(am map[string]interface{}, ipan IPanel, attr uint) 
 		panel.SetRenderable(am[AttribRender].(bool))
 	}
 
-	//	err := b.setLayoutParams(am, ipan)
-	//	if err != nil {
+	// Sets optional layout
+	err := b.setLayout(am, panel)
+	if err != nil {
+		return nil
+	}
 	//		return err
 	//	}
 	//	return b.setLayout(am, ipan)
@@ -1741,7 +2366,7 @@ func (b *Builder) debugPrint(v interface{}, level int) {
 		level += 3
 		fmt.Printf("\n")
 		for mk, mv := range vt {
-			if mk == "_parent" {
+			if mk == AttribParent_ {
 				continue
 			}
 			fmt.Printf("%s%s:", strings.Repeat(" ", level), mk)
