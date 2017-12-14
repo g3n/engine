@@ -733,3 +733,42 @@ func buildChart(b *Builder, am map[string]interface{}) (IPanel, error) {
 
 	return chart, nil
 }
+
+// buildTable builds a gui object of type: Table
+func buildTable(b *Builder, am map[string]interface{}) (IPanel, error) {
+
+	// Internal function to build a TableColumn from its attribute map
+	buildTableCol := func(b *Builder, am map[string]interface{}) (*TableColumn, error) {
+		tc := &TableColumn{}
+
+		return tc, nil
+	}
+
+	// Builds table columns array
+	tableCols := []*TableColumn{}
+	if iv := am[AttribColumns]; iv != nil {
+		cols := iv.([]map[string]interface{})
+		var tc *TableColumn
+		var err error
+		for _, c := range cols {
+			tc, err = buildTableCol(b, c)
+			if err != nil {
+				return nil, err
+			}
+		}
+		tableCols = append(tableCols, tc)
+	}
+	//Id         string          // Column id used to reference the column. Must be unique
+	//Header     string          // Column name shown in the table header
+	//Width      float32         // Initial column width in pixels
+	//Minwidth   float32         // Minimum width in pixels for this column
+	//Hidden     bool            // Hidden flag
+	//Align      Align           // Cell content alignment: AlignLeft|AlignCenter|AlignRight
+	//Format     string          // Format string for formatting the columns' cells
+	//FormatFunc TableFormatFunc // Format function (overrides Format string)
+	//Expand     float32         // Column width expansion factor (0 for no expansion)
+	//Sort       TableSortType   // Column sort type
+	//Resize     bool            // Allow column to be resized by user
+
+	return nil, nil
+}

@@ -66,6 +66,7 @@ const (
 	TypeMenu        = "menu"
 	TypeWindow      = "window"
 	TypeChart       = "chart"
+	TypeTable       = "table"
 	TypeHBoxLayout  = "hbox"
 	TypeVBoxLayout  = "vbox"
 	TypeGridLayout  = "grid"
@@ -83,8 +84,9 @@ const (
 	AttribBorderColor    = "bordercolor"  // Color4
 	AttribChecked        = "checked"      // bool
 	AttribColor          = "color"        // Color4
-	AttribCols           = "cols"         // int
-	AttribColSpan        = "colspan"      // int
+	AttribCols           = "cols"         // int GridLayout
+	AttribColSpan        = "colspan"      // int GridLayout
+	AttribColumns        = "columns"      // []map[string]interface{} Table
 	AttribCountStepx     = "countstepx"   // float32
 	AttribEdge           = "edge"         // int
 	AttribEnabled        = "enabled"      // bool
@@ -215,6 +217,7 @@ func NewBuilder() *Builder {
 		TypeTree:        buildTree,
 		TypeWindow:      buildWindow,
 		TypeChart:       buildChart,
+		TypeTable:       buildTable,
 	}
 	// Sets map of layout type name to layout function
 	b.layouts = map[string]IBuilderLayout{
