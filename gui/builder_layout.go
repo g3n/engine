@@ -26,13 +26,13 @@ func (bl *BuilderLayoutHBox) BuildLayout(b *Builder, am map[string]interface{}) 
 	}
 
 	// Sets optional minheight flag
-	if mh := am[AttribMinHeight]; mh != nil {
-		l.SetMinHeight(mh.(bool))
+	if mh := am[AttribAutoHeight]; mh != nil {
+		l.SetAutoHeight(mh.(bool))
 	}
 
 	// Sets optional minwidth flag
-	if mw := am[AttribMinWidth]; mw != nil {
-		l.SetMinWidth(mw.(bool))
+	if mw := am[AttribAutoWidth]; mw != nil {
+		l.SetAutoWidth(mw.(bool))
 	}
 	return l, nil
 }
@@ -77,13 +77,13 @@ func (bl *BuilderLayoutVBox) BuildLayout(b *Builder, am map[string]interface{}) 
 	}
 
 	// Sets optional minheight flag
-	if mh := am[AttribMinHeight]; mh != nil {
-		l.SetMinHeight(mh.(bool))
+	if mh := am[AttribAutoHeight]; mh != nil {
+		l.SetAutoHeight(mh.(bool))
 	}
 
 	// Sets optional minwidth flag
-	if mw := am[AttribMinWidth]; mw != nil {
-		l.SetMinWidth(mw.(bool))
+	if mw := am[AttribAutoWidth]; mw != nil {
+		l.SetAutoWidth(mw.(bool))
 	}
 	return l, nil
 }

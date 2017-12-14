@@ -34,7 +34,7 @@ type Window struct {
 	styles     *WindowStyles
 	title      *WindowTitle // internal optional title panel
 	client     Panel        // internal client panel
-	resizable  Resizable
+	resizable  ResizeBorders
 	overBorder string
 	drag       bool
 	mouseX     float32
@@ -59,10 +59,10 @@ type WindowStyles struct {
 	Disabled WindowStyle
 }
 
-type Resizable int
+type ResizeBorders int
 
 const (
-	ResizeTop = Resizable(1 << (iota + 1))
+	ResizeTop = ResizeBorders(1 << (iota + 1))
 	ResizeRight
 	ResizeBottom
 	ResizeLeft
@@ -93,7 +93,7 @@ func NewWindow(width, height float32) *Window {
 }
 
 // SetResizable set the borders which are resizable
-func (w *Window) SetResizable(res Resizable) {
+func (w *Window) SetResizable(res ResizeBorders) {
 
 	w.resizable = res
 }

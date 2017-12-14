@@ -75,68 +75,75 @@ const (
 
 // Common attribute names
 const (
-	AttribAlignv         = "alignv"       // Align
-	AttribAlignh         = "alignh"       // Align
-	AttribAspectHeight   = "aspectheight" // float32
-	AttribAspectWidth    = "aspectwidth"  // float32
-	AttribBgColor        = "bgcolor"      // Color4
-	AttribBorders        = "borders"      // BorderSizes
-	AttribBorderColor    = "bordercolor"  // Color4
-	AttribChecked        = "checked"      // bool
-	AttribColor          = "color"        // Color4
-	AttribCols           = "cols"         // int GridLayout
-	AttribColSpan        = "colspan"      // int GridLayout
-	AttribColumns        = "columns"      // []map[string]interface{} Table
-	AttribCountStepx     = "countstepx"   // float32
-	AttribEdge           = "edge"         // int
-	AttribEnabled        = "enabled"      // bool
-	AttribExpand         = "expand"       // float32
-	AttribExpandh        = "expandh"      // bool
-	AttribExpandv        = "expandv"      // bool
-	AttribFirstx         = "firstx"       // float32
-	AttribFontColor      = "fontcolor"    // Color4
-	AttribFontDPI        = "fontdpi"      // float32
-	AttribFontSize       = "fontsize"     // float32
-	AttribFormat         = "format"       // string
-	AttribGroup          = "group"        // string
-	AttribHeight         = "height"       // float32
-	AttribIcon           = "icon"         // string
-	AttribImageFile      = "imagefile"    // string
-	AttribImageLabel     = "imagelabel"   // []map[string]interface{}
-	AttribItems          = "items"        // []map[string]interface{}
-	AttribLayout         = "layout"       // map[string]interface{}
-	AttribLayoutParams   = "layoutparams" // map[string]interface{}
-	AttribLineSpacing    = "linespacing"  // float32
-	AttribLines          = "lines"        // int
-	AttribMargin         = "margin"       // float32
-	AttribMargins        = "margins"      // BorderSizes
-	AttribMinHeight      = "minheight"    // bool
-	AttribMinWidth       = "minwidth"     // bool
-	AttribName           = "name"         // string
-	AttribPaddings       = "paddings"     // BorderSizes
-	AttribPanel0         = "panel0"       // map[string]interface{}
-	AttribPanel1         = "panel1"       // map[string]interface{}
-	AttribParentInternal = "parent_"      // string (internal attribute)
-	AttribPlaceHolder    = "placeholder"  // string
-	AttribPosition       = "position"     // []float32
-	AttribRangeAuto      = "rangeauto"    // bool
-	AttribRangeMin       = "rangemin"     // float32
-	AttribRangeMax       = "rangemax"     // float32
-	AttribRender         = "render"       // bool
-	AttribResizable      = "resizable"    // Resizable
-	AttribScaleFactor    = "scalefactor"  // float32
-	AttribScalex         = "scalex"       // map[string]interface{}
-	AttribScaley         = "scaley"       // map[string]interface{}
-	AttribShortcut       = "shortcut"     // []int
-	AttribSpacing        = "spacing"      // float32
-	AttribSplit          = "split"        // float32
-	AttribStepx          = "stepx"        // float32
-	AttribText           = "text"         // string
-	AttribTitle          = "title"        // string
-	AttribType           = "type"         // string
-	AttribWidth          = "width"        // float32
-	AttribValue          = "value"        // float32
-	AttribVisible        = "visible"      // bool
+	AttribAlignv         = "alignv"        // Align
+	AttribAlignh         = "alignh"        // Align
+	AttribAspectHeight   = "aspectheight"  // float32
+	AttribAspectWidth    = "aspectwidth"   // float32
+	AttribBgColor        = "bgcolor"       // Color4
+	AttribBorders        = "borders"       // BorderSizes
+	AttribBorderColor    = "bordercolor"   // Color4
+	AttribChecked        = "checked"       // bool
+	AttribColor          = "color"         // Color4
+	AttribCols           = "cols"          // int GridLayout
+	AttribColSpan        = "colspan"       // int GridLayout
+	AttribColumns        = "columns"       // []map[string]interface{} Table
+	AttribCountStepx     = "countstepx"    // float32
+	AttribEdge           = "edge"          // int
+	AttribEnabled        = "enabled"       // bool
+	AttribExpand         = "expand"        // float32
+	AttribExpandh        = "expandh"       // bool
+	AttribExpandv        = "expandv"       // bool
+	AttribFirstx         = "firstx"        // float32
+	AttribFontColor      = "fontcolor"     // Color4
+	AttribFontDPI        = "fontdpi"       // float32
+	AttribFontSize       = "fontsize"      // float32
+	AttribFormat         = "format"        // string
+	AttribGroup          = "group"         // string
+	AttribHeader         = "header"        // string
+	AttribHeight         = "height"        // float32
+	AttribHidden         = "hidden"        // bool Table
+	AttribId             = "id"            // string
+	AttribIcon           = "icon"          // string
+	AttribImageFile      = "imagefile"     // string
+	AttribImageLabel     = "imagelabel"    // []map[string]interface{}
+	AttribItems          = "items"         // []map[string]interface{}
+	AttribLayout         = "layout"        // map[string]interface{}
+	AttribLayoutParams   = "layoutparams"  // map[string]interface{}
+	AttribLineSpacing    = "linespacing"   // float32
+	AttribLines          = "lines"         // int
+	AttribMargin         = "margin"        // float32
+	AttribMargins        = "margins"       // BorderSizes
+	AttribMinwidth       = "minwidth"      // float32 Table
+	AttribAutoHeight     = "autoheight"    // bool
+	AttribAutoWidth      = "autowidth"     // bool
+	AttribName           = "name"          // string
+	AttribPaddings       = "paddings"      // BorderSizes
+	AttribPanel0         = "panel0"        // map[string]interface{}
+	AttribPanel1         = "panel1"        // map[string]interface{}
+	AttribParentInternal = "parent_"       // string (internal attribute)
+	AttribPlaceHolder    = "placeholder"   // string
+	AttribPosition       = "position"      // []float32
+	AttribRangeAuto      = "rangeauto"     // bool
+	AttribRangeMin       = "rangemin"      // float32
+	AttribRangeMax       = "rangemax"      // float32
+	AttribRender         = "render"        // bool
+	AttribResizeBorders  = "resizeborders" // Resizable
+	AttribResize         = "resize"        // bool Table
+	AttribScaleFactor    = "scalefactor"   // float32
+	AttribScalex         = "scalex"        // map[string]interface{}
+	AttribScaley         = "scaley"        // map[string]interface{}
+	AttribShortcut       = "shortcut"      // []int
+	AttribShowHeader     = "showheader"    // bool
+	AttribSortType       = "sorttype"      // TableSortType Table
+	AttribSpacing        = "spacing"       // float32
+	AttribSplit          = "split"         // float32
+	AttribStepx          = "stepx"         // float32
+	AttribText           = "text"          // string
+	AttribTitle          = "title"         // string
+	AttribType           = "type"          // string
+	AttribWidth          = "width"         // float32
+	AttribValue          = "value"         // float32
+	AttribVisible        = "visible"       // bool
 )
 
 const (
@@ -183,12 +190,19 @@ var mapEdgeName = map[string]int{
 }
 
 // maps resize border name (window) with parameter value
-var mapResizable = map[string]Resizable{
+var mapResizable = map[string]ResizeBorders{
 	"top":    ResizeTop,
 	"right":  ResizeRight,
 	"bottom": ResizeBottom,
 	"left":   ResizeLeft,
 	"all":    ResizeAll,
+}
+
+// maps table sort type to value
+var mapTableSortType = map[string]TableSortType{
+	"none":   TableSortNone,
+	"string": TableSortString,
+	"number": TableSortNumber,
 }
 
 // NewBuilder creates and returns a pointer to a new gui Builder object
@@ -228,66 +242,74 @@ func NewBuilder() *Builder {
 	}
 	// Sets map of attribute name to check function
 	b.attribs = map[string]AttribCheckFunc{
-		AttribAlignv:       AttribCheckAlign,
-		AttribAlignh:       AttribCheckAlign,
-		AttribAspectWidth:  AttribCheckFloat,
-		AttribAspectHeight: AttribCheckFloat,
-		AttribHeight:       AttribCheckFloat,
-		AttribMargin:       AttribCheckFloat,
-		AttribMargins:      AttribCheckBorderSizes,
-		AttribBgColor:      AttribCheckColor,
-		AttribBorders:      AttribCheckBorderSizes,
-		AttribBorderColor:  AttribCheckColor,
-		AttribChecked:      AttribCheckBool,
-		AttribColor:        AttribCheckColor,
-		AttribCols:         AttribCheckInt,
-		AttribColSpan:      AttribCheckInt,
-		AttribCountStepx:   AttribCheckFloat,
-		AttribEdge:         AttribCheckEdge,
-		AttribEnabled:      AttribCheckBool,
-		AttribExpand:       AttribCheckFloat,
-		AttribExpandh:      AttribCheckBool,
-		AttribExpandv:      AttribCheckBool,
-		AttribFirstx:       AttribCheckFloat,
-		AttribFontColor:    AttribCheckColor,
-		AttribFontDPI:      AttribCheckFloat,
-		AttribFontSize:     AttribCheckFloat,
-		AttribFormat:       AttribCheckString,
-		AttribGroup:        AttribCheckString,
-		AttribIcon:         AttribCheckIcons,
-		AttribImageFile:    AttribCheckString,
-		AttribImageLabel:   AttribCheckMap,
-		AttribItems:        AttribCheckListMap,
-		AttribLayout:       AttribCheckLayout,
-		AttribLayoutParams: AttribCheckMap,
-		AttribLineSpacing:  AttribCheckFloat,
-		AttribLines:        AttribCheckInt,
-		AttribMinHeight:    AttribCheckBool,
-		AttribMinWidth:     AttribCheckBool,
-		AttribName:         AttribCheckString,
-		AttribPaddings:     AttribCheckBorderSizes,
-		AttribPanel0:       AttribCheckMap,
-		AttribPanel1:       AttribCheckMap,
-		AttribPlaceHolder:  AttribCheckString,
-		AttribPosition:     AttribCheckPosition,
-		AttribRangeAuto:    AttribCheckBool,
-		AttribRangeMin:     AttribCheckFloat,
-		AttribRangeMax:     AttribCheckFloat,
-		AttribRender:       AttribCheckBool,
-		AttribResizable:    AttribCheckResizable,
-		AttribScaleFactor:  AttribCheckFloat,
-		AttribScalex:       AttribCheckMap,
-		AttribScaley:       AttribCheckMap,
-		AttribShortcut:     AttribCheckMenuShortcut,
-		AttribSpacing:      AttribCheckFloat,
-		AttribSplit:        AttribCheckFloat,
-		AttribStepx:        AttribCheckFloat,
-		AttribText:         AttribCheckString,
-		AttribTitle:        AttribCheckString,
-		AttribType:         AttribCheckStringLower,
-		AttribValue:        AttribCheckFloat,
-		AttribVisible:      AttribCheckBool,
-		AttribWidth:        AttribCheckFloat,
+		AttribAlignv:        AttribCheckAlign,
+		AttribAlignh:        AttribCheckAlign,
+		AttribAspectWidth:   AttribCheckFloat,
+		AttribAspectHeight:  AttribCheckFloat,
+		AttribHeight:        AttribCheckFloat,
+		AttribBgColor:       AttribCheckColor,
+		AttribBorders:       AttribCheckBorderSizes,
+		AttribBorderColor:   AttribCheckColor,
+		AttribChecked:       AttribCheckBool,
+		AttribColor:         AttribCheckColor,
+		AttribCols:          AttribCheckInt,
+		AttribColSpan:       AttribCheckInt,
+		AttribColumns:       AttribCheckListMap,
+		AttribCountStepx:    AttribCheckFloat,
+		AttribEdge:          AttribCheckEdge,
+		AttribEnabled:       AttribCheckBool,
+		AttribExpand:        AttribCheckFloat,
+		AttribExpandh:       AttribCheckBool,
+		AttribExpandv:       AttribCheckBool,
+		AttribFirstx:        AttribCheckFloat,
+		AttribFontColor:     AttribCheckColor,
+		AttribFontDPI:       AttribCheckFloat,
+		AttribFontSize:      AttribCheckFloat,
+		AttribFormat:        AttribCheckString,
+		AttribGroup:         AttribCheckString,
+		AttribHeader:        AttribCheckString,
+		AttribHidden:        AttribCheckBool,
+		AttribIcon:          AttribCheckIcons,
+		AttribId:            AttribCheckString,
+		AttribImageFile:     AttribCheckString,
+		AttribImageLabel:    AttribCheckMap,
+		AttribItems:         AttribCheckListMap,
+		AttribLayout:        AttribCheckLayout,
+		AttribLayoutParams:  AttribCheckMap,
+		AttribLineSpacing:   AttribCheckFloat,
+		AttribLines:         AttribCheckInt,
+		AttribMargin:        AttribCheckFloat,
+		AttribMargins:       AttribCheckBorderSizes,
+		AttribMinwidth:      AttribCheckFloat,
+		AttribAutoHeight:    AttribCheckBool,
+		AttribAutoWidth:     AttribCheckBool,
+		AttribName:          AttribCheckString,
+		AttribPaddings:      AttribCheckBorderSizes,
+		AttribPanel0:        AttribCheckMap,
+		AttribPanel1:        AttribCheckMap,
+		AttribPlaceHolder:   AttribCheckString,
+		AttribPosition:      AttribCheckPosition,
+		AttribRangeAuto:     AttribCheckBool,
+		AttribRangeMin:      AttribCheckFloat,
+		AttribRangeMax:      AttribCheckFloat,
+		AttribRender:        AttribCheckBool,
+		AttribResizeBorders: AttribCheckResizeBorders,
+		AttribResize:        AttribCheckBool,
+		AttribScaleFactor:   AttribCheckFloat,
+		AttribScalex:        AttribCheckMap,
+		AttribScaley:        AttribCheckMap,
+		AttribShortcut:      AttribCheckMenuShortcut,
+		AttribShowHeader:    AttribCheckBool,
+		AttribSortType:      AttribCheckTableSortType,
+		AttribSpacing:       AttribCheckFloat,
+		AttribSplit:         AttribCheckFloat,
+		AttribStepx:         AttribCheckFloat,
+		AttribText:          AttribCheckString,
+		AttribTitle:         AttribCheckString,
+		AttribType:          AttribCheckStringLower,
+		AttribValue:         AttribCheckFloat,
+		AttribVisible:       AttribCheckBool,
+		AttribWidth:         AttribCheckFloat,
 	}
 	return b
 }
@@ -646,8 +668,28 @@ func (b *Builder) setLayoutParams(am map[string]interface{}, ipan IPanel) error 
 	return nil
 }
 
-// AttribCheckResizable checks and converts attribute with list of window resizable borders
-func AttribCheckResizable(b *Builder, am map[string]interface{}, fname string) error {
+// AttribCheckTableSortType checks and converts attribute table column sort type
+func AttribCheckTableSortType(b *Builder, am map[string]interface{}, fname string) error {
+
+	// If attribute not found, ignore
+	v := am[fname]
+	if v == nil {
+		return nil
+	}
+	vs, ok := v.(string)
+	if !ok {
+		return b.err(am, fname, "Invalid attribute")
+	}
+	tstype, ok := mapTableSortType[vs]
+	if !ok {
+		return b.err(am, fname, "Invalid attribute")
+	}
+	am[fname] = tstype
+	return nil
+}
+
+// AttribCheckResizeBorders checks and converts attribute with list of window resizable borders
+func AttribCheckResizeBorders(b *Builder, am map[string]interface{}, fname string) error {
 
 	// If attribute not found, ignore
 	v := am[fname]
@@ -663,7 +705,7 @@ func AttribCheckResizable(b *Builder, am map[string]interface{}, fname string) e
 
 	// Each string field must be a valid resizable name
 	parts := strings.Fields(vs)
-	var res Resizable
+	var res ResizeBorders
 	for _, name := range parts {
 		v, ok := mapResizable[name]
 		if !ok {

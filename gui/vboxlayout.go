@@ -21,17 +21,17 @@ package gui
 // 	AlignHeight - Try to align the individual children vertically with the same same space between each other.
 // 	Each individual child can be aligned horizontally by SetLayoutParameters()
 //
-// If the layout method SetMinHeight(true) is called, the panel minimum content height will be the
+// If the layout method SetAutoHeight(true) is called, the panel minimum content height will be the
 // sum of its children's heights plus the spacing.
 //
-// If the layout method SetMinWidth(true) is called, the panel minimum content width will be the
+// If the layout method SetAutoWidth(true) is called, the panel minimum content width will be the
 // width of the widest child.
 type VBoxLayout struct {
-	pan       IPanel
-	spacing   float32
-	alignV    Align
-	minHeight bool
-	minWidth  bool
+	pan        IPanel
+	spacing    float32
+	alignV     Align
+	autoHeight bool
+	autoWidth  bool
 }
 
 // VBoxLayoutParams specify the horizontal alignment of each individual child.
@@ -66,19 +66,19 @@ func (bl *VBoxLayout) SetAlignV(align Align) {
 	bl.Recalc(bl.pan)
 }
 
-// SetMinHeight sets if the panel minimum height should be the height of
+// SetAutoHeight sets if the panel minimum height should be the height of
 // the largest of its children's height.
-func (bl *VBoxLayout) SetMinHeight(state bool) {
+func (bl *VBoxLayout) SetAutoHeight(state bool) {
 
-	bl.minHeight = state
+	bl.autoHeight = state
 	bl.Recalc(bl.pan)
 }
 
-// SetMinWidth sets if the panel minimum width should be sum of its
+// SetAutoWidth sets if the panel minimum width should be sum of its
 // children's width plus the spacing
-func (bl *VBoxLayout) SetMinWidth(state bool) {
+func (bl *VBoxLayout) SetAutoWidth(state bool) {
 
-	bl.minWidth = state
+	bl.autoWidth = state
 	bl.Recalc(bl.pan)
 }
 
@@ -95,9 +95,9 @@ func (bl *VBoxLayout) Recalc(ipan IPanel) {
 		return
 	}
 
-	// If minHeight is set, get the sum of heights of this panel's children plus the spacings.
+	// If autoHeight is set, get the sum of heights of this panel's children plus the spacings.
 	// If the panel content height is less than this height, set its content height to this value.
-	if bl.minHeight {
+	if bl.autoHeight {
 		var totalHeight float32
 		for _, ichild := range parent.Children() {
 			child := ichild.(IPanel).GetPanel()
@@ -113,9 +113,9 @@ func (bl *VBoxLayout) Recalc(ipan IPanel) {
 		}
 	}
 
-	// If minWidth is set, get the maximum width of all the panel's children
+	// If autoWidth is set, get the maximum width of all the panel's children
 	// and if the panel content width is less than this maximum, set its content width to this value.
-	if bl.minWidth {
+	if bl.autoWidth {
 		var maxWidth float32
 		for _, ichild := range parent.Children() {
 			child := ichild.(IPanel).GetPanel()

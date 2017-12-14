@@ -608,8 +608,8 @@ func buildWindow(b *Builder, am map[string]interface{}) (IPanel, error) {
 	}
 
 	// Set optional resizable borders
-	if resiz := am[AttribResizable]; resiz != nil {
-		win.SetResizable(resiz.(Resizable))
+	if resiz := am[AttribResizeBorders]; resiz != nil {
+		win.SetResizable(resiz.(ResizeBorders))
 	}
 
 	// Builds window children
@@ -740,35 +740,63 @@ func buildTable(b *Builder, am map[string]interface{}) (IPanel, error) {
 	// Internal function to build a TableColumn from its attribute map
 	buildTableCol := func(b *Builder, am map[string]interface{}) (*TableColumn, error) {
 		tc := &TableColumn{}
-
+		if iv := am[AttribId]; iv != nil {
+			tc.Id = iv.(string)
+		}
+		if iv := am[AttribHeader]; iv != nil {
+			tc.Header = iv.(string)
+		}
+		if iv := am[AttribWidth]; iv != nil {
+			tc.Width = iv.(float32)
+		}
+		if iv := am[AttribMinwidth]; iv != nil {
+			tc.Minwidth = iv.(float32)
+		}
+		if iv := am[AttribHidden]; iv != nil {
+			tc.Hidden = iv.(bool)
+		}
+		if iv := am[AttribFormat]; iv != nil {
+			tc.Format = iv.(string)
+		}
+		if iv := am[AttribExpand]; iv != nil {
+			tc.Expand = iv.(float32)
+		}
+		if iv := am[AttribResize]; iv != nil {
+			tc.Resize = iv.(bool)
+		}
+		if iv := am[AttribSortType]; iv != nil {
+			tc.Sort = iv.(TableSortType)
+		}
 		return tc, nil
 	}
 
 	// Builds table columns array
-	tableCols := []*TableColumn{}
+	tableCols := []TableColumn{}
 	if iv := am[AttribColumns]; iv != nil {
 		cols := iv.([]map[string]interface{})
-		var tc *TableColumn
-		var err error
 		for _, c := range cols {
-			tc, err = buildTableCol(b, c)
+			tc, err := buildTableCol(b, c)
 			if err != nil {
 				return nil, err
 			}
+			tableCols = append(tableCols, *tc)
 		}
-		tableCols = append(tableCols, tc)
 	}
-	//Id         string          // Column id used to reference the column. Must be unique
-	//Header     string          // Column name shown in the table header
-	//Width      float32         // Initial column width in pixels
-	//Minwidth   float32         // Minimum width in pixels for this column
-	//Hidden     bool            // Hidden flag
-	//Align      Align           // Cell content alignment: AlignLeft|AlignCenter|AlignRight
-	//Format     string          // Format string for formatting the columns' cells
-	//FormatFunc TableFormatFunc // Format function (overrides Format string)
-	//Expand     float32         // Column width expansion factor (0 for no expansion)
-	//Sort       TableSortType   // Column sort type
-	//Resize     bool            // Allow column to be resized by user
 
-	return nil, nil
+	// Creates table and set common attributes
+	table, err := NewTable(0, 0, tableCols)
+	if err != nil {
+		return nil, err
+	}
+	err = b.setAttribs(am, table, asPANEL)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sets optional show header attribute
+	if show := am[AttribShowHeader]; show != nil {
+		table.ShowHeader(show.(bool))
+	}
+
+	return table, nil
 }
