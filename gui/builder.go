@@ -20,7 +20,7 @@ import (
 
 // Builder builds GUI objects from a declarative description in YAML format
 type Builder struct {
-	am       map[string]interface{}     // parsed map with gui object atttributes
+	am       map[string]interface{}     // parsed attribute map
 	builders map[string]BuilderFunc     // map of builder functions by type
 	attribs  map[string]AttribCheckFunc // map of attribute name with check functions
 	layouts  map[string]IBuilderLayout  // map of layout type to layout builder
@@ -35,6 +35,9 @@ type IBuilderLayout interface {
 
 // BuilderFunc is type for functions which build a gui object from an attribute map
 type BuilderFunc func(*Builder, map[string]interface{}) (IPanel, error)
+
+// AttribCheckFunc is the type for all attribute check functions
+type AttribCheckFunc func(b *Builder, am map[string]interface{}, fname string) error
 
 // IgnoreSuffix specified the suffix of ignored keys
 const IgnoreSuffix = "_"
@@ -62,6 +65,7 @@ const (
 	TypeMenuBar     = "menubar"
 	TypeMenu        = "menu"
 	TypeWindow      = "window"
+	TypeChart       = "chart"
 	TypeHBoxLayout  = "hbox"
 	TypeVBoxLayout  = "vbox"
 	TypeGridLayout  = "grid"
@@ -70,56 +74,67 @@ const (
 
 // Common attribute names
 const (
-	AttribAlignv       = "alignv"       // Align
-	AttribAlignh       = "alignh"       // Align
-	AttribAspectHeight = "aspectheight" // float32
-	AttribAspectWidth  = "aspectwidth"  // float32
-	AttribBgColor      = "bgcolor"      // Color4
-	AttribBorders      = "borders"      // BorderSizes
-	AttribBorderColor  = "bordercolor"  // Color4
-	AttribChecked      = "checked"      // bool
-	AttribColor        = "color"        // Color4
-	AttribCols         = "cols"         // Int
-	AttribColSpan      = "colspan"      // Int
-	AttribEdge         = "edge"         // int
-	AttribEnabled      = "enabled"      // bool
-	AttribExpand       = "expand"       // float32
-	AttribExpandh      = "expandh"      // bool
-	AttribExpandv      = "expandv"      // bool
-	AttribFontColor    = "fontcolor"    // Color4
-	AttribFontDPI      = "fontdpi"      // float32
-	AttribFontSize     = "fontsize"     // float32
-	AttribGroup        = "group"        // string
-	AttribHeight       = "height"       // float32
-	AttribIcon         = "icon"         // string
-	AttribImageFile    = "imagefile"    // string
-	AttribImageLabel   = "imagelabel"   // []map[string]interface{}
-	AttribItems        = "items"        // []map[string]interface{}
-	AttribLayout       = "layout"       // map[string]interface{}
-	AttribLayoutParams = "layoutparams" // map[string]interface{}
-	AttribLineSpacing  = "linespacing"  // float32
-	AttribMinHeight    = "minheight"    // bool
-	AttribMinWidth     = "minwidth"     // bool
-	AttribMargins      = "margins"      // BorderSizes
-	AttribName         = "name"         // string
-	AttribPaddings     = "paddings"     // BorderSizes
-	AttribPanel0       = "panel0"       // map[string]interface{}
-	AttribPanel1       = "panel1"       // map[string]interface{}
-	AttribParent_      = "parent_"      // string (internal attribute)
-	AttribPlaceHolder  = "placeholder"  // string
-	AttribPosition     = "position"     // []float32
-	AttribRender       = "render"       // bool
-	AttribResizable    = "resizable"    // Resizable
-	AttribScaleFactor  = "scalefactor"  // float32
-	AttribShortcut     = "shortcut"     // []int
-	AttribSpacing      = "spacing"      // float32
-	AttribSplit        = "split"        // float32
-	AttribText         = "text"         // string
-	AttribTitle        = "title"        // string
-	AttribType         = "type"         // string
-	AttribWidth        = "width"        // float32
-	AttribValue        = "value"        // float32
-	AttribVisible      = "visible"      // bool
+	AttribAlignv         = "alignv"       // Align
+	AttribAlignh         = "alignh"       // Align
+	AttribAspectHeight   = "aspectheight" // float32
+	AttribAspectWidth    = "aspectwidth"  // float32
+	AttribBgColor        = "bgcolor"      // Color4
+	AttribBorders        = "borders"      // BorderSizes
+	AttribBorderColor    = "bordercolor"  // Color4
+	AttribChecked        = "checked"      // bool
+	AttribColor          = "color"        // Color4
+	AttribCols           = "cols"         // int
+	AttribColSpan        = "colspan"      // int
+	AttribCountStepx     = "countstepx"   // float32
+	AttribEdge           = "edge"         // int
+	AttribEnabled        = "enabled"      // bool
+	AttribExpand         = "expand"       // float32
+	AttribExpandh        = "expandh"      // bool
+	AttribExpandv        = "expandv"      // bool
+	AttribFirstx         = "firstx"       // float32
+	AttribFontColor      = "fontcolor"    // Color4
+	AttribFontDPI        = "fontdpi"      // float32
+	AttribFontSize       = "fontsize"     // float32
+	AttribFormat         = "format"       // string
+	AttribGroup          = "group"        // string
+	AttribHeight         = "height"       // float32
+	AttribIcon           = "icon"         // string
+	AttribImageFile      = "imagefile"    // string
+	AttribImageLabel     = "imagelabel"   // []map[string]interface{}
+	AttribItems          = "items"        // []map[string]interface{}
+	AttribLayout         = "layout"       // map[string]interface{}
+	AttribLayoutParams   = "layoutparams" // map[string]interface{}
+	AttribLineSpacing    = "linespacing"  // float32
+	AttribLines          = "lines"        // int
+	AttribMargin         = "margin"       // float32
+	AttribMargins        = "margins"      // BorderSizes
+	AttribMinHeight      = "minheight"    // bool
+	AttribMinWidth       = "minwidth"     // bool
+	AttribName           = "name"         // string
+	AttribPaddings       = "paddings"     // BorderSizes
+	AttribPanel0         = "panel0"       // map[string]interface{}
+	AttribPanel1         = "panel1"       // map[string]interface{}
+	AttribParentInternal = "parent_"      // string (internal attribute)
+	AttribPlaceHolder    = "placeholder"  // string
+	AttribPosition       = "position"     // []float32
+	AttribRangeAuto      = "rangeauto"    // bool
+	AttribRangeMin       = "rangemin"     // float32
+	AttribRangeMax       = "rangemax"     // float32
+	AttribRender         = "render"       // bool
+	AttribResizable      = "resizable"    // Resizable
+	AttribScaleFactor    = "scalefactor"  // float32
+	AttribScalex         = "scalex"       // map[string]interface{}
+	AttribScaley         = "scaley"       // map[string]interface{}
+	AttribShortcut       = "shortcut"     // []int
+	AttribSpacing        = "spacing"      // float32
+	AttribSplit          = "split"        // float32
+	AttribStepx          = "stepx"        // float32
+	AttribText           = "text"         // string
+	AttribTitle          = "title"        // string
+	AttribType           = "type"         // string
+	AttribWidth          = "width"        // float32
+	AttribValue          = "value"        // float32
+	AttribVisible        = "visible"      // bool
 )
 
 const (
@@ -174,9 +189,6 @@ var mapResizable = map[string]Resizable{
 	"all":    ResizeAll,
 }
 
-// AttribCheckFunc is the type for all attribute check functions
-type AttribCheckFunc func(b *Builder, am map[string]interface{}, fname string) error
-
 // NewBuilder creates and returns a pointer to a new gui Builder object
 func NewBuilder() *Builder {
 
@@ -202,6 +214,7 @@ func NewBuilder() *Builder {
 		TypeVSplitter:   buildSplitter,
 		TypeTree:        buildTree,
 		TypeWindow:      buildWindow,
+		TypeChart:       buildChart,
 	}
 	// Sets map of layout type name to layout function
 	b.layouts = map[string]IBuilderLayout{
@@ -217,6 +230,7 @@ func NewBuilder() *Builder {
 		AttribAspectWidth:  AttribCheckFloat,
 		AttribAspectHeight: AttribCheckFloat,
 		AttribHeight:       AttribCheckFloat,
+		AttribMargin:       AttribCheckFloat,
 		AttribMargins:      AttribCheckBorderSizes,
 		AttribBgColor:      AttribCheckColor,
 		AttribBorders:      AttribCheckBorderSizes,
@@ -225,14 +239,17 @@ func NewBuilder() *Builder {
 		AttribColor:        AttribCheckColor,
 		AttribCols:         AttribCheckInt,
 		AttribColSpan:      AttribCheckInt,
+		AttribCountStepx:   AttribCheckFloat,
 		AttribEdge:         AttribCheckEdge,
 		AttribEnabled:      AttribCheckBool,
 		AttribExpand:       AttribCheckFloat,
 		AttribExpandh:      AttribCheckBool,
 		AttribExpandv:      AttribCheckBool,
+		AttribFirstx:       AttribCheckFloat,
 		AttribFontColor:    AttribCheckColor,
 		AttribFontDPI:      AttribCheckFloat,
 		AttribFontSize:     AttribCheckFloat,
+		AttribFormat:       AttribCheckString,
 		AttribGroup:        AttribCheckString,
 		AttribIcon:         AttribCheckIcons,
 		AttribImageFile:    AttribCheckString,
@@ -241,6 +258,7 @@ func NewBuilder() *Builder {
 		AttribLayout:       AttribCheckLayout,
 		AttribLayoutParams: AttribCheckMap,
 		AttribLineSpacing:  AttribCheckFloat,
+		AttribLines:        AttribCheckInt,
 		AttribMinHeight:    AttribCheckBool,
 		AttribMinWidth:     AttribCheckBool,
 		AttribName:         AttribCheckString,
@@ -249,12 +267,18 @@ func NewBuilder() *Builder {
 		AttribPanel1:       AttribCheckMap,
 		AttribPlaceHolder:  AttribCheckString,
 		AttribPosition:     AttribCheckPosition,
+		AttribRangeAuto:    AttribCheckBool,
+		AttribRangeMin:     AttribCheckFloat,
+		AttribRangeMax:     AttribCheckFloat,
 		AttribRender:       AttribCheckBool,
 		AttribResizable:    AttribCheckResizable,
 		AttribScaleFactor:  AttribCheckFloat,
+		AttribScalex:       AttribCheckMap,
+		AttribScaley:       AttribCheckMap,
 		AttribShortcut:     AttribCheckMenuShortcut,
 		AttribSpacing:      AttribCheckFloat,
 		AttribSplit:        AttribCheckFloat,
+		AttribStepx:        AttribCheckFloat,
 		AttribText:         AttribCheckString,
 		AttribTitle:        AttribCheckString,
 		AttribType:         AttribCheckStringLower,
@@ -343,7 +367,7 @@ func (b *Builder) ParseString(desc string) error {
 				}
 			}
 			if par != nil {
-				ms[AttribParent_] = par
+				ms[AttribParentInternal] = par
 			}
 			return ms, nil
 
@@ -428,15 +452,31 @@ func (b *Builder) Build(name string) (IPanel, error) {
 	return b.build(am.(map[string]interface{}), nil)
 }
 
-// SetImagePath Sets the path for image panels relative image files
+// SetImagepath Sets the path for image panels relative image files
 func (b *Builder) SetImagepath(path string) {
 
 	b.imgpath = path
 }
 
-func (b *Builder) AddBuilder(typename string, bf BuilderFunc) {
+// AddBuilderPanel adds a panel builder function for the specified type name.
+// If the type name already exists it is replaced.
+func (b *Builder) AddBuilderPanel(typename string, bf BuilderFunc) {
 
 	b.builders[typename] = bf
+}
+
+// AddBuilderLayout adds a layout builder object for the specified type name.
+// If the type name already exists it is replaced.
+func (b *Builder) AddBuilderLayout(typename string, bl IBuilderLayout) {
+
+	b.layouts[typename] = bl
+}
+
+// AddAttrib adds an attribute type and its checker/converte
+// If the attribute type name already exists it is replaced.
+func (b *Builder) AddAttrib(typename string, acf AttribCheckFunc) {
+
+	b.attribs[typename] = acf
 }
 
 // build builds the gui object from the specified description.
@@ -483,7 +523,6 @@ func (b *Builder) setAttribs(am map[string]interface{}, ipan IPanel, attr uint) 
 	// Set optional panel width
 	if attr&aSIZE != 0 && am[AttribWidth] != nil {
 		panel.SetWidth(am[AttribWidth].(float32))
-		log.Error("set width:%v", am[AttribWidth])
 	}
 
 	// Sets optional panel height
@@ -582,7 +621,7 @@ func (b *Builder) setLayoutParams(am map[string]interface{}, ipan IPanel) error 
 	lp := lpi.(map[string]interface{})
 
 	// Get layout type from parent
-	pi := am[AttribParent_]
+	pi := am[AttribParentInternal]
 	if pi == nil {
 		return b.err(am, AttribType, "Panel has no parent")
 	}
@@ -633,7 +672,7 @@ func AttribCheckResizable(b *Builder, am map[string]interface{}, fname string) e
 	return nil
 }
 
-// AttributeCheckEdge checks and converts attribute with name of layout edge
+// AttribCheckEdge checks and converts attribute with name of layout edge
 func AttribCheckEdge(b *Builder, am map[string]interface{}, fname string) error {
 
 	v := am[fname]
@@ -652,7 +691,7 @@ func AttribCheckEdge(b *Builder, am map[string]interface{}, fname string) error 
 	return nil
 }
 
-// AttributeCheckLayout checks and converts layout attribute
+// AttribCheckLayout checks and converts layout attribute
 func AttribCheckLayout(b *Builder, am map[string]interface{}, fname string) error {
 
 	v := am[fname]
@@ -674,7 +713,7 @@ func AttribCheckLayout(b *Builder, am map[string]interface{}, fname string) erro
 	return nil
 }
 
-// AttributeCheckAlignt checks and converts layout align* attribute
+// AttribCheckAlign checks and converts layout align* attribute
 func AttribCheckAlign(b *Builder, am map[string]interface{}, fname string) error {
 
 	v := am[fname]
@@ -698,7 +737,7 @@ func AttribCheckAlign(b *Builder, am map[string]interface{}, fname string) error
 	return nil
 }
 
-// AttributeCheckMenuShortcut checks and converts attribute describing menu shortcut key
+// AttribCheckMenuShortcut checks and converts attribute describing menu shortcut key
 func AttribCheckMenuShortcut(b *Builder, am map[string]interface{}, fname string) error {
 
 	v := am[fname]
@@ -745,7 +784,7 @@ func AttribCheckMenuShortcut(b *Builder, am map[string]interface{}, fname string
 	return nil
 }
 
-// AttributeCheckListMap checks and converts attribute to []map[string]interface{}
+// AttribCheckListMap checks and converts attribute to []map[string]interface{}
 func AttribCheckListMap(b *Builder, am map[string]interface{}, fname string) error {
 
 	v := am[fname]
@@ -769,7 +808,7 @@ func AttribCheckListMap(b *Builder, am map[string]interface{}, fname string) err
 	return nil
 }
 
-// AttributeCheckMap checks and converts attribute to map[string]interface{}
+// AttribCheckMap checks and converts attribute to map[string]interface{}
 func AttribCheckMap(b *Builder, am map[string]interface{}, fname string) error {
 
 	v := am[fname]
@@ -1051,7 +1090,7 @@ func (b *Builder) debugPrint(v interface{}, level int) {
 		level += 3
 		fmt.Printf("\n")
 		for mk, mv := range vt {
-			if mk == AttribParent_ {
+			if mk == AttribParentInternal {
 				continue
 			}
 			fmt.Printf("%s%s:", strings.Repeat(" ", level), mk)

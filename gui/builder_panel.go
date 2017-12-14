@@ -1,6 +1,7 @@
 // Copyright 2016 The G3N Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
+
 package gui
 
 import (
@@ -369,7 +370,7 @@ func buildMenu(b *Builder, am map[string]interface{}) (IPanel, error) {
 	}
 
 	// Only sets attribs for top level menus
-	if pi := am[AttribParent_]; pi != nil {
+	if pi := am[AttribParentInternal]; pi != nil {
 		par := pi.(map[string]interface{})
 		ptype := ""
 		if ti := par[AttribType]; ti != nil {
@@ -624,4 +625,111 @@ func buildWindow(b *Builder, am map[string]interface{}) (IPanel, error) {
 		}
 	}
 	return win, nil
+}
+
+// buildChart builds a gui object of type: Chart
+func buildChart(b *Builder, am map[string]interface{}) (IPanel, error) {
+
+	// Builds window and sets its common attributes
+	chart := NewChart(0, 0)
+	err := b.setAttribs(am, chart, asPANEL)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sets optional title
+	if title := am[AttribTitle]; title != nil {
+		chart.SetTitle(title.(string), 14)
+	}
+
+	// Sets x scale attibutes
+	if v := am[AttribScalex]; v != nil {
+		sx := v.(map[string]interface{})
+		// Sets optional x scale margin
+		if mx := sx[AttribMargin]; mx != nil {
+			chart.SetMarginX(mx.(float32))
+		}
+		// Sets optional x scale format
+		if fx := sx[AttribFormat]; fx != nil {
+			chart.SetFormatX(fx.(string))
+		}
+		// Sets optional x scale font size
+		if fsize := sx[AttribFontSize]; fsize != nil {
+			chart.SetFontSizeX(float64(fsize.(float32)))
+		}
+		// Number of lines
+		lines := 4
+		if v := sx[AttribLines]; v != nil {
+			lines = v.(int)
+		}
+		// Lines color
+		color4 := math32.NewColor4("Black")
+		if v := sx[AttribColor]; v != nil {
+			color4 = v.(*math32.Color4)
+		}
+		color := color4.ToColor()
+		chart.SetScaleX(lines, &color)
+		// Range first
+		firstX := float32(0)
+		if v := sx[AttribFirstx]; v != nil {
+			firstX = v.(float32)
+		}
+		// Range step
+		stepX := float32(1)
+		if v := sx[AttribStepx]; v != nil {
+			stepX = v.(float32)
+		}
+		// Range count step
+		countStepX := float32(1)
+		if v := sx[AttribStepx]; v != nil {
+			countStepX = v.(float32)
+		}
+		chart.SetRangeX(firstX, stepX, countStepX)
+	}
+
+	// Sets y scale attibutes
+	if v := am[AttribScaley]; v != nil {
+		sy := v.(map[string]interface{})
+		// Sets optional y scale margin
+		if my := sy[AttribMargin]; my != nil {
+			chart.SetMarginY(my.(float32))
+		}
+		// Sets optional y scale format
+		if fy := sy[AttribFormat]; fy != nil {
+			chart.SetFormatY(fy.(string))
+		}
+		// Sets optional y scale font size
+		if fsize := sy[AttribFontSize]; fsize != nil {
+			chart.SetFontSizeY(float64(fsize.(float32)))
+		}
+		// Number of lines
+		lines := 4
+		if v := sy[AttribLines]; v != nil {
+			lines = v.(int)
+		}
+		// Lines color
+		color4 := math32.NewColor4("Black")
+		if v := sy[AttribColor]; v != nil {
+			color4 = v.(*math32.Color4)
+		}
+		color := color4.ToColor()
+		chart.SetScaleY(lines, &color)
+		// Range min
+		rmin := float32(-10)
+		if v := sy[AttribRangeMin]; v != nil {
+			rmin = v.(float32)
+		}
+		// Range max
+		rmax := float32(10)
+		if v := sy[AttribRangeMax]; v != nil {
+			rmax = v.(float32)
+		}
+		chart.SetRangeY(rmin, rmax)
+		// Range auto
+		if rauto := sy[AttribRangeAuto]; rauto != nil {
+			chart.SetRangeYauto(v.(bool))
+		}
+	}
+
+	return chart, nil
 }
