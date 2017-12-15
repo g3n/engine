@@ -56,10 +56,10 @@ func (l *Label) initialize(msg string, font *text.Font) {
 // SetText draws the label text using the current font
 func (l *Label) SetText(msg string) {
 
-	// Do not allow empty labels
-	str := msg
-	if len(msg) == 0 {
-		str = " "
+	// Need at least a character to get dimensions
+	l.currentText = msg
+	if msg == "" {
+		msg = " "
 	}
 
 	// Set font properties
@@ -70,11 +70,11 @@ func (l *Label) SetText(msg string) {
 	l.font.SetFgColor4(&l.fgColor)
 
 	// Measure text
-	width, height := l.font.MeasureText(str)
+	width, height := l.font.MeasureText(msg)
 	// Create image canvas with the exact size of the texture
 	// and draw the text.
 	canvas := text.NewCanvas(width, height, &l.bgColor)
-	canvas.DrawText(0, 0, str, l.font)
+	canvas.DrawText(0, 0, msg, l.font)
 
 	// Creates texture if if doesnt exist.
 	if l.tex == nil {
@@ -89,7 +89,6 @@ func (l *Label) SetText(msg string) {
 
 	// Updates label panel dimensions
 	l.Panel.SetContentSize(float32(width), float32(height))
-	l.currentText = str
 }
 
 // Text returns the current label text

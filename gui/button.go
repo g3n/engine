@@ -224,9 +224,16 @@ func (b *Button) recalc() {
 		imgWidth = b.icon.Width()
 	}
 
-	// Sets new content width and height if necessary
+	// If the label is empty and an icon of image was defined ignore the label widthh
+	// to centralize the icon/image in the button
 	spacing := float32(4)
-	minWidth := imgWidth + spacing + b.Label.Width()
+	labelWidth := spacing + b.Label.Width()
+	if b.Label.Text() == "" && imgWidth > 0 {
+		labelWidth = 0
+	}
+
+	// Sets new content width and height if necessary
+	minWidth := imgWidth + labelWidth
 	minHeight := b.Label.Height()
 	resize := false
 	if width < minWidth {
