@@ -46,11 +46,12 @@ type IPanel interface {
 	SetRoot(*Root)
 	LostKeyFocus()
 	TotalHeight() float32
+	SetLayout(ILayout)
 }
 
 // Panel is 2D rectangular graphic which by default has a quad (2 triangles) geometry.
 // When using the default geometry, a panel has margins, borders, paddings
-// and a content area. The content area can be associated wit a texture
+// and a content area. The content area can be associated with a texture
 // It is the building block of most GUI widgets.
 type Panel struct {
 	*graphic.Graphic                    // Embedded graphic
@@ -148,7 +149,7 @@ func (p *Panel) Initialize(width, height float32) {
 	p.udata.bordersColor = math32.Color4{0, 0, 0, 1}
 	p.bounded = true
 	p.enabled = true
-	p.resize(width, height)
+	p.resize(width, height, true)
 }
 
 // InitializeGraphic initializes this panel with a different graphic
@@ -166,7 +167,7 @@ func (p *Panel) InitializeGraphic(width, height float32, gr *graphic.Graphic) {
 	p.udata.bordersColor = math32.Color4{0, 0, 0, 1}
 	p.bounded = true
 	p.enabled = true
-	p.resize(width, height)
+	p.resize(width, height, true)
 }
 
 // GetPanel satisfies the IPanel interface and
@@ -244,7 +245,7 @@ func (p *Panel) SetSize(width, height float32) {
 		log.Warn("Invalid panel height:%v", height)
 		height = 0
 	}
-	p.resize(width, height)
+	p.resize(width, height, true)
 }
 
 // SetWidth sets this panel external width in pixels.
@@ -314,7 +315,7 @@ func (p *Panel) ContentHeight() float32 {
 func (p *Panel) SetMargins(top, right, bottom, left float32) {
 
 	p.marginSizes.Set(top, right, bottom, left)
-	p.resize(p.calcWidth(), p.calcHeight())
+	p.resize(p.calcWidth(), p.calcHeight(), true)
 }
 
 // SetMarginsFrom sets this panel margins sizes from the specified
@@ -322,7 +323,7 @@ func (p *Panel) SetMargins(top, right, bottom, left float32) {
 func (p *Panel) SetMarginsFrom(src *BorderSizes) {
 
 	p.marginSizes = *src
-	p.resize(p.calcWidth(), p.calcHeight())
+	p.resize(p.calcWidth(), p.calcHeight(), true)
 }
 
 // Margins returns the current margin sizes in pixels
@@ -336,7 +337,7 @@ func (p *Panel) Margins() BorderSizes {
 func (p *Panel) SetBorders(top, right, bottom, left float32) {
 
 	p.borderSizes.Set(top, right, bottom, left)
-	p.resize(p.calcWidth(), p.calcHeight())
+	p.resize(p.calcWidth(), p.calcHeight(), true)
 }
 
 // SetBordersFrom sets this panel border sizes from the specified
@@ -344,7 +345,7 @@ func (p *Panel) SetBorders(top, right, bottom, left float32) {
 func (p *Panel) SetBordersFrom(src *BorderSizes) {
 
 	p.borderSizes = *src
-	p.resize(p.calcWidth(), p.calcHeight())
+	p.resize(p.calcWidth(), p.calcHeight(), true)
 }
 
 // Borders returns this panel current border sizes
@@ -357,7 +358,7 @@ func (p *Panel) Borders() BorderSizes {
 func (p *Panel) SetPaddings(top, right, bottom, left float32) {
 
 	p.paddingSizes.Set(top, right, bottom, left)
-	p.resize(p.calcWidth(), p.calcHeight())
+	p.resize(p.calcWidth(), p.calcHeight(), true)
 }
 
 // SetPaddingsFrom sets this panel padding sizes from the specified
@@ -365,7 +366,7 @@ func (p *Panel) SetPaddings(top, right, bottom, left float32) {
 func (p *Panel) SetPaddingsFrom(src *BorderSizes) {
 
 	p.paddingSizes = *src
-	p.resize(p.calcWidth(), p.calcHeight())
+	p.resize(p.calcWidth(), p.calcHeight(), true)
 }
 
 // Paddings returns this panel padding sizes in pixels
@@ -426,16 +427,7 @@ func (p *Panel) Color4() math32.Color4 {
 // the new content size.
 func (p *Panel) SetContentSize(width, height float32) {
 
-	// Calculates the new desired external width and height
-	eWidth := width +
-		p.paddingSizes.Left + p.paddingSizes.Right +
-		p.borderSizes.Left + p.borderSizes.Right +
-		p.marginSizes.Left + p.marginSizes.Right
-	eHeight := height +
-		p.paddingSizes.Top + p.paddingSizes.Bottom +
-		p.borderSizes.Top + p.borderSizes.Bottom +
-		p.marginSizes.Top + p.marginSizes.Bottom
-	p.resize(eWidth, eHeight)
+	p.setContentSize(width, height, true)
 }
 
 // SetContentWidth sets this panel content width to the specified dimension in pixels.
@@ -592,6 +584,12 @@ func (p *Panel) SetLayoutParams(params interface{}) {
 	p.layoutParams = params
 }
 
+// LayoutParams returns this panel current layout parameters
+func (p *Panel) LayoutParams() interface{} {
+
+	return p.layoutParams
+}
+
 // ContentCoords converts the specified window absolute coordinates in pixels
 // (as informed by OnMouse event) to this panel internal content area pixel coordinates
 func (p *Panel) ContentCoords(wx, wy float32) (float32, float32) {
@@ -633,6 +631,24 @@ func (p *Panel) Pix2NDC(px, py float32) (nx, ny float32) {
 	w := p.ContentWidth()
 	h := p.ContentHeight()
 	return px / w, -py / h
+}
+
+// setContentSize is an internal version of SetContentSize() which allows
+// to determine if the panel will recalculate its layout and dispatch event.
+// It is normally used by layout managers when setting the panel content size
+// to avoid another invokation of the layout manager.
+func (p *Panel) setContentSize(width, height float32, dispatch bool) {
+
+	// Calculates the new desired external width and height
+	eWidth := width +
+		p.paddingSizes.Left + p.paddingSizes.Right +
+		p.borderSizes.Left + p.borderSizes.Right +
+		p.marginSizes.Left + p.marginSizes.Right
+	eHeight := height +
+		p.paddingSizes.Top + p.paddingSizes.Bottom +
+		p.borderSizes.Top + p.borderSizes.Bottom +
+		p.marginSizes.Top + p.marginSizes.Bottom
+	p.resize(eWidth, eHeight, dispatch)
 }
 
 // setZ sets the Z coordinate for this panel and its children recursively
@@ -772,7 +788,9 @@ func (p *Panel) calcHeight() float32 {
 // The margins, borders and padding sizes are kept and the content
 // area size is adjusted. So if the panel is decreased, its minimum
 // size is determined by the margins, borders and paddings.
-func (p *Panel) resize(width, height float32) {
+// Normally it should be called with dispatch=true to recalculate the
+// panel layout and dispatch OnSize event.
+func (p *Panel) resize(width, height float32, dispatch bool) {
 
 	var padding Rect
 	var border Rect
@@ -836,7 +854,11 @@ func (p *Panel) resize(width, height float32) {
 		float32(p.content.Width) / float32(p.width),
 		float32(p.content.Height) / float32(p.height),
 	}
+
 	// Update layout and dispatch event
+	if !dispatch {
+		return
+	}
 	if p.layout != nil {
 		p.layout.Recalc(p)
 	}

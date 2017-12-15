@@ -258,13 +258,13 @@ func (s *Scroller) SetStyles(ss *ScrollerStyles) {
 func (s *Scroller) ApplyStyle(style int) {
 
 	switch style {
-	case OverStyle:
+	case StyleOver:
 		s.applyStyle(&s.styles.Over)
-	case FocusStyle:
+	case StyleFocus:
 		s.applyStyle(&s.styles.Focus)
-	case NormalStyle:
+	case StyleNormal:
 		s.applyStyle(&s.styles.Normal)
-	case DefaultStyle:
+	case StyleDef:
 		s.update()
 	}
 }
@@ -284,7 +284,7 @@ func (s *Scroller) initialize(vert bool, width, height float32) {
 
 	s.vert = vert
 	s.Panel.Initialize(width, height)
-	s.styles = &StyleDefault.Scroller
+	s.styles = &StyleDefault().Scroller
 
 	s.Panel.Subscribe(OnCursorEnter, s.onCursor)
 	s.Panel.Subscribe(OnCursorLeave, s.onCursor)

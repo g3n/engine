@@ -79,7 +79,7 @@ func newList(vert bool, width, height float32) *List {
 
 func (li *List) initialize(vert bool, width, height float32) {
 
-	li.styles = &StyleDefault.List
+	li.styles = &StyleDefault().List
 	li.single = true
 
 	li.Scroller.initialize(vert, width, height)

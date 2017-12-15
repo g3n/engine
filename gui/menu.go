@@ -5,7 +5,7 @@
 package gui
 
 import (
-	"github.com/g3n/engine/gui/assets"
+	"github.com/g3n/engine/gui/assets/icon"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 	"time"
@@ -158,7 +158,7 @@ func NewMenu() *Menu {
 
 	m := new(Menu)
 	m.Panel.Initialize(0, 0)
-	m.styles = &StyleDefault.Menu
+	m.styles = &StyleDefault().Menu
 	m.items = make([]*MenuItem, 0)
 	m.Panel.Subscribe(OnCursorEnter, m.onCursor)
 	m.Panel.Subscribe(OnCursor, m.onCursor)
@@ -206,7 +206,7 @@ func (m *Menu) AddMenu(text string, subm *Menu) *MenuItem {
 	mi.submenu.autoOpen = true
 	mi.menu = m
 	if !m.bar {
-		mi.ricon = NewIconLabel(string(assets.PlayArrow))
+		mi.ricon = NewLabel(string(icon.PlayArrow), true)
 		mi.Panel.Add(mi.ricon)
 	}
 	mi.Panel.Add(mi.submenu)
@@ -596,7 +596,7 @@ func newMenuItem(text string, styles *MenuItemStyles) *MenuItem {
 
 // SetIcon sets the left icon of this menu item
 // If an image was previously set it is replaced by this icon
-func (mi *MenuItem) SetIcon(icode int) *MenuItem {
+func (mi *MenuItem) SetIcon(icon string) *MenuItem {
 
 	// Remove and dispose previous icon
 	if mi.licon != nil {
@@ -605,7 +605,7 @@ func (mi *MenuItem) SetIcon(icode int) *MenuItem {
 		mi.licon = nil
 	}
 	// Sets the new icon
-	mi.licon = NewIconLabel(string(icode))
+	mi.licon = NewLabel(icon, true)
 	mi.Panel.Add(mi.licon)
 	mi.update()
 	return mi

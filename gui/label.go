@@ -11,6 +11,8 @@ import (
 	"github.com/g3n/engine/texture"
 )
 
+// Label is a panel which contains a texture for rendering text
+// The content size of the label panel is the exact size of texture
 type Label struct {
 	Panel       // Embedded panel
 	fontSize    float64
@@ -24,20 +26,16 @@ type Label struct {
 }
 
 // NewLabel creates and returns a label panel with the specified text
-// drawn using the current default font.
-func NewLabel(msg string) *Label {
+// drawn using the current default text font.
+// If icon is true the text is drawn using the default icon font
+func NewLabel(msg string, icon ...bool) *Label {
 
 	l := new(Label)
-	l.initialize(msg, StyleDefault.Font)
-	return l
-}
-
-// NewIconLabel creates and returns a label panel using the specified text
-// drawn using the default icon font.
-func NewIconLabel(msg string) *Label {
-
-	l := new(Label)
-	l.initialize(msg, StyleDefault.FontIcon)
+	if len(icon) > 0 && icon[0] {
+		l.initialize(msg, StyleDefault().FontIcon)
+	} else {
+		l.initialize(msg, StyleDefault().Font)
+	}
 	return l
 }
 
@@ -51,17 +49,17 @@ func (l *Label) initialize(msg string, font *text.Font) {
 	l.fontDPI = 72
 	l.lineSpacing = 1.0
 	l.bgColor = math32.Color4{0, 0, 0, 0}
-	l.fgColor = math32.Black4
+	l.fgColor = math32.Color4{0, 0, 0, 1}
 	l.SetText(msg)
 }
 
 // SetText draws the label text using the current font
 func (l *Label) SetText(msg string) {
 
-	// Do not allow empty labels
-	str := msg
-	if len(msg) == 0 {
-		str = " "
+	// Need at least a character to get dimensions
+	l.currentText = msg
+	if msg == "" {
+		msg = " "
 	}
 
 	// Set font properties
@@ -72,11 +70,11 @@ func (l *Label) SetText(msg string) {
 	l.font.SetFgColor4(&l.fgColor)
 
 	// Measure text
-	width, height := l.font.MeasureText(str)
+	width, height := l.font.MeasureText(msg)
 	// Create image canvas with the exact size of the texture
 	// and draw the text.
 	canvas := text.NewCanvas(width, height, &l.bgColor)
-	canvas.DrawText(0, 0, str, l.font)
+	canvas.DrawText(0, 0, msg, l.font)
 
 	// Creates texture if if doesnt exist.
 	if l.tex == nil {
@@ -91,7 +89,6 @@ func (l *Label) SetText(msg string) {
 
 	// Updates label panel dimensions
 	l.Panel.SetContentSize(float32(width), float32(height))
-	l.currentText = str
 }
 
 // Text returns the current label text
@@ -148,6 +145,13 @@ func (l *Label) BgColor() math32.Color4 {
 	return l.bgColor
 }
 
+// SetFont sets this label text or icon font
+func (l *Label) SetFont(f *text.Font) {
+
+	l.font = f
+	l.SetText(l.currentText)
+}
+
 // SetFontSize sets label font size
 func (l *Label) SetFontSize(size float64) *Label {
 
@@ -160,6 +164,23 @@ func (l *Label) SetFontSize(size float64) *Label {
 func (l *Label) FontSize() float64 {
 
 	return l.fontSize
+}
+
+// SetFontDPI sets the font dots per inch
+func (l *Label) SetFontDPI(dpi float64) *Label {
+
+	l.fontDPI = dpi
+	l.SetText(l.currentText)
+	return l
+}
+
+// SetLineSpacing sets the spacing between lines.
+// The default value is 1.0
+func (l *Label) SetLineSpacing(spacing float64) *Label {
+
+	l.lineSpacing = spacing
+	l.SetText(l.currentText)
+	return l
 }
 
 // setTextCaret sets the label text and draws a caret at the

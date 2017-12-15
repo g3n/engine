@@ -55,13 +55,13 @@ func NewEdit(width int, placeHolder string) *Edit {
 	ed.width = width
 	ed.placeHolder = placeHolder
 
-	ed.styles = &StyleDefault.Edit
+	ed.styles = &StyleDefault().Edit
 	ed.text = ""
 	ed.MaxLength = 80
 	ed.col = 0
 	ed.focus = false
 
-	ed.Label.initialize("", StyleDefault.Font)
+	ed.Label.initialize("", StyleDefault().Font)
 	ed.Label.Subscribe(OnKeyDown, ed.onKey)
 	ed.Label.Subscribe(OnKeyRepeat, ed.onKey)
 	ed.Label.Subscribe(OnChar, ed.onChar)

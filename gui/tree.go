@@ -31,7 +31,7 @@ type TreeNodeStyle struct {
 	BorderColor math32.Color4
 	BgColor     math32.Color4
 	FgColor     math32.Color
-	Icons       [2]int
+	Icons       [2]string
 }
 
 type TreeNode struct {
@@ -57,7 +57,7 @@ func NewTree(width, height float32) *Tree {
 func (t *Tree) Initialize(width, height float32) {
 
 	t.List.initialize(true, width, height)
-	t.SetStyles(&StyleDefault.Tree)
+	t.SetStyles(&StyleDefault().Tree)
 	t.List.Subscribe(OnKeyDown, t.onKey)
 	t.List.Subscribe(OnKeyUp, t.onKey)
 	t.List.Subscribe(OnCursor, t.onCursor)
@@ -206,11 +206,11 @@ func newTreeNode(text string, tree *Tree, parNode *TreeNode) *TreeNode {
 	n.Panel.Initialize(0, 0)
 
 	// Initialize node label
-	n.label.initialize(text, StyleDefault.Font)
+	n.label.initialize(text, StyleDefault().Font)
 	n.Panel.Add(&n.label)
 
 	// Create node icon
-	n.icon.initialize("", StyleDefault.FontIcon)
+	n.icon.initialize("", StyleDefault().FontIcon)
 	n.icon.SetFontSize(n.label.FontSize() * 1.3)
 	n.Panel.Add(&n.icon)
 

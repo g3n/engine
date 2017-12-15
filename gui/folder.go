@@ -25,7 +25,7 @@ type FolderStyle struct {
 	BorderColor math32.Color4
 	BgColor     math32.Color
 	FgColor     math32.Color
-	Icons       [2]int
+	Icons       [2]string
 }
 
 type FolderStyles struct {
@@ -49,14 +49,14 @@ func NewFolder(text string, width float32, contentPanel IPanel) *Folder {
 func (f *Folder) Initialize(text string, width float32, contentPanel IPanel) {
 
 	f.Panel.Initialize(width, 0)
-	f.styles = &StyleDefault.Folder
+	f.styles = &StyleDefault().Folder
 
 	// Initialize label
-	f.label.initialize(text, StyleDefault.Font)
+	f.label.initialize(text, StyleDefault().Font)
 	f.Panel.Add(&f.label)
 
 	// Create icon
-	f.icon.initialize("", StyleDefault.FontIcon)
+	f.icon.initialize("", StyleDefault().FontIcon)
 	f.icon.SetFontSize(f.label.FontSize() * 1.3)
 	f.Panel.Add(&f.icon)
 

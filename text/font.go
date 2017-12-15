@@ -65,8 +65,8 @@ func NewFontFromData(fontData []byte) (*Font, error) {
 	f.fontDPI = 72
 	f.lineSpacing = 1.0
 	f.hinting = font.HintingNone
-	f.SetFgColor4(math32.NewColor4(0, 0, 0, 1))
-	f.SetBgColor4(math32.NewColor4(1, 1, 1, 0))
+	f.SetFgColor4(&math32.Color4{0, 0, 0, 1})
+	f.SetBgColor4(&math32.Color4{1, 1, 1, 0})
 	f.changed = false
 
 	// Creates font face

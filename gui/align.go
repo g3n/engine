@@ -4,6 +4,7 @@
 
 package gui
 
+// Align specifies the alignment of an object inside another
 type Align int
 
 const (

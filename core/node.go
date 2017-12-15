@@ -5,6 +5,8 @@
 package core
 
 import (
+	"strings"
+
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/math32"
 )
@@ -91,6 +93,43 @@ func (n *Node) SetLoaderID(id string) {
 func (n *Node) LoaderID() string {
 
 	return n.loaderID
+}
+
+// FindPath finds a node with the specified path starting with this node and
+// searching in all its children recursively.
+// A path is the sequence of the names from the first node to the desired node
+// separated by the forward slash.
+func (n *Node) FindPath(path string) INode {
+
+	// Internal recursive function to find node
+	var finder func(inode INode, path string) INode
+	finder = func(inode INode, path string) INode {
+		// Get first component of the path
+		parts := strings.Split(path, "/")
+		if len(parts) == 0 {
+			return nil
+		}
+		first := parts[0]
+		// Checks current node
+		node := inode.GetNode()
+		if node.name != first {
+			return nil
+		}
+		// If the path has finished this is the desired node
+		rest := strings.Join(parts[1:], "/")
+		if rest == "" {
+			return inode
+		}
+		// Otherwise search in this node children
+		for _, ichild := range node.children {
+			found := finder(ichild, rest)
+			if found != nil {
+				return found
+			}
+		}
+		return nil
+	}
+	return finder(n, path)
 }
 
 // FindLoaderID looks in the specified node and all its children

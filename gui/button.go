@@ -55,7 +55,7 @@ type ButtonStyles struct {
 func NewButton(text string) *Button {
 
 	b := new(Button)
-	b.styles = &StyleDefault.Button
+	b.styles = &StyleDefault().Button
 
 	// Initializes the button panel
 	b.Panel = NewPanel(0, 0)
@@ -83,9 +83,9 @@ func NewButton(text string) *Button {
 
 // SetIcon sets the button icon from the default Icon font.
 // If there is currently a selected image, it is removed
-func (b *Button) SetIcon(icode int) {
+func (b *Button) SetIcon(icode string) {
 
-	ico := NewIconLabel(string(icode))
+	ico := NewLabel(icode, true)
 	if b.image != nil {
 		b.Panel.Remove(b.image)
 		b.image = nil
@@ -218,15 +218,25 @@ func (b *Button) recalc() {
 
 	// Image or icon width
 	imgWidth := float32(0)
+	spacing := float32(4)
 	if b.image != nil {
 		imgWidth = b.image.Width()
 	} else if b.icon != nil {
 		imgWidth = b.icon.Width()
 	}
+	if imgWidth == 0 {
+		spacing = 0
+	}
+
+	// If the label is empty and an icon of image was defined ignore the label widthh
+	// to centralize the icon/image in the button
+	labelWidth := spacing + b.Label.Width()
+	if b.Label.Text() == "" && imgWidth > 0 {
+		labelWidth = 0
+	}
 
 	// Sets new content width and height if necessary
-	spacing := float32(4)
-	minWidth := imgWidth + spacing + b.Label.Width()
+	minWidth := imgWidth + labelWidth
 	minHeight := b.Label.Height()
 	resize := false
 	if width < minWidth {

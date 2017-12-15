@@ -54,7 +54,7 @@ func newSplitter(horiz bool, width, height float32) *Splitter {
 
 	s := new(Splitter)
 	s.horiz = horiz
-	s.styles = &StyleDefault.Splitter
+	s.styles = &StyleDefault().Splitter
 	s.Panel.Initialize(width, height)
 
 	// Initialize left/top panel

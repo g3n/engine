@@ -5,7 +5,7 @@
 package gui
 
 import (
-	"github.com/g3n/engine/gui/assets"
+	"github.com/g3n/engine/gui/assets/icon"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 )
@@ -44,7 +44,7 @@ type DropDownStyles struct {
 func NewDropDown(width float32, item *ImageLabel) *DropDown {
 
 	dd := new(DropDown)
-	dd.styles = &StyleDefault.DropDown
+	dd.styles = &StyleDefault().DropDown
 	dd.litem = item
 
 	dd.Panel.Initialize(width, 0)
@@ -58,9 +58,9 @@ func NewDropDown(width float32, item *ImageLabel) *DropDown {
 	dd.Panel.Add(dd.litem)
 
 	// Create icon
-	dd.icon = NewIconLabel(" ")
-	dd.icon.SetFontSize(StyleDefault.Font.Size() * 1.3)
-	dd.icon.SetText(string(assets.ArrowDropDown))
+	dd.icon = NewLabel(" ", true)
+	dd.icon.SetFontSize(StyleDefault().Font.Size() * 1.3)
+	dd.icon.SetText(string(icon.ArrowDropDown))
 	dd.Panel.Add(dd.icon)
 
 	/// Create list
@@ -259,16 +259,16 @@ func (dd *DropDown) update() {
 
 	if dd.overDropdown || dd.overList {
 		dd.applyStyle(dd.styles.Over)
-		dd.list.ApplyStyle(OverStyle)
+		dd.list.ApplyStyle(StyleOver)
 		return
 	}
 	if dd.focus {
 		dd.applyStyle(dd.styles.Focus)
-		dd.list.ApplyStyle(FocusStyle)
+		dd.list.ApplyStyle(StyleFocus)
 		return
 	}
 	dd.applyStyle(dd.styles.Normal)
-	dd.list.ApplyStyle(NormalStyle)
+	dd.list.ApplyStyle(StyleNormal)
 }
 
 // applyStyle applies the specified style

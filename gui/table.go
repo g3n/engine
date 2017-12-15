@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/g3n/engine/gui/assets"
+	"github.com/g3n/engine/gui/assets/icon"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 )
@@ -43,9 +43,9 @@ const (
 )
 
 const (
-	tableSortedNoneIcon = assets.SwapVert
-	tableSortedAscIcon  = assets.ArrowDownward
-	tableSortedDescIcon = assets.ArrowUpward
+	tableSortedNoneIcon = icon.SwapVert
+	tableSortedAscIcon  = icon.ArrowDownward
+	tableSortedDescIcon = icon.ArrowUpward
 	tableSortedNone     = 0
 	tableSortedAsc      = 1
 	tableSortedDesc     = 2
@@ -217,7 +217,7 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 
 	t := new(Table)
 	t.Panel.Initialize(width, height)
-	t.styles = &StyleDefault.Table
+	t.styles = &StyleDefault().Table
 	t.rowCursor = -1
 
 	// Initialize table header
@@ -259,7 +259,7 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 		c.resize = cdesc.Resize
 		// Adds optional sort icon
 		if c.sort != TableSortNone {
-			c.ricon = NewIconLabel(string(tableSortedNoneIcon))
+			c.ricon = NewLabel(string(tableSortedNoneIcon), true)
 			c.Add(c.ricon)
 			c.ricon.Subscribe(OnMouseDown, func(evname string, ev interface{}) {
 				t.onRicon(evname, c)
@@ -722,7 +722,7 @@ func (t *Table) insertRow(row int, values map[string]interface{}) {
 		// Creates tableRow cell panel
 		cell := new(tableCell)
 		cell.Initialize(0, 0)
-		cell.label.initialize("", StyleDefault.Font)
+		cell.label.initialize("", StyleDefault().Font)
 		cell.Add(&cell.label)
 		trow.cells = append(trow.cells, cell)
 		trow.Panel.Add(cell)

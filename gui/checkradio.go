@@ -5,16 +5,16 @@
 package gui
 
 import (
-	"github.com/g3n/engine/gui/assets"
+	"github.com/g3n/engine/gui/assets/icon"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 )
 
 const (
-	checkON  = string(assets.CheckBox)
-	checkOFF = string(assets.CheckBoxOutlineBlank)
-	radioON  = string(assets.RadioButtonChecked)
-	radioOFF = string(assets.RadioButtonUnchecked)
+	checkON  = string(icon.CheckBox)
+	checkOFF = string(icon.CheckBoxOutlineBlank)
+	radioON  = string(icon.RadioButtonChecked)
+	radioOFF = string(icon.RadioButtonUnchecked)
 )
 
 type CheckRadio struct {
@@ -65,7 +65,7 @@ func NewRadioButton(text string) *CheckRadio {
 func newCheckRadio(check bool, text string) *CheckRadio {
 
 	cb := new(CheckRadio)
-	cb.styles = &StyleDefault.CheckRadio
+	cb.styles = &StyleDefault().CheckRadio
 
 	// Adapts to specified type: CheckBox or RadioButton
 	cb.check = check
@@ -94,7 +94,7 @@ func newCheckRadio(check bool, text string) *CheckRadio {
 	cb.Panel.Add(cb.Label)
 
 	// Creates icon label
-	cb.icon = NewIconLabel(" ")
+	cb.icon = NewLabel(" ", true)
 	cb.Panel.Add(cb.icon)
 
 	cb.recalc()

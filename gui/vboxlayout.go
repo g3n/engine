@@ -4,13 +4,37 @@
 
 package gui
 
+// VBoxLayout implements a panel layout which arranges the panel children vertically.
+// The children can be separated by a space in pixels set by SetSpacing().
+// The whole group of children can be aligned vertically by SetAlignV() which can
+// accept the following types of alignment:
+//
+// 	AlignTop: Try to align the group of children to the top if the panel height is
+// 	greater the the sum of the children heights + spacing.
+//
+// 	AlignBottom: Try to align the group of children to the bottoom if the panel height is
+// 	greater the the sum of the children heights + spacing.
+//
+// 	AlignCenter: Try to align the group of children in the center if the panel height is
+// 	greater the the sum of the children heights + spacing.
+//
+// 	AlignHeight - Try to align the individual children vertically with the same same space between each other.
+// 	Each individual child can be aligned horizontally by SetLayoutParameters()
+//
+// If the layout method SetAutoHeight(true) is called, the panel minimum content height will be the
+// sum of its children's heights plus the spacing.
+//
+// If the layout method SetAutoWidth(true) is called, the panel minimum content width will be the
+// width of the widest child.
 type VBoxLayout struct {
-	pan     IPanel
-	spacing float32 // vertical spacing between the children in pixels.
-	alignV  Align   // vertical alignment of the whole block of children
+	pan        IPanel
+	spacing    float32
+	alignV     Align
+	autoHeight bool
+	autoWidth  bool
 }
 
-// Parameters for individual children
+// VBoxLayoutParams specify the horizontal alignment of each individual child.
 type VBoxLayoutParams struct {
 	Expand float32 // item expand vertically factor (0 - no expand)
 	AlignH Align   // item horizontal alignment
@@ -33,12 +57,28 @@ func (bl *VBoxLayout) SetSpacing(spacing float32) {
 	bl.Recalc(bl.pan)
 }
 
-// SetAlignH sets the horizontal alignment of the whole group of items
+// SetAlignV sets the vertical alignment of the whole group of items
 // inside the parent panel and updates the layout if possible.
 // This only has any effect if there are no expanded items.
 func (bl *VBoxLayout) SetAlignV(align Align) {
 
 	bl.alignV = align
+	bl.Recalc(bl.pan)
+}
+
+// SetAutoHeight sets if the panel minimum height should be the height of
+// the largest of its children's height.
+func (bl *VBoxLayout) SetAutoHeight(state bool) {
+
+	bl.autoHeight = state
+	bl.Recalc(bl.pan)
+}
+
+// SetAutoWidth sets if the panel minimum width should be sum of its
+// children's width plus the spacing
+func (bl *VBoxLayout) SetAutoWidth(state bool) {
+
+	bl.autoWidth = state
 	bl.Recalc(bl.pan)
 }
 
@@ -55,12 +95,48 @@ func (bl *VBoxLayout) Recalc(ipan IPanel) {
 		return
 	}
 
+	// If autoHeight is set, get the sum of heights of this panel's children plus the spacings.
+	// If the panel content height is less than this height, set its content height to this value.
+	if bl.autoHeight {
+		var totalHeight float32
+		for _, ichild := range parent.Children() {
+			child := ichild.(IPanel).GetPanel()
+			if !child.Visible() {
+				continue
+			}
+			totalHeight += child.Height()
+		}
+		// Adds spacing
+		totalHeight += bl.spacing * float32(len(parent.Children())-1)
+		if parent.ContentHeight() < totalHeight {
+			parent.setContentSize(parent.ContentWidth(), totalHeight, false)
+		}
+	}
+
+	// If autoWidth is set, get the maximum width of all the panel's children
+	// and if the panel content width is less than this maximum, set its content width to this value.
+	if bl.autoWidth {
+		var maxWidth float32
+		for _, ichild := range parent.Children() {
+			child := ichild.(IPanel).GetPanel()
+			if !child.Visible() {
+				continue
+			}
+			if child.Width() > maxWidth {
+				maxWidth = child.Width()
+			}
+		}
+		if parent.ContentWidth() < maxWidth {
+			parent.setContentSize(maxWidth, parent.ContentHeight(), false)
+		}
+	}
+
 	// Calculates the total height, expanded height, fixed height and
 	// the sum of the expand factor for all items.
-	var theight float32 = 0
-	var eheight float32 = 0
-	var fheight float32 = 0
-	var texpand float32 = 0
+	var theight float32
+	var eheight float32
+	var fheight float32
+	var texpand float32
 	ecount := 0
 	paramsDef := VBoxLayoutParams{Expand: 0, AlignH: AlignLeft}
 	for pos, obj := range parent.Children() {
@@ -94,7 +170,7 @@ func (bl *VBoxLayout) Recalc(ipan IPanel) {
 
 	// If there is at least on expanded item, all free space will be occupied
 	spaceMiddle := bl.spacing
-	var posY float32 = 0
+	var posY float32
 	if texpand > 0 {
 		// If there is free space, distribute space between expanded items
 		totalSpace := parent.ContentHeight() - theight
@@ -132,7 +208,7 @@ func (bl *VBoxLayout) Recalc(ipan IPanel) {
 		// Calculates initial y position which depends
 		// on the current horizontal alignment.
 		switch bl.alignV {
-		case AlignTop:
+		case AlignNone, AlignTop:
 			posY = 0
 		case AlignCenter:
 			posY = (parent.ContentHeight() - theight) / 2
@@ -163,7 +239,7 @@ func (bl *VBoxLayout) Recalc(ipan IPanel) {
 		}
 		cwidth := pan.Width()
 		switch params.AlignH {
-		case AlignLeft:
+		case AlignNone, AlignLeft:
 			posX = 0
 		case AlignCenter:
 			posX = (width - cwidth) / 2
