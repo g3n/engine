@@ -218,15 +218,18 @@ func (b *Button) recalc() {
 
 	// Image or icon width
 	imgWidth := float32(0)
+	spacing := float32(4)
 	if b.image != nil {
 		imgWidth = b.image.Width()
 	} else if b.icon != nil {
 		imgWidth = b.icon.Width()
 	}
+	if imgWidth == 0 {
+		spacing = 0
+	}
 
 	// If the label is empty and an icon of image was defined ignore the label widthh
 	// to centralize the icon/image in the button
-	spacing := float32(4)
 	labelWidth := spacing + b.Label.Width()
 	if b.Label.Text() == "" && imgWidth > 0 {
 		labelWidth = 0
