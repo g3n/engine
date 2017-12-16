@@ -617,9 +617,8 @@ bool checkRect(vec4 rect) {
 
     // Top left corner
     float radius = rect[3] * Roundness[0] / 2;
-    //float radius = rect[3] * 0.5;
-    float rx = Roundness[0] / 2;
-    float ry = Roundness[0] / 2;
+    float rx = rect[0]*AspectRatio + radius;
+    float ry = rect[1] + radius;
     if (fragx <= rx && FragTexcoord.y <= ry) {
         vec2 center = vec2(rx, ry);
         float dist = distance(frag, center);
@@ -631,7 +630,7 @@ bool checkRect(vec4 rect) {
 
     // Bottom left corner
     radius = rect[3] * Roundness[3] / 2;
-    rx = rect[0] + radius;
+    rx = rect[0]*AspectRatio + radius;
     ry = rect[1] + rect[3] - radius;
     if (fragx <= rx && FragTexcoord.y >= ry) {
         vec2 center = vec2(rx, ry);
@@ -644,7 +643,7 @@ bool checkRect(vec4 rect) {
 
     // Top right corner
     radius = rect[2] * Roundness[1] / 2;
-    rx = rect[0] + rect[2]*AspectRatio - radius;
+    rx = (rect[0] + rect[2])*AspectRatio - radius;
     ry = rect[1] + radius;
     if (fragx >= rx && FragTexcoord.y <= ry) {
         vec2 center = vec2(rx, ry);
@@ -657,7 +656,7 @@ bool checkRect(vec4 rect) {
 
     // Bottom right corner
     radius = rect[3] * Roundness[2] / 2;
-    rx = rect[0] + rect[2]*AspectRatio - radius;
+    rx = (rect[0] + rect[2])*AspectRatio - radius;
     ry = rect[1] + rect[3] - radius;
     if (fragx >= rx && FragTexcoord.y >= ry) {
         vec2 center = vec2(rx, ry);
