@@ -568,7 +568,7 @@ uniform vec2		MatTexinfo[3];
 in vec2 FragTexcoord;
 
 // Input uniform
-uniform vec4 Panel[8];
+uniform vec4 Panel[9];
 #define Bounds			Panel[0]		  // panel bounds in texture coordinates
 #define Border			Panel[1]		  // panel border in texture coordinates
 #define Padding			Panel[2]		  // panel padding in texture coordinates
@@ -576,7 +576,9 @@ uniform vec4 Panel[8];
 #define BorderColor		Panel[4]		  // panel border color
 #define PaddingColor	Panel[5]		  // panel padding color
 #define ContentColor	Panel[6]		  // panel content color
-#define TextureValid	bool(Panel[7].x)  // texture valid flag
+#define Roundness 	    Panel[7]		  // panel corner roundness
+#define TextureValid	bool(Panel[8].x)  // texture valid flag
+#define AspectRatio  	Panel[8].y        // panel aspect ratio
 
 // Output
 out vec4 FragColor;
@@ -590,7 +592,7 @@ out vec4 FragColor;
 * rect[2] - width [0,1]
 * rect[3] - height [0,1]
 */
-bool checkRect(vec4 rect, float roundness) {
+bool checkRect(vec4 rect) {
 
     if (FragTexcoord.x < rect[0]) {
         return false;
@@ -605,24 +607,68 @@ bool checkRect(vec4 rect, float roundness) {
         return false;
     }
 
-    if (roundness == 0) {
+    if (Roundness == 0) {
         return true;
     }
-    // Calculate the radius
-    float radius = min(roundness, 1.0) / 2;
 
-    // Top left 
-    float rx = (rect[0] + radius);
-    float ry = (rect[1] + radius);
+    // Adjust fragment x coordinate multiplying by the aspect ratio
+    float fragx = FragTexcoord.x * AspectRatio;
+    vec2 frag = vec2(fragx, FragTexcoord.y);
 
-    if (FragTexcoord.x <= rx && FragTexcoord.y <= ry) {
-        vec2 p1 = vec2(FragTexcoord.x, FragTexcoord.y);
-        vec2 p2 = vec2(rx, ry);
-        float dist = distance(p1, p2);
-        if (dist >= radius) {
-            return false;
+    // Top left corner
+    float radius = rect[3] * Roundness[0] / 2;
+    //float radius = rect[3] * 0.5;
+    float rx = Roundness[0] / 2;
+    float ry = Roundness[0] / 2;
+    if (fragx <= rx && FragTexcoord.y <= ry) {
+        vec2 center = vec2(rx, ry);
+        float dist = distance(frag, center);
+        if (dist < radius) {
+            return true;
         }
+        return false;
     }
+
+    // Bottom left corner
+    radius = rect[3] * Roundness[3] / 2;
+    rx = rect[0] + radius;
+    ry = rect[1] + rect[3] - radius;
+    if (fragx <= rx && FragTexcoord.y >= ry) {
+        vec2 center = vec2(rx, ry);
+        float dist = distance(frag, center);
+        if (dist < radius) {
+            return true;
+        }
+        return false;
+    }
+
+    // Top right corner
+    radius = rect[2] * Roundness[1] / 2;
+    rx = rect[0] + rect[2]*AspectRatio - radius;
+    ry = rect[1] + radius;
+    if (fragx >= rx && FragTexcoord.y <= ry) {
+        vec2 center = vec2(rx, ry);
+        float dist = distance(frag, center);
+        if (dist < radius) {
+            return true;
+        }
+        return false;
+    }
+
+    // Bottom right corner
+    radius = rect[3] * Roundness[2] / 2;
+    rx = rect[0] + rect[2]*AspectRatio - radius;
+    ry = rect[1] + rect[3] - radius;
+    if (fragx >= rx && FragTexcoord.y >= ry) {
+        vec2 center = vec2(rx, ry);
+        float dist = distance(frag, center);
+        if (dist < radius) {
+            return true;
+        }
+        return false;
+    }
+
+    // Fragment is inside the inner rectangle
     return true;
 }
 
@@ -640,10 +686,9 @@ void main() {
     if (FragTexcoord.y <= Bounds[1] || FragTexcoord.y >= Bounds[3]) {
         discard;
     }
-    float roundness = 1;
 
     // Check if fragment is inside content area
-    if (checkRect(Content, roundness)) {
+    if (checkRect(Content)) {
         // If no texture, the color will be the material color.
         vec4 color = ContentColor;
 		if (TextureValid) {
@@ -661,13 +706,13 @@ void main() {
     }
 
     // Checks if fragment is inside paddings area
-    if (checkRect(Padding, roundness)) {
+    if (checkRect(Padding)) {
         FragColor = PaddingColor;
         return;
     }
 
     // Checks if fragment is inside borders area
-    if (checkRect(Border, roundness)) {
+    if (checkRect(Border)) {
         FragColor = BorderColor;
         return;
     }

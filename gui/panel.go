@@ -86,7 +86,9 @@ type Panel struct {
 		bordersColor  math32.Color4  // panel border color
 		paddingsColor math32.Color4  // panel padding color
 		contentColor  math32.Color4  // panel content color
+		roundness     math32.Vector4 // panel corners roundness
 		textureValid  float32        // texture valid flag (bool)
+		aspect        float32        // panel aspect ration (width/height)
 		dummy         [3]float32     // complete 8 * vec4
 	}
 }
@@ -308,6 +310,18 @@ func (p *Panel) ContentWidth() float32 {
 func (p *Panel) ContentHeight() float32 {
 
 	return p.content.Height
+}
+
+// SetRoundness sets the roundness of each corner of the panel.
+// The roundness value is 0 for non roundness for 1 to maximum roundness.
+func (p *Panel) SetRoundness(top, right, bottom, left float32) {
+
+	p.udata.roundness = math32.Vector4{
+		math32.Clamp(top, 0, 1),
+		math32.Clamp(right, 0, 1),
+		math32.Clamp(bottom, 0, 1),
+		math32.Clamp(left, 0, 1),
+	}
 }
 
 // SetMargins set this panel margin sizes in pixels
@@ -855,6 +869,9 @@ func (p *Panel) resize(width, height float32, dispatch bool) {
 		float32(p.content.Height) / float32(p.height),
 	}
 
+	// Updates aspect ratio uniform
+	p.udata.aspect = p.width / p.height
+
 	// Update layout and dispatch event
 	if !dispatch {
 		return
@@ -886,7 +903,7 @@ func (p *Panel) RenderSetup(gl *gls.GLS, rinfo *core.RenderInfo) {
 
 	// Transfer panel parameters combined uniform
 	location = p.uniPanel.Location(gl)
-	const vec4count = 8
+	const vec4count = 9
 	gl.Uniform4fvUP(location, vec4count, unsafe.Pointer(&p.udata))
 }
 
