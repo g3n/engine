@@ -38,7 +38,7 @@ out vec4 FragColor;
 * rect[2] - width [0,1]
 * rect[3] - height [0,1]
 */
-bool checkRect(vec4 rect) {
+bool checkRect(vec4 rect, float roundness) {
 
     if (FragTexcoord.x < rect[0]) {
         return false;
@@ -51,6 +51,25 @@ bool checkRect(vec4 rect) {
     }
     if (FragTexcoord.y > rect[1] + rect[3]) {
         return false;
+    }
+
+    if (roundness == 0) {
+        return true;
+    }
+    // Calculate the radius
+    float radius = min(roundness, 1.0) / 2;
+
+    // Top left 
+    float rx = (rect[0] + radius);
+    float ry = (rect[1] + radius);
+
+    if (FragTexcoord.x <= rx && FragTexcoord.y <= ry) {
+        vec2 p1 = vec2(FragTexcoord.x, FragTexcoord.y);
+        vec2 p2 = vec2(rx, ry);
+        float dist = distance(p1, p2);
+        if (dist >= radius) {
+            return false;
+        }
     }
     return true;
 }
@@ -69,9 +88,10 @@ void main() {
     if (FragTexcoord.y <= Bounds[1] || FragTexcoord.y >= Bounds[3]) {
         discard;
     }
+    float roundness = 1;
 
     // Check if fragment is inside content area
-    if (checkRect(Content)) {
+    if (checkRect(Content, roundness)) {
         // If no texture, the color will be the material color.
         vec4 color = ContentColor;
 		if (TextureValid) {
@@ -89,13 +109,13 @@ void main() {
     }
 
     // Checks if fragment is inside paddings area
-    if (checkRect(Padding)) {
+    if (checkRect(Padding, roundness)) {
         FragColor = PaddingColor;
         return;
     }
 
     // Checks if fragment is inside borders area
-    if (checkRect(Border)) {
+    if (checkRect(Border, roundness)) {
         FragColor = BorderColor;
         return;
     }
