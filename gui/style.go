@@ -28,6 +28,7 @@ type Style struct {
 	Menu          MenuStyles
 	Table         TableStyles
 	ImageButton   ImageButtonStyles
+	TabBar        TabBarStyles
 }
 
 const (
