@@ -89,7 +89,7 @@ type Panel struct {
 		roundness     math32.Vector4 // panel corners roundness
 		textureValid  float32        // texture valid flag (bool)
 		aspect        float32        // panel aspect ration (width/height)
-		dummy         [3]float32     // complete 8 * vec4
+		dummy         [2]float32     // complete 9 * vec4
 	}
 }
 

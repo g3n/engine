@@ -551,7 +551,7 @@ void main() {
 `
 
 const panel_fragment_source = `//
-// Fragment Shader template
+// Panel Fragment Shader
 //
 
 // Texture uniforms
@@ -611,10 +611,13 @@ bool checkRect(vec4 rect) {
         return true;
     }
 
-    // Adjust fragment x coordinate multiplying by the aspect ratio
+    // Adjust fragment x coordinate multiplying by the panel's aspect ratio
     float fragx = FragTexcoord.x * AspectRatio;
     vec2 frag = vec2(fragx, FragTexcoord.y);
     float side = min(rect[2], rect[3]);
+    if (AspectRatio < 1) {
+       side *= AspectRatio;
+    }
 
     // Top left corner
     float radius = side * Roundness[0] / 2;
