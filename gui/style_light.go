@@ -799,31 +799,65 @@ func NewLightStyle() *Style {
 	s.TabBar = TabBarStyles{
 		Normal: TabBarStyle{
 			Border:      borderSizes,
-			Paddings:    BorderSizes{0, 0, 0, 0},
+			Paddings:    BorderSizes{2, 0, 0, 0},
 			BorderColor: borderColor,
 			BgColor:     math32.Color4{0.7, 0.7, 0.7, 1},
-			FgColor:     fgColor,
 		},
 		Over: TabBarStyle{
 			Border:      borderSizes,
-			Paddings:    BorderSizes{0, 0, 0, 0},
+			Paddings:    BorderSizes{2, 0, 0, 0},
 			BorderColor: borderColor,
 			BgColor:     bgColor4Over,
-			FgColor:     fgColor,
 		},
 		Focus: TabBarStyle{
 			Border:      borderSizes,
-			Paddings:    BorderSizes{0, 0, 0, 0},
+			Paddings:    BorderSizes{2, 0, 0, 0},
 			BorderColor: borderColor,
 			BgColor:     bgColor4,
-			FgColor:     fgColor,
 		},
 		Disabled: TabBarStyle{
 			Border:      borderSizes,
-			Paddings:    BorderSizes{0, 0, 0, 0},
+			Paddings:    BorderSizes{2, 0, 0, 0},
 			BorderColor: borderColor,
 			BgColor:     bgColor4,
-			FgColor:     fgColor,
+		},
+		Tab: TabStyles{
+			MinWidth: 32,
+			Normal: TabStyle{
+				Border:      borderSizes,
+				Paddings:    BorderSizes{2, 2, 2, 2},
+				BorderColor: borderColor,
+				BgColor:     bgColor4,
+				FgColor:     fgColor,
+			},
+			Over: TabStyle{
+				Border:      borderSizes,
+				Paddings:    BorderSizes{2, 2, 2, 2},
+				BorderColor: borderColor,
+				BgColor:     bgColor4,
+				FgColor:     fgColor,
+			},
+			Focus: TabStyle{
+				Border:      borderSizes,
+				Paddings:    BorderSizes{2, 2, 2, 2},
+				BorderColor: borderColor,
+				BgColor:     bgColor4,
+				FgColor:     fgColor,
+			},
+			Disabled: TabStyle{
+				Border:      borderSizes,
+				Paddings:    BorderSizes{2, 2, 2, 2},
+				BorderColor: borderColor,
+				BgColor:     bgColor4,
+				FgColor:     fgColor,
+			},
+			Selected: TabStyle{
+				Border:      borderSizes,
+				Paddings:    BorderSizes{2, 2, 2, 2},
+				BorderColor: borderColor,
+				BgColor:     bgColor4,
+				FgColor:     fgColor,
+			},
 		},
 	}
 	return s

@@ -6,8 +6,8 @@ package gui
 
 import "github.com/g3n/engine/math32"
 
-// TabBar is a panel which can contain other panels contained in Tabs.
-// Only one panel is visible at one time.
+// TabBar is a panel which can contain other panels arranged in horizontal Tabs.
+// Only one panel is visible at a time.
 // To show another panel the corresponding Tab must be selected.
 type TabBar struct {
 	Panel                    // Embedded panel
@@ -17,17 +17,25 @@ type TabBar struct {
 	cursorOver bool          // Cursor over flag
 }
 
-// Tab describes an individual tab from the TabBar
-type Tab struct {
-	header  Panel  // Tab header
-	label   *Label // Tab optional label
-	icon    *Label // Tab optional icon
-	img     *Image // Tab optional image
-	content Panel  // User content panel
+// TabBarStyle describes the style of the TabBar
+type TabBarStyle struct {
+	Border      BorderSizes   // Border sizes
+	Paddings    BorderSizes   // Padding sizes
+	BorderColor math32.Color4 // Border color
+	BgColor     math32.Color4 // Background color
 }
 
-// TabBarStyle describes the style
-type TabBarStyle struct {
+// TabBarStyles describes all the TabBarStyles
+type TabBarStyles struct {
+	Normal   TabBarStyle // Style for normal exhibition
+	Over     TabBarStyle // Style when cursor is over the TabBar
+	Focus    TabBarStyle // Style when the TabBar has key focus
+	Disabled TabBarStyle // Style when the TabBar is disabled
+	Tab      TabStyles   // Style for Tabs
+}
+
+// TabStyle describes the style of the individual Tabs
+type TabStyle struct {
 	Border      BorderSizes
 	Paddings    BorderSizes
 	BorderColor math32.Color4
@@ -35,11 +43,14 @@ type TabBarStyle struct {
 	FgColor     math32.Color
 }
 
-type TabBarStyles struct {
-	Normal   TabBarStyle
-	Over     TabBarStyle
-	Focus    TabBarStyle
-	Disabled TabBarStyle
+// TabStyles describes all Tab styles
+type TabStyles struct {
+	MinWidth float32  // Minimum Tab header width
+	Normal   TabStyle // Style for normal exhibition
+	Over     TabStyle // Style when cursor is over the Tab
+	Focus    TabStyle // Style when the Tab has key focus
+	Disabled TabStyle // Style when the Tab is disabled
+	Selected TabStyle // Style when the Tab is selected
 }
 
 // NewTabBar creates and returns a pointer to a new TabBar widget
@@ -82,17 +93,13 @@ func (tb *TabBar) InsertTab(text string, pos int) *Tab {
 		return nil
 	}
 
-	// Creates and initializes the new Tab
-	tab := new(Tab)
-	if text != "" {
-		tab.label = NewLabel(text)
-	}
-	tab.content.Initialize(0, 0)
-
 	// Inserts created Tab at the specified position
+	tab := newTab(text, &tb.styles.Tab)
 	tb.tabs = append(tb.tabs, nil)
 	copy(tb.tabs[pos+1:], tb.tabs[pos:])
 	tb.tabs[pos] = tab
+	tb.Add(&tab.header)
+	tb.Add(&tab.content)
 
 	tb.update()
 	tb.recalc()
@@ -103,15 +110,18 @@ func (tb *TabBar) InsertTab(text string, pos int) *Tab {
 // Returns the pointer of the removed tab or nil if the position is invalid.
 func (tb *TabBar) RemoveTab(pos int) *Tab {
 
+	// Check position to remove from
 	if pos < 0 || pos >= len(tb.tabs) {
 		return nil
 	}
-	tab := tb.tabs[pos]
+
 	// Remove tab from array
+	tab := tb.tabs[pos]
 	copy(tb.tabs[pos:], tb.tabs[pos+1:])
 	tb.tabs[len(tb.tabs)-1] = nil
 	tb.tabs = tb.tabs[:len(tb.tabs)-1]
-	// Checks if tab was selected
+
+	// Checks if removed tab was selected
 	if tb.selected == pos {
 
 	}
@@ -146,6 +156,13 @@ func (tb *TabBar) SetSelected(pos int) *Tab {
 	return tb.tabs[pos]
 }
 
+// Selected returns the position of the selected Tab.
+// Returns value < 0 if there is no selected Tab.
+func (tb *TabBar) Selected() int {
+
+	return tb.selected
+}
+
 // onCursor process subscribed cursor events
 func (tb *TabBar) onCursor(evname string, ev interface{}) {
 
@@ -174,9 +191,23 @@ func (tb *TabBar) applyStyle(s *TabBarStyle) {
 // recalc recalculates and updates the positions of all tabs
 func (tb *TabBar) recalc() {
 
+	maxWidth := tb.ContentWidth() / float32(len(tb.tabs))
+	headerx := float32(0)
+	for i := 0; i < len(tb.tabs); i++ {
+		tab := tb.tabs[i]
+		tab.recalc(maxWidth)
+		tab.header.SetPosition(headerx, 0)
+		// Sets size and position of the Tab content panel
+		contentx := float32(0)
+		contenty := tab.header.Height()
+		tab.content.SetWidth(tb.ContentWidth())
+		tab.content.SetHeight(tb.ContentHeight() - tab.header.Height())
+		tab.content.SetPosition(contentx, contenty)
+		headerx += tab.header.Width()
+	}
 }
 
-// update...
+// update updates the TabBar visual state
 func (tb *TabBar) update() {
 
 	if !tb.Enabled() {
@@ -191,8 +222,53 @@ func (tb *TabBar) update() {
 }
 
 //
-// Tab methods
+// Tab
 //
+
+// Tab describes an individual tab of the TabBar
+type Tab struct {
+	styles     *TabStyles // Pointer to Tab current styles
+	header     Panel      // Tab header
+	label      *Label     // Tab label
+	icon       *Label     // Tab optional icon
+	img        *Image     // Tab optional image
+	content    Panel      // User content panel
+	cursorOver bool
+}
+
+// newTab creates and returns a pointer to a new Tab
+func newTab(text string, styles *TabStyles) *Tab {
+
+	tab := new(Tab)
+	tab.styles = styles
+	tab.header.Initialize(0, 0)
+	tab.label = NewLabel(text)
+	tab.header.Add(tab.label)
+	tab.content.Initialize(0, 0)
+
+	// Subscribe to header events
+	tab.header.Subscribe(OnCursorEnter, tab.onCursor)
+	tab.header.Subscribe(OnCursorLeave, tab.onCursor)
+
+	tab.update()
+	return tab
+}
+
+// onCursor process subscribed cursor events
+func (tab *Tab) onCursor(evname string, ev interface{}) {
+
+	switch evname {
+	case OnCursorEnter:
+		tab.cursorOver = true
+		tab.update()
+	case OnCursorLeave:
+		tab.cursorOver = false
+		tab.update()
+	default:
+		return
+	}
+	tab.header.root.StopPropagation(StopAll)
+}
 
 // SetText sets the text of the tab header
 func (tab *Tab) SetText(text string) *Tab {
@@ -206,15 +282,49 @@ func (tab *Tab) SetIcon(icon string) *Tab {
 	return tab
 }
 
-// Panel returns a pointer to the specified tab content panel
-func (tab *Tab) Panel() *Panel {
+// Content returns a pointer to the specified Tab content panel
+func (tab *Tab) Content() *Panel {
 
 	return &tab.content
 }
 
-// recalc recalculates the positions of the Tab header internal panels
-func (tab *Tab) recalc() {
+// applyStyle applies the specified Tab style to the Tab header
+func (tab *Tab) applyStyle(s *TabStyle) {
 
-	width := tab.header.Width()
+	tab.header.SetBordersFrom(&s.Border)
+	tab.header.SetBordersColor4(&s.BorderColor)
+	tab.header.SetPaddingsFrom(&s.Paddings)
+	tab.header.SetColor4(&s.BgColor)
+}
+
+func (tab *Tab) update() {
+
+	if !tab.header.Enabled() {
+		tab.applyStyle(&tab.styles.Disabled)
+		return
+	}
+	if tab.cursorOver {
+		tab.applyStyle(&tab.styles.Over)
+		return
+	}
+	tab.applyStyle(&tab.styles.Normal)
+}
+
+// recalc recalculates the size of the Tab header and the size
+// and positions of the Taheader internal panels
+func (tab *Tab) recalc(maxWidth float32) {
+
+	height := tab.label.Height()
+	//iconWidth := float32(0)
+	//if tab.icon != nil {
+	//	tab.icon.SetPosition(0, 0)
+	//	iconWidth = tab.icon.Width()
+	//} else if tab.img != nil {
+	//	tab.img.SetPosition(0, 0)
+	//	iconWidth = tab.img.Width()
+	//}
+
+	width := tab.label.Width()
+	tab.header.SetContentSize(width, height)
 
 }
