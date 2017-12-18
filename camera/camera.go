@@ -90,6 +90,33 @@ func (cam *Camera) SetPosition(x, y, z float32) {
 	cam.updateQuaternion()
 }
 
+// SetPositionX sets this camera world position
+// This method overrides the Node method to update
+// the camera quaternion, because changing the camera position
+// may change its rotation
+func (cam *Camera) SetPositionX(x float32) {
+	cam.Node.SetPositionX(x)
+	cam.updateQuaternion()
+}
+
+// SetPositionY sets this camera world position
+// This method overrides the Node method to update
+// the camera quaternion, because changing the camera position
+// may change its rotation
+func (cam *Camera) SetPositionY(y float32) {
+	cam.Node.SetPositionY(y)
+	cam.updateQuaternion()
+}
+
+// SetPositionZ sets this camera world position
+// This method overrides the Node method to update
+// the camera quaternion, because changing the camera position
+// may change its rotation
+func (cam *Camera) SetPositionZ(z float32) {
+	cam.Node.SetPositionZ(z)
+	cam.updateQuaternion()
+}
+
 // SetPositionVec sets this node position from the specified vector pointer
 // This method overrides the Node method to update
 // the camera quaternion, because changing the camera position
