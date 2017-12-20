@@ -797,9 +797,9 @@ func NewLightStyle() *Style {
 
 	// TabBar styles
 	s.TabBar = TabBarStyles{
-		SepHeight:    1,
-		IconList:     icon.MoreVert,
-		IconPaddings: BorderSizes{2, 2, 0, 0},
+		SepHeight:          1,
+		ListButtonIcon:     icon.MoreVert,
+		ListButtonPaddings: BorderSizes{2, 4, 0, 0},
 		Normal: TabBarStyle{
 			Border:      borderSizes,
 			Paddings:    BorderSizes{2, 0, 0, 0},
@@ -825,7 +825,9 @@ func NewLightStyle() *Style {
 			BgColor:     bgColor4,
 		},
 		Tab: TabStyles{
-			IconClose: icon.Clear,
+			IconPaddings:  BorderSizes{2, 2, 0, 0},
+			ImagePaddings: BorderSizes{0, 2, 0, 0},
+			IconClose:     icon.Clear,
 			Normal: TabStyle{
 				Margins:     BorderSizes{0, 2, 0, 2},
 				Border:      BorderSizes{1, 1, 0, 1},

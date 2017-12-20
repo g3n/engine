@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/window"
 )
 
 // TabBar is a panel which can contain other panels arranged in horizontal Tabs.
@@ -18,7 +19,7 @@ type TabBar struct {
 	styles     *TabBarStyles // Pointer to current styles
 	tabs       []*Tab        // Array of tabs
 	separator  Panel         // Separator Panel
-	iconList   *Label        // Icon for tab list button
+	listButton *Label        // Icon for tab list button
 	list       *List         // List for not visible tabs
 	selected   int           // Index of the selected tab
 	cursorOver bool          // Cursor over TabBar panel flag
@@ -34,34 +35,36 @@ type TabBarStyle struct {
 
 // TabBarStyles describes all the TabBarStyles
 type TabBarStyles struct {
-	SepHeight    float32 // Separator width
-	IconList     string  // Icon for showing tab list
-	IconPaddings BorderSizes
-	Normal       TabBarStyle // Style for normal exhibition
-	Over         TabBarStyle // Style when cursor is over the TabBar
-	Focus        TabBarStyle // Style when the TabBar has key focus
-	Disabled     TabBarStyle // Style when the TabBar is disabled
-	Tab          TabStyles   // Style for Tabs
+	SepHeight          float32     // Separator width
+	ListButtonIcon     string      // Icon for list button
+	ListButtonPaddings BorderSizes // Paddings for list button
+	Normal             TabBarStyle // Style for normal exhibition
+	Over               TabBarStyle // Style when cursor is over the TabBar
+	Focus              TabBarStyle // Style when the TabBar has key focus
+	Disabled           TabBarStyle // Style when the TabBar is disabled
+	Tab                TabStyles   // Style for Tabs
 }
 
-// TabStyle describes the style of the individual Tabs
+// TabStyle describes the style of the individual Tabs header
 type TabStyle struct {
-	Margins     BorderSizes
-	Border      BorderSizes
-	Paddings    BorderSizes
-	BorderColor math32.Color4
-	BgColor     math32.Color4
-	FgColor     math32.Color
+	Margins     BorderSizes   // Tab header margins
+	Border      BorderSizes   // Tab header borders
+	Paddings    BorderSizes   // Tab header paddings
+	BorderColor math32.Color4 // Tab header border color
+	BgColor     math32.Color4 // Tab header background color
+	FgColor     math32.Color  // Tab header color for icon and text
 }
 
 // TabStyles describes all Tab styles
 type TabStyles struct {
-	IconClose string   // Codepoint for close icon in Tab header
-	Normal    TabStyle // Style for normal exhibition
-	Over      TabStyle // Style when cursor is over the Tab
-	Focus     TabStyle // Style when the Tab has key focus
-	Disabled  TabStyle // Style when the Tab is disabled
-	Selected  TabStyle // Style when the Tab is selected
+	IconPaddings  BorderSizes // Paddings for optional icon
+	ImagePaddings BorderSizes // Paddings for optional image
+	IconClose     string      // Codepoint for close icon in Tab header
+	Normal        TabStyle    // Style for normal exhibition
+	Over          TabStyle    // Style when cursor is over the Tab
+	Focus         TabStyle    // Style when the Tab has key focus
+	Disabled      TabStyle    // Style when the Tab is disabled
+	Selected      TabStyle    // Style when the Tab is selected
 }
 
 // NewTabBar creates and returns a pointer to a new TabBar widget
@@ -75,11 +78,11 @@ func NewTabBar(width, height float32) *TabBar {
 	tb.tabs = make([]*Tab, 0)
 	tb.selected = -1
 
-	// Creates separator panel
+	// Creates separator panel (between the tab headers and content panel)
 	tb.separator.Initialize(0, 0)
 	tb.Add(&tb.separator)
 
-	// Create list
+	// Create list for contained tabs not visible
 	tb.list = NewVList(0, 0)
 	tb.list.Subscribe(OnMouseOut, func(evname string, ev interface{}) {
 		tb.list.SetVisible(false)
@@ -88,10 +91,10 @@ func NewTabBar(width, height float32) *TabBar {
 	tb.Add(tb.list)
 
 	// Creates list icon button
-	tb.iconList = NewLabel(tb.styles.IconList, true)
-	tb.iconList.SetPaddingsFrom(&tb.styles.IconPaddings)
-	tb.iconList.Subscribe(OnMouseDown, tb.onListButton)
-	tb.Add(tb.iconList)
+	tb.listButton = NewLabel(tb.styles.ListButtonIcon, true)
+	tb.listButton.SetPaddingsFrom(&tb.styles.ListButtonPaddings)
+	tb.listButton.Subscribe(OnMouseDown, tb.onListButton)
+	tb.Add(tb.listButton)
 
 	// Subscribe to panel events
 	tb.Subscribe(OnCursorEnter, tb.onCursor)
@@ -156,12 +159,40 @@ func (tb *TabBar) RemoveTab(pos int) error {
 	tb.tabs[len(tb.tabs)-1] = nil
 	tb.tabs = tb.tabs[:len(tb.tabs)-1]
 
-	// Checks if removed tab was selected
+	// If removed tab was selected, selects other tab.
 	if tb.selected == pos {
-		// TODO
+		// Try to select tab at right
+		if len(tb.tabs) > pos {
+			tb.tabs[pos].setSelected(true)
+			// Otherwise select tab at left
+		} else if pos > 0 {
+			tb.tabs[pos-1].setSelected(true)
+		}
 	}
 
 	tb.update()
+	tb.recalc()
+	return nil
+}
+
+// MoveTab moves a Tab to another position in the Tabs list
+func (tb *TabBar) MoveTab(src, dest int) error {
+
+	// Check source position
+	if src < 0 || src >= len(tb.tabs) {
+		return fmt.Errorf("Invalid tab source position:%d", src)
+	}
+	// Check destination position
+	if dest < 0 || dest >= len(tb.tabs) {
+		return fmt.Errorf("Invalid tab destination position:%d", dest)
+	}
+	if src == dest {
+		return nil
+	}
+
+	tabDest := tb.tabs[dest]
+	tb.tabs[dest] = tb.tabs[src]
+	tb.tabs[src] = tabDest
 	tb.recalc()
 	return nil
 }
@@ -253,6 +284,7 @@ func (tb *TabBar) onListChange(evname string, ev interface{}) {
 
 	selected := tb.list.Selected()
 	pos := selected[0].GetPanel().UserData().(int)
+	log.Error("onListChange:%v", pos)
 	tb.SetSelected(pos)
 	tb.list.SetVisible(false)
 }
@@ -271,7 +303,7 @@ func (tb *TabBar) applyStyle(s *TabBarStyle) {
 func (tb *TabBar) recalc() {
 
 	// Determines how many tabs could be fully shown
-	iconWidth := tb.iconList.Width()
+	iconWidth := tb.listButton.Width()
 	availWidth := tb.ContentWidth() - iconWidth
 	var tabWidth float32
 	var totalWidth float32
@@ -289,13 +321,13 @@ func (tb *TabBar) recalc() {
 		count++
 	}
 
-	tb.list.Clear()
+	// If there are more Tabs that can be shown, shows list button
 	if count < len(tb.tabs) {
-		// Sets the list button visible andposition
-		tb.iconList.SetVisible(true)
+		// Sets the list button visible
+		tb.listButton.SetVisible(true)
 		height := tb.tabs[0].header.Height()
-		iy := (height - tb.iconList.Height()) / 2
-		tb.iconList.SetPosition(availWidth, iy)
+		iy := (height - tb.listButton.Height()) / 2
+		tb.listButton.SetPosition(availWidth, iy)
 		// Sets the tab list position and size
 		listWidth := float32(200)
 		lx := tb.ContentWidth() - listWidth
@@ -303,30 +335,33 @@ func (tb *TabBar) recalc() {
 		tb.list.SetPosition(lx, ly)
 		tb.list.SetSize(listWidth, 200)
 		tb.SetTopChild(tb.list)
-
 	} else {
-		tb.iconList.SetVisible(false)
+		tb.listButton.SetVisible(false)
 		tb.list.SetVisible(false)
 	}
 
+	tb.list.Clear()
 	var headerx float32
-	twidth := availWidth / float32(count)
+	// When there is available space limits the with of the tabs
+	maxTabWidth := availWidth / float32(count)
+	if tabWidth < maxTabWidth {
+		tabWidth += (maxTabWidth - tabWidth) / 4
+	}
 	for i := 0; i < len(tb.tabs); i++ {
 		tab := tb.tabs[i]
-		// If Tab can be shown
+		// Recalculate Tab header and sets its position
+		tab.recalc(tabWidth)
+		tab.header.SetPosition(headerx, 0)
+		// Sets size and position of the Tab content panel
+		contenty := tab.header.Height() + tb.styles.SepHeight
+		tab.content.SetWidth(tb.ContentWidth())
+		tab.content.SetHeight(tb.ContentHeight() - contenty)
+		tab.content.SetPosition(0, contenty)
+		headerx += tab.header.Width()
+		// If Tab can be shown set its header visible
 		if i < count {
-			tab.recalc(twidth)
-			tab.header.SetPosition(headerx, 0)
-			// Sets size and position of the Tab content panel
-			contentx := float32(0)
-			contenty := tab.header.Height() + tb.styles.SepHeight
-			tab.content.SetWidth(tb.ContentWidth())
-			tab.content.SetHeight(tb.ContentHeight() - contenty)
-			tab.content.SetPosition(contentx, contenty)
-			headerx += tab.header.Width()
 			tab.header.SetVisible(true)
-			continue
-			// Tab cannot be shown, insert into vertical list
+			// Otherwise insert tab text in List
 		} else {
 			tab.header.SetVisible(false)
 			item := NewImageLabel(tab.label.Text())
@@ -360,10 +395,8 @@ func (tb *TabBar) update() {
 }
 
 //
-// Tab
-//
-
 // Tab describes an individual tab of the TabBar
+//
 type Tab struct {
 	tb         *TabBar    // Pointer to parent *TabBar
 	styles     *TabStyles // Pointer to Tab current styles
@@ -371,11 +404,12 @@ type Tab struct {
 	label      *Label     // Tab user label
 	iconClose  *Label     // Tab close icon
 	icon       *Label     // Tab optional user icon
-	img        *Image     // Tab optional user image
-	bottom     Panel
-	content    Panel // User content panel
+	image      *Image     // Tab optional user image
+	bottom     Panel      // Panel to cover the bottom edge of the Tab
+	content    Panel      // User content panel
 	cursorOver bool
 	selected   bool
+	pinned     bool
 }
 
 // newTab creates and returns a pointer to a new Tab
@@ -428,7 +462,12 @@ func (tab *Tab) onMouseHeader(evname string, ev interface{}) {
 
 	switch evname {
 	case OnMouseDown:
-		tab.tb.SetSelected(tab.tb.TabPosition(tab))
+		mev := ev.(*window.MouseEvent)
+		if mev.Button == window.MouseButtonLeft {
+			tab.tb.SetSelected(tab.tb.TabPosition(tab))
+		} else {
+			tab.header.Dispatch(OnRightClick, ev)
+		}
 	default:
 		return
 	}
@@ -450,13 +489,88 @@ func (tab *Tab) onMouseIcon(evname string, ev interface{}) {
 // SetText sets the text of the tab header
 func (tab *Tab) SetText(text string) *Tab {
 
+	tab.label.SetText(text)
+	// Needs to recalculate all Tabs because this Tab width will change
+	tab.tb.recalc()
 	return tab
 }
 
-// SetIcon sets the icon of the tab header
+// SetIcon sets the optional icon of the Tab header
 func (tab *Tab) SetIcon(icon string) *Tab {
 
+	// Remove previous header image if any
+	if tab.image != nil {
+		tab.header.Remove(tab.image)
+		tab.image.Dispose()
+		tab.image = nil
+	}
+	// Creates or updates icon
+	if tab.icon == nil {
+		tab.icon = NewLabel(icon, true)
+		tab.icon.SetPaddingsFrom(&tab.styles.IconPaddings)
+		tab.header.Add(tab.icon)
+	} else {
+		tab.icon.SetText(icon)
+	}
+	// Needs to recalculate all Tabs because this Tab width will change
+	tab.tb.recalc()
 	return tab
+}
+
+// SetImage sets the optional image of the Tab header
+func (tab *Tab) SetImage(imgfile string) error {
+
+	// Remove previous icon if any
+	if tab.icon != nil {
+		tab.header.Remove(tab.icon)
+		tab.icon.Dispose()
+		tab.icon = nil
+	}
+	// Creates or updates image
+	if tab.image == nil {
+		// Creates image panel from file
+		img, err := NewImage(imgfile)
+		if err != nil {
+			return err
+		}
+		tab.image = img
+		tab.image.SetPaddingsFrom(&tab.styles.ImagePaddings)
+		tab.header.Add(tab.image)
+	} else {
+		err := tab.image.SetImage(imgfile)
+		if err != nil {
+			return err
+		}
+	}
+	// Scale image so its height is not greater than the Label height
+	if tab.image.Height() > tab.label.Height() {
+		tab.image.SetContentAspectHeight(tab.label.Height())
+	}
+	// Needs to recalculate all Tabs because this Tab width will change
+	tab.tb.recalc()
+	return nil
+}
+
+// SetPinned sets the tab pinned state.
+// A pinned tab cannot be removed by the user because the close icon is not shown.
+func (tab *Tab) SetPinned(pinned bool) {
+
+	tab.pinned = pinned
+	tab.iconClose.SetVisible(!pinned)
+}
+
+// Pinned returns this tab pinned state
+func (tab *Tab) Pinned() bool {
+
+	return tab.pinned
+}
+
+// Header returns a pointer to this Tab header panel.
+// Can be used to set an event handler when the Tab header is right clicked.
+// (to show a context Menu for example).
+func (tab *Tab) Header() *Panel {
+
+	return &tab.header
 }
 
 // Content returns a pointer to the specified Tab content panel
@@ -465,6 +579,7 @@ func (tab *Tab) Content() *Panel {
 	return &tab.content
 }
 
+// setSelected sets this Tab selected state
 func (tab *Tab) setSelected(selected bool) {
 
 	tab.selected = selected
@@ -481,8 +596,8 @@ func (tab *Tab) minWidth() float32 {
 	var minWidth float32
 	if tab.icon != nil {
 		minWidth = tab.icon.Width()
-	} else if tab.img != nil {
-		minWidth = tab.img.Width()
+	} else if tab.image != nil {
+		minWidth = tab.image.Width()
 	}
 	minWidth += tab.label.Width()
 	minWidth += tab.iconClose.Width()
@@ -539,11 +654,12 @@ func (tab *Tab) recalc(width float32) {
 
 	labx := float32(0)
 	if tab.icon != nil {
-		tab.icon.SetPosition(0, 0)
+		icy := (tab.header.ContentHeight() - tab.icon.Height()) / 2
+		tab.icon.SetPosition(0, icy)
 		labx = tab.icon.Width()
-	} else if tab.img != nil {
-		tab.img.SetPosition(0, 0)
-		labx = tab.img.Width()
+	} else if tab.image != nil {
+		tab.image.SetPosition(0, 0)
+		labx = tab.image.Width()
 	}
 	tab.label.SetPosition(labx, 0)
 
