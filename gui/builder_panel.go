@@ -800,3 +800,59 @@ func buildTable(b *Builder, am map[string]interface{}) (IPanel, error) {
 
 	return table, nil
 }
+
+// buildTabBar builds a gui object of type: TabBare
+func buildTabBar(b *Builder, am map[string]interface{}) (IPanel, error) {
+
+	// Creates TabBar and set common attributes
+	tabbar := NewTabBar(0, 0)
+	err := b.setAttribs(am, tabbar, asPANEL)
+	if err != nil {
+		return nil, err
+	}
+	v := am[AttribItems]
+
+	// For each tab
+	if v != nil {
+		items := v.([]map[string]interface{})
+		for _, item := range items {
+			// Creates Tab
+			text := ""
+			if v := item[AttribText]; v != nil {
+				text = v.(string)
+			}
+			tab := tabbar.AddTab(text)
+			// Sets optional icon
+			if v := item[AttribIcon]; v != nil {
+				tab.SetIcon(v.(string))
+			}
+			// Sets optional image
+			if v := item[AttribImageFile]; v != nil {
+				// If path is not absolute join with user supplied image base path
+				imagefile := v.(string)
+				if !filepath.IsAbs(imagefile) {
+					imagefile = filepath.Join(b.imgpath, imagefile)
+				}
+				err := tab.SetImage(imagefile)
+				if err != nil {
+					return nil, err
+				}
+			}
+			// Sets content panel
+			if v := item[AttribContent]; v != nil {
+				am := v.(map[string]interface{})
+				content, err := b.build(am, nil)
+				if err != nil {
+					return nil, err
+				}
+				tab.SetContent(content)
+			}
+			// Sets pinned state
+			if v := item[AttribPinned]; v != nil {
+				tab.SetPinned(v.(bool))
+			}
+		}
+	}
+
+	return tabbar, nil
+}

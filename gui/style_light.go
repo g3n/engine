@@ -794,5 +794,81 @@ func NewLightStyle() *Style {
 			FgColor:     fgColorDis,
 		},
 	}
+
+	// TabBar styles
+	s.TabBar = TabBarStyles{
+		SepHeight:          1,
+		ListButtonIcon:     icon.MoreVert,
+		ListButtonPaddings: BorderSizes{2, 4, 0, 0},
+		Normal: TabBarStyle{
+			Border:      borderSizes,
+			Paddings:    BorderSizes{2, 0, 0, 0},
+			BorderColor: borderColor,
+			BgColor:     math32.Color4{0.7, 0.7, 0.7, 1},
+		},
+		Over: TabBarStyle{
+			Border:      borderSizes,
+			Paddings:    BorderSizes{2, 0, 0, 0},
+			BorderColor: borderColor,
+			BgColor:     bgColor4Over,
+		},
+		Focus: TabBarStyle{
+			Border:      borderSizes,
+			Paddings:    BorderSizes{2, 0, 0, 0},
+			BorderColor: borderColor,
+			BgColor:     bgColor4,
+		},
+		Disabled: TabBarStyle{
+			Border:      borderSizes,
+			Paddings:    BorderSizes{2, 0, 0, 0},
+			BorderColor: borderColor,
+			BgColor:     bgColor4,
+		},
+		Tab: TabStyles{
+			IconPaddings:  BorderSizes{2, 2, 0, 0},
+			ImagePaddings: BorderSizes{0, 2, 0, 0},
+			IconClose:     icon.Clear,
+			Normal: TabStyle{
+				Margins:     BorderSizes{0, 2, 0, 2},
+				Border:      BorderSizes{1, 1, 0, 1},
+				Paddings:    BorderSizes{2, 2, 2, 2},
+				BorderColor: borderColor,
+				BgColor:     bgColor4,
+				FgColor:     fgColor,
+			},
+			Over: TabStyle{
+				Margins:     BorderSizes{0, 2, 0, 2},
+				Border:      BorderSizes{1, 1, 0, 1},
+				Paddings:    BorderSizes{2, 2, 2, 2},
+				BorderColor: borderColor,
+				BgColor:     bgColor4Over,
+				FgColor:     fgColor,
+			},
+			Focus: TabStyle{
+				Margins:     BorderSizes{0, 2, 0, 2},
+				Border:      BorderSizes{1, 1, 0, 1},
+				Paddings:    BorderSizes{2, 2, 2, 2},
+				BorderColor: borderColor,
+				BgColor:     bgColor4,
+				FgColor:     fgColor,
+			},
+			Disabled: TabStyle{
+				Margins:     BorderSizes{0, 2, 0, 2},
+				Border:      BorderSizes{1, 1, 0, 1},
+				Paddings:    BorderSizes{2, 2, 2, 2},
+				BorderColor: borderColor,
+				BgColor:     bgColor4,
+				FgColor:     fgColor,
+			},
+			Selected: TabStyle{
+				Margins:     BorderSizes{0, 2, 0, 2},
+				Border:      BorderSizes{1, 1, 0, 1},
+				Paddings:    BorderSizes{2, 2, 2, 2},
+				BorderColor: borderColor,
+				BgColor:     math32.Color4{0.85, 0.85, 0.85, 1},
+				FgColor:     fgColor,
+			},
+		},
+	}
 	return s
 }
