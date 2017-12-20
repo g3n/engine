@@ -133,7 +133,6 @@ func (tb *TabBar) InsertTab(text string, pos int) *Tab {
 	copy(tb.tabs[pos+1:], tb.tabs[pos:])
 	tb.tabs[pos] = tab
 	tb.Add(&tab.header)
-	tb.Add(&tab.content)
 
 	tb.update()
 	tb.recalc()
@@ -152,7 +151,9 @@ func (tb *TabBar) RemoveTab(pos int) error {
 	// Remove tab from TabBar panel
 	tab := tb.tabs[pos]
 	tb.Remove(&tab.header)
-	tb.Remove(&tab.content)
+	if tab.content != nil {
+		tb.Remove(tab.content)
+	}
 
 	// Remove tab from tabbar array
 	copy(tb.tabs[pos:], tb.tabs[pos+1:])
@@ -353,10 +354,13 @@ func (tb *TabBar) recalc() {
 		tab.recalc(tabWidth)
 		tab.header.SetPosition(headerx, 0)
 		// Sets size and position of the Tab content panel
-		contenty := tab.header.Height() + tb.styles.SepHeight
-		tab.content.SetWidth(tb.ContentWidth())
-		tab.content.SetHeight(tb.ContentHeight() - contenty)
-		tab.content.SetPosition(0, contenty)
+		if tab.content != nil {
+			cpan := tab.content.GetPanel()
+			contenty := tab.header.Height() + tb.styles.SepHeight
+			cpan.SetWidth(tb.ContentWidth())
+			cpan.SetHeight(tb.ContentHeight() - contenty)
+			cpan.SetPosition(0, contenty)
+		}
 		headerx += tab.header.Width()
 		// If Tab can be shown set its header visible
 		if i < count {
@@ -406,7 +410,7 @@ type Tab struct {
 	icon       *Label     // Tab optional user icon
 	image      *Image     // Tab optional user image
 	bottom     Panel      // Panel to cover the bottom edge of the Tab
-	content    Panel      // User content panel
+	content    IPanel     // User content panel
 	cursorOver bool
 	selected   bool
 	pinned     bool
@@ -429,7 +433,6 @@ func newTab(text string, tb *TabBar, styles *TabStyles) *Tab {
 	tab.bottom.SetBounded(false)
 	tab.bottom.SetColor4(&tab.styles.Selected.BgColor)
 	tab.header.Add(&tab.bottom)
-	tab.content.Initialize(0, 0)
 
 	// Subscribe to header panel events
 	tab.header.Subscribe(OnCursorEnter, tab.onCursor)
@@ -573,17 +576,33 @@ func (tab *Tab) Header() *Panel {
 	return &tab.header
 }
 
-// Content returns a pointer to the specified Tab content panel
-func (tab *Tab) Content() *Panel {
+// SetContent sets or replaces this tab content panel.
+func (tab *Tab) SetContent(ipan IPanel) {
 
-	return &tab.content
+	// Remove previous content if any
+	if tab.content != nil {
+		tab.tb.Remove(tab.content)
+	}
+	tab.content = ipan
+	if ipan != nil {
+		tab.tb.Add(tab.content)
+	}
+	tab.tb.recalc()
+}
+
+// Content returns a pointer to the specified Tab content panel
+func (tab *Tab) Content() IPanel {
+
+	return tab.content
 }
 
 // setSelected sets this Tab selected state
 func (tab *Tab) setSelected(selected bool) {
 
 	tab.selected = selected
-	tab.content.SetVisible(selected)
+	if tab.content != nil {
+		tab.content.GetPanel().SetVisible(selected)
+	}
 	tab.bottom.SetVisible(selected)
 	tab.update()
 	tab.setBottomPanel()

@@ -67,6 +67,7 @@ const (
 	TypeWindow      = "window"
 	TypeChart       = "chart"
 	TypeTable       = "table"
+	TypeTabBar      = "tabbar"
 	TypeHBoxLayout  = "hbox"
 	TypeVBoxLayout  = "vbox"
 	TypeGridLayout  = "grid"
@@ -87,6 +88,7 @@ const (
 	AttribCols           = "cols"          // int GridLayout
 	AttribColSpan        = "colspan"       // int GridLayout
 	AttribColumns        = "columns"       // []map[string]interface{} Table
+	AttribContent        = "content"       // map[string]interface{} Table
 	AttribCountStepx     = "countstepx"    // float32
 	AttribEdge           = "edge"          // int
 	AttribEnabled        = "enabled"       // bool
@@ -121,6 +123,7 @@ const (
 	AttribPanel0         = "panel0"        // map[string]interface{}
 	AttribPanel1         = "panel1"        // map[string]interface{}
 	AttribParentInternal = "parent_"       // string (internal attribute)
+	AttribPinned         = "pinned"        // bool
 	AttribPlaceHolder    = "placeholder"   // string
 	AttribPosition       = "position"      // []float32
 	AttribRangeAuto      = "rangeauto"     // bool
@@ -147,19 +150,19 @@ const (
 )
 
 const (
-	aPOS         = 1 << iota                                  // attribute position
-	aSIZE        = 1 << iota                                  // attribute size
-	aNAME        = 1 << iota                                  // attribute name
-	aMARGINS     = 1 << iota                                  // attribute margins widths
-	aBORDERS     = 1 << iota                                  // attribute borders widths
-	aBORDERCOLOR = 1 << iota                                  // attribute border color
-	aPADDINGS    = 1 << iota                                  // attribute paddings widths
-	aCOLOR       = 1 << iota                                  // attribute panel bgcolor
-	aENABLED     = 1 << iota                                  // attribute enabled for events
-	aRENDER      = 1 << iota                                  // attribute renderable
-	aVISIBLE     = 1 << iota                                  // attribute visible
-	asPANEL      = 0xFF                                       // attribute set for panels
-	asWIDGET     = aPOS | aNAME | aSIZE | aENABLED | aVISIBLE // attribute set for widgets
+	aPOS         = 1 << iota                                             // attribute position
+	aSIZE        = 1 << iota                                             // attribute size
+	aNAME        = 1 << iota                                             // attribute name
+	aMARGINS     = 1 << iota                                             // attribute margins widths
+	aBORDERS     = 1 << iota                                             // attribute borders widths
+	aBORDERCOLOR = 1 << iota                                             // attribute border color
+	aPADDINGS    = 1 << iota                                             // attribute paddings widths
+	aCOLOR       = 1 << iota                                             // attribute panel bgcolor
+	aENABLED     = 1 << iota                                             // attribute enabled for events
+	aRENDER      = 1 << iota                                             // attribute renderable
+	aVISIBLE     = 1 << iota                                             // attribute visible
+	asPANEL      = 0xFF                                                  // attribute set for panels
+	asWIDGET     = aPOS | aNAME | aMARGINS | aSIZE | aENABLED | aVISIBLE // attribute set for widgets
 )
 
 // maps align name with align parameter
@@ -232,6 +235,7 @@ func NewBuilder() *Builder {
 		TypeWindow:      buildWindow,
 		TypeChart:       buildChart,
 		TypeTable:       buildTable,
+		TypeTabBar:      buildTabBar,
 	}
 	// Sets map of layout type name to layout function
 	b.layouts = map[string]IBuilderLayout{
@@ -255,6 +259,7 @@ func NewBuilder() *Builder {
 		AttribCols:          AttribCheckInt,
 		AttribColSpan:       AttribCheckInt,
 		AttribColumns:       AttribCheckListMap,
+		AttribContent:       AttribCheckMap,
 		AttribCountStepx:    AttribCheckFloat,
 		AttribEdge:          AttribCheckEdge,
 		AttribEnabled:       AttribCheckBool,
@@ -287,6 +292,7 @@ func NewBuilder() *Builder {
 		AttribPaddings:      AttribCheckBorderSizes,
 		AttribPanel0:        AttribCheckMap,
 		AttribPanel1:        AttribCheckMap,
+		AttribPinned:        AttribCheckBool,
 		AttribPlaceHolder:   AttribCheckString,
 		AttribPosition:      AttribCheckPosition,
 		AttribRangeAuto:     AttribCheckBool,
@@ -360,6 +366,9 @@ func (b *Builder) ParseString(desc string) error {
 
 		case map[interface{}]interface{}:
 			ms := make(map[string]interface{})
+			if par != nil {
+				ms[AttribParentInternal] = par
+			}
 			for k, v := range vt {
 				// Checks key
 				ks, ok := k.(string)
@@ -377,7 +386,7 @@ func (b *Builder) ParseString(desc string) error {
 					return nil, err
 				}
 				ms[ks] = vi
-				// If has panel has parent or is a single top level panel, checks attributes
+				// If has parent or is a single top level panel, checks attributes
 				if par != nil || single {
 					// Get attribute check function
 					acf, ok := b.attribs[ks]
@@ -390,9 +399,6 @@ func (b *Builder) ParseString(desc string) error {
 						return nil, err
 					}
 				}
-			}
-			if par != nil {
-				ms[AttribParentInternal] = par
 			}
 			return ms, nil
 
@@ -1122,7 +1128,28 @@ func (b *Builder) parseFloats(am map[string]interface{}, fname string, min, max 
 // err creates and returns an error for the current object, field name and with the specified message
 func (b *Builder) err(am map[string]interface{}, fname, msg string) error {
 
-	return fmt.Errorf("Error in object:%s field:%s -> %s", am[AttribName], fname, msg)
+	// Get path of objects till the error
+	names := []string{}
+	var name string
+	for {
+		if v := am[AttribName]; v != nil {
+			name = v.(string)
+		} else {
+			name = "?"
+		}
+		names = append(names, name)
+		var par interface{}
+		if par = am[AttribParentInternal]; par == nil {
+			break
+		}
+		am = par.(map[string]interface{})
+	}
+	path := []string{}
+	for i := len(names) - 1; i >= 0; i-- {
+		path = append(path, names[i])
+	}
+
+	return fmt.Errorf("Error in object:%s field:%s -> %s", strings.Join(path, "/"), fname, msg)
 }
 
 // debugPrint prints the internal attribute map of the builder for debugging.
