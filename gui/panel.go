@@ -96,6 +96,9 @@ const (
 	deltaZunb = deltaZ * 10000 // delta Z for unbounded panels
 )
 
+// Quad geometry shared by ALL Panels
+var panelQuadGeometry *geometry.Geometry
+
 // NewPanel creates and returns a pointer to a new panel with the
 // specified dimensions in pixels and a default quad geometry
 func NewPanel(width, height float32) *Panel {
@@ -111,26 +114,31 @@ func (p *Panel) Initialize(width, height float32) {
 	p.width = width
 	p.height = height
 
-	// Builds array with vertex positions and texture coordinates
-	positions := math32.NewArrayF32(0, 20)
-	positions.Append(
-		0, 0, 0, 0, 1,
-		0, -1, 0, 0, 0,
-		1, -1, 0, 1, 0,
-		1, 0, 0, 1, 1,
-	)
-	// Builds array of indices
-	indices := math32.NewArrayU32(0, 6)
-	indices.Append(0, 1, 2, 0, 2, 3)
+	// If necessary, creates panel quad geometry
+	if panelQuadGeometry == nil {
 
-	// Creates geometry
-	geom := geometry.NewGeometry()
-	geom.SetIndices(indices)
-	geom.AddVBO(gls.NewVBO().
-		AddAttrib("VertexPosition", 3).
-		AddAttrib("VertexTexcoord", 2).
-		SetBuffer(positions),
-	)
+		// Builds array with vertex positions and texture coordinates
+		positions := math32.NewArrayF32(0, 20)
+		positions.Append(
+			0, 0, 0, 0, 1,
+			0, -1, 0, 0, 0,
+			1, -1, 0, 1, 0,
+			1, 0, 0, 1, 1,
+		)
+		// Builds array of indices
+		indices := math32.NewArrayU32(0, 6)
+		indices.Append(0, 1, 2, 0, 2, 3)
+
+		// Creates geometry
+		geom := geometry.NewGeometry()
+		geom.SetIndices(indices)
+		geom.AddVBO(gls.NewVBO().
+			AddAttrib("VertexPosition", 3).
+			AddAttrib("VertexTexcoord", 2).
+			SetBuffer(positions),
+		)
+		panelQuadGeometry = geom
+	}
 
 	// Initialize material
 	p.mat = material.NewMaterial()
@@ -138,7 +146,7 @@ func (p *Panel) Initialize(width, height float32) {
 	p.mat.SetShaderUnique(true)
 
 	// Initialize graphic
-	p.Graphic = graphic.NewGraphic(geom, gls.TRIANGLES)
+	p.Graphic = graphic.NewGraphic(panelQuadGeometry.Incref(), gls.TRIANGLES)
 	p.AddMaterial(p, p.mat, 0, 0)
 
 	// Initialize uniforms location caches
