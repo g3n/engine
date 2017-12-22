@@ -94,7 +94,6 @@ func (r *Renderer) Render(icam camera.ICamera) error {
 	if r.gui != nil {
 		r.gs.Clear(gls.DEPTH_BUFFER_BIT)
 		err := r.renderGui(icam)
-		//err := r.renderScene(r.gui, icam)
 		if err != nil {
 			return err
 		}
@@ -238,19 +237,23 @@ func (r *Renderer) renderGui(icam camera.ICamera) error {
 	var buildRenderList func(ipan gui.IPanel)
 	buildRenderList = func(ipan gui.IPanel) {
 		pan := ipan.GetPanel()
+		// If panel is not visible, ignore
 		if !pan.Visible() {
 			return
 		}
+		// Get panel graphic materials
 		gr := pan.GetGraphic()
 		materials := gr.Materials()
 		for i := 0; i < len(materials); i++ {
 			r.grmats = append(r.grmats, &materials[i])
 		}
+		// Get this panel children
 		for _, ichild := range pan.Children() {
 			buildRenderList(ichild.(gui.IPanel))
 		}
 	}
 
+	// Builds list of panel graphic materials to render
 	r.grmats = r.grmats[0:0]
 	buildRenderList(parent)
 
