@@ -74,6 +74,7 @@ type Panel struct {
 	bounded          bool               // panel is bounded by its parent
 	enabled          bool               // enable event processing
 	cursorEnter      bool               // mouse enter dispatched
+	changed          bool               // changed flag
 	layout           ILayout            // current layout for children
 	layoutParams     interface{}        // current layout parameters used by container panel
 	uniMatrix        gls.Uniform        // model matrix uniform location cache
@@ -175,6 +176,7 @@ func (p *Panel) InitializeGraphic(width, height float32, gr *graphic.Graphic) {
 	p.udata.bordersColor = math32.Color4{0, 0, 0, 1}
 	p.bounded = true
 	p.enabled = true
+	p.changed = true
 	p.resize(width, height, true)
 }
 
@@ -231,6 +233,7 @@ func (p *Panel) SetTopChild(ipan IPanel) {
 	found := p.Remove(ipan)
 	if found {
 		p.Add(ipan)
+		p.changed = true
 	}
 }
 
@@ -240,6 +243,7 @@ func (p *Panel) SetPosition(x, y float32) {
 
 	p.Node.SetPositionX(math32.Round(x))
 	p.Node.SetPositionY(math32.Round(y))
+	p.changed = true
 }
 
 // SetSize sets this panel external width and height in pixels.
@@ -388,12 +392,14 @@ func (p *Panel) Paddings() BorderSizes {
 func (p *Panel) SetBordersColor(color *math32.Color) {
 
 	p.udata.bordersColor = math32.Color4{color.R, color.G, color.B, 1}
+	p.changed = true
 }
 
 // SetBordersColor4 sets the color and opacity of this panel borders
 func (p *Panel) SetBordersColor4(color *math32.Color4) {
 
 	p.udata.bordersColor = *color
+	p.changed = true
 }
 
 // BorderColor4 returns current border color
@@ -406,6 +412,7 @@ func (p *Panel) BordersColor4() math32.Color4 {
 func (p *Panel) SetPaddingsColor(color *math32.Color) {
 
 	p.udata.paddingsColor = math32.Color4{color.R, color.G, color.B, 1}
+	p.changed = true
 }
 
 // SetColor sets the color of the panel paddings and content area
@@ -413,6 +420,7 @@ func (p *Panel) SetColor(color *math32.Color) *Panel {
 
 	p.udata.paddingsColor = math32.Color4{color.R, color.G, color.B, 1}
 	p.udata.contentColor = p.udata.paddingsColor
+	p.changed = true
 	return p
 }
 
@@ -421,6 +429,7 @@ func (p *Panel) SetColor4(color *math32.Color4) *Panel {
 
 	p.udata.paddingsColor = *color
 	p.udata.contentColor = *color
+	p.changed = true
 	return p
 }
 
@@ -560,6 +569,18 @@ func (p *Panel) InsideBorders(x, y float32) bool {
 		return false
 	}
 	return true
+}
+
+// SetChanged sets this panel changed flag
+func (p *Panel) SetChanged(changed bool) {
+
+	p.changed = changed
+}
+
+// Changed returns this panel changed flag
+func (p *Panel) Changed() bool {
+
+	return p.changed
 }
 
 // SetEnabled sets the panel enabled state
@@ -862,6 +883,7 @@ func (p *Panel) resize(width, height float32, dispatch bool) {
 		float32(p.content.Width) / float32(p.width),
 		float32(p.content.Height) / float32(p.height),
 	}
+	p.changed = true
 
 	// Update layout and dispatch event
 	if !dispatch {

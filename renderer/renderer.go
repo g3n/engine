@@ -9,12 +9,15 @@ import (
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/graphic"
+	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/light"
 )
 
 type Renderer struct {
 	gs          *gls.GLS
 	shaman      Shaman                     // Internal shader manager
+	scene       core.INode                 // Node containing 3D scene to render
+	gui         gui.IPanel                 // Panel containing GUI to render
 	ambLights   []*light.Ambient           // Array of ambient lights for last scene
 	dirLights   []*light.Directional       // Array of directional lights for last scene
 	pointLights []*light.Point             // Array of point
@@ -61,15 +64,46 @@ func (r *Renderer) AddProgram(name, vertex, frag string, others ...string) {
 	r.shaman.AddProgram(name, vertex, frag, others...)
 }
 
-//// SetProgramShader sets the shader type and name for a previously specified program name.
-//// Returns error if the specified program or shader name not found or
-//// if an invalid shader type was specified.
-//func (r *Renderer) SetProgramShader(pname string, stype int, sname string) error {
-//
-//	return r.shaman.SetProgramShader(pname, stype, sname)
-//}
+// SetGui sets the gui panel which contains the Gui to render
+// over the optional 3D scene.
+// If set to nil, no Gui will be rendered
+func (r *Renderer) SetGui(gui gui.IPanel) {
 
-func (r *Renderer) Render(iscene core.INode, icam camera.ICamera) error {
+	r.gui = gui
+}
+
+// SetScene sets the Node which contains the scene to render
+// If set to nil, no scene will be rendered
+func (r *Renderer) SetScene(scene core.INode) {
+
+	r.scene = scene
+}
+
+// Render renders the previously set Scene and Gui using the specified camera
+func (r *Renderer) Render(icam camera.ICamera) error {
+
+	// Renders the 3D scene
+	if r.scene != nil {
+		r.gs.Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
+		err := r.renderScene(r.scene, icam)
+		if err != nil {
+			return err
+		}
+	}
+	// Renders the Gui over the 3D scene
+	if r.gui != nil {
+		r.gs.Clear(gls.DEPTH_BUFFER_BIT)
+		err := r.renderGui(icam)
+		//err := r.renderScene(r.gui, icam)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// renderScene renders the 3D scene using the specified camera
+func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 
 	// Updates world matrices of all scene nodes
 	iscene.UpdateMatrixWorld()
@@ -187,5 +221,53 @@ func (r *Renderer) Render(iscene core.INode, icam camera.ICamera) error {
 		// Render this graphic material
 		grmat.Render(r.gs, &r.rinfo)
 	}
+	return nil
+}
+
+// renderGui renders the Gui
+func (r *Renderer) renderGui(icam camera.ICamera) error {
+
+	// Updates panels bounds and relative positions
+	parent := r.gui.GetPanel()
+	parent.UpdateMatrixWorld()
+
+	// Builds RenderInfo calls RenderSetup for all visible nodes
+	icam.ViewMatrix(&r.rinfo.ViewMatrix)
+	icam.ProjMatrix(&r.rinfo.ProjMatrix)
+
+	var buildRenderList func(ipan gui.IPanel)
+	buildRenderList = func(ipan gui.IPanel) {
+		pan := ipan.GetPanel()
+		if !pan.Visible() {
+			return
+		}
+		gr := pan.GetGraphic()
+		materials := gr.Materials()
+		for i := 0; i < len(materials); i++ {
+			r.grmats = append(r.grmats, &materials[i])
+		}
+		for _, ichild := range pan.Children() {
+			buildRenderList(ichild.(gui.IPanel))
+		}
+	}
+
+	r.grmats = r.grmats[0:0]
+	buildRenderList(parent)
+
+	// For each *GraphicMaterial
+	for _, grmat := range r.grmats {
+		mat := grmat.GetMaterial().GetMaterial()
+
+		// Sets the shader specs for this material and sets shader program
+		r.specs.Name = mat.Shader()
+		r.specs.ShaderUnique = mat.ShaderUnique()
+		_, err := r.shaman.SetProgram(&r.specs)
+		if err != nil {
+			return err
+		}
+		// Render this graphic material
+		grmat.Render(r.gs, &r.rinfo)
+	}
+
 	return nil
 }
