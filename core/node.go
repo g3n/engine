@@ -32,6 +32,7 @@ type Node struct {
 	matrix      math32.Matrix4    // Transform matrix relative to this node parent.
 	matrixWorld math32.Matrix4    // Transform world matrix
 	visible     bool              // Visible flag
+	changed     bool              // Node position/orientation/scale changed
 	parent      INode             // Parent node
 	children    []INode           // Array with node children
 	userData    interface{}       // Generic user data
@@ -59,6 +60,7 @@ func (n *Node) Init() {
 	n.matrixWorld.Identity()
 	n.children = make([]INode, 0)
 	n.visible = true
+	n.changed = true
 }
 
 // GetNode satisfies the INode interface and returns
@@ -154,6 +156,18 @@ func (n *Node) FindLoaderID(id string) INode {
 	return finder(n, id)
 }
 
+// SetChanged sets this node changed flag
+func (n *Node) SetChanged(changed bool) {
+
+	n.changed = changed
+}
+
+// Changed returns this Node changed flag
+func (n *Node) Changed() bool {
+
+	return n.changed
+}
+
 // SetName set an option name for the node.
 // This name can be used for debugging or other purposes.
 func (n *Node) SetName(name string) {
@@ -171,30 +185,35 @@ func (n *Node) Name() string {
 func (n *Node) SetPosition(x, y, z float32) {
 
 	n.position.Set(x, y, z)
+	n.changed = true
 }
 
 // SetPositionVec sets this node position from the specified vector pointer
 func (n *Node) SetPositionVec(vpos *math32.Vector3) {
 
 	n.position = *vpos
+	n.changed = true
 }
 
 // SetPositionX sets the x coordinate of this node position
 func (n *Node) SetPositionX(x float32) {
 
 	n.position.X = x
+	n.changed = true
 }
 
 // SetPositionY sets the y coordinate of this node position
 func (n *Node) SetPositionY(y float32) {
 
 	n.position.Y = y
+	n.changed = true
 }
 
 // SetPositionZ sets the z coordinate of this node position
 func (n *Node) SetPositionZ(z float32) {
 
 	n.position.Z = z
+	n.changed = true
 }
 
 // Position returns the current node position as a vector
@@ -209,6 +228,7 @@ func (n *Node) SetRotation(x, y, z float32) {
 
 	n.rotation.Set(x, y, z)
 	n.quaternion.SetFromEuler(&n.rotation)
+	n.changed = true
 }
 
 // SetRotationX sets the x rotation angle in radians
@@ -217,6 +237,7 @@ func (n *Node) SetRotationX(x float32) {
 
 	n.rotation.X = x
 	n.quaternion.SetFromEuler(&n.rotation)
+	n.changed = true
 }
 
 // SetRotationY sets the y rotation angle in radians
@@ -225,6 +246,7 @@ func (n *Node) SetRotationY(y float32) {
 
 	n.rotation.Y = y
 	n.quaternion.SetFromEuler(&n.rotation)
+	n.changed = true
 }
 
 // SetRotationZ sets the z rotation angle in radians
@@ -233,6 +255,7 @@ func (n *Node) SetRotationZ(z float32) {
 
 	n.rotation.Z = z
 	n.quaternion.SetFromEuler(&n.rotation)
+	n.changed = true
 }
 
 // AddRotationX adds to the current rotation x coordinate in radians
@@ -241,6 +264,7 @@ func (n *Node) AddRotationX(x float32) {
 
 	n.rotation.X += x
 	n.quaternion.SetFromEuler(&n.rotation)
+	n.changed = true
 }
 
 // AddRotationY adds to the current rotation y coordinate in radians
@@ -249,6 +273,7 @@ func (n *Node) AddRotationY(y float32) {
 
 	n.rotation.Y += y
 	n.quaternion.SetFromEuler(&n.rotation)
+	n.changed = true
 }
 
 // AddRotationZ adds to the current rotation z coordinate in radians
@@ -257,6 +282,7 @@ func (n *Node) AddRotationZ(z float32) {
 
 	n.rotation.Z += z
 	n.quaternion.SetFromEuler(&n.rotation)
+	n.changed = true
 }
 
 // Rotation returns the current rotation
@@ -269,18 +295,21 @@ func (n *Node) Rotation() math32.Vector3 {
 func (n *Node) SetQuaternion(x, y, z, w float32) {
 
 	n.quaternion.Set(x, y, z, w)
+	n.changed = true
 }
 
 // SetQuaternionQuat sets this node quaternion from the specified quaternion pointer
 func (n *Node) SetQuaternionQuat(q *math32.Quaternion) {
 
 	n.quaternion = *q
+	n.changed = true
 }
 
 // QuaternionMult multiplies the quaternion by the specified quaternion
 func (n *Node) QuaternionMult(q *math32.Quaternion) {
 
 	n.quaternion.Multiply(q)
+	n.changed = true
 }
 
 // Quaternion returns the current quaternion
@@ -293,30 +322,35 @@ func (n *Node) Quaternion() math32.Quaternion {
 func (n *Node) SetScale(x, y, z float32) {
 
 	n.scale.Set(x, y, z)
+	n.changed = true
 }
 
 // SetScaleVec sets this node scale from a pointer to a Vector3
 func (n *Node) SetScaleVec(scale *math32.Vector3) {
 
 	n.scale = *scale
+	n.changed = true
 }
 
 // SetScaleX sets the X scale of this node
 func (n *Node) SetScaleX(sx float32) {
 
 	n.scale.X = sx
+	n.changed = true
 }
 
 // SetScaleY sets the Y scale of this node
 func (n *Node) SetScaleY(sy float32) {
 
 	n.scale.Y = sy
+	n.changed = true
 }
 
 // SetScaleZ sets the Z scale of this node
 func (n *Node) SetScaleZ(sz float32) {
 
 	n.scale.Z = sz
+	n.changed = true
 }
 
 // Scale returns the current scale
@@ -329,12 +363,14 @@ func (n *Node) Scale() math32.Vector3 {
 func (n *Node) SetDirection(x, y, z float32) {
 
 	n.direction.Set(x, y, z)
+	n.changed = true
 }
 
 // SetDirection sets this node initial direction vector
 func (n *Node) SetDirectionv(vdir *math32.Vector3) {
 
 	n.direction = *vdir
+	n.changed = true
 }
 
 // Direction returns this node initial direction
@@ -347,6 +383,7 @@ func (n *Node) Direction() math32.Vector3 {
 func (n *Node) SetMatrix(m *math32.Matrix4) {
 
 	n.matrix = *m
+	n.changed = true
 }
 
 // Matrix returns a copy of this node local transformation matrix

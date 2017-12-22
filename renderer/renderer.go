@@ -26,6 +26,8 @@ type Renderer struct {
 	grmats      []*graphic.GraphicMaterial // Array of all graphic materials for scene
 	rinfo       core.RenderInfo            // Preallocated Render info
 	specs       ShaderSpecs                // Preallocated Shader specs
+	clearScreen bool                       // Clear screen flag
+	needSwap    bool
 }
 
 func NewRenderer(gs *gls.GLS) *Renderer {
@@ -79,12 +81,19 @@ func (r *Renderer) SetScene(scene core.INode) {
 	r.scene = scene
 }
 
+func (r *Renderer) NeedSwap() bool {
+
+	return r.needSwap
+}
+
 // Render renders the previously set Scene and Gui using the specified camera
 func (r *Renderer) Render(icam camera.ICamera) error {
 
+	r.needSwap = false
+
 	// Renders the 3D scene
 	if r.scene != nil {
-		r.gs.Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
+		//r.gs.Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
 		err := r.renderScene(r.scene, icam)
 		if err != nil {
 			return err
@@ -188,6 +197,12 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		r.others[i].Render(r.gs)
 	}
 
+	if len(r.grmats) > 0 {
+		r.gs.Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
+		r.needSwap = true
+		log.Error("Clear screen")
+	}
+
 	// For each *GraphicMaterial
 	for _, grmat := range r.grmats {
 		//log.Debug("grmat:%v", grmat)
@@ -234,28 +249,78 @@ func (r *Renderer) renderGui(icam camera.ICamera) error {
 	icam.ViewMatrix(&r.rinfo.ViewMatrix)
 	icam.ProjMatrix(&r.rinfo.ProjMatrix)
 
-	var buildRenderList func(ipan gui.IPanel)
-	buildRenderList = func(ipan gui.IPanel) {
+	// checkBounded checks if any of this panel children has
+	// changed and it is not bounded
+	var checkBounded func(ipan gui.IPanel) bool
+	checkBounded = func(ipan gui.IPanel) bool {
+		pan := ipan.GetPanel()
+		if !pan.Visible() {
+			return false
+		}
+		if pan.Changed() && !pan.Bounded() {
+			return true
+		}
+		for _, ichild := range pan.Children() {
+			if checkBounded(ichild.(gui.IPanel)) {
+				return true
+			}
+		}
+		return false
+	}
+
+	// checkChildren checks if any of this panel immediate children has changed
+	checkChildren := func(ipan gui.IPanel) bool {
+		pan := ipan.GetPanel()
+		for _, ichild := range pan.Children() {
+			child := ichild.(gui.IPanel).GetPanel()
+			if !child.Visible() || !child.Renderable() {
+				continue
+			}
+			if child.Changed() {
+				return true
+			}
+		}
+		return false
+	}
+
+	var buildRenderList func(ipan gui.IPanel, checkChanged bool)
+	buildRenderList = func(ipan gui.IPanel, checkChanged bool) {
 		pan := ipan.GetPanel()
 		// If panel is not visible, ignore
 		if !pan.Visible() {
 			return
 		}
-		// Get panel graphic materials
-		gr := pan.GetGraphic()
-		materials := gr.Materials()
-		for i := 0; i < len(materials); i++ {
-			r.grmats = append(r.grmats, &materials[i])
+		// If no check or if any of this panel immediate children changed,
+		// inserts this panel if renderable and all its visible/renderable children
+		if !checkChanged || checkChildren(ipan) || checkBounded(ipan) {
+			if pan.Renderable() {
+				materials := pan.GetGraphic().Materials()
+				r.grmats = append(r.grmats, &materials[0])
+			}
+			for _, ichild := range pan.Children() {
+				buildRenderList(ichild.(gui.IPanel), false)
+			}
+			pan.SetChanged(false)
+			return
 		}
-		// Get this panel children
+		// If this panel is renderable and changed, inserts this panel
+		if pan.Renderable() && pan.Changed() {
+			materials := pan.GetGraphic().Materials()
+			r.grmats = append(r.grmats, &materials[0])
+		}
+		// Checks this panel children
 		for _, ichild := range pan.Children() {
-			buildRenderList(ichild.(gui.IPanel))
+			buildRenderList(ichild.(gui.IPanel), true)
 		}
+		pan.SetChanged(false)
 	}
 
 	// Builds list of panel graphic materials to render
 	r.grmats = r.grmats[0:0]
-	buildRenderList(parent)
+	buildRenderList(parent, true)
+	if len(r.grmats) > 0 {
+		log.Error("render list:%v", len(r.grmats))
+	}
 
 	// For each *GraphicMaterial
 	for _, grmat := range r.grmats {
@@ -270,6 +335,7 @@ func (r *Renderer) renderGui(icam camera.ICamera) error {
 		}
 		// Render this graphic material
 		grmat.Render(r.gs, &r.rinfo)
+		r.needSwap = true
 	}
 
 	return nil
