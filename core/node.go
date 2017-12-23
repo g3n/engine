@@ -396,6 +396,7 @@ func (n *Node) Matrix() math32.Matrix4 {
 func (n *Node) SetVisible(state bool) {
 
 	n.visible = state
+	n.changed = true
 }
 
 // Visible returns the node visibility state

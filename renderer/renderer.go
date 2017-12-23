@@ -14,20 +14,21 @@ import (
 )
 
 type Renderer struct {
-	gs          *gls.GLS
-	shaman      Shaman                     // Internal shader manager
-	scene       core.INode                 // Node containing 3D scene to render
-	gui         gui.IPanel                 // Panel containing GUI to render
-	ambLights   []*light.Ambient           // Array of ambient lights for last scene
-	dirLights   []*light.Directional       // Array of directional lights for last scene
-	pointLights []*light.Point             // Array of point
-	spotLights  []*light.Spot              // Array of spot lights for the scene
-	others      []core.INode               // Other nodes (audio, players, etc)
-	grmats      []*graphic.GraphicMaterial // Array of all graphic materials for scene
-	rinfo       core.RenderInfo            // Preallocated Render info
-	specs       ShaderSpecs                // Preallocated Shader specs
-	clearScreen bool                       // Clear screen flag
-	needSwap    bool
+	gs            *gls.GLS
+	shaman        Shaman                     // Internal shader manager
+	scene         core.INode                 // Node containing 3D scene to render
+	gui           gui.IPanel                 // Panel containing GUI to render
+	panel3D       gui.IPanel                 // Panel which contains the 3D scene
+	ambLights     []*light.Ambient           // Array of ambient lights for last scene
+	dirLights     []*light.Directional       // Array of directional lights for last scene
+	pointLights   []*light.Point             // Array of point
+	spotLights    []*light.Spot              // Array of spot lights for the scene
+	others        []core.INode               // Other nodes (audio, players, etc)
+	grmats        []*graphic.GraphicMaterial // Array of all graphic materials for scene
+	rinfo         core.RenderInfo            // Preallocated Render info
+	specs         ShaderSpecs                // Preallocated Shader specs
+	screenCleared bool
+	needSwap      bool
 }
 
 func NewRenderer(gs *gls.GLS) *Renderer {
@@ -74,6 +75,12 @@ func (r *Renderer) SetGui(gui gui.IPanel) {
 	r.gui = gui
 }
 
+// SetGuiPanel3D sets the gui panel inside which the 3D scene is shown.
+func (r *Renderer) SetGuiPanel3D(panel3D gui.IPanel) {
+
+	r.panel3D = panel3D
+}
+
 // SetScene sets the Node which contains the scene to render
 // If set to nil, no scene will be rendered
 func (r *Renderer) SetScene(scene core.INode) {
@@ -89,11 +96,11 @@ func (r *Renderer) NeedSwap() bool {
 // Render renders the previously set Scene and Gui using the specified camera
 func (r *Renderer) Render(icam camera.ICamera) error {
 
+	r.screenCleared = false
 	r.needSwap = false
 
 	// Renders the 3D scene
 	if r.scene != nil {
-		//r.gs.Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
 		err := r.renderScene(r.scene, icam)
 		if err != nil {
 			return err
@@ -101,7 +108,6 @@ func (r *Renderer) Render(icam camera.ICamera) error {
 	}
 	// Renders the Gui over the 3D scene
 	if r.gui != nil {
-		r.gs.Clear(gls.DEPTH_BUFFER_BIT)
 		err := r.renderGui(icam)
 		if err != nil {
 			return err
@@ -197,10 +203,21 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		r.others[i].Render(r.gs)
 	}
 
+	// If there is graphic material to render
 	if len(r.grmats) > 0 {
+		if r.panel3D != nil {
+			pos := r.panel3D.GetPanel().Pospix()
+			width, height := r.panel3D.GetPanel().Size()
+			_, _, _, viewheight := r.gs.GetViewport()
+			r.gs.Enable(gls.SCISSOR_TEST)
+			r.gs.Scissor(int32(pos.X), viewheight-int32(pos.Y)-int32(height), uint32(width), uint32(height))
+		} else {
+			r.gs.Disable(gls.SCISSOR_TEST)
+			r.screenCleared = true
+		}
+		// Clears the area inside the current scissor
 		r.gs.Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
 		r.needSwap = true
-		log.Error("Clear screen")
 	}
 
 	// For each *GraphicMaterial
@@ -315,18 +332,23 @@ func (r *Renderer) renderGui(icam camera.ICamera) error {
 		pan.SetChanged(false)
 	}
 
-	// Builds list of panel graphic materials to render
+	// Builds list of panel's graphic materials to render
 	r.grmats = r.grmats[0:0]
-	buildRenderList(parent, true)
+	buildRenderList(parent, !r.screenCleared)
+
+	// If there are panels to render, disable the scissor test
+	// which could have been set by the 3D scene renderer.
 	if len(r.grmats) > 0 {
 		log.Error("render list:%v", len(r.grmats))
+		r.gs.Disable(gls.SCISSOR_TEST)
+		r.gs.Clear(gls.DEPTH_BUFFER_BIT)
+		r.needSwap = true
 	}
 
 	// For each *GraphicMaterial
 	for _, grmat := range r.grmats {
+		// Sets shader program for this material
 		mat := grmat.GetMaterial().GetMaterial()
-
-		// Sets the shader specs for this material and sets shader program
 		r.specs.Name = mat.Shader()
 		r.specs.ShaderUnique = mat.ShaderUnique()
 		_, err := r.shaman.SetProgram(&r.specs)
@@ -335,7 +357,6 @@ func (r *Renderer) renderGui(icam camera.ICamera) error {
 		}
 		// Render this graphic material
 		grmat.Render(r.gs, &r.rinfo)
-		r.needSwap = true
 	}
 
 	return nil
