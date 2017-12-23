@@ -337,7 +337,9 @@ func (r *Renderer) renderGui(icam camera.ICamera) error {
 	buildRenderList(parent, !r.screenCleared)
 
 	// If there are panels to render, disable the scissor test
-	// which could have been set by the 3D scene renderer.
+	// which could have been set by the 3D scene renderer and
+	// then clear the depth buffer, so the panels will be rendered
+	// over the 3D scene.
 	if len(r.grmats) > 0 {
 		log.Error("render list:%v", len(r.grmats))
 		r.gs.Disable(gls.SCISSOR_TEST)
