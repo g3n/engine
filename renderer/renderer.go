@@ -13,6 +13,8 @@ import (
 	"github.com/g3n/engine/light"
 )
 
+// Renderer renders a 3D scene and or a 2D GUI over the 3D scene
+// on the current window.
 type Renderer struct {
 	gs            *gls.GLS
 	shaman        Shaman                     // Internal shader manager
@@ -31,6 +33,7 @@ type Renderer struct {
 	needSwap      bool
 }
 
+// NewRenderer creates and returns a pointer to a new Renderer
 func NewRenderer(gs *gls.GLS) *Renderer {
 
 	r := new(Renderer)
@@ -262,79 +265,12 @@ func (r *Renderer) renderGui(icam camera.ICamera) error {
 	parent := r.gui.GetPanel()
 	parent.UpdateMatrixWorld()
 
-	// Builds RenderInfo calls RenderSetup for all visible nodes
-	icam.ViewMatrix(&r.rinfo.ViewMatrix)
-	icam.ProjMatrix(&r.rinfo.ProjMatrix)
-
-	// checkBounded checks if any of this panel children has
-	// changed and it is not bounded
-	var checkBounded func(ipan gui.IPanel) bool
-	checkBounded = func(ipan gui.IPanel) bool {
-		pan := ipan.GetPanel()
-		if !pan.Visible() {
-			return false
-		}
-		if pan.Changed() && !pan.Bounded() {
-			return true
-		}
-		for _, ichild := range pan.Children() {
-			if checkBounded(ichild.(gui.IPanel)) {
-				return true
-			}
-		}
-		return false
-	}
-
-	// checkChildren checks if any of this panel immediate children has changed
-	checkChildren := func(ipan gui.IPanel) bool {
-		pan := ipan.GetPanel()
-		for _, ichild := range pan.Children() {
-			child := ichild.(gui.IPanel).GetPanel()
-			if !child.Visible() || !child.Renderable() {
-				continue
-			}
-			if child.Changed() {
-				return true
-			}
-		}
-		return false
-	}
-
-	var buildRenderList func(ipan gui.IPanel, checkChanged bool)
-	buildRenderList = func(ipan gui.IPanel, checkChanged bool) {
-		pan := ipan.GetPanel()
-		// If panel is not visible, ignore
-		if !pan.Visible() {
-			return
-		}
-		// If no check or if any of this panel immediate children changed,
-		// inserts this panel if renderable and all its visible/renderable children
-		if !checkChanged || checkChildren(ipan) || checkBounded(ipan) {
-			if pan.Renderable() {
-				materials := pan.GetGraphic().Materials()
-				r.grmats = append(r.grmats, &materials[0])
-			}
-			for _, ichild := range pan.Children() {
-				buildRenderList(ichild.(gui.IPanel), false)
-			}
-			pan.SetChanged(false)
-			return
-		}
-		// If this panel is renderable and changed, inserts this panel
-		if pan.Renderable() && pan.Changed() {
-			materials := pan.GetGraphic().Materials()
-			r.grmats = append(r.grmats, &materials[0])
-		}
-		// Checks this panel children
-		for _, ichild := range pan.Children() {
-			buildRenderList(ichild.(gui.IPanel), true)
-		}
-		pan.SetChanged(false)
-	}
-
 	// Builds list of panel's graphic materials to render
+	// If all the screen has been cleared by the 3D scene,
+	// no need to check panels.  All must be redrawn.
 	r.grmats = r.grmats[0:0]
-	buildRenderList(parent, !r.screenCleared)
+	checkChanged := !r.screenCleared
+	r.buildPanelList(parent, checkChanged)
 
 	// If there are panels to render, disable the scissor test
 	// which could have been set by the 3D scene renderer and
@@ -360,6 +296,99 @@ func (r *Renderer) renderGui(icam camera.ICamera) error {
 		// Render this graphic material
 		grmat.Render(r.gs, &r.rinfo)
 	}
-
 	return nil
+}
+
+// buildPanelList builds list of panel materials that must be rendered.
+// If checkChanged is false the specified panel and all its children
+// recursively  will be appended to the list inconditionally.
+// Otherwise the following criteria is used:
+// - If the panel is changed, itself and all its children recursively
+//   are appended to list
+// - If any the panel immediate children is changed the panel itself
+//   and the immediate children are appended to the list
+func (r *Renderer) buildPanelList(ipan gui.IPanel, checkChanged bool) {
+
+	pan := ipan.GetPanel()
+	// If panel is not visible, ignore
+	if !pan.Visible() {
+		return
+	}
+	// If no check or if any of this panel immediate children changed,
+	// inserts this panel if renderable and all its visible/renderable children
+	if !checkChanged || r.checkPanelOver3D(ipan) || r.checkPanelChildren(ipan) || r.checkPanelUnbounded(ipan) {
+		if pan.Renderable() {
+			materials := pan.GetGraphic().Materials()
+			r.grmats = append(r.grmats, &materials[0])
+		}
+		for _, ichild := range pan.Children() {
+			r.buildPanelList(ichild.(gui.IPanel), false)
+		}
+		pan.SetChanged(false)
+		return
+	}
+	// If this panel is renderable and changed, inserts this panel
+	if pan.Renderable() && pan.Changed() {
+		materials := pan.GetGraphic().Materials()
+		r.grmats = append(r.grmats, &materials[0])
+	}
+	// Checks this panel children
+	for _, ichild := range pan.Children() {
+		r.buildPanelList(ichild.(gui.IPanel), true)
+	}
+	pan.SetChanged(false)
+}
+
+// checkPanelOver3D checks if the specified panel is over
+// the area where the 3D scene will be rendered.
+func (r *Renderer) checkPanelOver3D(ipan gui.IPanel) bool {
+
+	if r.panel3D == nil {
+		return false
+	}
+	pan := r.gui.GetPanel()
+	if !pan.Visible() || !pan.Renderable() {
+		return false
+	}
+	res := pan.Intersects(r.panel3D.GetPanel())
+	if res {
+		log.Error("panel over 3D:%v %v %v / %v %v %v", pan.Pospix(), pan.Width(), pan.Height(),
+			r.panel3D.GetPanel().Pospix(), r.panel3D.GetPanel().Width(), r.panel3D.GetPanel().Height())
+	}
+	return res
+}
+
+// checkPanelUnbounded checks if any of the specified panel children has
+// changed and it is not bounded
+func (r *Renderer) checkPanelUnbounded(ipan gui.IPanel) bool {
+
+	pan := ipan.GetPanel()
+	if !pan.Visible() {
+		return false
+	}
+	if pan.Changed() && !pan.Bounded() {
+		return true
+	}
+	for _, ichild := range pan.Children() {
+		if r.checkPanelUnbounded(ichild.(gui.IPanel)) {
+			return true
+		}
+	}
+	return false
+}
+
+// checkPanelChildren checks if any of this panel immediate children has changed
+func (r *Renderer) checkPanelChildren(ipan gui.IPanel) bool {
+
+	pan := ipan.GetPanel()
+	for _, ichild := range pan.Children() {
+		child := ichild.(gui.IPanel).GetPanel()
+		if !child.Visible() || !child.Renderable() {
+			continue
+		}
+		if child.Changed() {
+			return true
+		}
+	}
+	return false
 }

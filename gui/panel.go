@@ -569,6 +569,28 @@ func (p *Panel) InsideBorders(x, y float32) bool {
 	return true
 }
 
+// Intersects returns if this panel intersects with the other panel
+func (p *Panel) Intersects(other *Panel) bool {
+
+	pospix := other.Pospix()
+	if p.ContainsPosition(pospix.X, pospix.Y) {
+		return true
+	}
+	if p.ContainsPosition(pospix.X+other.width, pospix.Y) {
+		return true
+	}
+	if p.ContainsPosition(pospix.X+other.width, pospix.Y) {
+		return true
+	}
+	if p.ContainsPosition(pospix.X, pospix.Y+other.height) {
+		return true
+	}
+	if p.ContainsPosition(pospix.X+other.width, pospix.Y+other.height) {
+		return true
+	}
+	return false
+}
+
 // SetEnabled sets the panel enabled state
 // A disabled panel do not process key or mouse events.
 func (p *Panel) SetEnabled(state bool) {
