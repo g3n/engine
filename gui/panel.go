@@ -576,16 +576,13 @@ func (p *Panel) Intersects(other *Panel) bool {
 	if p.ContainsPosition(pospix.X, pospix.Y) {
 		return true
 	}
-	if p.ContainsPosition(pospix.X+other.width, pospix.Y) {
+	if p.ContainsPosition(pospix.X+other.width-1, pospix.Y) {
 		return true
 	}
-	if p.ContainsPosition(pospix.X+other.width, pospix.Y) {
+	if p.ContainsPosition(pospix.X, pospix.Y+other.height-1) {
 		return true
 	}
-	if p.ContainsPosition(pospix.X, pospix.Y+other.height) {
-		return true
-	}
-	if p.ContainsPosition(pospix.X+other.width, pospix.Y+other.height) {
+	if p.ContainsPosition(pospix.X+other.width-1, pospix.Y+other.height-1) {
 		return true
 	}
 	return false
