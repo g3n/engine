@@ -28,10 +28,10 @@ type Renderer struct {
 	grmats      []*graphic.GraphicMaterial // Array of all graphic materials for scene
 	rinfo       core.RenderInfo            // Preallocated Render info
 	specs       ShaderSpecs                // Preallocated Shader specs
-	redrawGui   bool
-	needSwap    bool
-	panList     []gui.IPanel
-	panRendered int
+	redrawGui   bool                       // Flag indicating the gui must be redrawn completely
+	rendered    bool                       // Flag indicating if anything was rendered
+	panList     []gui.IPanel               // list of panels to render
+	panRendered int                        // number of panels rendered
 }
 
 // NewRenderer creates and returns a pointer to a new Renderer
@@ -51,21 +51,27 @@ func NewRenderer(gs *gls.GLS) *Renderer {
 	return r
 }
 
+// AddDefaultShaders adds to this renderer's shader manager all default
+// include chunks, shaders and programs statically registered.
 func (r *Renderer) AddDefaultShaders() error {
 
 	return r.shaman.AddDefaultShaders()
 }
 
+// AddChunk adds a shader chunk with the specified name and source code
 func (r *Renderer) AddChunk(name, source string) {
 
 	r.shaman.AddChunk(name, source)
 }
 
+// AddShader adds a shader program with the specified name and source code
 func (r *Renderer) AddShader(name, source string) {
 
 	r.shaman.AddShader(name, source)
 }
 
+// AddProgram adds a program with the specified name and associated vertex
+// and fragment shaders names (previously registered)
 func (r *Renderer) AddProgram(name, vertex, frag string, others ...string) {
 
 	r.shaman.AddProgram(name, vertex, frag, others...)
@@ -94,32 +100,28 @@ func (r *Renderer) SetScene(scene core.INode) {
 	r.scene = scene
 }
 
-func (r *Renderer) NeedSwap() bool {
-
-	return r.needSwap
-}
-
 // Render renders the previously set Scene and Gui using the specified camera
-func (r *Renderer) Render(icam camera.ICamera) error {
+// Returns an indication if anything was rendered and an error
+func (r *Renderer) Render(icam camera.ICamera) (bool, error) {
 
 	r.redrawGui = false
-	r.needSwap = false
+	r.rendered = false
 
 	// Renders the 3D scene
 	if r.scene != nil {
 		err := r.renderScene(r.scene, icam)
 		if err != nil {
-			return err
+			return r.rendered, err
 		}
 	}
 	// Renders the Gui over the 3D scene
 	if r.panelGui != nil {
-		err := r.renderGui(icam)
+		err := r.renderGui()
 		if err != nil {
-			return err
+			return r.rendered, err
 		}
 	}
-	return nil
+	return r.rendered, nil
 }
 
 // renderScene renders the 3D scene using the specified camera
@@ -225,7 +227,7 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		}
 		// Clears the area inside the current scissor
 		r.gs.Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
-		r.needSwap = true
+		r.rendered = true
 	}
 
 	// For each *GraphicMaterial
@@ -263,11 +265,7 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 }
 
 // renderGui renders the Gui
-func (r *Renderer) renderGui(icam camera.ICamera) error {
-
-	// Updates panels bounds and relative positions
-	parent := r.panelGui.GetPanel()
-	parent.UpdateMatrixWorld()
+func (r *Renderer) renderGui() error {
 
 	// If panel3D was defined and 3D scene is empty
 	// Sets it renderable as the GUI background
@@ -283,20 +281,21 @@ func (r *Renderer) renderGui(icam camera.ICamera) error {
 	r.panList = r.panList[0:0]
 	r.panRendered = 0
 	// Redraw all GUI elements if necessary by appending the GUI panel to the render list
-	if r.redrawGui || r.checkPanelUnbounded(r.panelGui) {
+	if r.redrawGui || r.checkChanged(r.panelGui) {
 		r.panList = append(r.panList, r.panelGui)
 	} else {
-		r.buildPanelList(r.panelGui, true)
+		r.buildPanelList()
 	}
 
-	// If there are panels to render, disable the scissor test
-	// which could have been set by the 3D scene renderer and
-	// then clear the depth buffer, so the panels will be rendered
-	// over the 3D scene.
+	// If there are panels to render
 	if len(r.panList) > 0 {
+		// Updates panels bounds and relative positions
+		r.panelGui.GetPanel().UpdateMatrixWorld()
+		// Disable the scissor test which could have been set by the 3D scene renderer
+		// and then clear the depth buffer, so the panels will be rendered over the 3D scene.
 		r.gs.Disable(gls.SCISSOR_TEST)
 		r.gs.Clear(gls.DEPTH_BUFFER_BIT)
-		r.needSwap = true
+		r.rendered = true
 	}
 
 	// Render panels
@@ -312,45 +311,43 @@ func (r *Renderer) renderGui(icam camera.ICamera) error {
 	return nil
 }
 
-// buildPanelList builds list of panel materials that must be rendered.
-func (r *Renderer) buildPanelList(ipan gui.IPanel, check3D bool) {
+// buildPanelList builds list of panels over 3D to be rendered
+func (r *Renderer) buildPanelList() {
 
-	// If panel is not visible, ignore it and all its children
-	pan := ipan.GetPanel()
-	if !pan.Visible() {
+	// If panel3D not set or renderable, nothing to do
+	if r.panel3D == nil || r.panel3D.Renderable() {
 		return
 	}
 
-	// If this panel is not the main GUI panel checks if its over 3D.
-	// If it is appends to the render list and we are done.
-	// Otherwise do not check over 3D for its children because if the
-	// parent is not over 3D than its children are also not over 3D.
-	// The exception to this case is when the panel is unbounded,
-	// which is verified in the next check.
-	if ipan != r.panelGui {
-		if check3D && r.checkPanelOver3D(ipan) {
-			r.panList = append(r.panList, ipan)
-			return
-		} else {
-			check3D = false
+	// Internal recursive function to check if any child of the
+	// specified panel is unbounded and over 3D.
+	// If it is, it is inserted in the list of panels to render.
+	var checkUnbounded func(pan *gui.Panel)
+	checkUnbounded = func(pan *gui.Panel) {
+
+		for i := 0; i < len(pan.Children()); i++ {
+			child := pan.Children()[i].(gui.IPanel).GetPanel()
+			if !child.Bounded() && r.checkPanelOver3D(child) {
+				r.panList = append(r.panList, child)
+				continue
+			}
+			checkUnbounded(child)
 		}
 	}
 
-	// If panel is unbounded and is over 3D, appends to the render list
-	if !pan.Bounded() && r.checkPanelOver3D(ipan) {
-		r.panList = append(r.panList, ipan)
-		return
-	}
-	// If this panel changed and is renderable or if any of its immediate children changed,
-	// appends to the render list
-	//if (pan.Changed() && pan.Renderable()) || r.checkPanelChildren(ipan) {
-	if r.checkPanelChildren(ipan) {
-		r.panList = append(r.panList, ipan)
-		return
-	}
-	// Checks this panel children
-	for _, ichild := range pan.Children() {
-		r.buildPanelList(ichild.(gui.IPanel), check3D)
+	// For all children of the Gui, checks if it is over the 3D panel
+	children := r.panelGui.GetPanel().Children()
+	for i := 0; i < len(children); i++ {
+		pan := children[i].(gui.IPanel).GetPanel()
+		if !pan.Visible() {
+			continue
+		}
+		if r.checkPanelOver3D(pan) {
+			r.panList = append(r.panList, pan)
+			continue
+		}
+		// Current child is not over 3D but can have an unbounded child which is
+		checkUnbounded(pan)
 	}
 }
 
@@ -389,55 +386,41 @@ func (r *Renderer) renderPanel(ipan gui.IPanel) error {
 	return nil
 }
 
+// checkChanged checks if the specified panel or any of its children is changed
+func (r *Renderer) checkChanged(ipan gui.IPanel) bool {
+
+	// Unbounded panels are checked even if not visible
+	pan := ipan.GetPanel()
+	if !pan.Bounded() && pan.Changed() {
+		pan.SetChanged(false)
+		return true
+	}
+	// Ignore invisible panel and its children
+	if !pan.Visible() {
+		return false
+	}
+	if pan.Changed() && pan.Renderable() {
+		return true
+	}
+	for i := 0; i < len(pan.Children()); i++ {
+		res := r.checkChanged(pan.Children()[i].(gui.IPanel))
+		if res {
+			return res
+		}
+	}
+	return false
+}
+
 // checkPanelOver3D checks if the specified panel is over
 // the area where the 3D scene will be rendered.
 func (r *Renderer) checkPanelOver3D(ipan gui.IPanel) bool {
 
-	if r.panel3D == nil || r.panel3D.Renderable() {
-		return false
-	}
 	pan := ipan.GetPanel()
 	if !pan.Visible() {
 		return false
 	}
 	if r.panel3D.GetPanel().Intersects(pan) {
-		//log.Error("panel..: %v %v %v", pan.Pospix(), pan.Width(), pan.Height())
-		//panel3D := r.panel3D.GetPanel()
-		//log.Error("panel3D: %v %v %v", panel3D.Pospix(), panel3D.Width(), panel3D.Height())
 		return true
-	}
-	return false
-}
-
-// checkPanelUnbounded checks if the specified panel or any
-// of its children has changed and it is unbounded
-func (r *Renderer) checkPanelUnbounded(ipan gui.IPanel) bool {
-
-	pan := ipan.GetPanel()
-	if pan.Changed() && !pan.Bounded() {
-		pan.SetChanged(false)
-		return true
-	}
-	for _, ichild := range pan.Children() {
-		if r.checkPanelUnbounded(ichild.(gui.IPanel)) {
-			return true
-		}
-	}
-	return false
-}
-
-// checkPanelChildren checks if any of this panel immediate children has changed
-func (r *Renderer) checkPanelChildren(ipan gui.IPanel) bool {
-
-	pan := ipan.GetPanel()
-	for _, ichild := range pan.Children() {
-		child := ichild.(gui.IPanel).GetPanel()
-		if !child.Visible() || !child.Renderable() {
-			continue
-		}
-		if child.Changed() {
-			return true
-		}
 	}
 	return false
 }
