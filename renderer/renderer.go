@@ -13,8 +13,24 @@ import (
 	"github.com/g3n/engine/light"
 )
 
-// Renderer renders a 3D scene and or a 2D GUI over the 3D scene
-// on the current window.
+// Renderer renders a 3D scene and/or a 2D GUI on the current window.
+// This renderer supports the following use cases:
+// - Only a 3D scene:
+//   - SetScene(scene)
+//   - SetGui(nil) (default)
+//   - SetGuiPanel3D(nil) (default)
+// - Only GUI:
+//   - SetScene(nil) (default)
+//   - SetGui(gui)
+//   - SetGuiPanel3D(nil)
+// - GUI with one internal panel showing 3D scene:
+//   - SetGui(gui)
+//   - SetScene(scene)
+//   - SetGuiPanel3D(panel3D)
+// - 3D scene with GUI overlay
+//   - SetScene(scene)
+//   - SetGui(gui)
+//   - SetPanel3D(nil) (default)
 type Renderer struct {
 	gs          *gls.GLS
 	shaman      Shaman                     // Internal shader manager
@@ -72,8 +88,7 @@ func (r *Renderer) AddProgram(name, vertex, frag string, others ...string) {
 	r.shaman.AddProgram(name, vertex, frag, others...)
 }
 
-// SetGui sets the gui panel which contains the Gui to render
-// over the optional 3D scene.
+// SetGui sets the gui panel which contains the Gui to render.
 // If set to nil, no Gui will be rendered
 func (r *Renderer) SetGui(gui gui.IPanel) {
 
@@ -89,8 +104,8 @@ func (r *Renderer) SetGuiPanel3D(panel3D gui.IPanel) {
 	r.panel3D = panel3D
 }
 
-// SetScene sets the Node which contains the scene to render
-// If set to nil, no scene will be rendered
+// SetScene sets the 3D scene to render
+// If set to nil, no 3D scene will be rendered
 func (r *Renderer) SetScene(scene core.INode) {
 
 	r.scene = scene
@@ -213,7 +228,7 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 
 	// If there is graphic material to render
 	if len(r.grmats) > 0 {
-		log.Error("graphics:%v", len(r.grmats))
+		//log.Error("graphics:%v", len(r.grmats))
 		// If the 3D scene to draw is to be confined to user specified panel
 		// sets scissor to avoid erasing gui elements outside of this panel
 		if r.panel3D != nil {
@@ -317,12 +332,13 @@ func (r *Renderer) buildPanelList(ipan gui.IPanel, check3D bool) {
 	// If this panel is not the main GUI panel checks if its over 3D.
 	// If it is appends to the render list and we are done.
 	// Otherwise do not check over 3D for its children because if the
-	// parent is not over 3D than the children are also not over 3D.
+	// parent is not over 3D than its children are also not over 3D.
 	// The exception to this case is when the panel is unbounded,
 	// which is verified in the next check.
 	if ipan != r.panelGui {
 		if check3D && r.checkPanelOver3D(ipan) {
 			r.panList = append(r.panList, ipan)
+			log.Error("panel not over 3D")
 			return
 		} else {
 			check3D = false
@@ -332,6 +348,7 @@ func (r *Renderer) buildPanelList(ipan gui.IPanel, check3D bool) {
 	// If panel is unbounded and is over 3D, appends to the render list
 	if !pan.Bounded() && r.checkPanelOver3D(ipan) {
 		r.panList = append(r.panList, ipan)
+		log.Error("unbounded over 3D")
 		return
 	}
 	// If any of this panel immediate children changed, appends to the render list
@@ -339,12 +356,12 @@ func (r *Renderer) buildPanelList(ipan gui.IPanel, check3D bool) {
 		r.panList = append(r.panList, ipan)
 		return
 	}
-	// If this panel is renderable and changed, appends to the render list
-	if pan.Renderable() && pan.Changed() {
-		r.panList = append(r.panList, ipan)
-		log.Error("panel changed")
-		return
-	}
+	//// If this panel is renderable and changed, appends to the render list
+	//if pan.Renderable() && pan.Changed() {
+	//	r.panList = append(r.panList, ipan)
+	//	log.Error("panel changed")
+	//	return
+	//}
 	// Checks this panel children
 	for _, ichild := range pan.Children() {
 		r.buildPanelList(ichild.(gui.IPanel), check3D)
