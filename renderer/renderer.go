@@ -14,23 +14,6 @@ import (
 )
 
 // Renderer renders a 3D scene and/or a 2D GUI on the current window.
-// This renderer supports the following use cases:
-// - Only a 3D scene:
-//   - SetScene(scene)
-//   - SetGui(nil) (default)
-//   - SetGuiPanel3D(nil) (default)
-// - Only GUI:
-//   - SetScene(nil) (default)
-//   - SetGui(gui)
-//   - SetGuiPanel3D(nil)
-// - GUI with one internal panel showing 3D scene:
-//   - SetGui(gui)
-//   - SetScene(scene)
-//   - SetGuiPanel3D(panel3D)
-// - 3D scene with GUI overlay
-//   - SetScene(scene)
-//   - SetGui(gui)
-//   - SetPanel3D(nil) (default)
 type Renderer struct {
 	gs          *gls.GLS
 	shaman      Shaman                     // Internal shader manager
@@ -228,7 +211,6 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 
 	// If there is graphic material to render
 	if len(r.grmats) > 0 {
-		//log.Error("graphics:%v", len(r.grmats))
 		// If the 3D scene to draw is to be confined to user specified panel
 		// sets scissor to avoid erasing gui elements outside of this panel
 		if r.panel3D != nil {
@@ -287,6 +269,16 @@ func (r *Renderer) renderGui(icam camera.ICamera) error {
 	parent := r.panelGui.GetPanel()
 	parent.UpdateMatrixWorld()
 
+	// If panel3D was defined and 3D scene is empty
+	// Sets it renderable as the GUI background
+	if r.panel3D != nil {
+		if len(r.grmats) == 0 {
+			r.panel3D.SetRenderable(true)
+		} else {
+			r.panel3D.SetRenderable(false)
+		}
+	}
+
 	// Clears list of panels to render
 	r.panList = r.panList[0:0]
 	r.panRendered = 0
@@ -338,7 +330,6 @@ func (r *Renderer) buildPanelList(ipan gui.IPanel, check3D bool) {
 	if ipan != r.panelGui {
 		if check3D && r.checkPanelOver3D(ipan) {
 			r.panList = append(r.panList, ipan)
-			log.Error("panel not over 3D")
 			return
 		} else {
 			check3D = false
@@ -348,20 +339,15 @@ func (r *Renderer) buildPanelList(ipan gui.IPanel, check3D bool) {
 	// If panel is unbounded and is over 3D, appends to the render list
 	if !pan.Bounded() && r.checkPanelOver3D(ipan) {
 		r.panList = append(r.panList, ipan)
-		log.Error("unbounded over 3D")
 		return
 	}
-	// If any of this panel immediate children changed, appends to the render list
+	// If this panel changed and is renderable or if any of its immediate children changed,
+	// appends to the render list
+	//if (pan.Changed() && pan.Renderable()) || r.checkPanelChildren(ipan) {
 	if r.checkPanelChildren(ipan) {
 		r.panList = append(r.panList, ipan)
 		return
 	}
-	//// If this panel is renderable and changed, appends to the render list
-	//if pan.Renderable() && pan.Changed() {
-	//	r.panList = append(r.panList, ipan)
-	//	log.Error("panel changed")
-	//	return
-	//}
 	// Checks this panel children
 	for _, ichild := range pan.Children() {
 		r.buildPanelList(ichild.(gui.IPanel), check3D)
@@ -407,7 +393,7 @@ func (r *Renderer) renderPanel(ipan gui.IPanel) error {
 // the area where the 3D scene will be rendered.
 func (r *Renderer) checkPanelOver3D(ipan gui.IPanel) bool {
 
-	if r.panel3D == nil || len(r.panel3D.GetPanel().Children()) == 0 {
+	if r.panel3D == nil || r.panel3D.Renderable() {
 		return false
 	}
 	pan := ipan.GetPanel()
@@ -415,9 +401,9 @@ func (r *Renderer) checkPanelOver3D(ipan gui.IPanel) bool {
 		return false
 	}
 	if r.panel3D.GetPanel().Intersects(pan) {
-		log.Error("panel..: %v %v %v", pan.Pospix(), pan.Width(), pan.Height())
-		panel3D := r.panel3D.GetPanel()
-		log.Error("panel3D: %v %v %v", panel3D.Pospix(), panel3D.Width(), panel3D.Height())
+		//log.Error("panel..: %v %v %v", pan.Pospix(), pan.Width(), pan.Height())
+		//panel3D := r.panel3D.GetPanel()
+		//log.Error("panel3D: %v %v %v", panel3D.Pospix(), panel3D.Width(), panel3D.Height())
 		return true
 	}
 	return false
@@ -428,11 +414,8 @@ func (r *Renderer) checkPanelOver3D(ipan gui.IPanel) bool {
 func (r *Renderer) checkPanelUnbounded(ipan gui.IPanel) bool {
 
 	pan := ipan.GetPanel()
-	if !pan.Visible() {
-		return false
-	}
 	if pan.Changed() && !pan.Bounded() {
-		log.Error("panel unbounded changed")
+		pan.SetChanged(false)
 		return true
 	}
 	for _, ichild := range pan.Children() {
@@ -453,7 +436,6 @@ func (r *Renderer) checkPanelChildren(ipan gui.IPanel) bool {
 			continue
 		}
 		if child.Changed() {
-			log.Error("panel children changed")
 			return true
 		}
 	}
