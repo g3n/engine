@@ -491,6 +491,11 @@ func (gs *GLS) GetShaderiv(shader, pname uint32, params *int32) {
 	C.glGetShaderiv(C.GLuint(shader), C.GLenum(pname), (*C.GLint)(params))
 }
 
+func (gs *GLS) Scissor(x, y int32, width, height uint32) {
+
+	C.glScissor(C.GLint(x), C.GLint(y), C.GLsizei(width), C.GLsizei(height))
+}
+
 func (gs *GLS) ShaderSource(shader uint32, src string) {
 
 	csource := gs.cbufStr(src)

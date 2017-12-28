@@ -231,6 +231,7 @@ func (p *Panel) SetTopChild(ipan IPanel) {
 	found := p.Remove(ipan)
 	if found {
 		p.Add(ipan)
+		p.SetChanged(true)
 	}
 }
 
@@ -388,12 +389,14 @@ func (p *Panel) Paddings() BorderSizes {
 func (p *Panel) SetBordersColor(color *math32.Color) {
 
 	p.udata.bordersColor = math32.Color4{color.R, color.G, color.B, 1}
+	p.SetChanged(true)
 }
 
 // SetBordersColor4 sets the color and opacity of this panel borders
 func (p *Panel) SetBordersColor4(color *math32.Color4) {
 
 	p.udata.bordersColor = *color
+	p.SetChanged(true)
 }
 
 // BorderColor4 returns current border color
@@ -406,6 +409,7 @@ func (p *Panel) BordersColor4() math32.Color4 {
 func (p *Panel) SetPaddingsColor(color *math32.Color) {
 
 	p.udata.paddingsColor = math32.Color4{color.R, color.G, color.B, 1}
+	p.SetChanged(true)
 }
 
 // SetColor sets the color of the panel paddings and content area
@@ -413,6 +417,7 @@ func (p *Panel) SetColor(color *math32.Color) *Panel {
 
 	p.udata.paddingsColor = math32.Color4{color.R, color.G, color.B, 1}
 	p.udata.contentColor = p.udata.paddingsColor
+	p.SetChanged(true)
 	return p
 }
 
@@ -421,6 +426,7 @@ func (p *Panel) SetColor4(color *math32.Color4) *Panel {
 
 	p.udata.paddingsColor = *color
 	p.udata.contentColor = *color
+	p.SetChanged(true)
 	return p
 }
 
@@ -514,6 +520,7 @@ func (p *Panel) Bounded() bool {
 func (p *Panel) SetBounded(bounded bool) {
 
 	p.bounded = bounded
+	p.SetChanged(true)
 }
 
 // UpdateMatrixWorld overrides the standard core.Node version which is called by
@@ -560,6 +567,25 @@ func (p *Panel) InsideBorders(x, y float32) bool {
 		return false
 	}
 	return true
+}
+
+// Intersects returns if this panel intersects with the other panel
+func (p *Panel) Intersects(other *Panel) bool {
+
+	pospix := other.Pospix()
+	if p.ContainsPosition(pospix.X, pospix.Y) {
+		return true
+	}
+	if p.ContainsPosition(pospix.X+other.width-1, pospix.Y) {
+		return true
+	}
+	if p.ContainsPosition(pospix.X, pospix.Y+other.height-1) {
+		return true
+	}
+	if p.ContainsPosition(pospix.X+other.width-1, pospix.Y+other.height-1) {
+		return true
+	}
+	return false
 }
 
 // SetEnabled sets the panel enabled state
@@ -862,6 +888,7 @@ func (p *Panel) resize(width, height float32, dispatch bool) {
 		float32(p.content.Width) / float32(p.width),
 		float32(p.content.Height) / float32(p.height),
 	}
+	p.SetChanged(true)
 
 	// Update layout and dispatch event
 	if !dispatch {

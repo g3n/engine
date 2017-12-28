@@ -677,6 +677,7 @@ func (lg *Graph) updateData() {
 		positions.Append(px, py, 0)
 	}
 	lg.vbo.SetBuffer(positions)
+	lg.SetChanged(true)
 }
 
 // recalc recalculates the position and width of the this panel
