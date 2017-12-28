@@ -262,17 +262,20 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		// Setup lights (transfer lights uniforms)
 		for idx, l := range r.ambLights {
 			l.RenderSetup(r.gs, &r.rinfo, idx)
+			r.stats.Lights++
 		}
 		for idx, l := range r.dirLights {
 			l.RenderSetup(r.gs, &r.rinfo, idx)
+			r.stats.Lights++
 		}
 		for idx, l := range r.pointLights {
 			l.RenderSetup(r.gs, &r.rinfo, idx)
+			r.stats.Lights++
 		}
 		for idx, l := range r.spotLights {
 			l.RenderSetup(r.gs, &r.rinfo, idx)
+			r.stats.Lights++
 		}
-		r.stats.Lights += len(r.ambLights) + len(r.dirLights) + len(r.pointLights) + len(r.spotLights)
 
 		// Render this graphic material
 		grmat.Render(r.gs, &r.rinfo)
@@ -284,12 +287,16 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 // renderGui renders the Gui
 func (r *Renderer) renderGui() error {
 
-	// If panel3D was defined and 3D scene is empty
-	// Sets it renderable as the GUI background
-	if r.panel3D != nil {
-		if len(r.grmats) == 0 {
+	// If no 3D scene was rendered sets Gui panels as renderable for background
+	// User must define the colors
+	if len(r.grmats) == 0 {
+		r.panelGui.SetRenderable(true)
+		if r.panel3D != nil {
 			r.panel3D.SetRenderable(true)
-		} else {
+		}
+	} else {
+		r.panelGui.SetRenderable(false)
+		if r.panel3D != nil {
 			r.panel3D.SetRenderable(false)
 		}
 	}
