@@ -17,6 +17,7 @@ import (
 type Renderer struct {
 	gs          *gls.GLS
 	shaman      Shaman                     // Internal shader manager
+	stats       Stats                      // Renderer statistics
 	scene       core.INode                 // Node containing 3D scene to render
 	panelGui    gui.IPanel                 // Panel containing GUI to render
 	panel3D     gui.IPanel                 // Panel which contains the 3D scene
@@ -31,7 +32,13 @@ type Renderer struct {
 	redrawGui   bool                       // Flag indicating the gui must be redrawn completely
 	rendered    bool                       // Flag indicating if anything was rendered
 	panList     []gui.IPanel               // list of panels to render
-	panRendered int                        // number of panels rendered
+}
+
+type Stats struct {
+	Graphics int // Number of graphic objects rendered
+	Lights   int // Number of lights rendered
+	Panels   int // Number of Gui panels rendered
+	Others   int // Number of other objects rendered
 }
 
 // NewRenderer creates and returns a pointer to a new Renderer
@@ -100,12 +107,19 @@ func (r *Renderer) SetScene(scene core.INode) {
 	r.scene = scene
 }
 
+// Returns statistics
+func (r *Renderer) Stats() Stats {
+
+	return r.stats
+}
+
 // Render renders the previously set Scene and Gui using the specified camera
 // Returns an indication if anything was rendered and an error
 func (r *Renderer) Render(icam camera.ICamera) (bool, error) {
 
 	r.redrawGui = false
 	r.rendered = false
+	r.stats = Stats{}
 
 	// Renders the 3D scene
 	if r.scene != nil {
@@ -209,6 +223,7 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 			continue
 		}
 		r.others[i].Render(r.gs)
+		r.stats.Others++
 	}
 
 	// If there is graphic material to render
@@ -257,9 +272,11 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		for idx, l := range r.spotLights {
 			l.RenderSetup(r.gs, &r.rinfo, idx)
 		}
+		r.stats.Lights += len(r.ambLights) + len(r.dirLights) + len(r.pointLights) + len(r.spotLights)
 
 		// Render this graphic material
 		grmat.Render(r.gs, &r.rinfo)
+		r.stats.Graphics++
 	}
 	return nil
 }
@@ -279,10 +296,9 @@ func (r *Renderer) renderGui() error {
 
 	// Clears list of panels to render
 	r.panList = r.panList[0:0]
-	r.panRendered = 0
 	// Redraw all GUI elements if necessary by appending the GUI panel to the render list
 	if r.redrawGui || r.checkChanged(r.panelGui) {
-		r.panList = append(r.panList, r.panelGui)
+		r.appendPanel(r.panelGui)
 	} else {
 		r.buildPanelList()
 	}
@@ -305,9 +321,6 @@ func (r *Renderer) renderGui() error {
 			return err
 		}
 	}
-	if r.panRendered > 0 {
-		log.Error("panels rendered:%v", r.panRendered)
-	}
 	return nil
 }
 
@@ -328,7 +341,7 @@ func (r *Renderer) buildPanelList() {
 		for i := 0; i < len(pan.Children()); i++ {
 			child := pan.Children()[i].(gui.IPanel).GetPanel()
 			if !child.Bounded() && r.checkPanelOver3D(child) {
-				r.panList = append(r.panList, child)
+				r.appendPanel(child)
 				continue
 			}
 			checkUnbounded(child)
@@ -343,7 +356,7 @@ func (r *Renderer) buildPanelList() {
 			continue
 		}
 		if r.checkPanelOver3D(pan) {
-			r.panList = append(r.panList, pan)
+			r.appendPanel(pan)
 			continue
 		}
 		// Current child is not over 3D but can have an unbounded child which is
@@ -358,6 +371,7 @@ func (r *Renderer) renderPanel(ipan gui.IPanel) error {
 	// If panel not visible, ignore it and all its children
 	pan := ipan.GetPanel()
 	if !pan.Visible() {
+		pan.SetChanged(false)
 		return nil
 	}
 	// If panel is renderable, renders it
@@ -373,9 +387,9 @@ func (r *Renderer) renderPanel(ipan gui.IPanel) error {
 		}
 		// Render this panel's graphic material
 		grmat.Render(r.gs, &r.rinfo)
-		pan.SetChanged(false)
-		r.panRendered++
+		r.stats.Panels++
 	}
+	pan.SetChanged(false)
 	// Renders this panel children
 	for i := 0; i < len(pan.Children()); i++ {
 		err := r.renderPanel(pan.Children()[i].(gui.IPanel))
@@ -384,6 +398,16 @@ func (r *Renderer) renderPanel(ipan gui.IPanel) error {
 		}
 	}
 	return nil
+}
+
+func (r *Renderer) appendPanel(ipan gui.IPanel) {
+
+	for i := 0; i < len(r.panList); i++ {
+		if r.panList[i] == ipan {
+			log.Error("duplicate panel:%p")
+		}
+	}
+	r.panList = append(r.panList, ipan)
 }
 
 // checkChanged checks if the specified panel or any of its children is changed
