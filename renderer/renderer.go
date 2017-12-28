@@ -400,13 +400,10 @@ func (r *Renderer) renderPanel(ipan gui.IPanel) error {
 	return nil
 }
 
+// appendPanel appends the specified panel to the list of panels to render.
+// Currently there is no need to check for duplicates.
 func (r *Renderer) appendPanel(ipan gui.IPanel) {
 
-	for i := 0; i < len(r.panList); i++ {
-		if r.panList[i] == ipan {
-			log.Error("duplicate panel:%p")
-		}
-	}
 	r.panList = append(r.panList, ipan)
 }
 
