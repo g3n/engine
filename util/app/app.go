@@ -9,6 +9,7 @@ import (
 	"github.com/g3n/engine/audio/ov"
 	"github.com/g3n/engine/audio/vorbis"
 	"github.com/g3n/engine/camera"
+	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/renderer"
@@ -28,7 +29,9 @@ type App struct {
 	audioEFX    bool                 // Audio effect extension support available
 	audioDev    *al.Device           // Audio player device
 	captureDev  *al.Device           // Audio capture device
+	frameRater  *FrameRater
 	oCpuProfile *string
+	scene       *core.Node // Node container for 3D tests
 }
 
 type Options struct {
@@ -38,6 +41,7 @@ type Options struct {
 	VersionMinor int  // Application version minor
 	LogLevel     int  // Initial log level
 	EnableFlags  bool // Enable command line flags
+	TargetFPS    uint // Desired FPS
 }
 
 // appInstance points to the single Application instance
@@ -108,8 +112,14 @@ func Create(name string, ops Options) (*App, error) {
 	app.renderer = renderer.NewRenderer(gl)
 	err = app.renderer.AddDefaultShaders()
 	if err != nil {
-		return nil, fmt.Errorf("Erro from AddDefaulShaders:%v", err)
+		return nil, fmt.Errorf("Error from AddDefaulShaders:%v", err)
 	}
+
+	// Creates scene for 3D objects
+	app.scene = core.NewNode()
+
+	// Create frame rater
+	app.frameRater = NewFrameRater(60)
 
 	// Subscribe to window resize events
 	app.win.Subscribe(window.OnWindowSize, func(evname string, ev interface{}) {
@@ -135,10 +145,16 @@ func (a *App) Window() window.IWindow {
 func (a *App) Run() {
 
 	for !a.win.ShouldClose() {
+		// Starts measuring this frame
+		a.frameRater.Start()
+
 		// Poll input events and process them
 		a.win.PollEvents()
 
 		a.win.SwapBuffers()
+
+		// Controls the frame rate and updates the FPS for the user
+		a.frameRater.Wait()
 	}
 }
 
