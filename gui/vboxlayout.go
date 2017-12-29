@@ -101,7 +101,7 @@ func (bl *VBoxLayout) Recalc(ipan IPanel) {
 		var totalHeight float32
 		for _, ichild := range parent.Children() {
 			child := ichild.(IPanel).GetPanel()
-			if !child.Visible() {
+			if !child.Visible() || !child.Bounded() {
 				continue
 			}
 			totalHeight += child.Height()
@@ -119,7 +119,7 @@ func (bl *VBoxLayout) Recalc(ipan IPanel) {
 		var maxWidth float32
 		for _, ichild := range parent.Children() {
 			child := ichild.(IPanel).GetPanel()
-			if !child.Visible() {
+			if !child.Visible() || !child.Bounded() {
 				continue
 			}
 			if child.Width() > maxWidth {
@@ -141,6 +141,9 @@ func (bl *VBoxLayout) Recalc(ipan IPanel) {
 	paramsDef := VBoxLayoutParams{Expand: 0, AlignH: AlignLeft}
 	for pos, obj := range parent.Children() {
 		pan := obj.(IPanel).GetPanel()
+		if !pan.Visible() || !pan.Bounded() {
+			continue
+		}
 		// Get item layout parameters or use default
 		params := paramsDef
 		if pan.layoutParams != nil {
@@ -177,6 +180,9 @@ func (bl *VBoxLayout) Recalc(ipan IPanel) {
 		if totalSpace > 0 {
 			for _, obj := range parent.Children() {
 				pan := obj.(IPanel).GetPanel()
+				if !pan.Visible() || !pan.Bounded() {
+					continue
+				}
 				// Get item layout parameters or use default
 				params := paramsDef
 				if pan.layoutParams != nil {
@@ -191,6 +197,9 @@ func (bl *VBoxLayout) Recalc(ipan IPanel) {
 		} else {
 			for _, obj := range parent.Children() {
 				pan := obj.(IPanel).GetPanel()
+				if !pan.Visible() || !pan.Bounded() {
+					continue
+				}
 				// Get item layout parameters or use default
 				params := paramsDef
 				if pan.layoutParams != nil {
@@ -232,6 +241,9 @@ func (bl *VBoxLayout) Recalc(ipan IPanel) {
 	width := parent.ContentWidth()
 	for pos, obj := range parent.Children() {
 		pan := obj.(IPanel).GetPanel()
+		if !pan.Visible() || !pan.Bounded() {
+			continue
+		}
 		// Get item layout parameters or use default
 		params := paramsDef
 		if pan.layoutParams != nil {
