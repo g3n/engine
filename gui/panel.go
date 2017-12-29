@@ -331,6 +331,7 @@ func (p *Panel) SetRoundness(top, right, bottom, left float32) {
 		math32.Clamp(bottom, 0, 1),
 		math32.Clamp(left, 0, 1),
 	}
+	p.SetChanged(true)
 }
 
 // SetMargins set this panel margin sizes in pixels
