@@ -34,6 +34,8 @@ type Renderer struct {
 	panList     []gui.IPanel               // list of panels to render
 }
 
+// Stats describes how many object types were rendered
+// It is cleared at the start of each render
 type Stats struct {
 	Graphics int // Number of graphic objects rendered
 	Lights   int // Number of lights rendered
