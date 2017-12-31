@@ -102,6 +102,12 @@ func (r *Renderer) SetGuiPanel3D(panel3D gui.IPanel) {
 	r.panel3D = panel3D
 }
 
+// Panel3D returns the current gui panel over the 3D scene
+func (r *Renderer) Panel3D() gui.IPanel {
+
+	return r.panel3D
+}
+
 // SetScene sets the 3D scene to render
 // If set to nil, no 3D scene will be rendered
 func (r *Renderer) SetScene(scene core.INode) {
