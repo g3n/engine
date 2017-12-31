@@ -572,20 +572,15 @@ func (p *Panel) InsideBorders(x, y float32) bool {
 // Intersects returns if this panel intersects with the other panel
 func (p *Panel) Intersects(other *Panel) bool {
 
-	pospix := other.Pospix()
-	if p.ContainsPosition(pospix.X, pospix.Y) {
-		return true
+	// Checks if one panel is completely on the left side of the other
+	if p.pospix.X+p.width <= other.pospix.X || other.pospix.X+other.width <= p.pospix.X {
+		return false
 	}
-	if p.ContainsPosition(pospix.X+other.width-1, pospix.Y) {
-		return true
+	// Checks if one panel is completely above the other
+	if p.pospix.Y+p.height <= other.pospix.Y || other.pospix.Y+other.height <= p.pospix.Y {
+		return false
 	}
-	if p.ContainsPosition(pospix.X, pospix.Y+other.height-1) {
-		return true
-	}
-	if p.ContainsPosition(pospix.X+other.width-1, pospix.Y+other.height-1) {
-		return true
-	}
-	return false
+	return true
 }
 
 // SetEnabled sets the panel enabled state
