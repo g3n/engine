@@ -345,6 +345,11 @@ func (gs *GLS) DrawArrays(mode uint32, first int32, count int32) {
 	gs.stats.Drawcalls++
 }
 
+func (gs *GLS) DrawBuffer(mode uint32) {
+
+	C.glDrawBuffer(C.GLenum(mode))
+}
+
 func (gs *GLS) DrawElements(mode uint32, count int32, itype uint32, start uint32) {
 
 	C.glDrawElements(C.GLenum(mode), C.GLsizei(count), C.GLenum(itype), unsafe.Pointer(uintptr(start)))
