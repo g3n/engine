@@ -48,16 +48,19 @@ type Application struct {
 	frameTime         time.Time             // Time at the start of the frame
 	frameDelta        time.Duration         // Time delta from previous frame
 	startTime         time.Time             // Time at the start of the render loop
-	cpuProfile        string                // File to write cpu profile to
-	swapInterval      int                   // Swap interval option
-	targetFPS         uint                  // Target FPS option
-	noglErrors        bool                  // No OpenGL check errors options
+	fullScreen        *bool                 // Full screen option
+	cpuProfile        *string               // File to write cpu profile to
+	swapInterval      *int                  // Swap interval option
+	targetFPS         *uint                 // Target FPS option
+	noglErrors        *bool                 // No OpenGL check errors options
+
 }
 
 // Options defines initial options passed to application creation function
 type Options struct {
-	WinHeight   int  // Initial window height (default is screen width)
-	WinWidth    int  // Initial window width (default is screen height)
+	Height      int  // Initial window height (default is screen width)
+	Width       int  // Initial window width (default is screen height)
+	Fullscreen  bool // Window full screen flag (default = false)
 	LogLevel    int  // Initial log level (default = DEBUG)
 	EnableFlags bool // Enable command line flags (default = false)
 	TargetFPS   uint // Desired frames per second rate (default = 60)
@@ -80,31 +83,34 @@ func Create(name string, ops Options) (*Application, error) {
 		return nil, fmt.Errorf("Application already created")
 	}
 	app := new(Application)
+	appInstance = app
 	app.Dispatcher.Initialize()
 	app.TimerManager.Initialize()
-	appInstance = app
 
-	// Initialize options default values
-	app.cpuProfile = ""
-	app.swapInterval = -1
-	app.targetFPS = 60
+	// Initialize options defaults
+	app.fullScreen = new(bool)
+	app.cpuProfile = new(string)
+	app.swapInterval = new(int)
+	*app.swapInterval = -1
+	app.targetFPS = new(uint)
+	*app.targetFPS = 60
+	app.noglErrors = new(bool)
+
+	// Options parameter overrides some options
 	if ops.TargetFPS != 0 {
-		app.targetFPS = ops.TargetFPS
+		*app.fullScreen = ops.Fullscreen
+		*app.targetFPS = ops.TargetFPS
 	}
-	app.noglErrors = false
 
-	// Parse standard application command flags if requested
+	// Creates flags if requested (override options defaults)
 	if ops.EnableFlags {
-		cpuProfile := flag.String("cpuprofile", "", "Activate cpu profiling writing profile to the specified file")
-		swapInterval := flag.Int("swapinterval", -1, "Sets the swap buffers interval to this value")
-		targetFPS := flag.Uint("targetfps", 60, "Sets the frame rate in frames per second")
-		noglErrors := flag.Bool("noglerrors", false, "Do not check OpenGL errors at each call (may increase FPS)")
-		flag.Parse()
-		app.cpuProfile = *cpuProfile
-		app.swapInterval = *swapInterval
-		app.targetFPS = *targetFPS
-		app.noglErrors = *noglErrors
+		app.fullScreen = flag.Bool("fullscreen", false, "Stars application with full screen")
+		app.cpuProfile = flag.String("cpuprofile", "", "Activate cpu profiling writing profile to the specified file")
+		app.swapInterval = flag.Int("swapinterval", -1, "Sets the swap buffers interval to this value")
+		app.targetFPS = flag.Uint("targetfps", 60, "Sets the frame rate in frames per second")
+		app.noglErrors = flag.Bool("noglerrors", false, "Do not check OpenGL errors at each call (may increase FPS)")
 	}
+	flag.Parse()
 
 	// Creates application logger
 	app.log = logger.New(name, nil)
@@ -115,29 +121,43 @@ func Create(name string, ops Options) (*Application, error) {
 	// Window event handling must run on the main OS thread
 	runtime.LockOSThread()
 
-	// Creates window and sets it as the current context
-	win, err := window.New("glfw", 10, 10, name, false)
+	// Creates window
+	win, err := window.New("glfw", 801, 600, name, *app.fullScreen)
 	if err != nil {
 		return nil, err
 	}
-	// Sets the window size
-	swidth, sheight := win.GetScreenResolution(nil)
-	if ops.WinWidth != 0 {
-		swidth = ops.WinWidth
-	}
-	if ops.WinHeight != 0 {
-		sheight = ops.WinHeight
-	}
-	win.SetSize(swidth, sheight)
 	app.win = win
-
+	if !*app.fullScreen {
+		// Calculates window size and position
+		swidth, sheight := win.GetScreenResolution(nil)
+		var posx, posy int
+		if ops.Width != 0 {
+			posx = (swidth - ops.Width) / 2
+			if posx < 0 {
+				posx = 0
+			}
+			swidth = ops.Width
+		}
+		if ops.Height != 0 {
+			posy = (sheight - ops.Height) / 2
+			if posy < 0 {
+				posy = 0
+			}
+			sheight = ops.Height
+		}
+		// Sets the window size and position
+		win.SetSize(swidth, sheight)
+		win.SetPos(posx, posy)
+	}
 	// Create OpenGL state
 	gl, err := gls.New()
 	if err != nil {
 		return nil, err
 	}
 	app.gl = gl
-	app.gl.SetCheckErrors(!app.noglErrors)
+	// Checks OpenGL errors
+	app.gl.SetCheckErrors(!*app.noglErrors)
+
 	cc := math32.NewColor("gray")
 	app.gl.ClearColor(cc.R, cc.G, cc.B, 1)
 	app.gl.Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
@@ -178,12 +198,12 @@ func Create(name string, ops Options) (*Application, error) {
 	app.renderer.SetGui(app.guiroot)
 
 	// Create frame rater
-	app.frameRater = NewFrameRater(uint(app.targetFPS))
+	app.frameRater = NewFrameRater(*app.targetFPS)
 
 	return app, nil
 }
 
-// App returns the application single instance or nil
+// Get returns the application single instance or nil
 // if the application was not created yet
 func Get() *Application {
 
@@ -202,7 +222,7 @@ func (app *Application) Window() window.IWindow {
 	return app.win
 }
 
-// Gl returns the OpenGL state associated
+// Gl returns the OpenGL state
 func (app *Application) Gl() *gls.GLS {
 
 	return app.gl
@@ -287,41 +307,50 @@ func (app *Application) FrameRater() *FrameRater {
 	return app.frameRater
 }
 
+// FrameCount returns the total number of frames since the call to Run()
 func (app *Application) FrameCount() uint64 {
 
 	return app.frameCount
 }
 
+// FrameDelta returns the duration of the previous frame
 func (app *Application) FrameDelta() time.Duration {
 
 	return app.frameDelta
 }
 
+// FrameDeltaSeconds returns the duration of the previous frame
+// in float32 seconds
 func (app *Application) FrameDeltaSeconds() float32 {
 
 	return float32(app.frameDelta.Seconds())
 }
 
+// RunTime returns the duration since the call to Run()
 func (app *Application) RunTime() time.Duration {
 
 	return time.Now().Sub(app.startTime)
 }
 
+// RunSeconds returns the elapsed time in seconds since the call to Run()
 func (app *Application) RunSeconds() float32 {
 
 	return float32(time.Now().Sub(app.startTime).Seconds())
 }
 
+// Renderer returns the application renderer
 func (app *Application) Renderer() *renderer.Renderer {
 
 	return app.renderer
 }
 
+// AudioSupport returns if the audio library was loaded OK
 func (app *Application) AudioSupport() bool {
 
 	return app.audio
 }
 
+// VorbisSupport returns if the Ogg Vorbis decoder library was loaded OK
 func (app *Application) VorbisSupport() bool {
 
 	return app.vorbis
@@ -332,21 +361,21 @@ func (app *Application) VorbisSupport() bool {
 // till the end of the application.
 func (app *Application) SetCpuProfile(fname string) {
 
-	app.cpuProfile = fname
+	*app.cpuProfile = fname
 }
 
 // Runs runs the application render loop
 func (app *Application) Run() error {
 
 	// Set swap interval
-	if app.swapInterval >= 0 {
-		app.win.SwapInterval(app.swapInterval)
-		app.log.Debug("Swap interval set to:%v", app.swapInterval)
+	if *app.swapInterval >= 0 {
+		app.win.SwapInterval(*app.swapInterval)
+		app.log.Debug("Swap interval set to:%v", *app.swapInterval)
 	}
 
 	// Start profiling if requested
-	if app.cpuProfile != "" {
-		f, err := os.Create(app.cpuProfile)
+	if *app.cpuProfile != "" {
+		f, err := os.Create(*app.cpuProfile)
 		if err != nil {
 			return err
 		}
@@ -422,7 +451,7 @@ func (app *Application) OnWindowResize(evname string, ev interface{}) {
 	aspect := float32(width) / float32(height)
 	app.camPersp.SetAspect(aspect)
 
-	// Sets the size of GUI root panel size to the size of the screen
+	// Sets the GUI root panel size to the size of the screen
 	if app.guiroot != nil {
 		app.guiroot.SetSize(float32(width), float32(height))
 	}
