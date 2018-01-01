@@ -166,6 +166,7 @@ func Create(name string, ops Options) (*Application, error) {
 
 	// Creates gui root panel
 	app.guiroot = gui.NewRoot(app.gl, app.win)
+	app.guiroot.SetColor(math32.NewColor("silver"))
 
 	// Creates renderer
 	app.renderer = renderer.NewRenderer(gl)
@@ -470,6 +471,7 @@ func (app *Application) LoadAudioLibs() error {
 	if err == nil {
 		app.vorbis = true
 		vorbis.Load()
+		app.log.Info("%s", vorbis.VersionString())
 	}
 	return nil
 }
