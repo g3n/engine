@@ -33,7 +33,7 @@ type Renderer struct {
 	rendered     bool                       // Flag indicating if anything was rendered
 	panList      []gui.IPanel               // list of panels to render
 	frameBuffers int                        // Number of frame buffers
-	frameCount   int                        // Current number of frames to write
+	frameCount   int                        // Current number of frame buffers to write
 }
 
 // Stats describes how many object types were rendered
@@ -325,7 +325,7 @@ func (r *Renderer) renderGui() error {
 		// No change, but need to update frame buffers
 	} else if r.frameCount > 0 {
 		r.appendPanel(r.panelGui)
-		// No change, draw only panels over 3D
+		// No change, draw only panels over 3D if any
 	} else {
 		r.getPanelsOver3D()
 	}
