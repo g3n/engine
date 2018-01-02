@@ -329,18 +329,16 @@ func (r *Renderer) renderGui() error {
 	} else {
 		r.getPanelsOver3D()
 	}
-
-	// If there are panels to render
-	if len(r.panList) > 0 {
-		// Updates panels bounds and relative positions
-		r.panelGui.GetPanel().UpdateMatrixWorld()
-		// Disable the scissor test which could have been set by the 3D scene renderer
-		// and then clear the depth buffer, so the panels will be rendered over the 3D scene.
-		r.gs.Disable(gls.SCISSOR_TEST)
-		r.gs.Clear(gls.DEPTH_BUFFER_BIT)
-		r.frameCount--
-		r.rendered = true
+	if len(r.panList) == 0 {
+		return nil
 	}
+
+	// Updates panels bounds and relative positions
+	r.panelGui.GetPanel().UpdateMatrixWorld()
+	// Disable the scissor test which could have been set by the 3D scene renderer
+	// and then clear the depth buffer, so the panels will be rendered over the 3D scene.
+	r.gs.Disable(gls.SCISSOR_TEST)
+	r.gs.Clear(gls.DEPTH_BUFFER_BIT)
 
 	// Render panels
 	for i := 0; i < len(r.panList); i++ {
@@ -349,6 +347,8 @@ func (r *Renderer) renderGui() error {
 			return err
 		}
 	}
+	r.frameCount--
+	r.rendered = true
 	return nil
 }
 
