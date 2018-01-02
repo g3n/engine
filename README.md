@@ -135,7 +135,7 @@ func main() {
 
 	// Creates a wireframe sphere positioned at the center of the scene
 	geom := geometry.NewSphere(2, 16, 16, 0, math.Pi*2, 0, math.Pi)
-	mat := material.NewStandard(math32.NewColor(1, 1, 1))
+	mat := material.NewStandard(math32.NewColor("White"))
 	mat.SetSide(material.SideDouble)
 	mat.SetWireframe(true)
 	sphere := graphic.NewMesh(geom, mat)
@@ -147,6 +147,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	rend.SetScene(scene)
 
 	// Sets window background color
 	gs.ClearColor(0, 0, 0, 1.0)
@@ -154,20 +155,18 @@ func main() {
 	// Render loop
 	for !win.ShouldClose() {
 
-		// Clear buffers
-		gs.Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
-
 		// Rotates the sphere a bit around the Z axis (up)
 		sphere.AddRotationY(0.005)
 
 		// Render the scene using the specified camera
-		rend.Render(scene, camera)
+		rend.Render(camera)
 
 		// Update window and checks for I/O events
 		win.SwapBuffers()
 		win.PollEvents()
 	}
 }
+
 ```
 
 <p align="center">
