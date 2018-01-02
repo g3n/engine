@@ -15,23 +15,25 @@ import (
 
 // Renderer renders a 3D scene and/or a 2D GUI on the current window.
 type Renderer struct {
-	gs          *gls.GLS
-	shaman      Shaman                     // Internal shader manager
-	stats       Stats                      // Renderer statistics
-	scene       core.INode                 // Node containing 3D scene to render
-	panelGui    gui.IPanel                 // Panel containing GUI to render
-	panel3D     gui.IPanel                 // Panel which contains the 3D scene
-	ambLights   []*light.Ambient           // Array of ambient lights for last scene
-	dirLights   []*light.Directional       // Array of directional lights for last scene
-	pointLights []*light.Point             // Array of point
-	spotLights  []*light.Spot              // Array of spot lights for the scene
-	others      []core.INode               // Other nodes (audio, players, etc)
-	grmats      []*graphic.GraphicMaterial // Array of all graphic materials for scene
-	rinfo       core.RenderInfo            // Preallocated Render info
-	specs       ShaderSpecs                // Preallocated Shader specs
-	redrawGui   bool                       // Flag indicating the gui must be redrawn completely
-	rendered    bool                       // Flag indicating if anything was rendered
-	panList     []gui.IPanel               // list of panels to render
+	gs           *gls.GLS
+	shaman       Shaman                     // Internal shader manager
+	stats        Stats                      // Renderer statistics
+	scene        core.INode                 // Node containing 3D scene to render
+	panelGui     gui.IPanel                 // Panel containing GUI to render
+	panel3D      gui.IPanel                 // Panel which contains the 3D scene
+	ambLights    []*light.Ambient           // Array of ambient lights for last scene
+	dirLights    []*light.Directional       // Array of directional lights for last scene
+	pointLights  []*light.Point             // Array of point
+	spotLights   []*light.Spot              // Array of spot lights for the scene
+	others       []core.INode               // Other nodes (audio, players, etc)
+	grmats       []*graphic.GraphicMaterial // Array of all graphic materials for scene
+	rinfo        core.RenderInfo            // Preallocated Render info
+	specs        ShaderSpecs                // Preallocated Shader specs
+	redrawGui    bool                       // Flag indicating the gui must be redrawn completely
+	rendered     bool                       // Flag indicating if anything was rendered
+	panList      []gui.IPanel               // list of panels to render
+	frameBuffers int                        // Number of frame buffers
+	frameCount   int                        // Current number of frames to write
 }
 
 // Stats describes how many object types were rendered
@@ -57,6 +59,7 @@ func NewRenderer(gs *gls.GLS) *Renderer {
 	r.others = make([]core.INode, 0)
 	r.grmats = make([]*graphic.GraphicMaterial, 0)
 	r.panList = make([]gui.IPanel, 0)
+	r.frameBuffers = 2
 	return r
 }
 
@@ -311,11 +314,20 @@ func (r *Renderer) renderGui() error {
 
 	// Clears list of panels to render
 	r.panList = r.panList[0:0]
-	// Redraw all GUI elements if necessary by appending the GUI panel to the render list
-	if r.redrawGui || r.checkChanged(r.panelGui) {
+	// Redraw all GUI elements elements (panel3D == nil and 3D scene drawn)
+	if r.redrawGui {
 		r.appendPanel(r.panelGui)
+		// Redraw GUI elements only if changed
+		// Set the number of frame buffers to draw these changes
+	} else if r.checkChanged(r.panelGui) {
+		r.appendPanel(r.panelGui)
+		r.frameCount = r.frameBuffers
+		// No change, but need to update frame buffers
+	} else if r.frameCount > 0 {
+		r.appendPanel(r.panelGui)
+		// No change, draw only panels over 3D
 	} else {
-		r.buildPanelList()
+		r.getPanelsOver3D()
 	}
 
 	// If there are panels to render
@@ -326,6 +338,7 @@ func (r *Renderer) renderGui() error {
 		// and then clear the depth buffer, so the panels will be rendered over the 3D scene.
 		r.gs.Disable(gls.SCISSOR_TEST)
 		r.gs.Clear(gls.DEPTH_BUFFER_BIT)
+		r.frameCount--
 		r.rendered = true
 	}
 
@@ -339,8 +352,8 @@ func (r *Renderer) renderGui() error {
 	return nil
 }
 
-// buildPanelList builds list of panels over 3D to be rendered
-func (r *Renderer) buildPanelList() {
+// getPanelsOver3D builds list of panels over 3D to be rendered
+func (r *Renderer) getPanelsOver3D() {
 
 	// If panel3D not set or renderable, nothing to do
 	if r.panel3D == nil || r.panel3D.Renderable() {
