@@ -22,7 +22,7 @@ import (
 	"github.com/g3n/engine/window"
 )
 
-// Application is a basic standard application object which can be used as a base for G3N applications.
+// Application is a standard application object which can be used as a base for G3N applications.
 // It creates a Window, OpenGL state, default cameras, default scene and Gui and has a method to run the render loop.
 type Application struct {
 	core.Dispatcher                         // Embedded event dispatcher
@@ -396,7 +396,7 @@ func (app *Application) Run() error {
 		if err != nil {
 			return err
 		}
-		app.log.Info("Started writing CPU profile to:%s", app.cpuProfile)
+		app.log.Info("Started writing CPU profile to:%s", *app.cpuProfile)
 		defer pprof.StopCPUProfile()
 	}
 
