@@ -161,7 +161,7 @@ const (
 	aENABLED     = 1 << iota                                             // attribute enabled for events
 	aRENDER      = 1 << iota                                             // attribute renderable
 	aVISIBLE     = 1 << iota                                             // attribute visible
-	asPANEL      = 0xFF                                                  // attribute set for panels
+	asPANEL      = 0xFFFFFFF                                             // attribute set for panels
 	asWIDGET     = aPOS | aNAME | aMARGINS | aSIZE | aENABLED | aVISIBLE // attribute set for widgets
 )
 
