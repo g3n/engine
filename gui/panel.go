@@ -607,6 +607,12 @@ func (p *Panel) SetLayout(ilayout ILayout) {
 	}
 }
 
+// Layout returns this panel current layout
+func (p *Panel) Layout() ILayout {
+
+	return p.layout
+}
+
 // SetLayoutParams sets the layout parameters for this panel
 func (p *Panel) SetLayoutParams(params interface{}) {
 
