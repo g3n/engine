@@ -11,9 +11,21 @@ import (
 	"github.com/go-gl/glfw/v3.2/glfw"
 )
 
-type GLFW struct {
-	core.Dispatcher
-	win             *glfw.Window
+// glfwManager contains data shared by all windows
+type glfwManager struct {
+	arrowCursor     *glfw.Cursor // Preallocated standard arrow cursor
+	ibeamCursor     *glfw.Cursor // Preallocated standard ibeam cursor
+	crosshairCursor *glfw.Cursor // Preallocated standard cross hair cursor
+	handCursor      *glfw.Cursor // Preallocated standard hand cursor
+	hresizeCursor   *glfw.Cursor // Preallocated standard horizontal resize cursor
+	vresizeCursor   *glfw.Cursor // Preallocated standard vertical resize cursor
+}
+
+// glfwWindow describes one glfw window
+type glfwWindow struct {
+	core.Dispatcher              // Embedded event dispatcher
+	win             *glfw.Window // Pointer to native glfw window
+	mgr             *glfwManager // Pointer to window manager
 	keyEv           KeyEvent
 	charEv          CharEvent
 	mouseEv         MouseEvent
@@ -21,12 +33,6 @@ type GLFW struct {
 	sizeEv          SizeEvent
 	cursorEv        CursorEvent
 	scrollEv        ScrollEvent
-	arrowCursor     *glfw.Cursor
-	ibeamCursor     *glfw.Cursor
-	crosshairCursor *glfw.Cursor
-	handCursor      *glfw.Cursor
-	hresizeCursor   *glfw.Cursor
-	vresizeCursor   *glfw.Cursor
 	fullScreen      bool
 	lastX           int
 	lastY           int
@@ -34,32 +40,69 @@ type GLFW struct {
 	lastHeight      int
 }
 
-// Global GLFW initialization flag
-// is initialized when the first window is created
-var initialized bool = false
+// glfw manager singleton
+var manager *glfwManager
 
-func newGLFW(width, height int, title string, full bool) (*GLFW, error) {
+// Glfw returns the glfw window manager
+func Glfw() (IWindowManager, error) {
 
-	// Initialize GLFW once before the first window is created
-	if !initialized {
-		err := glfw.Init()
-		if err != nil {
-			return nil, err
-		}
-		// Sets window hints
-		glfw.WindowHint(glfw.ContextVersionMajor, 3)
-		glfw.WindowHint(glfw.ContextVersionMinor, 3)
-		glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
-		glfw.WindowHint(glfw.Samples, 8)
-		// Sets OpenGL forward compatible context only for OSX because it is required for OSX.
-		// When this is set glLineWidth(width) only accepts width=1.0 and generates error
-		// for any other values although the spec says it should ignore non supported widths
-		// and generate error only when width <= 0.
-		if runtime.GOOS == "darwin" {
-			glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
-		}
-		initialized = true
+	if manager != nil {
+		return manager, nil
 	}
+
+	// Initialize glfw
+	err := glfw.Init()
+	if err != nil {
+		return nil, err
+	}
+
+	// Sets window hints
+	glfw.WindowHint(glfw.ContextVersionMajor, 3)
+	glfw.WindowHint(glfw.ContextVersionMinor, 3)
+	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
+	glfw.WindowHint(glfw.Samples, 8)
+	// Sets OpenGL forward compatible context only for OSX because it is required for OSX.
+	// When this is set glLineWidth(width) only accepts width=1.0 and generates error
+	// for any other values although the spec says it should ignore non supported widths
+	// and generate error only when width <= 0.
+	if runtime.GOOS == "darwin" {
+		glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
+	}
+
+	manager = new(glfwManager)
+	return manager, nil
+}
+
+// ScreenResolution returns the screen resolution
+func (m *glfwManager) ScreenResolution(p interface{}) (width, height int) {
+
+	mon := glfw.GetPrimaryMonitor()
+	vmode := mon.GetVideoMode()
+	return vmode.Width, vmode.Height
+}
+
+// PollEvents process events in the event queue
+func (m *glfwManager) PollEvents() {
+
+	glfw.PollEvents()
+}
+
+// SetSwapInterval sets the number of screen updates to wait from the time SwapBuffer()
+// is called before swapping the buffers and returning.
+func (m *glfwManager) SetSwapInterval(interval int) {
+
+	glfw.SwapInterval(interval)
+}
+
+// Terminate destroys any remainding window, cursors and other related objects.
+func (m *glfwManager) Terminate() {
+
+	glfw.Terminate()
+	manager = nil
+}
+
+// CreateWindow creates and returns a new window with the specified width and height in screen coordinates
+func (m *glfwManager) CreateWindow(width, height int, title string, fullscreen bool) (IWindow, error) {
 
 	// Creates window and sets it as the current context.
 	// The window is created always as not full screen because if it is
@@ -72,8 +115,9 @@ func newGLFW(width, height int, title string, full bool) (*GLFW, error) {
 	win.MakeContextCurrent()
 
 	// Create wrapper window with dispacher
-	w := new(GLFW)
+	w := new(glfwWindow)
 	w.win = win
+	w.mgr = m
 	w.Dispatcher.Initialize()
 
 	// Set key callback to dispatch event
@@ -164,92 +208,34 @@ func newGLFW(width, height int, title string, full bool) (*GLFW, error) {
 	})
 
 	// Preallocate standard cursors
-	w.arrowCursor = glfw.CreateStandardCursor(glfw.ArrowCursor)
-	w.ibeamCursor = glfw.CreateStandardCursor(glfw.IBeamCursor)
-	w.crosshairCursor = glfw.CreateStandardCursor(glfw.CrosshairCursor)
-	w.handCursor = glfw.CreateStandardCursor(glfw.HandCursor)
-	w.hresizeCursor = glfw.CreateStandardCursor(glfw.HResizeCursor)
-	w.vresizeCursor = glfw.CreateStandardCursor(glfw.VResizeCursor)
+	w.mgr.arrowCursor = glfw.CreateStandardCursor(glfw.ArrowCursor)
+	w.mgr.ibeamCursor = glfw.CreateStandardCursor(glfw.IBeamCursor)
+	w.mgr.crosshairCursor = glfw.CreateStandardCursor(glfw.CrosshairCursor)
+	w.mgr.handCursor = glfw.CreateStandardCursor(glfw.HandCursor)
+	w.mgr.hresizeCursor = glfw.CreateStandardCursor(glfw.HResizeCursor)
+	w.mgr.vresizeCursor = glfw.CreateStandardCursor(glfw.VResizeCursor)
 
 	// Sets full screen if requested
-	if full {
+	if fullscreen {
 		w.SetFullScreen(true)
 	}
 	return w, nil
 }
 
-// GetScreenResolution returns the resolution of the primary screen in pixels.
-// The parameter is currently ignored
-func (w *GLFW) GetScreenResolution(p interface{}) (width, height int) {
-
-	mon := glfw.GetPrimaryMonitor()
-	vmode := mon.GetVideoMode()
-	return vmode.Width, vmode.Height
-}
-
-func (w *GLFW) SwapInterval(interval int) {
-
-	glfw.SwapInterval(interval)
-}
-
-func (w *GLFW) MakeContextCurrent() {
+// MakeContextCurrent makes the OpenGL context of this window current on the calling thread
+func (w *glfwWindow) MakeContextCurrent() {
 
 	w.win.MakeContextCurrent()
 }
 
-func (w *GLFW) GetSize() (width int, height int) {
-
-	return w.win.GetSize()
-}
-
-func (w *GLFW) SetSize(width int, height int) {
-
-	w.win.SetSize(width, height)
-}
-
-func (w *GLFW) GetPos() (xpos, ypos int) {
-
-	return w.win.GetPos()
-}
-
-func (w *GLFW) SetPos(xpos, ypos int) {
-
-	w.win.SetPos(xpos, ypos)
-}
-
-func (w *GLFW) SetTitle(title string) {
-
-	w.win.SetTitle(title)
-}
-
-func (w *GLFW) SetStandardCursor(cursor StandardCursor) {
-
-	switch cursor {
-	case ArrowCursor:
-		w.win.SetCursor(w.arrowCursor)
-	case IBeamCursor:
-		w.win.SetCursor(w.ibeamCursor)
-	case CrosshairCursor:
-		w.win.SetCursor(w.crosshairCursor)
-	case HandCursor:
-		w.win.SetCursor(w.handCursor)
-	case HResizeCursor:
-		w.win.SetCursor(w.hresizeCursor)
-	case VResizeCursor:
-		w.win.SetCursor(w.vresizeCursor)
-	default:
-		panic("Invalid cursor")
-	}
-}
-
 // FullScreen returns this window full screen state for the primary monitor
-func (w *GLFW) FullScreen() bool {
+func (w *glfwWindow) FullScreen() bool {
 
 	return w.fullScreen
 }
 
 // SetFullScreen sets this window full screen state for the primary monitor
-func (w *GLFW) SetFullScreen(full bool) {
+func (w *glfwWindow) SetFullScreen(full bool) {
 
 	// If already in the desired state, nothing to do
 	if w.fullScreen == full {
@@ -275,35 +261,81 @@ func (w *GLFW) SetFullScreen(full bool) {
 	}
 }
 
-// ShouldClose returns the current state of this window  should close flag
-func (w *GLFW) ShouldClose() bool {
-
-	return w.win.ShouldClose()
-}
-
-// SetShouldClose sets the state of this windows should close flag
-func (w *GLFW) SetShouldClose(v bool) {
-
-	w.win.SetShouldClose(v)
-}
-
-func (w *GLFW) SwapBuffers() {
-
-	w.win.SwapBuffers()
-}
-
-func (w *GLFW) Destroy() {
+// Destroy destroys this window and its context
+func (w *glfwWindow) Destroy() {
 
 	w.win.Destroy()
 	w.win = nil
 }
 
-func (w *GLFW) PollEvents() {
+// SwapBuffers swaps the front and back buffers of this window.
+// If the swap interval is greater than zero,
+// the GPU driver waits the specified number of screen updates before swapping the buffers.
+func (w *glfwWindow) SwapBuffers() {
 
-	glfw.PollEvents()
+	w.win.SwapBuffers()
 }
 
-func (w *GLFW) GetTime() float64 {
+// Size returns this window size in screen coordinates
+func (w *glfwWindow) Size() (width int, height int) {
 
-	return glfw.GetTime()
+	return w.win.GetSize()
+}
+
+// SetSize sets the size, in screen coordinates, of the client area of this window
+func (w *glfwWindow) SetSize(width int, height int) {
+
+	w.win.SetSize(width, height)
+}
+
+// Pos returns the position, in screen coordinates, of the upper-left corner of the client area of this window
+func (w *glfwWindow) Pos() (xpos, ypos int) {
+
+	return w.win.GetPos()
+}
+
+// SetPos sets the position, in screen coordinates, of the upper-left corner of the client area of this window.
+// If the window is a full screen window, this function does nothing.
+func (w *glfwWindow) SetPos(xpos, ypos int) {
+
+	w.win.SetPos(xpos, ypos)
+}
+
+// SetTitle sets this window title, encoded as UTF-8
+func (w *glfwWindow) SetTitle(title string) {
+
+	w.win.SetTitle(title)
+}
+
+// ShouldClose returns the current state of this window  should close flag
+func (w *glfwWindow) ShouldClose() bool {
+
+	return w.win.ShouldClose()
+}
+
+// SetShouldClose sets the state of this windows should close flag
+func (w *glfwWindow) SetShouldClose(v bool) {
+
+	w.win.SetShouldClose(v)
+}
+
+// SetStandardCursor sets this window standard cursor type
+func (w *glfwWindow) SetStandardCursor(cursor StandardCursor) {
+
+	switch cursor {
+	case ArrowCursor:
+		w.win.SetCursor(w.mgr.arrowCursor)
+	case IBeamCursor:
+		w.win.SetCursor(w.mgr.ibeamCursor)
+	case CrosshairCursor:
+		w.win.SetCursor(w.mgr.crosshairCursor)
+	case HandCursor:
+		w.win.SetCursor(w.mgr.handCursor)
+	case HResizeCursor:
+		w.win.SetCursor(w.mgr.hresizeCursor)
+	case VResizeCursor:
+		w.win.SetCursor(w.mgr.vresizeCursor)
+	default:
+		panic("Invalid cursor")
+	}
 }
