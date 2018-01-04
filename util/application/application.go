@@ -106,7 +106,7 @@ func Create(name string, ops Options) (*Application, error) {
 
 	// Creates flags if requested (override options defaults)
 	if ops.EnableFlags {
-		app.fullScreen = flag.Bool("fullscreen", false, "Stars application with full screen")
+		app.fullScreen = flag.Bool("fullscreen", false, "Starts application with full screen")
 		app.swapInterval = flag.Int("swapinterval", -1, "Sets the swap buffers interval to this value")
 		app.targetFPS = flag.Uint("targetfps", 60, "Sets the frame rate in frames per second")
 		app.noglErrors = flag.Bool("noglerrors", false, "Do not check OpenGL errors at each call (may increase FPS)")
