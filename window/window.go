@@ -2,10 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-/*
- Package window abstracts the OpenGL Window manager
- Currently only "glfw" is supported
-*/
+// Package window abstracts the OpenGL Window manager
+// Currently only "glfw" is supported
 package window
 
 import (
@@ -13,36 +11,37 @@ import (
 	"github.com/go-gl/glfw/v3.2/glfw"
 )
 
-//
-// Interface for all window managers
-//
+// IWindowManager is the interface for all window managers
+type IWindowManager interface {
+	ScreenResolution(interface{}) (width, height int)
+	CreateWindow(width, height int, title string, full bool) (IWindow, error)
+	SetSwapInterval(interval int)
+	PollEvents()
+	Terminate()
+}
+
+// IWindow is the interface for all windows
 type IWindow interface {
 	core.IDispatcher
-	GetScreenResolution(interface{}) (width, height int)
-	SwapInterval(interval int)
 	MakeContextCurrent()
-	GetSize() (width int, height int)
+	Size() (width int, height int)
 	SetSize(width int, height int)
-	GetPos() (xpos, ypos int)
+	Pos() (xpos, ypos int)
 	SetPos(xpos, ypos int)
 	SetTitle(title string)
 	SetStandardCursor(cursor StandardCursor)
-	SwapBuffers()
 	ShouldClose() bool
 	SetShouldClose(bool)
 	FullScreen() bool
 	SetFullScreen(bool)
+	SwapBuffers()
 	Destroy()
-	PollEvents()
-	GetTime() float64
 }
 
 // Key corresponds to a keyboard key.
 type Key int
 
-//
 // Keycodes (from glfw)
-//
 const (
 	KeyUnknown      = Key(glfw.KeyUnknown)
 	KeySpace        = Key(glfw.KeySpace)
@@ -215,9 +214,12 @@ const (
 type Action int
 
 const (
-	Release = Action(glfw.Release) // The key or button was released.
-	Press   = Action(glfw.Press)   // The key or button was pressed.
-	Repeat  = Action(glfw.Repeat)  // The key was held down until it repeated.
+	// Release indicates that key or mouse button was released
+	Release = Action(glfw.Release)
+	// Press indicates that key or mouse button was pressed
+	Press = Action(glfw.Press)
+	// Repeat indicates that key was held down until it repeated
+	Repeat = Action(glfw.Repeat)
 )
 
 // InputMode corresponds to an input mode.
@@ -254,21 +256,21 @@ const (
 	OnFrame      = "win.OnFrame"
 )
 
-// Window position changed event
+// PosEvent describes a windows position changed event
 type PosEvent struct {
 	W    IWindow
 	Xpos int
 	Ypos int
 }
 
-// Window size changed
+// SizeEvent describers a window size changed event
 type SizeEvent struct {
 	W      IWindow
 	Width  int
 	Height int
 }
 
-// Key pressed in window
+// KeyEvent describes a window key event
 type KeyEvent struct {
 	W        IWindow
 	Keycode  Key
@@ -277,14 +279,14 @@ type KeyEvent struct {
 	Mods     ModifierKey
 }
 
-// Char pressed in window
+// CharEvent describes a window char event
 type CharEvent struct {
 	W    IWindow
 	Char rune
 	Mods ModifierKey
 }
 
-// Mouse button event
+// MouseEvent describes a mouse event over the window
 type MouseEvent struct {
 	W      IWindow
 	Xpos   float32
@@ -294,28 +296,26 @@ type MouseEvent struct {
 	Mods   ModifierKey
 }
 
-// Cursor position changed
+// CursorEvent describes a cursor position changed event
 type CursorEvent struct {
 	W    IWindow
 	Xpos float32
 	Ypos float32
 }
 
-// Scroll event
+// ScrollEvent describes a scroll event
 type ScrollEvent struct {
 	W       IWindow
 	Xoffset float32
 	Yoffset float32
 }
 
-// New creates and returns a new window of the specified type, width, height and title.
-// If full is true, the window will be opened in full screen and the width and height
-// parameters will be ignored.
+// Manager returns the window manager for the specified type.
 // Currently only "glfw" type is supported.
-func New(wtype string, width, height int, title string, full bool) (IWindow, error) {
+func Manager(wtype string) (IWindowManager, error) {
 
 	if wtype != "glfw" {
-		panic("Unsupported window type")
+		panic("Unsupported window manager")
 	}
-	return newGLFW(width, height, title, full)
+	return Glfw()
 }

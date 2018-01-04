@@ -130,7 +130,7 @@ func (oc *OrbitControl) Reset() {
 // Pan the camera and target by the specified deltas
 func (oc *OrbitControl) Pan(deltaX, deltaY float32) {
 
-	width, height := oc.win.GetSize()
+	width, height := oc.win.Size()
 	oc.pan(deltaX, deltaY, width, height)
 	oc.updatePan()
 }
@@ -392,7 +392,7 @@ func (oc *OrbitControl) onCursorPos(evname string, ev interface{}) {
 		oc.rotateDelta.SubVectors(&oc.rotateEnd, &oc.rotateStart)
 		oc.rotateStart = oc.rotateEnd
 		// rotating across whole screen goes 360 degrees around
-		width, height := oc.win.GetSize()
+		width, height := oc.win.Size()
 		oc.RotateLeft(2 * math32.Pi * oc.rotateDelta.X / float32(width) * oc.RotateSpeed)
 		// rotating up and down along whole screen attempts to go 360, but limited to 180
 		oc.RotateUp(2 * math32.Pi * oc.rotateDelta.Y / float32(height) * oc.RotateSpeed)

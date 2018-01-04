@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"runtime/trace"
 	"time"
 
 	"github.com/g3n/engine/audio/al"
@@ -27,6 +28,7 @@ import (
 type Application struct {
 	core.Dispatcher                         // Embedded event dispatcher
 	core.TimerManager                       // Embedded timer manager
+	wmgr              window.IWindowManager // Window manager
 	win               window.IWindow        // Application window
 	gl                *gls.GLS              // OpenGL state
 	log               *logger.Logger        // Default application logger
@@ -48,11 +50,11 @@ type Application struct {
 	frameDelta        time.Duration         // Time delta from previous frame
 	startTime         time.Time             // Time at the start of the render loop
 	fullScreen        *bool                 // Full screen option
-	cpuProfile        *string               // File to write cpu profile to
 	swapInterval      *int                  // Swap interval option
 	targetFPS         *uint                 // Target FPS option
 	noglErrors        *bool                 // No OpenGL check errors options
-
+	cpuProfile        *string               // File to write cpu profile to
+	execTrace         *string               // File to write execution trace data to
 }
 
 // Options defines initial options passed to the application creation function
@@ -105,10 +107,11 @@ func Create(name string, ops Options) (*Application, error) {
 	// Creates flags if requested (override options defaults)
 	if ops.EnableFlags {
 		app.fullScreen = flag.Bool("fullscreen", false, "Stars application with full screen")
-		app.cpuProfile = flag.String("cpuprofile", "", "Activate cpu profiling writing profile to the specified file")
 		app.swapInterval = flag.Int("swapinterval", -1, "Sets the swap buffers interval to this value")
 		app.targetFPS = flag.Uint("targetfps", 60, "Sets the frame rate in frames per second")
 		app.noglErrors = flag.Bool("noglerrors", false, "Do not check OpenGL errors at each call (may increase FPS)")
+		app.cpuProfile = flag.String("cpuprofile", "", "Activate cpu profiling writing profile to the specified file")
+		app.execTrace = flag.String("exectrace", "", "Activate execution tracer writing data to the specified file")
 	}
 	flag.Parse()
 
@@ -121,16 +124,18 @@ func Create(name string, ops Options) (*Application, error) {
 	// Window event handling must run on the main OS thread
 	runtime.LockOSThread()
 
-	// Creates window
-	win, err := window.New("glfw", 800, 600, name, *app.fullScreen)
+	// Get the window manager
+	wmgr, err := window.Manager("glfw")
 	if err != nil {
 		return nil, err
 	}
-	app.win = win
+	app.wmgr = wmgr
+
+	// Get the screen resolution
+	swidth, sheight := app.wmgr.ScreenResolution(nil)
+	var posx, posy int
+	// If not full screen, sets the window size
 	if !*app.fullScreen {
-		// Calculates window size and position
-		swidth, sheight := win.GetScreenResolution(nil)
-		var posx, posy int
 		if ops.Width != 0 {
 			posx = (swidth - ops.Width) / 2
 			if posx < 0 {
@@ -145,10 +150,16 @@ func Create(name string, ops Options) (*Application, error) {
 			}
 			sheight = ops.Height
 		}
-		// Sets the window size and position
-		win.SetSize(swidth, sheight)
-		win.SetPos(posx, posy)
 	}
+
+	// Creates window
+	win, err := app.wmgr.CreateWindow(swidth, sheight, name, *app.fullScreen)
+	if err != nil {
+		return nil, err
+	}
+	win.SetPos(posx, posy)
+	app.win = win
+
 	// Create OpenGL state
 	gl, err := gls.New()
 	if err != nil {
@@ -163,7 +174,7 @@ func Create(name string, ops Options) (*Application, error) {
 	app.gl.Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
 
 	// Creates perspective camera
-	width, height := app.win.GetSize()
+	width, height := app.win.Size()
 	aspect := float32(width) / float32(height)
 	app.camPersp = camera.NewPerspective(65, aspect, 0.01, 1000)
 
@@ -382,8 +393,8 @@ func (app *Application) Run() error {
 
 	// Set swap interval
 	if *app.swapInterval >= 0 {
-		app.win.SwapInterval(*app.swapInterval)
-		app.log.Debug("Swap interval set to:%v", *app.swapInterval)
+		app.wmgr.SetSwapInterval(*app.swapInterval)
+		app.log.Debug("Swap interval set to: %v", *app.swapInterval)
 	}
 
 	// Start profiling if requested
@@ -392,12 +403,28 @@ func (app *Application) Run() error {
 		if err != nil {
 			return err
 		}
+		defer f.Close()
 		err = pprof.StartCPUProfile(f)
 		if err != nil {
 			return err
 		}
-		app.log.Info("Started writing CPU profile to:%s", *app.cpuProfile)
 		defer pprof.StopCPUProfile()
+		app.log.Info("Started writing CPU profile to: %s", *app.cpuProfile)
+	}
+
+	// Start execution trace if requested
+	if *app.execTrace != "" {
+		f, err := os.Create(*app.execTrace)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		err = trace.Start(f)
+		if err != nil {
+			return err
+		}
+		defer trace.Stop()
+		app.log.Info("Started writing execution trace to: %s", *app.execTrace)
 	}
 
 	app.startTime = time.Now()
@@ -431,7 +458,7 @@ func (app *Application) Run() error {
 		}
 
 		// Poll input events and process them
-		app.win.PollEvents()
+		app.wmgr.PollEvents()
 
 		if rendered {
 			app.win.SwapBuffers()
@@ -440,10 +467,29 @@ func (app *Application) Run() error {
 		// Dispatch after render event
 		app.Dispatch(OnAfterRender, nil)
 
-		// Controls the frame rate and updates the FPS for the user
+		// Controls the frame rate
 		app.frameRater.Wait()
 		app.frameCount++
 	}
+
+	// Close default audio device
+	if app.audioDev != nil {
+		err := al.CloseDevice(app.audioDev)
+		if err != nil {
+			app.log.Error("Error closing audio device: %v", err)
+		}
+	}
+
+	// Dispose GL resources
+	if app.scene != nil {
+		app.scene.DisposeChildren(true)
+	}
+	if app.guiroot != nil {
+		app.guiroot.DisposeChildren(true)
+	}
+
+	// Terminates window manager
+	app.wmgr.Terminate()
 	return nil
 }
 
@@ -457,7 +503,7 @@ func (app *Application) Quit() {
 func (app *Application) OnWindowResize() {
 
 	// Get window size and sets the viewport to the same size
-	width, height := app.win.GetSize()
+	width, height := app.win.Size()
 	app.gl.Viewport(0, 0, int32(width), int32(height))
 
 	// Sets perspective camera aspect ratio
