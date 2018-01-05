@@ -651,21 +651,28 @@ func (b *Builder) setLayoutParams(am map[string]interface{}, ipan IPanel) error 
 	}
 	lp := lpi.(map[string]interface{})
 
-	// Get layout type from parent
-	pi := am[AttribParentInternal]
-	if pi == nil {
-		return b.err(am, AttribType, "Panel has no parent")
+	// Checks if layout param specifies the layout type
+	// This is useful when the panel has no parent yet
+	var ltype string
+	if v := lp[AttribType]; v != nil {
+		ltype = v.(string)
+	} else {
+		// Get layout type from parent
+		pi := am[AttribParentInternal]
+		if pi == nil {
+			return b.err(am, AttribType, "Panel has no parent")
+		}
+		par := pi.(map[string]interface{})
+		v := par[AttribLayout]
+		if v == nil {
+			return b.err(am, AttribType, "Parent has no layout")
+		}
+		playout := v.(map[string]interface{})
+		ltype = playout[AttribType].(string)
 	}
-	par := pi.(map[string]interface{})
-	v := par[AttribLayout]
-	if v == nil {
-		return nil
-	}
-	playout := v.(map[string]interface{})
-	pltype := playout[AttribType].(string)
 
 	// Get layout builder and builds layout params
-	lbuilder := b.layouts[pltype]
+	lbuilder := b.layouts[ltype]
 	params, err := lbuilder.BuildParams(b, lp)
 	if err != nil {
 		return err
