@@ -91,12 +91,13 @@ func Create(name string, ops Options) (*Application, error) {
 
 	// Initialize options defaults
 	app.fullScreen = new(bool)
-	app.cpuProfile = new(string)
 	app.swapInterval = new(int)
-	*app.swapInterval = -1
 	app.targetFPS = new(uint)
-	*app.targetFPS = 60
 	app.noglErrors = new(bool)
+	app.cpuProfile = new(string)
+	app.execTrace = new(string)
+	*app.swapInterval = -1
+	*app.targetFPS = 60
 
 	// Options parameter overrides some options
 	if ops.TargetFPS != 0 {
