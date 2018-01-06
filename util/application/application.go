@@ -475,10 +475,7 @@ func (app *Application) Run() error {
 
 	// Close default audio device
 	if app.audioDev != nil {
-		err := al.CloseDevice(app.audioDev)
-		if err != nil {
-			app.log.Error("Error closing audio device: %v", err)
-		}
+		al.CloseDevice(app.audioDev)
 	}
 
 	// Dispose GL resources
@@ -491,6 +488,9 @@ func (app *Application) Run() error {
 
 	// Terminates window manager
 	app.wmgr.Terminate()
+
+	// This is important when using the execution tracer
+	runtime.UnlockOSThread()
 	return nil
 }
 
