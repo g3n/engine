@@ -366,8 +366,8 @@ func (n *Node) SetDirection(x, y, z float32) {
 	n.changed = true
 }
 
-// SetDirection sets this node initial direction vector
-func (n *Node) SetDirectionv(vdir *math32.Vector3) {
+// SetDirectionVec sets this node initial direction vector from a pointer to Vector3
+func (n *Node) SetDirectionVec(vdir *math32.Vector3) {
 
 	n.direction = *vdir
 	n.changed = true
