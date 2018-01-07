@@ -247,11 +247,6 @@ func (af *AudioFile) openWave(filename string) error {
 // and if succesfull, sets up the player for playing this file
 func (af *AudioFile) openVorbis(filename string) error {
 
-	// Checks for Ogg Vorbis support
-	if !ov.IsLoaded() {
-		return fmt.Errorf("Unsupported file type")
-	}
-
 	// Try to open file as ogg vorbis
 	vf, err := ov.Fopen(filename)
 	if err != nil {
