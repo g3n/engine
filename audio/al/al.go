@@ -309,33 +309,6 @@ func checkCtxError(dev *Device) {
 	}
 }
 
-// OpenDefaultDevice opens the default audio device setting it to the current context
-func OpenDefaulDevice() (*Device, error) {
-
-	// Opens default audio device
-	dev, err := OpenDevice("")
-	if err == nil {
-		return nil, err
-	}
-
-	// Creates audio context with auxiliary sends
-	var attribs []int
-	//if app.audioEFX {
-	//	attribs = []int{al.MAX_AUXILIARY_SENDS, 4}
-	//}
-	acx, err := CreateContext(dev, attribs)
-	if err != nil {
-		return nil, err
-	}
-
-	// Makes the context the current one
-	err = MakeContextCurrent(acx)
-	if err != nil {
-		return nil, fmt.Errorf("Error setting audio context current:%s", err)
-	}
-	return dev, nil
-}
-
 func CreateContext(dev *Device, attrlist []int) (*Context, error) {
 
 	var plist unsafe.Pointer
