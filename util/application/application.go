@@ -170,10 +170,6 @@ func Create(name string, ops Options) (*Application, error) {
 	app.gl.ClearColor(cc.R, cc.G, cc.B, 1)
 	app.gl.Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
 
-	// Logs audio library versions
-	app.log.Debug("%s version: %s", al.GetString(al.Vendor), al.GetString(al.Version))
-	app.log.Debug("%s", vorbis.VersionString())
-
 	// Creates perspective camera
 	width, height := app.win.Size()
 	aspect := float32(width) / float32(height)
@@ -478,13 +474,14 @@ func (app *Application) Run() error {
 }
 
 // OpenDefaultAudioDevice opens the default audio device setting it to the current context
-func (app *Application) OpenDefaulAudioDevice() error {
+func (app *Application) OpenDefaultAudioDevice() error {
 
 	// Opens default audio device
 	dev, err := al.OpenDevice("")
 	if err == nil {
 		return err
 	}
+	app.audioDev = dev
 
 	// Creates audio context with auxiliary sends
 	var attribs []int
@@ -501,6 +498,10 @@ func (app *Application) OpenDefaulAudioDevice() error {
 	if err != nil {
 		return fmt.Errorf("Error setting audio context current:%s", err)
 	}
+
+	// Logs audio library versions
+	app.log.Debug("%s version: %s", al.GetString(al.Vendor), al.GetString(al.Version))
+	app.log.Debug("%s", vorbis.VersionString())
 	return nil
 }
 
