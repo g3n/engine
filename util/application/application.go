@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/g3n/engine/audio/al"
-	"github.com/g3n/engine/audio/ov"
 	"github.com/g3n/engine/audio/vorbis"
 	"github.com/g3n/engine/camera"
 	"github.com/g3n/engine/camera/control"
@@ -37,24 +36,20 @@ type Application struct {
 	camOrtho          *camera.Orthographic  // Orthographic camera
 	camera            camera.ICamera        // Current camera
 	orbit             *control.OrbitControl // Camera orbit controller
-	audio             bool                  // Audio available
-	vorbis            bool                  // Vorbis decoder available
-	audioEFX          bool                  // Audio effect extension support available
-	audioDev          *al.Device            // Audio player device
-	captureDev        *al.Device            // Audio capture device
 	frameRater        *FrameRater           // Render loop frame rater
-	scene             *core.Node            // Node container for 3D tests
-	guiroot           *gui.Root             // Gui root panel
-	frameCount        uint64                // Frame counter
-	frameTime         time.Time             // Time at the start of the frame
-	frameDelta        time.Duration         // Time delta from previous frame
-	startTime         time.Time             // Time at the start of the render loop
-	fullScreen        *bool                 // Full screen option
-	swapInterval      *int                  // Swap interval option
-	targetFPS         *uint                 // Target FPS option
-	noglErrors        *bool                 // No OpenGL check errors options
-	cpuProfile        *string               // File to write cpu profile to
-	execTrace         *string               // File to write execution trace data to
+	audioDev          *al.Device
+	scene             *core.Node    // Node container for 3D tests
+	guiroot           *gui.Root     // Gui root panel
+	frameCount        uint64        // Frame counter
+	frameTime         time.Time     // Time at the start of the frame
+	frameDelta        time.Duration // Time delta from previous frame
+	startTime         time.Time     // Time at the start of the render loop
+	fullScreen        *bool         // Full screen option
+	swapInterval      *int          // Swap interval option
+	targetFPS         *uint         // Target FPS option
+	noglErrors        *bool         // No OpenGL check errors options
+	cpuProfile        *string       // File to write cpu profile to
+	execTrace         *string       // File to write execution trace data to
 }
 
 // Options defines initial options passed to the application creation function
@@ -170,9 +165,14 @@ func Create(name string, ops Options) (*Application, error) {
 	// Checks OpenGL errors
 	app.gl.SetCheckErrors(!*app.noglErrors)
 
+	// Clears the screen
 	cc := math32.NewColor("gray")
 	app.gl.ClearColor(cc.R, cc.G, cc.B, 1)
 	app.gl.Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
+
+	// Logs audio library versions
+	app.log.Debug("%s version: %s", al.GetString(al.Vendor), al.GetString(al.Version))
+	app.log.Debug("%s", vorbis.VersionString())
 
 	// Creates perspective camera
 	width, height := app.win.Size()
@@ -362,18 +362,6 @@ func (app *Application) Renderer() *renderer.Renderer {
 	return app.renderer
 }
 
-// AudioSupport returns if the audio library was loaded OK
-func (app *Application) AudioSupport() bool {
-
-	return app.audio
-}
-
-// VorbisSupport returns if the Ogg Vorbis decoder library was loaded OK
-func (app *Application) VorbisSupport() bool {
-
-	return app.vorbis
-}
-
 // SetCPUProfile must be called before Run() and sets the file name for cpu profiling.
 // If set the cpu profiling starts before running the render loop and continues
 // till the end of the application.
@@ -473,11 +461,6 @@ func (app *Application) Run() error {
 		app.frameCount++
 	}
 
-	// Close default audio device
-	if app.audioDev != nil {
-		al.CloseDevice(app.audioDev)
-	}
-
 	// Dispose GL resources
 	if app.scene != nil {
 		app.scene.DisposeChildren(true)
@@ -491,6 +474,33 @@ func (app *Application) Run() error {
 
 	// This is important when using the execution tracer
 	runtime.UnlockOSThread()
+	return nil
+}
+
+// OpenDefaultAudioDevice opens the default audio device setting it to the current context
+func (app *Application) OpenDefaulAudioDevice() error {
+
+	// Opens default audio device
+	dev, err := al.OpenDevice("")
+	if err == nil {
+		return err
+	}
+
+	// Creates audio context with auxiliary sends
+	var attribs []int
+	//if app.audioEFX {
+	//	attribs = []int{al.MAX_AUXILIARY_SENDS, 4}
+	//}
+	acx, err := al.CreateContext(dev, attribs)
+	if err != nil {
+		return err
+	}
+
+	// Makes the context the current one
+	err = al.MakeContextCurrent(acx)
+	if err != nil {
+		return fmt.Errorf("Error setting audio context current:%s", err)
+	}
 	return nil
 }
 
@@ -515,52 +525,4 @@ func (app *Application) OnWindowResize() {
 	if app.guiroot != nil {
 		app.guiroot.SetSize(float32(width), float32(height))
 	}
-}
-
-// LoadAudioLibs try to load audio libraries
-func (app *Application) LoadAudioLibs() error {
-
-	// Try to load OpenAL
-	err := al.Load()
-	if err != nil {
-		return err
-	}
-
-	// Opens default audio device
-	app.audioDev, err = al.OpenDevice("")
-	if app.audioDev == nil {
-		return fmt.Errorf("Error: %s opening OpenAL default device", err)
-	}
-
-	// Checks for OpenAL effects extension support
-	if al.IsExtensionPresent("ALC_EXT_EFX") {
-		app.audioEFX = true
-	}
-
-	// Creates audio context with auxiliary sends
-	var attribs []int
-	if app.audioEFX {
-		attribs = []int{al.MAX_AUXILIARY_SENDS, 4}
-	}
-	acx, err := al.CreateContext(app.audioDev, attribs)
-	if err != nil {
-		return fmt.Errorf("Error creating audio context:%s", err)
-	}
-
-	// Makes the context the current one
-	err = al.MakeContextCurrent(acx)
-	if err != nil {
-		return fmt.Errorf("Error setting audio context current:%s", err)
-	}
-	app.audio = true
-	app.log.Info("%s version: %s", al.GetString(al.Vendor), al.GetString(al.Version))
-
-	// Ogg Vorbis support
-	err = ov.Load()
-	if err == nil {
-		app.vorbis = true
-		vorbis.Load()
-		app.log.Info("%s", vorbis.VersionString())
-	}
-	return nil
 }
