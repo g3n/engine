@@ -37,19 +37,19 @@ type Application struct {
 	camera            camera.ICamera        // Current camera
 	orbit             *control.OrbitControl // Camera orbit controller
 	frameRater        *FrameRater           // Render loop frame rater
-	audioDev          *al.Device
-	scene             *core.Node    // Node container for 3D tests
-	guiroot           *gui.Root     // Gui root panel
-	frameCount        uint64        // Frame counter
-	frameTime         time.Time     // Time at the start of the frame
-	frameDelta        time.Duration // Time delta from previous frame
-	startTime         time.Time     // Time at the start of the render loop
-	fullScreen        *bool         // Full screen option
-	swapInterval      *int          // Swap interval option
-	targetFPS         *uint         // Target FPS option
-	noglErrors        *bool         // No OpenGL check errors options
-	cpuProfile        *string       // File to write cpu profile to
-	execTrace         *string       // File to write execution trace data to
+	audioDev          *al.Device            // Default audio device
+	scene             *core.Node            // Node container for 3D tests
+	guiroot           *gui.Root             // Gui root panel
+	frameCount        uint64                // Frame counter
+	frameTime         time.Time             // Time at the start of the frame
+	frameDelta        time.Duration         // Time delta from previous frame
+	startTime         time.Time             // Time at the start of the render loop
+	fullScreen        *bool                 // Full screen option
+	swapInterval      *int                  // Swap interval option
+	targetFPS         *uint                 // Target FPS option
+	noglErrors        *bool                 // No OpenGL check errors options
+	cpuProfile        *string               // File to write cpu profile to
+	execTrace         *string               // File to write execution trace data to
 }
 
 // Options defines initial options passed to the application creation function
@@ -164,6 +164,10 @@ func Create(name string, ops Options) (*Application, error) {
 	app.gl = gl
 	// Checks OpenGL errors
 	app.gl.SetCheckErrors(!*app.noglErrors)
+
+	// Logs OpenGL version
+	glVersion := app.Gl().GetString(gls.VERSION)
+	app.log.Info("OpenGL version: %s", glVersion)
 
 	// Clears the screen
 	cc := math32.NewColor("gray")
@@ -457,6 +461,11 @@ func (app *Application) Run() error {
 		app.frameCount++
 	}
 
+	// Close default audio device
+	if app.audioDev != nil {
+		al.CloseDevice(app.audioDev)
+	}
+
 	// Dispose GL resources
 	if app.scene != nil {
 		app.scene.DisposeChildren(true)
@@ -477,31 +486,37 @@ func (app *Application) Run() error {
 func (app *Application) OpenDefaultAudioDevice() error {
 
 	// Opens default audio device
-	dev, err := al.OpenDevice("")
-	if err == nil {
-		return err
+	var err error
+	app.audioDev, err = al.OpenDevice("")
+	if err != nil {
+		return fmt.Errorf("Error: %s opening OpenAL default device", err)
 	}
-	app.audioDev = dev
+
+	// Checks for OpenAL effects extension support
+	audioEFX := false
+	if al.IsExtensionPresent("ALC_EXT_EFX") {
+		audioEFX = true
+	}
 
 	// Creates audio context with auxiliary sends
 	var attribs []int
-	//if app.audioEFX {
-	//	attribs = []int{al.MAX_AUXILIARY_SENDS, 4}
-	//}
-	acx, err := al.CreateContext(dev, attribs)
+	if audioEFX {
+		attribs = []int{al.MAX_AUXILIARY_SENDS, 4}
+	}
+	acx, err := al.CreateContext(app.audioDev, attribs)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error creating OpenAL context:%s", err)
 	}
 
 	// Makes the context the current one
 	err = al.MakeContextCurrent(acx)
 	if err != nil {
-		return fmt.Errorf("Error setting audio context current:%s", err)
+		return fmt.Errorf("Error setting OpenAL context current:%s", err)
 	}
 
 	// Logs audio library versions
-	app.log.Debug("%s version: %s", al.GetString(al.Vendor), al.GetString(al.Version))
-	app.log.Debug("%s", vorbis.VersionString())
+	app.log.Info("%s version: %s", al.GetString(al.Vendor), al.GetString(al.Version))
+	app.log.Info("%s", vorbis.VersionString())
 	return nil
 }
 
