@@ -12,7 +12,7 @@ package al
 #cgo windows  CFLAGS:  -DGO_WINDOWS -I${SRCDIR}/../windows/openal-soft-1.18.2/include/AL
 #cgo darwin   LDFLAGS: -lopenal
 #cgo linux    LDFLAGS: -lopenal
-#cgo windows  LDFLAGS: -lopenal
+#cgo windows  LDFLAGS: -L${SRCDIR}/../windows/bin -lOpenAL32
 
 #ifdef GO_DARWIN
 #include <stdlib.h>
