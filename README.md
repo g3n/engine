@@ -40,7 +40,7 @@ In all cases it is necessary to have a gcc compatible C compiler installed.
   * `libvorbis.x86_64`
   * `libvorbis-devel.x86_64`
 * For Windows the necessary audio libraries sources and `dlls` are supplied but they need to be installed
-  manually. Please see the [windows audio libs](audio/windows) for details.
+  manually. Please see [Audio libraries for Windows](audio/windows) for details.
   We tested the Windows build using the [mingw-w64](https://mingw-w64.org) toolchain.
 * Currently not tested on OS X.
 
@@ -73,7 +73,7 @@ install the packages. Make sure your GOPATH is set correctly.
 ## Basic application
 
 The following code shows a basic G3N application 
-([hellog3n](https://github.com/g3n/demos/tree/master/hellog3n))
+([hellog3n](../demos/hellog3n))
 which shows a wireframed sphere rotating.
 You can install hellog3n using: `go get -u github.com/g3n/demos/hellog3n`
 
