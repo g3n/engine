@@ -1,0 +1,19 @@
+version: 1.18.2.{build}
+
+environment:
+    matrix:
+      - GEN: "Visual Studio 14 2015"
+        CFG: Release
+      - GEN: "Visual Studio 14 2015 Win64"
+        CFG: Release
+
+install:
+    # Remove the VS Xamarin targets to reduce AppVeyor specific noise in build
+    # logs.  See also http://help.appveyor.com/discussions/problems/4569
+    - del "C:\Program Files (x86)\MSBuild\14.0\Microsoft.Common.targets\ImportAfter\Xamarin.Common.targets"
+
+build_script:
+    - cd build
+    - cmake -G"%GEN%" -DALSOFT_REQUIRE_WINMM=ON -DALSOFT_REQUIRE_DSOUND=ON -DALSOFT_REQUIRE_MMDEVAPI=ON -DALSOFT_EMBED_HRTF_DATA=YES ..
+    - cmake --build . --config %CFG% --clean-first
+
