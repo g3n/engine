@@ -22,7 +22,9 @@ The engine needs an OpenGL driver installed in the system and
 on Unix like systems depends on some C libraries that can be installed using the distribution package manager.
 In all cases it is necessary to have a gcc compatible C compiler installed.
 
-* For Ubuntu/Debian-like Linux distributions, install `libgl1-mesa-dev` and `xorg-dev` packages.
+* For Ubuntu/Debian-like Linux distributions, install the following packages:
+ - `libgl1-mesa-dev`
+ - `xorg-dev`
 * For CentOS/Fedora-like Linux distributions, install `libX11-devel libXcursor-devel libXrandr-devel libXinerama-devel mesa-libGL-devel libXi-devel` packages.
 * Currently it was not tested on OS X.
 * For Windows we tested the build using the [mingw-w64](https://mingw-w64.org) toolchain.
