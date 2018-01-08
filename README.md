@@ -2,7 +2,6 @@
 
 [![GoDoc](https://godoc.org/github.com/g3n/engine?status.svg)](https://godoc.org/github.com/g3n/engine)
 
-
 G3N is a basic (for now!) OpenGL 3D game engine written in Go.
 G3N was heavily inspired and based on the [three.js](https://threejs.org/) Javascript 3D library.
 
@@ -18,29 +17,32 @@ G3N was heavily inspired and based on the [three.js](https://threejs.org/) Javas
 
 ## Dependencies
 
-The engine needs an OpenGL driver installed in the system and
-on Unix like systems depends on some C libraries that can be installed using the distribution package manager.
+The engine needs an OpenGL driver installed in the system and on Unix like systems
+depends on some C libraries that can be installed using the distribution package manager.
 In all cases it is necessary to have a gcc compatible C compiler installed.
 
 * For Ubuntu/Debian-like Linux distributions, install the following packages:
- - `libgl1-mesa-dev`
- - `xorg-dev`
-* For CentOS/Fedora-like Linux distributions, install `libX11-devel libXcursor-devel libXrandr-devel libXinerama-devel mesa-libGL-devel libXi-devel` packages.
-* Currently it was not tested on OS X.
-* For Windows we tested the build using the [mingw-w64](https://mingw-w64.org) toolchain.
-
-G3N supports spatial audio using external libraries but loads these libraries
-dynamically on demand, so you can install G3N and build a 3D application
-(not using audio) without installing these libraries.
-
-The following libraries are necessary for the optional audio support:
-
-* For Ubuntu/Debian-like Linux distributions, install `libopenal1` and `libvorbisfile3`
-* For CentOS/Fedora-like Linux distributions, install `libopenal1` and `libvorbisfile3 (to be verified)`
-* Currently it was not tested on OS X.
-* For Windows its is necessary to install the following dlls:
-  `OpenAL32.dll, libogg.dll, libvorbis.dll` and `libvorbisfile.dll`.
-  See [windows_audio_dlls](https://github.com/g3n/windows_audio_dlls) for how to get them.
+ * `libgl1-mesa-dev`
+ * `xorg-dev`
+ * `libopenal1`
+ * `libopenal-dev`
+ * `libogg0`
+ * `libogg-dev`
+ * `libvorbis0a`
+ * `libvorbis-dev`
+ * `libvorbisfile3`
+* For CentOS/Fedora-like Linux distributions, install the following packages:
+ * `xorg-x11-devel.x86_64`
+ * `mesa-libGL.x86_64`
+ * `mesa-libGL-devel.x86_64`
+ * `openal-soft.x86_64`
+ * `openal-soft-devel.x86_64`
+ * `libvorbis.x86_64`
+ * `libvorbis-devel.x86_64`
+* For Windows the necessary audio libraries sources and `dlls` are supplied but they need to be installed
+  manually. Please see the [windows audio libs](https://github.com/g3n/engine/tree/audio/windows) for details.
+  We tested the Windows build using the [mingw-w64](https://mingw-w64.org) toolchain.
+* Currently not tested on OS X.
 
 G3N was only tested with Go1.7.4+
 
