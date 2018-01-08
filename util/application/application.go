@@ -461,17 +461,17 @@ func (app *Application) Run() error {
 		app.frameCount++
 	}
 
-	// Close default audio device
-	if app.audioDev != nil {
-		al.CloseDevice(app.audioDev)
-	}
-
-	// Dispose GL resources
+	// Dispose resources
 	if app.scene != nil {
 		app.scene.DisposeChildren(true)
 	}
 	if app.guiroot != nil {
 		app.guiroot.DisposeChildren(true)
+	}
+
+	// Close default audio device
+	if app.audioDev != nil {
+		al.CloseDevice(app.audioDev)
 	}
 
 	// Terminates window manager
