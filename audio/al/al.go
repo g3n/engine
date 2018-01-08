@@ -9,7 +9,7 @@ package al
 /*
 #cgo darwin   CFLAGS:  -DGO_DARWIN  -I/usr/include/AL
 #cgo linux    CFLAGS:  -DGO_LINUX   -I/usr/include/AL
-#cgo windows  CFLAGS:  -DGO_WINDOWS -I/usr/include/AL
+#cgo windows  CFLAGS:  -DGO_WINDOWS -I${SRCDIR}/../windows/openal-soft-1.18.2/include/AL
 #cgo darwin   LDFLAGS: -lopenal
 #cgo linux    LDFLAGS: -lopenal
 #cgo windows  LDFLAGS: -lopenal
@@ -32,7 +32,7 @@ package al
 #include <stdlib.h>
 #include "al.h"
 #include "alc.h"
-#include "/efx.h"
+#include "efx.h"
 #endif
 */
 import "C"
