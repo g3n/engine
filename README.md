@@ -22,25 +22,25 @@ depends on some C libraries that can be installed using the distribution package
 In all cases it is necessary to have a gcc compatible C compiler installed.
 
 * For Ubuntu/Debian-like Linux distributions, install the following packages:
- * `libgl1-mesa-dev`
- * `xorg-dev`
- * `libopenal1`
- * `libopenal-dev`
- * `libogg0`
- * `libogg-dev`
- * `libvorbis0a`
- * `libvorbis-dev`
- * `libvorbisfile3`
+  * `libgl1-mesa-dev`
+  * `xorg-dev`
+  * `libopenal1`
+  * `libopenal-dev`
+  * `libogg0`
+  * `libogg-dev`
+  * `libvorbis0a`
+  * `libvorbis-dev`
+  * `libvorbisfile3`
 * For CentOS/Fedora-like Linux distributions, install the following packages:
- * `xorg-x11-devel.x86_64`
- * `mesa-libGL.x86_64`
- * `mesa-libGL-devel.x86_64`
- * `openal-soft.x86_64`
- * `openal-soft-devel.x86_64`
- * `libvorbis.x86_64`
- * `libvorbis-devel.x86_64`
+  * `xorg-x11-devel.x86_64`
+  * `mesa-libGL.x86_64`
+  * `mesa-libGL-devel.x86_64`
+  * `openal-soft.x86_64`
+  * `openal-soft-devel.x86_64`
+  * `libvorbis.x86_64`
+  * `libvorbis-devel.x86_64`
 * For Windows the necessary audio libraries sources and `dlls` are supplied but they need to be installed
-  manually. Please see the [windows audio libs](https://github.com/g3n/engine/tree/audio/windows) for details.
+  manually. Please see the [windows audio libs](audio/windows) for details.
   We tested the Windows build using the [mingw-w64](https://mingw-w64.org) toolchain.
 * Currently not tested on OS X.
 
