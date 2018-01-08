@@ -8,7 +8,7 @@ package vorbis
 
 // #cgo darwin   CFLAGS:  -DGO_DARWIN  -I/usr/include/vorbis
 // #cgo linux    CFLAGS:  -DGO_LINUX   -I/usr/include/vorbis
-// #cgo windows  CFLAGS:  -DGO_WINDOWS -I/usr/include/vorbis
+// #cgo windows  CFLAGS:  -DGO_WINDOWS -I${SRCDIR}/../windows/oggvorbis/libvorbis/include/vorbis -I${SRCDIR}/../windows/oggvorbis/libogg/include
 // #cgo darwin   LDFLAGS: -lvorbis
 // #cgo linux    LDFLAGS: -lvorbis
 // #cgo windows  LDFLAGS: -lvorbis
