@@ -16,11 +16,9 @@ to copy these dlls to the directory from which will run your application.
 It is recommended to avoid copying them to the Windows system directory.
 
 The library sources were obtained from:
-```
-http://kcat.strangesoft.net/openal-releases/openal-soft-1.18.2.tar.bz2
-http://downloads.xiph.org/releases/ogg/libogg-1.3.3.zip
-http://downloads.xiph.org/releases/vorbis/libvorbis-1.3.5.zip
-```
+- http://kcat.strangesoft.net/openal-releases/openal-soft-1.18.2.tar.bz2
+- http://downloads.xiph.org/releases/ogg/libogg-1.3.3.zip
+- http://downloads.xiph.org/releases/vorbis/libvorbis-1.3.5.zip
 
 The original file `libvorbis-1.3.3/win32/VS2010/libogg.props` was changed to setup
 `libogg` version and location.
