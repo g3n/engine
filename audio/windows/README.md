@@ -20,7 +20,7 @@ The library sources were obtained from:
 - http://downloads.xiph.org/releases/ogg/libogg-1.3.3.zip
 - http://downloads.xiph.org/releases/vorbis/libvorbis-1.3.5.zip
 
-The original file `libvorbis-1.3.3/win32/VS2010/libogg.props` was changed to setup
+The original file `libvorbis-1.3.5/win32/VS2010/libogg.props` was changed to setup
 `libogg` version and location.
 
 If you want to build the `dlls` from source instead of using the supplied `dlls` you
