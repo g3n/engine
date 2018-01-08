@@ -22,12 +22,10 @@ depends on some C libraries that can be installed using the distribution package
 In all cases it is necessary to have a gcc compatible C compiler installed.
 
 * For Ubuntu/Debian-like Linux distributions, install the following packages:
-  * `libgl1-mesa-dev`
   * `xorg-dev`
+  * `libgl1-mesa-dev`
   * `libopenal1`
   * `libopenal-dev`
-  * `libogg0`
-  * `libogg-dev`
   * `libvorbis0a`
   * `libvorbis-dev`
   * `libvorbisfile3`
