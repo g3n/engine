@@ -73,7 +73,7 @@ install the packages. Make sure your GOPATH is set correctly.
 ## Basic application
 
 The following code shows a basic G3N application 
-([hellog3n](../demos/hellog3n))
+([hellog3n](https://github.com/g3n/demos/tree/master/hellog3n))
 which shows a wireframed sphere rotating.
 You can install hellog3n using: `go get -u github.com/g3n/demos/hellog3n`
 
