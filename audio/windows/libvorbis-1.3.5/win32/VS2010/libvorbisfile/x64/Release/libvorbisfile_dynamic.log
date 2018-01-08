@@ -1,0 +1,22 @@
+﻿  vorbisfile.c
+..\..\..\lib\vorbisfile.c(72): warning C4267: 'inicializando': conversão de 'size_t' para 'long', possível perda de dados
+..\..\..\lib\vorbisfile.c(259): warning C4244: 'função': conversão de 'ogg_int64_t' para 'long', possível perda de dados
+..\..\..\lib\vorbisfile.c(273): warning C4244: '=': conversão de 'ogg_int64_t' para 'int', possível perda de dados
+..\..\..\lib\vorbisfile.c(545): warning C4244: 'return': conversão de 'ogg_int64_t' para 'int', possível perda de dados
+..\..\..\lib\vorbisfile.c(566): warning C4244: 'return': conversão de 'ogg_int64_t' para 'int', possível perda de dados
+..\..\..\lib\vorbisfile.c(569): warning C4244: 'return': conversão de 'ogg_int64_t' para 'int', possível perda de dados
+..\..\..\lib\vorbisfile.c(579): warning C4244: 'return': conversão de 'ogg_int64_t' para 'int', possível perda de dados
+..\..\..\lib\vorbisfile.c(641): warning C4244: 'return': conversão de 'ogg_int64_t' para 'int', possível perda de dados
+..\..\..\lib\vorbisfile.c(874): warning C4244: 'função': conversão de 'ogg_int64_t' para 'long', possível perda de dados
+..\..\..\lib\vorbisfile.c(1012): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  C:\Program Files (x86)\Windows Kits\10\Include\10.0.15063.0\ucrt\stdio.h(207): note: consulte a declaração de 'fopen'
+..\..\..\lib\vorbisfile.c(1118): warning C4244: '=': conversão de 'double' para 'float', possível perda de dados
+..\..\..\lib\vorbisfile.c(1119): warning C4244: 'return': conversão de 'double' para 'long', possível perda de dados
+..\..\..\lib\vorbisfile.c(1123): warning C4244: 'return': conversão de 'double' para 'long', possível perda de dados
+..\..\..\lib\vorbisfile.c(1151): warning C4244: '=': conversão de 'double' para 'long', possível perda de dados
+..\..\..\lib\vorbisfile.c(1764): warning C4244: '=': conversão de 'ogg_int64_t' para 'long', possível perda de dados
+..\..\..\lib\vorbisfile.c(1801): warning C4244: 'inicializando': conversão de 'double' para 'ogg_int64_t', possível perda de dados
+..\..\..\lib\vorbisfile.c(1831): warning C4244: 'inicializando': conversão de 'double' para 'ogg_int64_t', possível perda de dados
+..\..\..\lib\vorbisfile.c(2167): warning C4244: 'inicializando': conversão de 'double' para 'float', possível perda de dados
+     Criando biblioteca C:\Users\leonel\go\src\github.com\g3n\engine\audio\windows\libvorbis-1.3.5\win32\VS2010\x64\Release\libvorbisfile.lib e objeto C:\Users\leonel\go\src\github.com\g3n\engine\audio\windows\libvorbis-1.3.5\win32\VS2010\x64\Release\libvorbisfile.exp
+  libvorbisfile_dynamic.vcxproj -> C:\Users\leonel\go\src\github.com\g3n\engine\audio\windows\libvorbis-1.3.5\win32\VS2010\x64\Release\libvorbisfile.dll

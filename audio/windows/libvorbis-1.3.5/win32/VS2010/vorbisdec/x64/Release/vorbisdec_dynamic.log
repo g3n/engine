@@ -1,0 +1,9 @@
+﻿  decoder_example.c
+..\..\..\examples\decoder_example.c(90): warning C4267: '=': conversão de 'size_t' para 'int', possível perda de dados
+..\..\..\examples\decoder_example.c(177): warning C4267: '=': conversão de 'size_t' para 'int', possível perda de dados
+..\..\..\examples\decoder_example.c(264): warning C4244: '=': conversão de 'int' para 'ogg_int16_t', possível perda de dados
+..\..\..\examples\decoder_example.c(286): warning C4267: '=': conversão de 'size_t' para 'int', possível perda de dados
+..\..\..\examples\decoder_example.c(251): warning C4244: 'inicializando': conversão de 'double' para 'int', possível perda de dados
+  Gerando código
+  Finalizada a geração de código
+  vorbisdec_dynamic.vcxproj -> C:\Users\leonel\go\src\github.com\g3n\engine\audio\windows\libvorbis-1.3.5\win32\VS2010\x64\Release\vorbisdec.exe
