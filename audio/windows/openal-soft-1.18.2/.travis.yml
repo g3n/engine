@@ -1,0 +1,70 @@
+language: c
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+    - os: linux
+      dist: trusty
+      env:
+        - BUILD_ANDROID=true
+    - os: osx
+sudo: required
+cache:
+  directories:
+    - $HOME/android-ndk-r14
+install:
+  - >
+    if [[ "${TRAVIS_OS_NAME}" == "linux" && -z "${BUILD_ANDROID}" ]]; then
+      # Install pulseaudio, portaudio, ALSA, JACK dependencies for
+      # corresponding backends.
+      # Install Qt5 dependency for alsoft-config.
+      sudo apt-get install -qq \
+        libpulse-dev \
+        portaudio19-dev \
+        libasound2-dev \
+        libjack-dev \
+        qtbase5-dev
+    fi
+  - >
+    if [[ "${TRAVIS_OS_NAME}" == "linux" && "${BUILD_ANDROID}" == "true" ]]; then
+      if [[ ! -d ~/android-ndk-r14 || -z "$(ls -A ~/android-ndk-r14)" ]]; then
+        curl -o ~/android-ndk.zip https://dl.google.com/android/repository/android-ndk-r14-linux-x86_64.zip
+        unzip -q ~/android-ndk.zip -d ~ \
+          'android-ndk-r14/build/cmake/*' \
+          'android-ndk-r14/platforms/android-9/arch-arm/*' \
+          'android-ndk-r14/source.properties' \
+          'android-ndk-r14/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/*' \
+          'android-ndk-r14/sysroot/*' \
+          'android-ndk-r14/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/*' \
+          'android-ndk-r14/toolchains/llvm/prebuilt/linux-x86_64/*'
+        sed -i -e 's/VERSION 3.6.0/VERSION 3.2/' ~/android-ndk-r14/build/cmake/android.toolchain.cmake
+      fi
+    fi
+script:
+  - >
+    if [[ "${TRAVIS_OS_NAME}" == "linux" && -z "${BUILD_ANDROID}" ]]; then
+      cmake \
+        -DALSOFT_REQUIRE_ALSA=ON \
+        -DALSOFT_REQUIRE_OSS=ON \
+        -DALSOFT_REQUIRE_PORTAUDIO=ON \
+        -DALSOFT_REQUIRE_PULSEAUDIO=ON \
+        -DALSOFT_REQUIRE_JACK=ON \
+        -DALSOFT_EMBED_HRTF_DATA=YES \
+        .
+    fi
+  - >
+    if [[ "${TRAVIS_OS_NAME}" == "linux" && "${BUILD_ANDROID}" == "true" ]]; then
+      cmake \
+        -DCMAKE_TOOLCHAIN_FILE=~/android-ndk-r14/build/cmake/android.toolchain.cmake \
+        -DALSOFT_REQUIRE_OPENSL=ON \
+        -DALSOFT_EMBED_HRTF_DATA=YES \
+        .
+    fi
+  - >
+    if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
+      cmake \
+        -DALSOFT_REQUIRE_COREAUDIO=ON \
+        -DALSOFT_EMBED_HRTF_DATA=YES \
+        .
+    fi
+  - make -j2
