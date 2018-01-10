@@ -11,6 +11,7 @@ import (
 	"sort"
 )
 
+// Root is the container and dispatcher of panel events
 type Root struct {
 	Panel                            // embedded panel
 	core.TimerManager                // embedded TimerManager
@@ -20,6 +21,7 @@ type Root struct {
 	keyFocus          IPanel         // current child panel with key focus
 	mouseFocus        IPanel         // current child panel with mouse focus
 	scrollFocus       IPanel         // current child panel with scroll focus
+	modalPanel        IPanel         // current modal panel
 	targets           listPanelZ     // preallocated list of target panels
 }
 
@@ -72,6 +74,14 @@ func (r *Root) Add(ipan IPanel) {
 	// This will also set the root panel for all the child children
 	// and the z coordinates of all the panel tree graph.
 	r.Panel.Add(ipan)
+}
+
+// SetModal sets the modal panel.
+// If there is a modal panel, only events for this panel are dispatched
+// To remove the modal panel call this function with a nil panel.
+func (r *Root) SetModal(ipan IPanel) {
+
+	r.modalPanel = ipan
 }
 
 // SetKeyFocus sets the panel which will receive all keyboard events
@@ -177,6 +187,10 @@ func (r *Root) onKey(evname string, ev interface{}) {
 	if r.keyFocus == nil {
 		return
 	}
+	// Checks modal panel
+	if !r.canDispatch(r.keyFocus) {
+		return
+	}
 	// Dispatch window.KeyEvent to focused panel subscribers
 	r.stopPropagation = 0
 	r.keyFocus.GetPanel().Dispatch(evname, ev)
@@ -191,6 +205,10 @@ func (r *Root) onChar(evname string, ev interface{}) {
 
 	// If no panel has the key focus, nothing to do
 	if r.keyFocus == nil {
+		return
+	}
+	// Checks modal panel
+	if !r.canDispatch(r.keyFocus) {
 		return
 	}
 	// Dispatch window.CharEvent to focused panel subscribers
@@ -222,6 +240,10 @@ func (r *Root) sendPanels(x, y float32, evname string, ev interface{}) {
 
 	// If there is panel with MouseFocus send only to this panel
 	if r.mouseFocus != nil {
+		// Checks modal panel
+		if !r.canDispatch(r.mouseFocus) {
+			return
+		}
 		r.mouseFocus.GetPanel().Dispatch(evname, ev)
 		if (r.stopPropagation & Stop3D) != 0 {
 			r.win.CancelDispatch()
@@ -290,6 +312,10 @@ func (r *Root) sendPanels(x, y float32, evname string, ev interface{}) {
 
 	// Send events to panels
 	for _, ipan := range r.targets {
+		// Checks modal panel
+		if !r.canDispatch(ipan) {
+			continue
+		}
 		pan := ipan.GetPanel()
 		// Cursor position event
 		if evname == OnCursor {
@@ -343,6 +369,36 @@ func (r *Root) onWindowSize(evname string, ev interface{}) {
 func (r *Root) onFrame(evname string, ev interface{}) {
 
 	r.TimerManager.ProcessTimers()
+}
+
+// canDispatch returns if event can be dispatched to the specified panel
+// An event cannot be dispatched if there is a modal panel and the specified
+// panel is not the modal panel or any of its children.
+func (r *Root) canDispatch(ipan IPanel) bool {
+
+	if r.modalPanel == nil {
+		return true
+	}
+	if r.modalPanel == ipan {
+		return true
+	}
+
+	// Internal function to check panel children recursively
+	var checkChildren func(iparent IPanel) bool
+	checkChildren = func(iparent IPanel) bool {
+		parent := iparent.GetPanel()
+		for _, child := range parent.Children() {
+			if child == ipan {
+				return true
+			}
+			res := checkChildren(child.(IPanel))
+			if res {
+				return res
+			}
+		}
+		return false
+	}
+	return checkChildren(r.modalPanel)
 }
 
 // For sorting panels by Z coordinate
