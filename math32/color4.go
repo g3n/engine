@@ -1,13 +1,14 @@
 // Copyright 2016 The G3N Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
+
 package math32
 
 import (
 	"strings"
 )
 
-// Type Color4 describes an RGBA color
+// Color4 describes an RGBA color
 type Color4 struct {
 	R float32
 	G float32
@@ -45,6 +46,7 @@ func Color4Name(name string, alpha ...float32) Color4 {
 }
 
 // Set sets this color individual R,G,B,A components
+// Returns pointer to this updated color
 func (c *Color4) Set(r, g, b, a float32) *Color4 {
 
 	c.R = r
@@ -57,6 +59,7 @@ func (c *Color4) Set(r, g, b, a float32) *Color4 {
 // SetHex sets the color RGB components from the
 // specified integer interpreted as a color hex number
 // Alpha component is not modified
+// Returns pointer to this updated color
 func (c *Color4) SetHex(value uint) *Color4 {
 
 	c.R = float32((value >> 16 & 255)) / 255
@@ -67,12 +70,15 @@ func (c *Color4) SetHex(value uint) *Color4 {
 
 // SetName sets the color RGB components from the
 // specified standard web color name
+// Returns pointer to this updated color
 func (c *Color4) SetName(name string) *Color4 {
 
 	*c = Color4Name(name, 1)
 	return c
 }
 
+// Add adds to each RGBA component of this color the correspondent component of other color
+// Returns pointer to this updated color
 func (c *Color4) Add(other *Color4) *Color4 {
 
 	c.R += other.R
@@ -82,6 +88,8 @@ func (c *Color4) Add(other *Color4) *Color4 {
 	return c
 }
 
+// MultiplyScalar multiplies each RGBA component of this color by the specified scalar.
+// Returns pointer to this updated color
 func (c *Color4) MultiplyScalar(v float32) *Color4 {
 
 	c.R *= v
