@@ -108,7 +108,7 @@ func main() {
 	}
 
 	// OpenGL functions must be executed in the same thread where
-	// the context was created (by window.New())
+	// the context was created (by CreateWindow())
 	runtime.LockOSThread()
 
 	// Create OpenGL state
