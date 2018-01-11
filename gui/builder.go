@@ -144,25 +144,27 @@ const (
 	AttribText           = "text"          // string
 	AttribTitle          = "title"         // string
 	AttribType           = "type"          // string
+	AttribUserData       = "userdata"      // interface{}
 	AttribWidth          = "width"         // float32
 	AttribValue          = "value"         // float32
 	AttribVisible        = "visible"       // bool
 )
 
 const (
-	aPOS         = 1 << iota                                             // attribute position
-	aSIZE        = 1 << iota                                             // attribute size
-	aNAME        = 1 << iota                                             // attribute name
-	aMARGINS     = 1 << iota                                             // attribute margins widths
-	aBORDERS     = 1 << iota                                             // attribute borders widths
-	aBORDERCOLOR = 1 << iota                                             // attribute border color
-	aPADDINGS    = 1 << iota                                             // attribute paddings widths
-	aCOLOR       = 1 << iota                                             // attribute panel bgcolor
-	aENABLED     = 1 << iota                                             // attribute enabled for events
-	aRENDER      = 1 << iota                                             // attribute renderable
-	aVISIBLE     = 1 << iota                                             // attribute visible
-	asPANEL      = 0xFFFFFFF                                             // attribute set for panels
-	asWIDGET     = aPOS | aNAME | aMARGINS | aSIZE | aENABLED | aVISIBLE // attribute set for widgets
+	aPOS         = 1 << iota                                                         // attribute position
+	aSIZE        = 1 << iota                                                         // attribute size
+	aNAME        = 1 << iota                                                         // attribute name
+	aMARGINS     = 1 << iota                                                         // attribute margins widths
+	aBORDERS     = 1 << iota                                                         // attribute borders widths
+	aBORDERCOLOR = 1 << iota                                                         // attribute border color
+	aPADDINGS    = 1 << iota                                                         // attribute paddings widths
+	aCOLOR       = 1 << iota                                                         // attribute panel bgcolor
+	aENABLED     = 1 << iota                                                         // attribute enabled for events
+	aRENDER      = 1 << iota                                                         // attribute renderable
+	aVISIBLE     = 1 << iota                                                         // attribute visible
+	aUSERDATA    = 1 << iota                                                         // attribute userdata
+	asPANEL      = 0xFFFFFFF                                                         // attribute set for panels
+	asWIDGET     = aPOS | aNAME | aMARGINS | aSIZE | aENABLED | aVISIBLE | aUSERDATA // attribute set for widgets
 )
 
 // maps align name with align parameter
@@ -313,6 +315,7 @@ func NewBuilder() *Builder {
 		AttribText:          AttribCheckString,
 		AttribTitle:         AttribCheckString,
 		AttribType:          AttribCheckStringLower,
+		AttribUserData:      AttribCheckInterface,
 		AttribValue:         AttribCheckFloat,
 		AttribVisible:       AttribCheckBool,
 		AttribWidth:         AttribCheckFloat,
@@ -597,8 +600,13 @@ func (b *Builder) setAttribs(am map[string]interface{}, ipan IPanel, attr uint) 
 	if attr&aENABLED != 0 && am[AttribEnabled] != nil {
 		panel.SetEnabled(am[AttribEnabled].(bool))
 	}
+
 	if attr&aRENDER != 0 && am[AttribRender] != nil {
 		panel.SetRenderable(am[AttribRender].(bool))
+	}
+
+	if attr&aUSERDATA != 0 && am[AttribUserData] != nil {
+		panel.SetUserData(am[AttribUserData])
 	}
 
 	// Sets optional layout (must pass IPanel not *Panel)
@@ -1075,6 +1083,12 @@ func AttribCheckBool(b *Builder, am map[string]interface{}, fname string) error 
 		return b.err(am, fname, "Not a bool")
 	}
 	am[fname] = bv
+	return nil
+}
+
+// AttribCheckInterface accepts any attribute value
+func AttribCheckInterface(b *Builder, am map[string]interface{}, fname string) error {
+
 	return nil
 }
 
