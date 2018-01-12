@@ -150,23 +150,6 @@ const (
 	AttribVisible        = "visible"       // bool
 )
 
-const (
-	aPOS         = 1 << iota                                                         // attribute position
-	aSIZE        = 1 << iota                                                         // attribute size
-	aNAME        = 1 << iota                                                         // attribute name
-	aMARGINS     = 1 << iota                                                         // attribute margins widths
-	aBORDERS     = 1 << iota                                                         // attribute borders widths
-	aBORDERCOLOR = 1 << iota                                                         // attribute border color
-	aPADDINGS    = 1 << iota                                                         // attribute paddings widths
-	aCOLOR       = 1 << iota                                                         // attribute panel bgcolor
-	aENABLED     = 1 << iota                                                         // attribute enabled for events
-	aRENDER      = 1 << iota                                                         // attribute renderable
-	aVISIBLE     = 1 << iota                                                         // attribute visible
-	aUSERDATA    = 1 << iota                                                         // attribute userdata
-	asPANEL      = 0xFFFFFFF                                                         // attribute set for panels
-	asWIDGET     = aPOS | aNAME | aMARGINS | aSIZE | aENABLED | aVISIBLE | aUSERDATA // attribute set for widgets
-)
-
 // maps align name with align parameter
 var mapAlignh = map[string]Align{
 	"none":   AlignNone,
@@ -544,69 +527,67 @@ func (b *Builder) build(am map[string]interface{}, iparent IPanel) (IPanel, erro
 }
 
 // SetAttribs sets common attributes from the description to the specified panel
-// The attributes which are set can be specified by the specified bitmask.
-func (b *Builder) SetAttribs(am map[string]interface{}, ipan IPanel, attr uint) error {
+func (b *Builder) SetAttribs(am map[string]interface{}, ipan IPanel) error {
 
 	panel := ipan.GetPanel()
-	log.Error("SetAttribs:%v -> %v", am[AttribType], am[AttribName])
 	// Set optional position
-	if attr&aPOS != 0 && am[AttribPosition] != nil {
+	if am[AttribPosition] != nil {
 		va := am[AttribPosition].([]float32)
 		panel.SetPosition(va[0], va[1])
 	}
 
 	// Set optional panel width
-	if attr&aSIZE != 0 && am[AttribWidth] != nil {
+	if am[AttribWidth] != nil {
 		panel.SetWidth(am[AttribWidth].(float32))
 	}
 
 	// Sets optional panel height
-	if attr&aSIZE != 0 && am[AttribHeight] != nil {
+	if am[AttribHeight] != nil {
 		panel.SetHeight(am[AttribHeight].(float32))
 	}
 
 	// Set optional margin sizes
-	if attr&aMARGINS != 0 && am[AttribMargins] != nil {
+	if am[AttribMargins] != nil {
 		panel.SetMarginsFrom(am[AttribMargins].(*BorderSizes))
 	}
 
 	// Set optional border sizes
-	if attr&aBORDERS != 0 && am[AttribBorders] != nil {
+	if am[AttribBorders] != nil {
 		panel.SetBordersFrom(am[AttribBorders].(*BorderSizes))
 	}
 
 	// Set optional border color
-	if attr&aBORDERCOLOR != 0 && am[AttribBorderColor] != nil {
+	if am[AttribBorderColor] != nil {
 		panel.SetBordersColor4(am[AttribBorderColor].(*math32.Color4))
 	}
 
 	// Set optional paddings sizes
-	if attr&aPADDINGS != 0 && am[AttribPaddings] != nil {
+	if am[AttribPaddings] != nil {
 		panel.SetPaddingsFrom(am[AttribPaddings].(*BorderSizes))
 	}
 
 	// Set optional panel color
-	if attr&aCOLOR != 0 && am[AttribColor] != nil {
+	if am[AttribColor] != nil {
 		panel.SetColor4(am[AttribColor].(*math32.Color4))
 	}
 
-	if attr&aNAME != 0 && am[AttribName] != nil {
+	if am[AttribName] != nil {
 		panel.SetName(am[AttribName].(string))
 	}
 
-	if attr&aVISIBLE != 0 && am[AttribVisible] != nil {
+	if am[AttribVisible] != nil {
 		panel.SetVisible(am[AttribVisible].(bool))
 	}
 
-	if attr&aENABLED != 0 && am[AttribEnabled] != nil {
+	if am[AttribEnabled] != nil {
 		panel.SetEnabled(am[AttribEnabled].(bool))
 	}
 
-	if attr&aRENDER != 0 && am[AttribRender] != nil {
+	if am[AttribRender] != nil {
 		panel.SetRenderable(am[AttribRender].(bool))
 	}
 
-	if attr&aUSERDATA != 0 && am[AttribUserData] != nil {
+	if am[AttribUserData] != nil {
 		panel.SetUserData(am[AttribUserData])
 	}
 
