@@ -106,6 +106,12 @@ func (dd *DropDown) ItemAt(pos int) *ImageLabel {
 	return dd.list.ItemAt(pos).(*ImageLabel)
 }
 
+// Len returns the number of items in the dropdown's list.
+func (dd *DropDown) Len() int {
+
+	return dd.list.Len()
+}
+
 // Returns the currently selected item or nil if not item
 // was selected
 func (dd *DropDown) Selected() *ImageLabel {
