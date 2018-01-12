@@ -66,7 +66,7 @@ func (v *Vector2) Component(index int) float32 {
 	case 1:
 		return v.Y
 	default:
-		panic("Vector2 index is out of range")
+		panic("index is out of range")
 	}
 }
 
@@ -89,7 +89,7 @@ func (v *Vector2) Add(other *Vector2) *Vector2 {
 	return v
 }
 
-// AddScalar adds the specified scalar to each component of this vector.
+// AddScalar adds scalar s to each component of this vector.
 // Returns the pointer to this updated vector.
 func (v *Vector2) AddScalar(s float32) *Vector2 {
 
@@ -356,9 +356,9 @@ func (v *Vector2) FromArray(array []float32, offset int) *Vector2 {
 
 // ToArray copies this vector's components to array starting at offset.
 // Returns the array.
-func (this *Vector2) ToArray(array []float32, offset int) []float32 {
+func (v *Vector2) ToArray(array []float32, offset int) []float32 {
 
-	array[offset] = this.X
-	array[offset+1] = this.Y
+	array[offset] = v.X
+	array[offset+1] = v.Y
 	return array
 }
