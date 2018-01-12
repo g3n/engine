@@ -15,7 +15,7 @@ import (
 func buildPanel(b *Builder, am map[string]interface{}) (IPanel, error) {
 
 	pan := NewPanel(0, 0)
-	err := b.SetAttribs(am, pan, asPANEL)
+	err := b.SetAttribs(am, pan)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func buildImagePanel(b *Builder, am map[string]interface{}) (IPanel, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = b.SetAttribs(am, panel, asPANEL)
+	err = b.SetAttribs(am, panel)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func buildLabel(b *Builder, am map[string]interface{}) (IPanel, error) {
 	}
 
 	// Sets common attributes
-	err := b.SetAttribs(am, label, asPANEL)
+	err := b.SetAttribs(am, label)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func buildImageLabel(b *Builder, am map[string]interface{}) (IPanel, error) {
 		text = am[AttribText].(string)
 	}
 	imglabel := NewImageLabel(text)
-	err := b.SetAttribs(am, imglabel, asPANEL)
+	err := b.SetAttribs(am, imglabel)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func buildButton(b *Builder, am map[string]interface{}) (IPanel, error) {
 		text = am[AttribText].(string)
 	}
 	button := NewButton(text)
-	err := b.SetAttribs(am, button, asWIDGET)
+	err := b.SetAttribs(am, button)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +213,7 @@ func buildEdit(b *Builder, am map[string]interface{}) (IPanel, error) {
 		placeholder = ph.(string)
 	}
 	edit := NewEdit(int(width), placeholder)
-	err := b.SetAttribs(am, edit, asWIDGET)
+	err := b.SetAttribs(am, edit)
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +229,7 @@ func buildCheckBox(b *Builder, am map[string]interface{}) (IPanel, error) {
 		text = am[AttribText].(string)
 	}
 	cb := NewCheckBox(text)
-	err := b.SetAttribs(am, cb, asWIDGET)
+	err := b.SetAttribs(am, cb)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +250,7 @@ func buildRadioButton(b *Builder, am map[string]interface{}) (IPanel, error) {
 		text = am[AttribText].(string)
 	}
 	rb := NewRadioButton(text)
-	err := b.SetAttribs(am, rb, asWIDGET)
+	err := b.SetAttribs(am, rb)
 	if err != nil {
 		return nil, err
 	}
@@ -272,7 +272,7 @@ func buildVList(b *Builder, am map[string]interface{}) (IPanel, error) {
 
 	// Builds list and set commont attributes
 	list := NewVList(0, 0)
-	err := b.SetAttribs(am, list, asWIDGET)
+	err := b.SetAttribs(am, list)
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +297,7 @@ func buildHList(b *Builder, am map[string]interface{}) (IPanel, error) {
 
 	// Builds list and set commont attributes
 	list := NewHList(0, 0)
-	err := b.SetAttribs(am, list, asWIDGET)
+	err := b.SetAttribs(am, list)
 	if err != nil {
 		return nil, err
 	}
@@ -337,7 +337,7 @@ func buildDropDown(b *Builder, am map[string]interface{}) (IPanel, error) {
 
 	// Builds drop down and set common attributes
 	dd := NewDropDown(0, imglabel)
-	err := b.SetAttribs(am, dd, asWIDGET)
+	err := b.SetAttribs(am, dd)
 	if err != nil {
 		return nil, err
 	}
@@ -377,7 +377,7 @@ func buildMenu(b *Builder, am map[string]interface{}) (IPanel, error) {
 			ptype = ti.(string)
 		}
 		if ptype != TypeMenu && ptype != TypeMenuBar {
-			err := b.SetAttribs(am, menu, asWIDGET)
+			err := b.SetAttribs(am, menu)
 			if err != nil {
 				return nil, err
 			}
@@ -440,7 +440,7 @@ func buildSlider(b *Builder, am map[string]interface{}) (IPanel, error) {
 	}
 
 	// Sets common attributes
-	err := b.SetAttribs(am, slider, asWIDGET)
+	err := b.SetAttribs(am, slider)
 	if err != nil {
 		return nil, err
 	}
@@ -472,7 +472,7 @@ func buildSplitter(b *Builder, am map[string]interface{}) (IPanel, error) {
 	}
 
 	// Sets common attributes
-	err := b.SetAttribs(am, splitter, asWIDGET)
+	err := b.SetAttribs(am, splitter)
 	if err != nil {
 		return nil, err
 	}
@@ -492,7 +492,7 @@ func buildSplitter(b *Builder, am map[string]interface{}) (IPanel, error) {
 		}
 		pattr := ipattribs.(map[string]interface{})
 		// Set panel attributes
-		err := b.SetAttribs(pattr, pan, asPANEL)
+		err := b.SetAttribs(pattr, pan)
 		if err != nil {
 			return nil
 		}
@@ -529,7 +529,7 @@ func buildTree(b *Builder, am map[string]interface{}) (IPanel, error) {
 
 	// Builds tree and sets its common attributes
 	tree := NewTree(0, 0)
-	err := b.SetAttribs(am, tree, asWIDGET)
+	err := b.SetAttribs(am, tree)
 	if err != nil {
 		return nil, err
 	}
@@ -597,7 +597,7 @@ func buildWindow(b *Builder, am map[string]interface{}) (IPanel, error) {
 
 	// Builds window and sets its common attributes
 	win := NewWindow(0, 0)
-	err := b.SetAttribs(am, win, asWIDGET)
+	err := b.SetAttribs(am, win)
 	if err != nil {
 		return nil, err
 	}
@@ -632,7 +632,7 @@ func buildChart(b *Builder, am map[string]interface{}) (IPanel, error) {
 
 	// Builds window and sets its common attributes
 	chart := NewChart(0, 0)
-	err := b.SetAttribs(am, chart, asPANEL)
+	err := b.SetAttribs(am, chart)
 	if err != nil {
 		return nil, err
 	}
@@ -788,7 +788,7 @@ func buildTable(b *Builder, am map[string]interface{}) (IPanel, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = b.SetAttribs(am, table, asPANEL)
+	err = b.SetAttribs(am, table)
 	if err != nil {
 		return nil, err
 	}
@@ -806,7 +806,7 @@ func buildTabBar(b *Builder, am map[string]interface{}) (IPanel, error) {
 
 	// Creates TabBar and set common attributes
 	tabbar := NewTabBar(0, 0)
-	err := b.SetAttribs(am, tabbar, asPANEL)
+	err := b.SetAttribs(am, tabbar)
 	if err != nil {
 		return nil, err
 	}
