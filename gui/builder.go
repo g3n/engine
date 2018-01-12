@@ -543,11 +543,12 @@ func (b *Builder) build(am map[string]interface{}, iparent IPanel) (IPanel, erro
 	return pan, nil
 }
 
-// setAttribs sets common attributes from the description to the specified panel
+// SetAttribs sets common attributes from the description to the specified panel
 // The attributes which are set can be specified by the specified bitmask.
-func (b *Builder) setAttribs(am map[string]interface{}, ipan IPanel, attr uint) error {
+func (b *Builder) SetAttribs(am map[string]interface{}, ipan IPanel, attr uint) error {
 
 	panel := ipan.GetPanel()
+	log.Error("SetAttribs:%v -> %v", am[AttribType], am[AttribName])
 	// Set optional position
 	if attr&aPOS != 0 && am[AttribPosition] != nil {
 		va := am[AttribPosition].([]float32)
