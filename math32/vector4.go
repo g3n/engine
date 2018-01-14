@@ -4,6 +4,7 @@
 
 package math32
 
+// Vector4 is a vector/point in homogeneous coordinates with X, Y, Z and W components.
 type Vector4 struct {
 	X float32
 	Y float32
@@ -11,11 +12,14 @@ type Vector4 struct {
 	W float32
 }
 
+// NewVector4 creates and returns a pointer to a new Vector4
 func NewVector4(x, y, z, w float32) *Vector4 {
 
 	return &Vector4{X: x, Y: y, Z: z, W: w}
 }
 
+// Set sets this vector X, Y, Z and W components.
+// Returns the pointer to this updated vector.
 func (v *Vector4) Set(x, y, z, w float32) *Vector4 {
 
 	v.X = x
@@ -25,7 +29,7 @@ func (v *Vector4) Set(x, y, z, w float32) *Vector4 {
 	return v
 }
 
-// SetVector3 sets this vector from another Vector3 and 'w' value
+// SetVector3 sets this vector from another Vector3 and W
 func (v *Vector4) SetVector3(other *Vector3, w float32) *Vector4 {
 
 	v.X = other.X
@@ -35,200 +39,461 @@ func (v *Vector4) SetVector3(other *Vector3, w float32) *Vector4 {
 	return v
 }
 
-//func (this *Vector4) SetX(x float32) *Vector4 {
-//
-//	this.X = x
-//	return this
-//}
-//
-//func (this *Vector4) SetY(y float32) *Vector4 {
-//
-//	this.Y = y
-//	return this
-//}
-//
-//func (this *Vector4) SetZ(z float32) *Vector4 {
-//
-//	this.Z = z
-//	return this
-//}
-//
-//func (this *Vector4) SetW(w float32) *Vector4 {
-//
-//	this.W = w
-//	return this
-//}
+// SetX sets this vector X component.
+// Returns the pointer to this updated Vector.
+func (v *Vector4) SetX(x float32) *Vector4 {
 
-func (this *Vector4) SetComponent(index int, value float32) *Vector4 {
+	v.X = x
+	return v
+}
+
+// SetY sets this vector Y component.
+// Returns the pointer to this updated vector.
+func (v *Vector4) SetY(y float32) *Vector4 {
+
+	v.Y = y
+	return v
+}
+
+// SetZ sets this vector Z component.
+// Returns the pointer to this updated vector.
+func (v *Vector4) SetZ(z float32) *Vector4 {
+
+	v.Z = z
+	return v
+}
+
+// SetW sets this vector W component.
+// Returns the pointer to this updated vector.
+func (v *Vector4) SetW(w float32) *Vector4 {
+
+	v.W = w
+	return v
+}
+
+// SetComponent sets this vector component value by its index: 0 for X, 1 for Y, 2 for Z, 3 for W.
+// Returns the pointer to this updated vector
+func (v *Vector4) SetComponent(index int, value float32) *Vector4 {
 
 	switch index {
 	case 0:
-		this.X = value
+		v.X = value
 	case 1:
-		this.Y = value
+		v.Y = value
 	case 2:
-		this.Z = value
+		v.Z = value
 	case 3:
-		this.Z = value
+		v.Z = value
 	default:
 		panic("index is out of range")
 	}
-	return this
+	return v
 }
 
-func (this *Vector4) GetComponent(index int) float32 {
+// Component returns this vector component by its index: 0 for X, 1 for Y, 2 for Z, 3 for W.
+func (v *Vector4) Component(index int) float32 {
 
 	switch index {
 	case 0:
-		return this.X
+		return v.X
 	case 1:
-		return this.Y
+		return v.Y
 	case 2:
-		return this.Z
+		return v.Z
 	case 3:
-		return this.W
+		return v.W
 	default:
 		panic("index is out of range")
 	}
 }
 
-func (this *Vector4) Copy(v *Vector4) *Vector4 {
+// SetByName sets this vector component value by its case insensitive name: "x", "y", "z" or "w".
+func (v *Vector4) SetByName(name string, value float32) {
 
-	this.X = v.X
-	this.Y = v.Y
-	this.Z = v.Z
-	this.W = v.W
-	return this
+	switch name {
+	case "x", "X":
+		v.X = value
+	case "y", "Y":
+		v.Y = value
+	case "z", "Z":
+		v.Z = value
+	case "w", "W":
+		v.W = value
+	default:
+		panic("Invalid Vector4 component name: " + name)
+	}
 }
 
-func (this *Vector4) Add(v *Vector4) *Vector4 {
+// Copy copies other vector to this one.
+// Returns the pointer to this updated vector.
+func (v *Vector4) Copy(other *Vector4) *Vector4 {
 
-	this.X += v.X
-	this.Y += v.Y
-	this.Z += v.Z
-	this.W += v.W
-	return this
+	*v = *other
+	return v
 }
 
-func (this *Vector4) AddScalar(s float32) *Vector4 {
+// Add adds other vector to this one.
+// Returns the pointer to this updated vector.
+func (v *Vector4) Add(other *Vector4) *Vector4 {
 
-	this.X += s
-	this.Y += s
-	this.Z += s
-	this.W += s
-	return this
+	v.X += other.X
+	v.Y += other.Y
+	v.Z += other.Z
+	v.W += other.W
+	return v
 }
 
-func (this *Vector4) AddVectors(a, b *Vector4) *Vector4 {
+// AddScalar adds scalar s to each component of this vector.
+// Returns the pointer to this updated vector.
+func (v *Vector4) AddScalar(s float32) *Vector4 {
 
-	this.X = a.X + b.X
-	this.Y = a.Y + b.Y
-	this.Z = a.Z + b.Z
-	this.W = a.W + b.W
-	return this
+	v.X += s
+	v.Y += s
+	v.Z += s
+	v.W += s
+	return v
 }
 
-func (this *Vector4) Sub(v *Vector4) *Vector4 {
+// AddVectors adds vectors a and b to this one.
+// Returns the pointer to this updated vector.
+func (v *Vector4) AddVectors(a, b *Vector4) *Vector4 {
 
-	this.X -= v.X
-	this.Y -= v.Y
-	this.Z -= v.Z
-	this.W -= v.W
-	return this
+	v.X = a.X + b.X
+	v.Y = a.Y + b.Y
+	v.Z = a.Z + b.Z
+	v.W = a.W + b.W
+	return v
 }
 
-func (this *Vector4) SubScalar(s float32) *Vector4 {
+// Sub subtracts other vector from this one.
+// Returns the pointer to this updated vector.
+func (v *Vector4) Sub(other *Vector4) *Vector4 {
 
-	this.X -= s
-	this.Y -= s
-	this.Z -= s
-	this.W -= s
-	return this
+	v.X -= other.X
+	v.Y -= other.Y
+	v.Z -= other.Z
+	v.W -= other.W
+	return v
 }
 
-func (this *Vector4) SubVectors(a, b *Vector4) *Vector4 {
+// SubScalar subtracts scalar s from each component of this vector.
+// Returns the pointer to this updated vector.
+func (v *Vector4) SubScalar(s float32) *Vector4 {
 
-	this.X = a.X - b.X
-	this.Y = a.Y - b.Y
-	this.Z = a.Y - b.Z
-	this.W = a.Y - b.W
-	return this
+	v.X -= s
+	v.Y -= s
+	v.Z -= s
+	v.W -= s
+	return v
 }
 
-func (this *Vector4) MultiplyScalar(scalar float32) *Vector4 {
+// SubVectors sets this vector to a - b.
+// Returns the pointer to this updated vector.
+func (v *Vector4) SubVectors(a, b *Vector4) *Vector4 {
 
-	this.X *= scalar
-	this.Y *= scalar
-	this.Z *= scalar
-	this.W *= scalar
-	return this
+	v.X = a.X - b.X
+	v.Y = a.Y - b.Y
+	v.Z = a.Y - b.Z
+	v.W = a.Y - b.W
+	return v
 }
 
-func (this *Vector4) ApplyMatrix4(m *Matrix4) *Vector4 {
+// Multiply multiplies each component of this vector by the corresponding one from other vector.
+// Returns the pointer to this updated vector.
+func (v *Vector4) Multiply(other *Vector4) *Vector4 {
 
-	x := this.X
-	y := this.Y
-	z := this.Z
-	w := this.W
-
-	this.X = m[0]*x + m[4]*y + m[8]*z + m[12]*w
-	this.Y = m[1]*x + m[5]*y + m[9]*z + m[13]*w
-	this.Z = m[2]*x + m[6]*y + m[10]*z + m[14]*w
-	this.W = m[3]*x + m[7]*y + m[11]*z + m[15]*w
-
-	return this
+	v.X *= other.X
+	v.Y *= other.Y
+	v.Z *= other.Z
+	v.W *= other.W
+	return v
 }
 
-func (this *Vector4) DivideScalar(scalar float32) *Vector4 {
+// MultiplyScalar multiplies each component of this vector by the scalar s.
+// Returns the pointer to this updated vector.
+func (v *Vector4) MultiplyScalar(scalar float32) *Vector4 {
+
+	v.X *= scalar
+	v.Y *= scalar
+	v.Z *= scalar
+	v.W *= scalar
+	return v
+}
+
+// Divide divides each component of this vector by the corresponding one from other vector.
+// Returns the pointer to this updated vector
+func (v *Vector4) Divide(other *Vector4) *Vector4 {
+
+	v.X /= other.X
+	v.Y /= other.Y
+	v.Z /= other.Z
+	v.W /= other.W
+	return v
+}
+
+// DivideScalar divides each component of this vector by the scalar s.
+// If scalar is zero, sets this vector to zero.
+// Returns the pointer to this updated vector.
+func (v *Vector4) DivideScalar(scalar float32) *Vector4 {
 
 	if scalar != 0 {
 		invScalar := 1 / scalar
-		this.X *= invScalar
-		this.Y *= invScalar
-		this.Z *= invScalar
-		this.W *= invScalar
+		v.X *= invScalar
+		v.Y *= invScalar
+		v.Z *= invScalar
+		v.W *= invScalar
 	} else {
-		this.X = 0
-		this.Y = 0
-		this.Z = 0
-		this.W = 0
+		v.X = 0
+		v.Y = 0
+		v.Z = 0
+		v.W = 0
 	}
-	return this
+	return v
 }
 
-func (this *Vector4) SetAxisAngleFromQuaternion(q *Quaternion) *Vector4 {
+// Min sets this vector components to the minimum values of itself and other vector.
+// Returns the pointer to this updated vector.
+func (v *Vector4) Min(other *Vector4) *Vector4 {
+
+	if v.X > other.X {
+		v.X = other.X
+	}
+	if v.Y > other.Y {
+		v.Y = other.Y
+	}
+	if v.Z > other.Z {
+		v.Z = other.Z
+	}
+	if v.W > other.W {
+		v.W = other.W
+	}
+	return v
+}
+
+// Max sets this vector components to the maximum value of itself and other vector.
+// Returns the pointer to this updated vector.
+func (v *Vector4) Max(other *Vector4) *Vector4 {
+
+	if v.X < other.X {
+		v.X = other.X
+	}
+	if v.Y < other.Y {
+		v.Y = other.Y
+	}
+	if v.Z < other.Z {
+		v.Z = other.Z
+	}
+	if v.W < other.W {
+		v.W = other.W
+	}
+	return v
+}
+
+// Clamp sets this vector components to be no less than the corresponding components of min
+// and not greater than the corresponding component of max.
+// Assumes min < max, if this assumption isn't true it will not operate correctly.
+// Returns the pointer to this updated vector.
+func (v *Vector4) Clamp(min, max *Vector4) *Vector4 {
+
+	if v.X < min.X {
+		v.X = min.X
+	} else if v.X > max.X {
+		v.X = max.X
+	}
+
+	if v.Y < min.Y {
+		v.Y = min.Y
+	} else if v.Y > max.Y {
+		v.Y = max.Y
+	}
+
+	if v.Z < min.Z {
+		v.Z = min.Z
+	} else if v.Z > max.Z {
+		v.Z = max.Z
+	}
+
+	if v.W < min.W {
+		v.W = min.W
+	} else if v.W > max.W {
+		v.W = max.W
+	}
+	return v
+}
+
+// ClampScalar sets this vector components to be no less than minVal and not greater than maxVal.
+// Returns the pointer to this updated vector.
+func (v *Vector4) ClampScalar(minVal, maxVal float32) *Vector4 {
+
+	min := NewVector4(minVal, minVal, minVal, minVal)
+	max := NewVector4(maxVal, maxVal, maxVal, maxVal)
+	return v.Clamp(min, max)
+}
+
+// Floor applies math32.Floor() to each of this vector's components.
+// Returns the pointer to this updated vector.
+func (v *Vector4) Floor() *Vector4 {
+
+	v.X = Floor(v.X)
+	v.Y = Floor(v.Y)
+	v.Z = Floor(v.Z)
+	v.W = Floor(v.W)
+	return v
+}
+
+// Ceil applies math32.Ceil() to each of this vector's components.
+// Returns the pointer to this updated vector.
+func (v *Vector4) Ceil() *Vector4 {
+
+	v.X = Ceil(v.X)
+	v.Y = Ceil(v.Y)
+	v.Z = Ceil(v.Z)
+	v.W = Ceil(v.W)
+	return v
+}
+
+// Round rounds each of this vector's components.
+// Returns the pointer to this updated vector.
+func (v *Vector4) Round() *Vector4 {
+
+	v.X = Floor(v.X + 0.5)
+	v.Y = Floor(v.Y + 0.5)
+	v.Z = Floor(v.Z + 0.5)
+	v.W = Floor(v.W + 0.5)
+	return v
+}
+
+// Negate negates each of this vector's components.
+// Returns the pointer to this updated vector.
+func (v *Vector4) Negate() *Vector4 {
+
+	v.X = -v.X
+	v.Y = -v.Y
+	v.Z = -v.Z
+	v.W = -v.W
+	return v
+}
+
+// Dot returns the dot product of this vector with other.
+// None of the vectors are changed.
+func (v *Vector4) Dot(other *Vector4) float32 {
+
+	return v.X*other.X + v.Y*other.Y + v.Z*other.Z + v.W*other.W
+}
+
+// LengthSq returns the length squared of this vector.
+// LengthSq can be used to compare vectors' lengths without the need to perform a square root.
+func (v *Vector4) LengthSq() float32 {
+
+	return v.X*v.X + v.Y*v.Y + v.Z*v.Z + v.W*v.W
+}
+
+// Length returns the length of this vector.
+func (v *Vector4) Length() float32 {
+
+	return Sqrt(v.X*v.X + v.Y*v.Y + v.Z*v.Z + v.W*v.W)
+}
+
+// Normalize normalizes this vector so its length will be 1.
+// Returns the pointer to this updated vector.
+func (v *Vector4) Normalize() *Vector4 {
+
+	return v.DivideScalar(v.Length())
+}
+
+// SetLength sets this vector to have the specified length.
+// If the current length is zero, does nothing.
+// Returns the pointer to this updated vector.
+func (v *Vector4) SetLength(l float32) *Vector4 {
+
+	oldLength := v.Length()
+	if oldLength != 0 && l != oldLength {
+		v.MultiplyScalar(l / oldLength)
+	}
+	return v
+}
+
+// Lerp sets each of this vector's components to the linear interpolated value of
+// alpha between ifself and the corresponding other component.
+// Returns the pointer to this updated vector.
+func (v *Vector4) Lerp(other *Vector4, alpha float32) *Vector4 {
+
+	v.X += (other.X - v.X) * alpha
+	v.Y += (other.Y - v.Y) * alpha
+	v.Z += (other.Z - v.Z) * alpha
+	v.W += (other.W - v.W) * alpha
+	return v
+}
+
+// Equals returns if this vector is equal to other.
+func (v *Vector4) Equals(other *Vector4) bool {
+
+	return (other.X == v.X) && (other.Y == v.Y) && (other.Z == v.Z) && (other.W == v.W)
+}
+
+// FromArray sets this vector's components from the specified array and offset
+// Returns the pointer to this updated vector.
+func (v *Vector4) FromArray(array []float32, offset int) *Vector4 {
+
+	v.X = array[offset]
+	v.Y = array[offset+1]
+	v.Z = array[offset+2]
+	v.W = array[offset+3]
+	return v
+}
+
+// ToArray copies this vector's components to array starting at offset.
+// Returns the array.
+func (v *Vector4) ToArray(array []float32, offset int) []float32 {
+
+	array[offset] = v.X
+	array[offset+1] = v.Y
+	array[offset+2] = v.Z
+	array[offset+3] = v.W
+	return array
+}
+
+// ApplyMatrix4 multiplies the specified 4x4 matrix by this vector.
+// Returns the pointer to this updated vector.
+func (v *Vector4) ApplyMatrix4(m *Matrix4) *Vector4 {
+
+	x := v.X
+	y := v.Y
+	z := v.Z
+	w := v.W
+
+	v.X = m[0]*x + m[4]*y + m[8]*z + m[12]*w
+	v.Y = m[1]*x + m[5]*y + m[9]*z + m[13]*w
+	v.Z = m[2]*x + m[6]*y + m[10]*z + m[14]*w
+	v.W = m[3]*x + m[7]*y + m[11]*z + m[15]*w
+
+	return v
+}
+
+// SetAxisAngleFromQuaternion set this vector to be the axis (x, y, z) and angle (w) of a rotation specified the quaternion q.
+// Assumes q is normalized.
+func (v *Vector4) SetAxisAngleFromQuaternion(q *Quaternion) *Vector4 {
 
 	// http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToAngle/index.htm
-
-	// q is assumed to be normalized
-
-	this.W = 2 * Acos(q.W())
-
+	v.W = 2 * Acos(q.W())
 	s := Sqrt(1 - q.W()*q.W())
-
 	if s < 0.0001 {
-
-		this.X = 1
-		this.Y = 0
-		this.Z = 0
-
+		v.X = 1
+		v.Y = 0
+		v.Z = 0
 	} else {
-
-		this.X = q.X() / s
-		this.Y = q.Y() / s
-		this.Z = q.Z() / s
-
+		v.X = q.X() / s
+		v.Y = q.Y() / s
+		v.Z = q.Z() / s
 	}
-
-	return this
+	return v
 }
 
-func (this *Vector4) SetAxisFromRotationMatrix(m *Matrix4) *Vector4 {
+// SetAxisFromRotationMatrix this vector to be the axis (x, y, z) and angle (w) of a rotation specified the matrix m.
+// Assumes the upper 3x3 of m is a pure rotation matrix (i.e, unscaled).
+func (v *Vector4) SetAxisFromRotationMatrix(m *Matrix4) *Vector4 {
 
 	// http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToAngle/index.htm
-
-	// assumes the upper 3x3 of m is a pure rotation matrix (i.e, unscaled)
-
 	var angle, x, y, z float32 // variables for result
 	var epsilon float32 = 0.01 // margin to allow for rounding errors
 	var epsilon2 float32 = 0.1 // margin to distinguish between 0 and 180 degrees
@@ -251,11 +516,11 @@ func (this *Vector4) SetAxisFromRotationMatrix(m *Matrix4) *Vector4 {
 
 		if (Abs(m12+m21) < epsilon2) && (Abs(m13+m31) < epsilon2) && (Abs(m23+m32) < epsilon2) && (Abs(m11+m22+m33-3) < epsilon2) {
 
-			// this singularity is identity matrix so angle = 0
+			// v singularity is identity matrix so angle = 0
 
-			this.Set(1, 0, 0, 0)
+			v.Set(1, 0, 0, 0)
 
-			return this // zero angle, arbitrary axis
+			return v // zero angle, arbitrary axis
 		}
 
 		// otherwise this singularity is angle = 180
@@ -319,9 +584,9 @@ func (this *Vector4) SetAxisFromRotationMatrix(m *Matrix4) *Vector4 {
 
 		}
 
-		this.Set(x, y, z, angle)
+		v.Set(x, y, z, angle)
 
-		return this // return 180 deg rotation
+		return v // return 180 deg rotation
 	}
 
 	// as we have reached here there are no singularities so we can handle normally
@@ -335,224 +600,16 @@ func (this *Vector4) SetAxisFromRotationMatrix(m *Matrix4) *Vector4 {
 	// prevent divide by zero, should not happen if matrix is orthogonal and should be
 	// caught by singularity test above, but I've left it in just in case
 
-	this.X = (m32 - m23) / s
-	this.Y = (m13 - m31) / s
-	this.Z = (m21 - m12) / s
-	this.W = Acos((m11 + m22 + m33 - 1) / 2)
+	v.X = (m32 - m23) / s
+	v.Y = (m13 - m31) / s
+	v.Z = (m21 - m12) / s
+	v.W = Acos((m11 + m22 + m33 - 1) / 2)
 
-	return this
+	return v
 }
 
-func (this *Vector4) Min(v *Vector4) *Vector4 {
+// Clone returns a copy of this vector
+func (v *Vector4) Clone() *Vector4 {
 
-	if this.X > v.X {
-		this.X = v.X
-	}
-	if this.Y > v.Y {
-		this.Y = v.Y
-	}
-	if this.Z > v.Z {
-		this.Z = v.Z
-	}
-	if this.W > v.W {
-		this.W = v.W
-	}
-	return this
-}
-
-func (this *Vector4) Max(v *Vector4) *Vector4 {
-
-	if this.X < v.X {
-		this.X = v.X
-	}
-	if this.Y < v.Y {
-		this.Y = v.Y
-	}
-	if this.Z < v.Z {
-		this.Z = v.Z
-	}
-	if this.W < v.W {
-		this.W = v.W
-	}
-	return this
-}
-
-func (this *Vector4) Clamp(min, max *Vector4) *Vector4 {
-
-	// This function assumes min < max, if this assumption isn't true it will not operate correctly
-	if this.X < min.X {
-		this.X = min.X
-	} else if this.X > max.X {
-		this.X = max.X
-	}
-
-	if this.Y < min.Y {
-		this.Y = min.Y
-	} else if this.Y > max.Y {
-		this.Y = max.Y
-	}
-
-	if this.Z < min.Z {
-		this.Z = min.Z
-	} else if this.Z > max.Z {
-		this.Z = max.Z
-	}
-
-	if this.W < min.W {
-		this.W = min.W
-	} else if this.W > max.W {
-		this.W = max.W
-	}
-	return this
-}
-
-func (this *Vector4) ClampScalar(minVal, maxVal float32) *Vector4 {
-
-	min := NewVector4(minVal, minVal, minVal, minVal)
-	max := NewVector4(maxVal, maxVal, maxVal, maxVal)
-	return this.Clamp(min, max)
-}
-
-func (this *Vector4) Floor() *Vector4 {
-
-	this.X = Floor(this.X)
-	this.Y = Floor(this.Y)
-	this.Z = Floor(this.Z)
-	this.W = Floor(this.W)
-	return this
-}
-
-func (this *Vector4) Ceil() *Vector4 {
-
-	this.X = Ceil(this.X)
-	this.Y = Ceil(this.Y)
-	this.Z = Ceil(this.Z)
-	this.W = Ceil(this.W)
-	return this
-}
-
-func (this *Vector4) Round() *Vector4 {
-
-	// TODO NEED CHECK
-	this.X = Floor(this.X + 0.5)
-	this.Y = Floor(this.Y + 0.5)
-	this.Z = Floor(this.Z + 0.5)
-	this.W = Floor(this.W + 0.5)
-	return this
-}
-
-func (this *Vector4) RoundToZero() *Vector4 {
-
-	if this.X < 0 {
-		this.X = Ceil(this.X)
-	} else {
-		this.X = Floor(this.X)
-	}
-
-	if this.Y < 0 {
-		this.Y = Ceil(this.Y)
-	} else {
-		this.Y = Floor(this.Y)
-	}
-
-	if this.Z < 0 {
-		this.Z = Ceil(this.Z)
-	} else {
-		this.Z = Floor(this.Z)
-	}
-
-	if this.W < 0 {
-		this.W = Ceil(this.W)
-	} else {
-		this.W = Floor(this.W)
-	}
-	return this
-}
-
-func (this *Vector4) Negate() *Vector4 {
-
-	this.X = -this.X
-	this.Y = -this.Y
-	this.Z = -this.Z
-	this.W = -this.W
-	return this
-}
-
-func (this *Vector4) Dot(v *Vector4) float32 {
-
-	return this.X*v.X + this.Y*v.Y + this.Z*v.Z + this.W*v.W
-}
-
-func (this *Vector4) LengthSq(v *Vector4) float32 {
-
-	return this.X*this.X + this.Y*this.Y + this.Z*this.Z + this.W*this.W
-}
-
-func (this *Vector4) Length() float32 {
-
-	return Sqrt(this.X*this.X + this.Y*this.Y + this.Z*this.Z + this.W*this.W)
-}
-
-func (this *Vector4) LengthManhattan(v *Vector4) float32 {
-
-	return Abs(this.X + Abs(this.Y+Abs(this.Z)) + Abs(this.W))
-}
-
-func (this *Vector4) Normalize() *Vector4 {
-
-	return this.DivideScalar(this.Length())
-}
-
-func (this *Vector4) SetLength(l float32) *Vector4 {
-
-	oldLength := this.Length()
-	if oldLength != 0 && l != oldLength {
-		this.MultiplyScalar(l / oldLength)
-	}
-	return this
-}
-
-func (this *Vector4) Lerp(v *Vector4, alpha float32) *Vector4 {
-
-	this.X += (v.X - this.X) * alpha
-	this.Y += (v.Y - this.Y) * alpha
-	this.Z += (v.Z - this.Z) * alpha
-	this.W += (v.W - this.W) * alpha
-	return this
-}
-
-func (this *Vector4) LerpVectors(v1, v2 *Vector4, alpha float32) *Vector4 {
-
-	this.SubVectors(v2, v2).MultiplyScalar(alpha).Add(v1)
-	return this
-}
-
-func (this *Vector4) Equals(v *Vector4) bool {
-
-	return (v.X == this.X) && (v.Y == this.Y) && (v.Z == this.Z) && (v.W == this.W)
-}
-
-func (this *Vector4) FromArray(array []float32, offset int) *Vector4 {
-
-	this.X = array[offset]
-	this.Y = array[offset+1]
-	this.Z = array[offset+2]
-	this.W = array[offset+3]
-	return this
-}
-
-func (this *Vector4) ToArray(array []float32, offset int) []float32 {
-
-	array[offset] = this.X
-	array[offset+1] = this.Y
-	array[offset+2] = this.Z
-	array[offset+3] = this.W
-	return array
-}
-
-// TODO fromAttribute: function ( attribute, index, offset ) {
-
-func (this *Vector4) Clone() *Vector4 {
-
-	return NewVector4(this.X, this.Y, this.Z, this.W)
+	return NewVector4(v.X, v.Y, v.Z, v.W)
 }
