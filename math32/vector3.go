@@ -157,7 +157,7 @@ func (v *Vector3) SubScalar(s float32) *Vector3 {
 	return v
 }
 
-// SubVectors subtracts vectors a and b from this vector.
+// SubVectors sets this vector to a - b.
 // Returns the pointer to this updated vector.
 func (v *Vector3) SubVectors(a, b *Vector3) *Vector3 {
 
