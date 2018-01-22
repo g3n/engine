@@ -119,7 +119,8 @@ func (r *Renderer) SetScene(scene core.INode) {
 	r.scene = scene
 }
 
-// Returns statistics
+// Stats returns a copy of the statistics for the last frame.
+// Should be called after the frame was rendered.
 func (r *Renderer) Stats() Stats {
 
 	return r.stats
@@ -147,6 +148,7 @@ func (r *Renderer) Render(icam camera.ICamera) (bool, error) {
 			return r.rendered, err
 		}
 	}
+	r.prevStats = r.stats
 	return r.rendered, nil
 }
 
@@ -294,7 +296,6 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		grmat.Render(r.gs, &r.rinfo)
 		r.stats.Graphics++
 	}
-	r.prevStats = r.stats
 	return nil
 }
 
