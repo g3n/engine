@@ -18,6 +18,7 @@ type Renderer struct {
 	gs           *gls.GLS
 	shaman       Shaman                     // Internal shader manager
 	stats        Stats                      // Renderer statistics
+	prevStats    Stats                      // Renderer statistics for previous frame
 	scene        core.INode                 // Node containing 3D scene to render
 	panelGui     gui.IPanel                 // Panel containing GUI to render
 	panel3D      gui.IPanel                 // Panel which contains the 3D scene
@@ -237,8 +238,9 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		r.stats.Others++
 	}
 
-	// If there is graphic material to render
-	if len(r.grmats) > 0 {
+	// If there is graphic material to render or there was in the previous frame
+	// it is necessary to clear the screen.
+	if len(r.grmats) > 0 || r.prevStats.Graphics > 0 {
 		// If the 3D scene to draw is to be confined to user specified panel
 		// sets scissor to avoid erasing gui elements outside of this panel
 		if r.panel3D != nil {
@@ -292,6 +294,7 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		grmat.Render(r.gs, &r.rinfo)
 		r.stats.Graphics++
 	}
+	r.prevStats = r.stats
 	return nil
 }
 
