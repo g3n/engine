@@ -4,8 +4,13 @@
 
 package math32
 
+import "errors"
+
+// Matrix3 is 3x3 matrix organized internally as column matrix
 type Matrix3 [9]float32
 
+// NewMatrix3 creates and returns a pointer to a new Matrix3
+// initialized as the identity matrix.
 func NewMatrix3() *Matrix3 {
 
 	var m Matrix3
@@ -13,6 +18,9 @@ func NewMatrix3() *Matrix3 {
 	return &m
 }
 
+// Set sets all the elements of the matrix row by row starting at row1, column1,
+// row1, column2, row1, column3 and so forth.
+// Returns the pointer to this updated Matrix.
 func (m *Matrix3) Set(n11, n12, n13, n21, n22, n23, n31, n32, n33 float32) *Matrix3 {
 
 	m[0] = n11
@@ -27,6 +35,8 @@ func (m *Matrix3) Set(n11, n12, n13, n21, n22, n23, n31, n32, n33 float32) *Matr
 	return m
 }
 
+// Identity sets this matrix as the identity matrix.
+// Returns the pointer to this updated matrix.
 func (m *Matrix3) Identity() *Matrix3 {
 
 	m.Set(
@@ -37,12 +47,17 @@ func (m *Matrix3) Identity() *Matrix3 {
 	return m
 }
 
+// Copy copies src matrix into this one.
+// Returns the pointer to this updated matrix.
 func (m *Matrix3) Copy(src *Matrix3) *Matrix3 {
 
 	*m = *src
 	return m
 }
 
+// ApplyToVector3Array multiplies length vectors in the array starting at offset by this matrix.
+// Returns pointer to the updated array.
+// This matrix is unchanged.
 func (m *Matrix3) ApplyToVector3Array(array []float32, offset int, length int) []float32 {
 
 	var v1 Vector3
@@ -59,6 +74,8 @@ func (m *Matrix3) ApplyToVector3Array(array []float32, offset int, length int) [
 	return array
 }
 
+// MultiplyScalar multiplies each of this matrix's components by the specified scalar.
+// Returns pointer to this updated matrix.
 func (m *Matrix3) MultiplyScalar(s float32) *Matrix3 {
 
 	m[0] *= s
@@ -73,6 +90,7 @@ func (m *Matrix3) MultiplyScalar(s float32) *Matrix3 {
 	return m
 }
 
+// Determinant calculates and returns the determinant of this matrix.
 func (m *Matrix3) Determinant() float32 {
 
 	return m[0]*m[4]*m[8] -
@@ -83,7 +101,11 @@ func (m *Matrix3) Determinant() float32 {
 		m[2]*m[4]*m[6]
 }
 
-func (m *Matrix3) GetInverse(src *Matrix4, throwOnInvertible bool) *Matrix3 {
+// GetInverse sets this matrix to the inverse of the src matrix.
+// Returns the pointer to this updated Matrix and an error.
+// An error is returned if the src matrix cannot be inverted.
+// In this case sets this matrix to the identity matrix.
+func (m *Matrix3) GetInverse(src *Matrix4) (*Matrix3, error) {
 
 	m[0] = src[10]*src[5] - src[6]*src[9]
 	m[1] = -src[10]*src[1] + src[2]*src[9]
@@ -99,16 +121,15 @@ func (m *Matrix3) GetInverse(src *Matrix4, throwOnInvertible bool) *Matrix3 {
 
 	// no inverse
 	if det == 0 {
-		if throwOnInvertible {
-			panic("Matrix3.getInverse(): can't invert matrix, determinant is 0")
-		}
 		m.Identity()
-		return m
+		return m, errors.New("Matrix3.GetInverse(): can't invert matrix, determinant is 0")
 	}
 	m.MultiplyScalar(1.0 / det)
-	return m
+	return m, nil
 }
 
+// Transpose transposes this matrix.
+// Returns pointer to this updated matrix.
 func (m *Matrix3) Transpose() *Matrix3 {
 
 	var tmp float32
@@ -124,45 +145,37 @@ func (m *Matrix3) Transpose() *Matrix3 {
 	return m
 }
 
-func (m *Matrix3) FlattenToArrayOffset(array []float32, offset int) []float32 {
+// GetNormalMatrix set this matrix to the matrix to transform the normal vectors
+// from the src matrix to transform the vertices.
+// If the src matrix cannot be inverted, returns nil and an error,
+// otherwise returns pointer to this updated matrix and no error.
+func (m *Matrix3) GetNormalMatrix(src *Matrix4) (*Matrix3, error) {
+
+	inv, err := m.GetInverse(src)
+	if err != nil {
+		return nil, err
+	}
+	*m = *inv.Transpose()
+	return m, nil
+}
+
+// FromArray set this matrix array starting at offset.
+// Returns pointer to this updated matrix.
+func (m *Matrix3) FromArray(array []float32, offset int) *Matrix3 {
+
+	copy(m[:], array[offset:offset+9])
+	return m
+}
+
+// ToArray copies this matrix to array starting at offset.
+// Returns pointer to the updated array.
+func (m *Matrix3) ToArray(array []float32, offset int) []float32 {
 
 	copy(array[offset:], m[:])
 	return array
 }
 
-func (m *Matrix3) GetNormalMatrix(src *Matrix4) *Matrix3 {
-
-	m.GetInverse(src, true).Transpose()
-	return m
-}
-
-func (m *Matrix3) TransposeIntoArray(r []float32) *Matrix3 {
-
-	r[0] = m[0]
-	r[1] = m[3]
-	r[2] = m[6]
-	r[3] = m[1]
-	r[4] = m[4]
-	r[5] = m[7]
-	r[6] = m[2]
-	r[7] = m[5]
-	r[8] = m[8]
-	return m
-}
-
-func (m *Matrix3) FromArray(array []float32) *Matrix3 {
-
-	copy(m[:], array[:9])
-	return m
-}
-
-func (m *Matrix3) ToArray() []float32 {
-
-	var dst = make([]float32, 9)
-	copy(dst, m[:])
-	return dst
-}
-
+// Clone creates and returns a pointer to a copy of this matrix.
 func (m *Matrix3) Clone() *Matrix3 {
 
 	var cloned Matrix3
