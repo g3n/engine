@@ -152,7 +152,7 @@ func (this *Plane) CoplanarPoint(optionalTarget *Vector3) *Vector3 {
 	return result.Copy(&this.normal).MultiplyScalar(-this.constant)
 }
 
-func (this *Plane) ApplyMatrix4(matrix *Matrix4, optionalNormalMatrix *Matrix3) *Plane {
+func (this *Plane) ApplyMatrix4(matrix *Matrix4, optionalNormalMatrix *Matrix3) (*Plane, error) {
 	// compute new normal based on theory here:
 	// http://www.songho.ca/opengl/gl_normaltransform.html
 
@@ -161,10 +161,14 @@ func (this *Plane) ApplyMatrix4(matrix *Matrix4, optionalNormalMatrix *Matrix3) 
 	m1 := NewMatrix3()
 
 	var normalMatrix *Matrix3
+	var err error
 	if optionalNormalMatrix != nil {
 		normalMatrix = optionalNormalMatrix
 	} else {
-		normalMatrix = m1.GetNormalMatrix(matrix)
+		normalMatrix, err = m1.GetNormalMatrix(matrix)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	newNormal := v1.Copy(&this.normal).ApplyMatrix3(normalMatrix)
@@ -173,7 +177,7 @@ func (this *Plane) ApplyMatrix4(matrix *Matrix4, optionalNormalMatrix *Matrix3) 
 	newCoplanarPoint.ApplyMatrix4(matrix)
 
 	this.SetFromNormalAndCoplanarPoint(newNormal, newCoplanarPoint)
-	return this
+	return this, nil
 }
 
 func (this *Plane) Translate(offset *Vector3) *Plane {
