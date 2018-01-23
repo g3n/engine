@@ -4,8 +4,6 @@
 
 package math32
 
-import "errors"
-
 // Matrix3 is 3x3 matrix organized internally as column matrix
 type Matrix3 [9]float32
 
@@ -101,11 +99,11 @@ func (m *Matrix3) Determinant() float32 {
 		m[2]*m[4]*m[6]
 }
 
-// GetInverse sets this matrix to the inverse of the src matrix.
-// Returns the pointer to this updated Matrix and an error.
-// An error is returned if the src matrix cannot be inverted.
-// In this case sets this matrix to the identity matrix.
-func (m *Matrix3) GetInverse(src *Matrix4) (*Matrix3, error) {
+// GetInverse sets this matrix to the inverse of the src matrix and
+// returns pointer to this updated matrix.
+// If the src matrix cannot be inverted returns nil and
+// sets this matrix to the identity matrix.
+func (m *Matrix3) GetInverse(src *Matrix4) *Matrix3 {
 
 	m[0] = src[10]*src[5] - src[6]*src[9]
 	m[1] = -src[10]*src[1] + src[2]*src[9]
@@ -122,10 +120,10 @@ func (m *Matrix3) GetInverse(src *Matrix4) (*Matrix3, error) {
 	// no inverse
 	if det == 0 {
 		m.Identity()
-		return m, errors.New("Matrix3.GetInverse(): can't invert matrix, determinant is 0")
+		return nil
 	}
 	m.MultiplyScalar(1.0 / det)
-	return m, nil
+	return m
 }
 
 // Transpose transposes this matrix.
@@ -147,16 +145,16 @@ func (m *Matrix3) Transpose() *Matrix3 {
 
 // GetNormalMatrix set this matrix to the matrix to transform the normal vectors
 // from the src matrix to transform the vertices.
-// If the src matrix cannot be inverted, returns nil and an error,
-// otherwise returns pointer to this updated matrix and no error.
-func (m *Matrix3) GetNormalMatrix(src *Matrix4) (*Matrix3, error) {
+// If the src matrix cannot be inverted, returns nil
+// otherwise returns pointer to this updated matrix.
+func (m *Matrix3) GetNormalMatrix(src *Matrix4) *Matrix3 {
 
-	inv, err := m.GetInverse(src)
-	if err != nil {
-		return nil, err
+	inv := m.GetInverse(src)
+	m.Transpose()
+	if inv == nil {
+		return nil
 	}
-	*m = *inv.Transpose()
-	return m, nil
+	return m
 }
 
 // FromArray set this matrix array starting at offset.

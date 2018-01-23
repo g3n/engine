@@ -99,7 +99,7 @@ func (m *Mesh) Raycast(rc *core.Raycaster, intersects *[]core.Intersect) {
 	// the geometry, as is much less expensive to transform the
 	// ray to model coordinates than the geometry to world coordinates.
 	var inverseMatrix math32.Matrix4
-	inverseMatrix.GetInverse(&matrixWorld, true)
+	inverseMatrix.GetInverse(&matrixWorld)
 	var ray math32.Ray
 	ray.Copy(&rc.Ray).ApplyMatrix4(&inverseMatrix)
 	bbox := geom.BoundingBox()

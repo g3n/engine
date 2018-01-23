@@ -75,7 +75,7 @@ func lineRaycast(igr IGraphic, rc *core.Raycaster, intersects *[]core.Intersect,
 	// ray to model coordinates than the geometry to world coordinates.
 	var inverseMatrix math32.Matrix4
 	var ray math32.Ray
-	inverseMatrix.GetInverse(&matrixWorld, true)
+	inverseMatrix.GetInverse(&matrixWorld)
 	ray.Copy(&rc.Ray).ApplyMatrix4(&inverseMatrix)
 
 	var vstart math32.Vector3
