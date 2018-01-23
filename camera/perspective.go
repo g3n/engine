@@ -84,7 +84,7 @@ func (cam *Perspective) Project(v *math32.Vector3) *math32.Vector3 {
 	cam.updateProjMatrix()
 	var matrix math32.Matrix4
 	matrixWorld := cam.MatrixWorld()
-	matrix.MultiplyMatrices(&cam.projMatrix, matrix.GetInverse(&matrixWorld, true))
+	matrix.MultiplyMatrices(&cam.projMatrix, matrix.GetInverse(&matrixWorld))
 	v.ApplyProjection(&matrix)
 	return v
 }
@@ -96,12 +96,12 @@ func (cam *Perspective) Unproject(v *math32.Vector3) *math32.Vector3 {
 	var viewMatrix math32.Matrix4
 	cam.ViewMatrix(&viewMatrix)
 	var invertedViewMatrix math32.Matrix4
-	invertedViewMatrix.GetInverse(&viewMatrix, true)
+	invertedViewMatrix.GetInverse(&viewMatrix)
 
 	// Get inverted camera projection matrix
 	cam.updateProjMatrix()
 	var invertedProjMatrix math32.Matrix4
-	invertedProjMatrix.GetInverse(&cam.projMatrix, true)
+	invertedProjMatrix.GetInverse(&cam.projMatrix)
 
 	// Multiply invertedViewMatrix by invertedProjMatrix
 	// to get transformation from camera projected coordinates to world coordinates

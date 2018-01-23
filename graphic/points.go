@@ -60,7 +60,7 @@ func (p *Points) Raycast(rc *core.Raycaster, intersects *[]core.Intersect) {
 	// Copy ray and transforms to model coordinates
 	var inverseMatrix math32.Matrix4
 	var ray math32.Ray
-	inverseMatrix.GetInverse(&matrixWorld, true)
+	inverseMatrix.GetInverse(&matrixWorld)
 	ray.Copy(&rc.Ray).ApplyMatrix4(&inverseMatrix)
 
 	// Checks intersection with all points
