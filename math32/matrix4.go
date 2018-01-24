@@ -4,6 +4,8 @@
 
 package math32
 
+import "errors"
+
 // Matrix4 is 4x4 matrix organized internally as column matrix.
 type Matrix4 [16]float32
 
@@ -413,11 +415,10 @@ func (m *Matrix4) SetPosition(v *Vector3) *Matrix4 {
 	return m
 }
 
-// GetInverse sets this matrix to the inverse of the src matrix and
-// returns pointer to this updated matrix.
-// If the src matrix cannot be inverted returns nil and
+// GetInverse sets this matrix to the inverse of the src matrix.
+// If the src matrix cannot be inverted returns error and
 // sets this matrix to the identity matrix.
-func (m *Matrix4) GetInverse(src *Matrix4) *Matrix4 {
+func (m *Matrix4) GetInverse(src *Matrix4) error {
 
 	n11 := src[0]
 	n12 := src[4]
@@ -457,10 +458,10 @@ func (m *Matrix4) GetInverse(src *Matrix4) *Matrix4 {
 
 	if det == 0 {
 		m.Identity()
-		return nil
+		return errors.New("Cannot inverse matrix")
 	}
 	m.MultiplyScalar(1.0 / det)
-	return m
+	return nil
 }
 
 // Scale multiply the first column of this matrix by the vector X component,

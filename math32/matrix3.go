@@ -4,6 +4,8 @@
 
 package math32
 
+import "errors"
+
 // Matrix3 is 3x3 matrix organized internally as column matrix
 type Matrix3 [9]float32
 
@@ -99,11 +101,10 @@ func (m *Matrix3) Determinant() float32 {
 		m[2]*m[4]*m[6]
 }
 
-// GetInverse sets this matrix to the inverse of the src matrix and
-// returns pointer to this updated matrix.
-// If the src matrix cannot be inverted returns nil and
+// GetInverse sets this matrix to the inverse of the src matrix.
+// If the src matrix cannot be inverted returns error and
 // sets this matrix to the identity matrix.
-func (m *Matrix3) GetInverse(src *Matrix4) *Matrix3 {
+func (m *Matrix3) GetInverse(src *Matrix4) error {
 
 	m[0] = src[10]*src[5] - src[6]*src[9]
 	m[1] = -src[10]*src[1] + src[2]*src[9]
@@ -120,10 +121,10 @@ func (m *Matrix3) GetInverse(src *Matrix4) *Matrix3 {
 	// no inverse
 	if det == 0 {
 		m.Identity()
-		return nil
+		return errors.New("Cannot inverse matrix")
 	}
 	m.MultiplyScalar(1.0 / det)
-	return m
+	return nil
 }
 
 // Transpose transposes this matrix.
@@ -145,16 +146,12 @@ func (m *Matrix3) Transpose() *Matrix3 {
 
 // GetNormalMatrix set this matrix to the matrix to transform the normal vectors
 // from the src matrix to transform the vertices.
-// If the src matrix cannot be inverted, returns nil
-// otherwise returns pointer to this updated matrix.
-func (m *Matrix3) GetNormalMatrix(src *Matrix4) *Matrix3 {
+// If the src matrix cannot be inverted returns error.
+func (m *Matrix3) GetNormalMatrix(src *Matrix4) error {
 
-	inv := m.GetInverse(src)
+	err := m.GetInverse(src)
 	m.Transpose()
-	if inv == nil {
-		return nil
-	}
-	return m
+	return err
 }
 
 // FromArray set this matrix array starting at offset.

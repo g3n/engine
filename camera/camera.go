@@ -15,9 +15,9 @@ type ICamera interface {
 	GetCamera() *Camera
 	ViewMatrix(*math32.Matrix4)
 	ProjMatrix(*math32.Matrix4)
-	Project(*math32.Vector3) *math32.Vector3
-	Unproject(*math32.Vector3) *math32.Vector3
-	SetRaycaster(rc *core.Raycaster, x, y float32)
+	Project(*math32.Vector3) (*math32.Vector3, error)
+	Unproject(*math32.Vector3) (*math32.Vector3, error)
+	SetRaycaster(rc *core.Raycaster, x, y float32) error
 }
 
 // Camera is the base camera which is normally embedded in other camera types
@@ -150,21 +150,21 @@ func (cam *Camera) updateQuaternion() {
 
 // Project satisfies the ICamera interface and must
 // be implemented for specific camera types.
-func (cam *Camera) Project(v *math32.Vector3) *math32.Vector3 {
+func (cam *Camera) Project(v *math32.Vector3) (*math32.Vector3, error) {
 
 	panic("Not implemented")
 }
 
 // Unproject satisfies the ICamera interface and must
 // be implemented for specific camera types.
-func (cam *Camera) Unproject(v *math32.Vector3) *math32.Vector3 {
+func (cam *Camera) Unproject(v *math32.Vector3) (*math32.Vector3, error) {
 
 	panic("Not implemented")
 }
 
 // SetRaycaster satisfies the ICamera interface and must
 // be implemented for specific camera types.
-func (cam *Camera) SetRaycaster(rc *core.Raycaster, x, y float32) {
+func (cam *Camera) SetRaycaster(rc *core.Raycaster, x, y float32) error {
 
 	panic("Not implemented")
 }

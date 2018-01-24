@@ -164,10 +164,11 @@ func (this *Plane) ApplyMatrix4(matrix *Matrix4, optionalNormalMatrix *Matrix3) 
 	if optionalNormalMatrix != nil {
 		normalMatrix = optionalNormalMatrix
 	} else {
-		normalMatrix = m1.GetNormalMatrix(matrix)
-		if normalMatrix == nil {
+		err := m1.GetNormalMatrix(matrix)
+		if err != nil {
 			return nil
 		}
+		normalMatrix = m1
 	}
 
 	newNormal := v1.Copy(&this.normal).ApplyMatrix3(normalMatrix)
