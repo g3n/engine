@@ -34,6 +34,7 @@ type ShaderSpecs struct {
 	PointLightsMax   int                // Current Number of point lights
 	SpotLightsMax    int                // Current Number of spot lights
 	MatTexturesMax   int                // Current Number of material textures
+	Defines          map[string]string  // Additional shader defines
 }
 
 type ProgSpecs struct {
@@ -179,6 +180,10 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 	defines["POINT_LIGHTS"] = strconv.FormatUint(uint64(specs.PointLightsMax), 10)
 	defines["SPOT_LIGHTS"] = strconv.FormatUint(uint64(specs.SpotLightsMax), 10)
 	defines["MAT_TEXTURES"] = strconv.FormatUint(uint64(specs.MatTexturesMax), 10)
+	// Adds additional material defines from the specs parameter
+	for name, value := range specs.Defines {
+		defines[name] = value
+	}
 
 	// Get vertex shader source
 	vertexSource, ok := sm.shadersm[progInfo.Vertex]
