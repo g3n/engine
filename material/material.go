@@ -218,11 +218,18 @@ func (mat *Material) SetPolygonOffset(factor, units float32) {
 	mat.polyOffsetUnits = units
 }
 
-// SetShaderDefine defines a name with the specified value which will
-// be passed to this material shader.
+// SetShaderDefine defines a name with the specified value which are
+// passed to this material shader.
 func (mat *Material) SetShaderDefine(name, value string) {
 
 	mat.defines[name] = value
+}
+
+// UnsetShaderDefines removes the specified name from the defines which
+// are passed to this material shader.
+func (mat *Material) UnsetShaderDefine(name string) {
+
+	delete(mat.defines, name)
 }
 
 // ShaderDefines returns a map with the shader defines.
