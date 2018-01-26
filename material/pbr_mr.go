@@ -65,6 +65,8 @@ func (m *PbrMr) SetBaseColorTexture(tex *texture.Texture2D) *PbrMr {
 	if m.baseColorTex != nil {
 		m.baseColorTex.SetUniformNames("uBaseColorSampler", "uBaseColorTexParams")
 		m.SetShaderDefine("HAS_BASECOLORMAP", "")
+	} else {
+		m.UnsetShaderDefine("HAS_BASECOLORMAP")
 	}
 	return m
 }
@@ -97,6 +99,8 @@ func (m *PbrMr) SetMetallicRoughnessTexture(tex *texture.Texture2D) *PbrMr {
 	if m.metallicRoughnessTex != nil {
 		m.metallicRoughnessTex.SetUniformNames("uMetallicRoughnessSampler", "uMetallicRoughnessTexParams")
 		m.SetShaderDefine("HAS_METALROUGHNESSMAP", "")
+	} else {
+		m.UnsetShaderDefine("HAS_METALROUGHNESSMAP")
 	}
 	return m
 }
@@ -109,6 +113,8 @@ func (m *PbrMr) SetNormalTexture(tex *texture.Texture2D) *PbrMr {
 	if m.normalTex != nil {
 		m.normalTex.SetUniformNames("uNormalSampler", "uNormalSamplerTexParams")
 		m.SetShaderDefine("HAS_NORMALMAP", "")
+	} else {
+		m.UnsetShaderDefine("HAS_NORMALMAP")
 	}
 	return m
 }
@@ -121,6 +127,8 @@ func (m *PbrMr) SetOcclusionTexture(tex *texture.Texture2D) *PbrMr {
 	if m.occlusionTex != nil {
 		m.occlusionTex.SetUniformNames("uOcclusionSampler", "uOcclusionTexParams")
 		m.SetShaderDefine("HAS_OCCLUSIONMAP", "")
+	} else {
+		m.UnsetShaderDefine("HAS_OCCLUSIONMAP")
 	}
 	return m
 }
@@ -133,6 +141,8 @@ func (m *PbrMr) SetEmissiveTexture(tex *texture.Texture2D) *PbrMr {
 	if m.emissiveTex != nil {
 		m.emissiveTex.SetUniformNames("uEmissiveSampler", "uEmissiveSamplerTexParams")
 		m.SetShaderDefine("HAS_EMISSIVEMAP", "")
+	} else {
+		m.UnsetShaderDefine("HAS_EMISSIVEMAP")
 	}
 	return m
 }
