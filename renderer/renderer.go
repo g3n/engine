@@ -269,6 +269,7 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		r.specs.ShaderUnique = mat.ShaderUnique()
 		r.specs.UseLights = mat.UseLights()
 		r.specs.MatTexturesMax = mat.TextureCount()
+		r.specs.Defines = mat.ShaderDefines()
 		_, err := r.shaman.SetProgram(&r.specs)
 		if err != nil {
 			return err

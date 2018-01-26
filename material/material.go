@@ -74,6 +74,7 @@ type Material struct {
 	lineWidth        float32              // line width for lines and mesh wireframe
 	polyOffsetFactor float32              // polygon offset factor
 	polyOffsetUnits  float32              // polygon offset units
+	defines          map[string]string    // shader defines
 	textures         []*texture.Texture2D // List of textures
 }
 
@@ -97,6 +98,7 @@ func (mat *Material) Init() *Material {
 	mat.lineWidth = 1.0
 	mat.polyOffsetFactor = 0
 	mat.polyOffsetUnits = 0
+	mat.defines = make(map[string]string)
 	mat.textures = make([]*texture.Texture2D, 0)
 
 	return mat
@@ -214,6 +216,19 @@ func (mat *Material) SetPolygonOffset(factor, units float32) {
 
 	mat.polyOffsetFactor = factor
 	mat.polyOffsetUnits = units
+}
+
+// SetShaderDefine defines a name with the specified value which will
+// be passed to this material shader.
+func (mat *Material) SetShaderDefine(name, value string) {
+
+	mat.defines[name] = value
+}
+
+// ShaderDefines returns a map with the shader defines.
+func (mat *Material) ShaderDefines() map[string]string {
+
+	return mat.defines
 }
 
 func (mat *Material) RenderSetup(gs *gls.GLS) {

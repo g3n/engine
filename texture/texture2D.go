@@ -127,6 +127,13 @@ func (t *Texture2D) Dispose() {
 	}
 }
 
+// SetUniformNames sets the names of the uniforms in the shader for sampler and texture info.
+func (t *Texture2D) SetUniformNames(sampler, info string) {
+
+	t.uniUnit.Init(sampler)
+	t.uniInfo.Init(info)
+}
+
 // SetImage sets a new image for this texture
 func (t *Texture2D) SetImage(imgfile string) error {
 
