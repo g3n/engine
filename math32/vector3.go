@@ -482,10 +482,10 @@ func (v *Vector3) ApplyQuaternion(q *Quaternion) *Vector3 {
 	y := v.Y
 	z := v.Z
 
-	qx := q.x
-	qy := q.y
-	qz := q.z
-	qw := q.w
+	qx := q.X
+	qy := q.Y
+	qz := q.Z
+	qw := q.W
 
 	// calculate quat * vector
 	ix := qw*x + qy*z - qz*y
