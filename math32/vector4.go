@@ -475,16 +475,16 @@ func (v *Vector4) ApplyMatrix4(m *Matrix4) *Vector4 {
 func (v *Vector4) SetAxisAngleFromQuaternion(q *Quaternion) *Vector4 {
 
 	// http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToAngle/index.htm
-	v.W = 2 * Acos(q.W())
-	s := Sqrt(1 - q.W()*q.W())
+	v.W = 2 * Acos(q.W)
+	s := Sqrt(1 - q.W*q.W)
 	if s < 0.0001 {
 		v.X = 1
 		v.Y = 0
 		v.Z = 0
 	} else {
-		v.X = q.X() / s
-		v.Y = q.Y() / s
-		v.Z = q.Z() / s
+		v.X = q.X / s
+		v.Y = q.Y / s
+		v.Z = q.Z / s
 	}
 	return v
 }

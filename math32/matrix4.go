@@ -164,10 +164,10 @@ func (m *Matrix4) MakeRotationFromEuler(euler *Vector3) *Matrix4 {
 // Returns pointer to this updated matrix.
 func (m *Matrix4) MakeRotationFromQuaternion(q *Quaternion) *Matrix4 {
 
-	x := q.x
-	y := q.y
-	z := q.z
-	w := q.w
+	x := q.X
+	y := q.Y
+	z := q.Z
+	w := q.W
 	x2 := x + x
 	y2 := y + y
 	z2 := z + z
