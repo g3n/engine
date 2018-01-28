@@ -98,7 +98,6 @@ func (mat *Material) Init() *Material {
 	mat.lineWidth = 1.0
 	mat.polyOffsetFactor = 0
 	mat.polyOffsetUnits = 0
-	mat.defines = make(map[string]string)
 	mat.textures = make([]*texture.Texture2D, 0)
 
 	return mat
@@ -222,6 +221,9 @@ func (mat *Material) SetPolygonOffset(factor, units float32) {
 // passed to this material shader.
 func (mat *Material) SetShaderDefine(name, value string) {
 
+	if mat.defines == nil {
+		mat.defines = make(map[string]string)
+	}
 	mat.defines[name] = value
 }
 
@@ -229,10 +231,13 @@ func (mat *Material) SetShaderDefine(name, value string) {
 // are passed to this material shader.
 func (mat *Material) UnsetShaderDefine(name string) {
 
+	if mat.defines == nil {
+		return
+	}
 	delete(mat.defines, name)
 }
 
-// ShaderDefines returns a map with the shader defines.
+// ShaderDefines returns this material map of shader defines.
 func (mat *Material) ShaderDefines() map[string]string {
 
 	return mat.defines

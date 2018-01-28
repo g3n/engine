@@ -3,6 +3,19 @@
 // 'go generate' in this folder.
 package shaders
 
+const include_attributes_source = `//
+// Vertex attributes
+//
+layout(location = 0) in  vec3  VertexPosition;
+layout(location = 1) in  vec3  VertexNormal;
+layout(location = 2) in  vec3  VertexColor;
+layout(location = 3) in  vec2  VertexTexcoord;
+layout(location = 4) in  float VertexDistance;
+layout(location = 5) in  vec4  VertexTexoffsets;
+
+
+`
+
 const include_phong_model_source = `/***
  phong lighting model
  Parameters:
@@ -121,6 +134,49 @@ void phongModel(vec4 position, vec3 normal, vec3 camDir, vec3 matAmbient, vec3 m
 
 `
 
+const include_lights_source = `//
+// Lights uniforms
+//
+
+// Ambient lights uniforms
+#if AMB_LIGHTS>0
+    uniform vec3 AmbientLightColor[AMB_LIGHTS];
+#endif
+
+// Directional lights uniform array. Each directional light uses 2 elements
+#if DIR_LIGHTS>0
+    uniform vec3 DirLight[2*DIR_LIGHTS];
+    // Macros to access elements inside the DirectionalLight uniform array
+    #define DirLightColor(a)		DirLight[2*a]
+    #define DirLightPosition(a)		DirLight[2*a+1]
+#endif
+
+// Point lights uniform array. Each point light uses 3 elements
+#if POINT_LIGHTS>0
+    uniform vec3 PointLight[3*POINT_LIGHTS];
+    // Macros to access elements inside the PointLight uniform array
+    #define PointLightColor(a)			PointLight[3*a]
+    #define PointLightPosition(a)		PointLight[3*a+1]
+    #define PointLightLinearDecay(a)	PointLight[3*a+2].x
+    #define PointLightQuadraticDecay(a)	PointLight[3*a+2].y
+#endif
+
+#if SPOT_LIGHTS>0
+    // Spot lights uniforms. Each spot light uses 5 elements
+    uniform vec3  SpotLight[5*SPOT_LIGHTS];
+    
+    // Macros to access elements inside the PointLight uniform array
+    #define SpotLightColor(a)			SpotLight[5*a]
+    #define SpotLightPosition(a)		SpotLight[5*a+1]
+    #define SpotLightDirection(a)		SpotLight[5*a+2]
+    #define SpotLightAngularDecay(a)	SpotLight[5*a+3].x
+    #define SpotLightCutoffAngle(a)		SpotLight[5*a+3].y
+    #define SpotLightLinearDecay(a)		SpotLight[5*a+3].z
+    #define SpotLightQuadraticDecay(a)	SpotLight[5*a+4].x
+#endif
+
+`
+
 const include_material_source = `//
 // Material properties uniform
 //
@@ -166,72 +222,129 @@ uniform vec3 Material[6];
 
 `
 
-const include_lights_source = `//
-// Lights uniforms
+const sprite_fragment_source = `//
+// Fragment shader for sprite
 //
 
-// Ambient lights uniforms
-#if AMB_LIGHTS>0
-    uniform vec3 AmbientLightColor[AMB_LIGHTS];
-#endif
+#include <material>
 
-// Directional lights uniform array. Each directional light uses 2 elements
-#if DIR_LIGHTS>0
-    uniform vec3 DirLight[2*DIR_LIGHTS];
-    // Macros to access elements inside the DirectionalLight uniform array
-    #define DirLightColor(a)		DirLight[2*a]
-    #define DirLightPosition(a)		DirLight[2*a+1]
-#endif
-
-// Point lights uniform array. Each point light uses 3 elements
-#if POINT_LIGHTS>0
-    uniform vec3 PointLight[3*POINT_LIGHTS];
-    // Macros to access elements inside the PointLight uniform array
-    #define PointLightColor(a)			PointLight[3*a]
-    #define PointLightPosition(a)		PointLight[3*a+1]
-    #define PointLightLinearDecay(a)	PointLight[3*a+2].x
-    #define PointLightQuadraticDecay(a)	PointLight[3*a+2].y
-#endif
-
-#if SPOT_LIGHTS>0
-    // Spot lights uniforms. Each spot light uses 5 elements
-    uniform vec3  SpotLight[5*SPOT_LIGHTS];
-    
-    // Macros to access elements inside the PointLight uniform array
-    #define SpotLightColor(a)			SpotLight[5*a]
-    #define SpotLightPosition(a)		SpotLight[5*a+1]
-    #define SpotLightDirection(a)		SpotLight[5*a+2]
-    #define SpotLightAngularDecay(a)	SpotLight[5*a+3].x
-    #define SpotLightCutoffAngle(a)		SpotLight[5*a+3].y
-    #define SpotLightLinearDecay(a)		SpotLight[5*a+3].z
-    #define SpotLightQuadraticDecay(a)	SpotLight[5*a+4].x
-#endif
-
-`
-
-const include_attributes_source = `//
-// Vertex attributes
-//
-layout(location = 0) in  vec3  VertexPosition;
-layout(location = 1) in  vec3  VertexNormal;
-layout(location = 2) in  vec3  VertexColor;
-layout(location = 3) in  vec2  VertexTexcoord;
-layout(location = 4) in  float VertexDistance;
-layout(location = 5) in  vec4  VertexTexoffsets;
-
-
-`
-
-const basic_fragment_source = `//
-// Fragment Shader template
-//
-
+// Inputs from vertex shader
 in vec3 Color;
+in vec2 FragTexcoord;
+
+// Output
 out vec4 FragColor;
 
 void main() {
 
-    FragColor = vec4(Color, 1.0);
+    // Combine all texture colors and opacity
+    vec4 texCombined = vec4(1);
+#if MAT_TEXTURES>0
+    for (int i = 0; i < {{.MatTexturesMax}}; i++) {
+        vec4 texcolor = texture(MatTexture[i], FragTexcoord * MatTexRepeat(i) + MatTexOffset(i));
+        if (i == 0) {
+            texCombined = texcolor;
+        } else {
+            texCombined = mix(texCombined, texcolor, texcolor.a);
+        }
+    }
+#endif
+
+    // Combine material color with texture
+    FragColor = min(vec4(Color, MatOpacity) * texCombined, vec4(1));
+}
+
+`
+
+const sprite_vertex_source = `//
+// Vertex shader for sprites
+//
+
+#include <attributes>
+
+// Input uniforms
+uniform mat4 MVP;
+
+#include <material>
+
+// Outputs for fragment shader
+out vec3 Color;
+out vec2 FragTexcoord;
+
+void main() {
+
+    // Applies transformation to vertex position
+    gl_Position = MVP * vec4(VertexPosition, 1.0);
+
+    // Outputs color
+    Color = MatDiffuseColor;
+
+    // Flips texture coordinate Y if requested.
+    vec2 texcoord = VertexTexcoord;
+#if MAT_TEXTURES>0
+    if (MatTexFlipY[0]) {
+        texcoord.y = 1 - texcoord.y;
+    }
+#endif
+    FragTexcoord = texcoord;
+}
+
+`
+
+const point_vertex_source = `#include <attributes>
+
+// Model uniforms
+uniform mat4 MVP;
+
+// Material uniforms
+#include <material>
+
+// Outputs for fragment shader
+out vec3 Color;
+flat out mat2 Rotation;
+
+void main() {
+
+    // Rotation matrix for fragment shader
+    float rotSin = sin(MatPointRotationZ);
+    float rotCos = cos(MatPointRotationZ);
+    Rotation = mat2(rotCos, rotSin, - rotSin, rotCos);
+
+    // Sets the vertex position
+    vec4 pos = MVP * vec4(VertexPosition, 1.0);
+    gl_Position = pos;
+
+    // Sets the size of the rasterized point decreasing with distance
+    gl_PointSize = (1.0 - pos.z / pos.w) * MatPointSize;
+
+    // Outputs color
+    Color = MatEmissiveColor;
+}
+
+`
+
+const panel_vertex_source = `//
+// Vertex shader panel
+//
+#include <attributes>
+
+// Model uniforms
+uniform mat4 ModelMatrix;
+
+// Outputs for fragment shader
+out vec2 FragTexcoord;
+
+
+void main() {
+
+    // Always flip texture coordinates
+    vec2 texcoord = VertexTexcoord;
+    texcoord.y = 1 - texcoord.y;
+    FragTexcoord = texcoord;
+
+    // Set position
+    vec4 pos = vec4(VertexPosition.xyz, 1);
+    gl_Position = ModelMatrix * pos;
 }
 
 `
@@ -282,63 +395,101 @@ void main() {
 
 `
 
-const panel_vertex_source = `//
-// Vertex shader panel
+const standard_vertex_source = `//
+// Vertex shader standard
 //
 #include <attributes>
 
 // Model uniforms
-uniform mat4 ModelMatrix;
+uniform mat4 ModelViewMatrix;
+uniform mat3 NormalMatrix;
+uniform mat4 MVP;
 
-// Outputs for fragment shader
+#include <lights>
+#include <material>
+#include <phong_model>
+
+
+// Outputs for the fragment shader.
+out vec3 ColorFrontAmbdiff;
+out vec3 ColorFrontSpec;
+out vec3 ColorBackAmbdiff;
+out vec3 ColorBackSpec;
 out vec2 FragTexcoord;
-
 
 void main() {
 
-    // Always flip texture coordinates
+    // Transform this vertex normal to camera coordinates.
+    vec3 normal = normalize(NormalMatrix * VertexNormal);
+
+    // Calculate this vertex position in camera coordinates
+    vec4 position = ModelViewMatrix * vec4(VertexPosition, 1.0);
+
+    // Calculate the direction vector from the vertex to the camera
+    // The camera is at 0,0,0
+    vec3 camDir = normalize(-position.xyz);
+
+    // Calculates the vertex Ambient+Diffuse and Specular colors using the Phong model
+    // for the front and back
+    phongModel(position,  normal, camDir, MatAmbientColor, MatDiffuseColor, ColorFrontAmbdiff, ColorFrontSpec);
+    phongModel(position, -normal, camDir, MatAmbientColor, MatDiffuseColor, ColorBackAmbdiff, ColorBackSpec);
+
     vec2 texcoord = VertexTexcoord;
-    texcoord.y = 1 - texcoord.y;
+#if MAT_TEXTURES > 0
+    // Flips texture coordinate Y if requested.
+    if (MatTexFlipY(0)) {
+        texcoord.y = 1 - texcoord.y;
+    }
+#endif
     FragTexcoord = texcoord;
 
-    // Set position
-    vec4 pos = vec4(VertexPosition.xyz, 1);
-    gl_Position = ModelMatrix * pos;
+    gl_Position = MVP * vec4(VertexPosition, 1.0);
 }
 
 `
 
-const sprite_fragment_source = `//
-// Fragment shader for sprite
+const physical_vertex_source = `//
+// Physical maiterial vertex shader
 //
+#include <attributes>
+
+// Model uniforms
+uniform mat4 ModelViewMatrix;
+uniform mat3 NormalMatrix;
+uniform mat4 MVP;
 
 #include <material>
 
-// Inputs from vertex shader
-in vec3 Color;
-in vec2 FragTexcoord;
-
-// Output
-out vec4 FragColor;
+// Output variables for Fragment shader
+out vec4 Position;
+out vec3 Normal;
+out vec3 CamDir;
+out vec2 FragTexcoord;
 
 void main() {
 
-    // Combine all texture colors and opacity
-    vec4 texCombined = vec4(1);
+    // Transform this vertex position to camera coordinates.
+    Position = ModelViewMatrix * vec4(VertexPosition, 1.0);
+
+    // Transform this vertex normal to camera coordinates.
+    Normal = normalize(NormalMatrix * VertexNormal);
+
+    // Calculate the direction vector from the vertex to the camera
+    // The camera is at 0,0,0
+    CamDir = normalize(-Position.xyz);
+
+    // Flips texture coordinate Y if requested.
+    vec2 texcoord = VertexTexcoord;
 #if MAT_TEXTURES>0
-    for (int i = 0; i < {{.MatTexturesMax}}; i++) {
-        vec4 texcolor = texture(MatTexture[i], FragTexcoord * MatTexRepeat(i) + MatTexOffset(i));
-        if (i == 0) {
-            texCombined = texcolor;
-        } else {
-            texCombined = mix(texCombined, texcolor, texcolor.a);
-        }
+    if (MatTexFlipY(0)) {
+        texcoord.y = 1 - texcoord.y;
     }
 #endif
+    FragTexcoord = texcoord;
 
-    // Combine material color with texture
-    FragColor = min(vec4(Color, MatOpacity) * texCombined, vec4(1));
+    gl_Position = MVP * vec4(VertexPosition, 1.0);
 }
+
 
 `
 
@@ -382,6 +533,20 @@ void main() {
 
     // Generates final color
     FragColor = min(vec4(Color, MatOpacity) * texMixed, vec4(1));
+}
+
+`
+
+const basic_fragment_source = `//
+// Fragment Shader template
+//
+
+in vec3 Color;
+out vec4 FragColor;
+
+void main() {
+
+    FragColor = vec4(Color, 1.0);
 }
 
 `
@@ -591,126 +756,6 @@ void main() {
 
 `
 
-const sprite_vertex_source = `//
-// Vertex shader for sprites
-//
-
-#include <attributes>
-
-// Input uniforms
-uniform mat4 MVP;
-
-#include <material>
-
-// Outputs for fragment shader
-out vec3 Color;
-out vec2 FragTexcoord;
-
-void main() {
-
-    // Applies transformation to vertex position
-    gl_Position = MVP * vec4(VertexPosition, 1.0);
-
-    // Outputs color
-    Color = MatDiffuseColor;
-
-    // Flips texture coordinate Y if requested.
-    vec2 texcoord = VertexTexcoord;
-#if MAT_TEXTURES>0
-    if (MatTexFlipY[0]) {
-        texcoord.y = 1 - texcoord.y;
-    }
-#endif
-    FragTexcoord = texcoord;
-}
-
-`
-
-const standard_vertex_source = `//
-// Vertex shader standard
-//
-#include <attributes>
-
-// Model uniforms
-uniform mat4 ModelViewMatrix;
-uniform mat3 NormalMatrix;
-uniform mat4 MVP;
-
-#include <lights>
-#include <material>
-#include <phong_model>
-
-
-// Outputs for the fragment shader.
-out vec3 ColorFrontAmbdiff;
-out vec3 ColorFrontSpec;
-out vec3 ColorBackAmbdiff;
-out vec3 ColorBackSpec;
-out vec2 FragTexcoord;
-
-void main() {
-
-    // Transform this vertex normal to camera coordinates.
-    vec3 normal = normalize(NormalMatrix * VertexNormal);
-
-    // Calculate this vertex position in camera coordinates
-    vec4 position = ModelViewMatrix * vec4(VertexPosition, 1.0);
-
-    // Calculate the direction vector from the vertex to the camera
-    // The camera is at 0,0,0
-    vec3 camDir = normalize(-position.xyz);
-
-    // Calculates the vertex Ambient+Diffuse and Specular colors using the Phong model
-    // for the front and back
-    phongModel(position,  normal, camDir, MatAmbientColor, MatDiffuseColor, ColorFrontAmbdiff, ColorFrontSpec);
-    phongModel(position, -normal, camDir, MatAmbientColor, MatDiffuseColor, ColorBackAmbdiff, ColorBackSpec);
-
-    vec2 texcoord = VertexTexcoord;
-#if MAT_TEXTURES > 0
-    // Flips texture coordinate Y if requested.
-    if (MatTexFlipY(0)) {
-        texcoord.y = 1 - texcoord.y;
-    }
-#endif
-    FragTexcoord = texcoord;
-
-    gl_Position = MVP * vec4(VertexPosition, 1.0);
-}
-
-`
-
-const point_vertex_source = `#include <attributes>
-
-// Model uniforms
-uniform mat4 MVP;
-
-// Material uniforms
-#include <material>
-
-// Outputs for fragment shader
-out vec3 Color;
-flat out mat2 Rotation;
-
-void main() {
-
-    // Rotation matrix for fragment shader
-    float rotSin = sin(MatPointRotationZ);
-    float rotCos = cos(MatPointRotationZ);
-    Rotation = mat2(rotCos, rotSin, - rotSin, rotCos);
-
-    // Sets the vertex position
-    vec4 pos = MVP * vec4(VertexPosition, 1.0);
-    gl_Position = pos;
-
-    // Sets the size of the rasterized point decreasing with distance
-    gl_PointSize = (1.0 - pos.z / pos.w) * MatPointSize;
-
-    // Outputs color
-    Color = MatEmissiveColor;
-}
-
-`
-
 const basic_vertex_source = `//
 // Vertex shader basic
 //
@@ -731,30 +776,86 @@ void main() {
 
 `
 
+const physical_fragment_source = `//
+// Physical material fragment shader
+//
+
+// Inputs from vertex shader
+in vec4 Position;       // Vertex position in camera coordinates.
+in vec3 Normal;         // Vertex normal in camera coordinates.
+in vec3 CamDir;         // Direction from vertex to camera
+in vec2 FragTexcoord;
+
+#include <lights>
+#include <material>
+#include <phong_model>
+
+// Final fragment color
+out vec4 FragColor;
+
+void main() {
+
+    // Mix material color with textures colors
+    vec4 texMixed = vec4(1);
+    vec4 texColor;
+    #if MAT_TEXTURES==1
+        MIX_TEXTURE(0)
+    #elif MAT_TEXTURES==2
+        MIX_TEXTURE(0)
+        MIX_TEXTURE(1)
+    #elif MAT_TEXTURES==3
+        MIX_TEXTURE(0)
+        MIX_TEXTURE(1)
+        MIX_TEXTURE(2)
+    #endif
+
+    // Combine material with texture colors
+    vec4 matDiffuse = vec4(MatDiffuseColor, MatOpacity) * texMixed;
+    vec4 matAmbient = vec4(MatAmbientColor, MatOpacity) * texMixed;
+
+    // Inverts the fragment normal if not FrontFacing
+    vec3 fragNormal = Normal;
+    if (!gl_FrontFacing) {
+        fragNormal = -fragNormal;
+    }
+
+    // Calculates the Ambient+Diffuse and Specular colors for this fragment using the Phong model.
+    vec3 Ambdiff, Spec;
+    phongModel(Position, fragNormal, CamDir, vec3(matAmbient), vec3(matDiffuse), Ambdiff, Spec);
+
+    // Final fragment color
+    FragColor = min(vec4(Ambdiff + Spec, matDiffuse.a), vec4(1.0));
+}
+
+
+`
+
 // Maps include name with its source code
 var includeMap = map[string]string{
 
-	"phong_model": include_phong_model_source,
-	"material":    include_material_source,
-	"lights":      include_lights_source,
 	"attributes":  include_attributes_source,
+	"phong_model": include_phong_model_source,
+	"lights":      include_lights_source,
+	"material":    include_material_source,
 }
 
 // Maps shader name with its source code
 var shaderMap = map[string]string{
 
-	"basic_fragment":    basic_fragment_source,
-	"standard_fragment": standard_fragment_source,
-	"panel_vertex":      panel_vertex_source,
 	"sprite_fragment":   sprite_fragment_source,
+	"sprite_vertex":     sprite_vertex_source,
+	"point_vertex":      point_vertex_source,
+	"panel_vertex":      panel_vertex_source,
+	"standard_fragment": standard_fragment_source,
+	"standard_vertex":   standard_vertex_source,
+	"physical_vertex":   physical_vertex_source,
 	"point_fragment":    point_fragment_source,
+	"basic_fragment":    basic_fragment_source,
 	"phong_vertex":      phong_vertex_source,
 	"panel_fragment":    panel_fragment_source,
 	"phong_fragment":    phong_fragment_source,
-	"sprite_vertex":     sprite_vertex_source,
-	"standard_vertex":   standard_vertex_source,
-	"point_vertex":      point_vertex_source,
 	"basic_vertex":      basic_vertex_source,
+	"physical_fragment": physical_fragment_source,
 }
 
 // Maps program name with Proginfo struct with shaders names
@@ -763,6 +864,7 @@ var programMap = map[string]ProgramInfo{
 	"basic":    {"basic_vertex", "basic_fragment", ""},
 	"panel":    {"panel_vertex", "panel_fragment", ""},
 	"phong":    {"phong_vertex", "phong_fragment", ""},
+	"physical": {"physical_vertex", "physical_fragment", ""},
 	"point":    {"point_vertex", "point_fragment", ""},
 	"sprite":   {"sprite_vertex", "sprite_fragment", ""},
 	"standard": {"standard_vertex", "standard_fragment", ""},
