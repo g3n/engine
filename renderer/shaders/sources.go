@@ -458,8 +458,6 @@ uniform mat4 ModelViewMatrix;
 uniform mat3 NormalMatrix;
 uniform mat4 MVP;
 
-#include <material>
-
 // Output variables for Fragment shader
 out vec4 Position;
 out vec3 Normal;
@@ -478,13 +476,13 @@ void main() {
     // The camera is at 0,0,0
     CamDir = normalize(-Position.xyz);
 
-    // Flips texture coordinate Y if requested.
-    vec2 texcoord = VertexTexcoord;
-#if MAT_TEXTURES>0
-    if (MatTexFlipY(0)) {
-        texcoord.y = 1 - texcoord.y;
-    }
-#endif
+//    // Flips texture coordinate Y if requested.
+   vec2 texcoord = VertexTexcoord;
+//#if MAT_TEXTURES>0
+//    if (MatTexFlipY(0)) {
+//        texcoord.y = 1 - texcoord.y;
+//    }
+//#endif
     FragTexcoord = texcoord;
 
     gl_Position = MVP * vec4(VertexPosition, 1.0);
@@ -786,32 +784,21 @@ in vec3 Normal;         // Vertex normal in camera coordinates.
 in vec3 CamDir;         // Direction from vertex to camera
 in vec2 FragTexcoord;
 
+// Material parameters uniform array
+uniform vec4 Material[3];
+// Macros to access elements inside the Material array
+#define uBaseColor		    Material[0]
+#define uEmissiveColor      Material[1]
+#define uMetallicFactor     Material[2].x
+#define uRoughnessFactor    Material[2].y
+
 #include <lights>
-#include <material>
-#include <phong_model>
 
 // Final fragment color
 out vec4 FragColor;
 
 void main() {
 
-    // Mix material color with textures colors
-    vec4 texMixed = vec4(1);
-    vec4 texColor;
-    #if MAT_TEXTURES==1
-        MIX_TEXTURE(0)
-    #elif MAT_TEXTURES==2
-        MIX_TEXTURE(0)
-        MIX_TEXTURE(1)
-    #elif MAT_TEXTURES==3
-        MIX_TEXTURE(0)
-        MIX_TEXTURE(1)
-        MIX_TEXTURE(2)
-    #endif
-
-    // Combine material with texture colors
-    vec4 matDiffuse = vec4(MatDiffuseColor, MatOpacity) * texMixed;
-    vec4 matAmbient = vec4(MatAmbientColor, MatOpacity) * texMixed;
 
     // Inverts the fragment normal if not FrontFacing
     vec3 fragNormal = Normal;
@@ -819,12 +806,9 @@ void main() {
         fragNormal = -fragNormal;
     }
 
-    // Calculates the Ambient+Diffuse and Specular colors for this fragment using the Phong model.
-    vec3 Ambdiff, Spec;
-    phongModel(Position, fragNormal, CamDir, vec3(matAmbient), vec3(matDiffuse), Ambdiff, Spec);
 
     // Final fragment color
-    FragColor = min(vec4(Ambdiff + Spec, matDiffuse.a), vec4(1.0));
+    FragColor = uBaseColor;
 }
 
 
