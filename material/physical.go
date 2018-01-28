@@ -161,6 +161,7 @@ func (m *Physical) RenderSetup(gl *gls.GLS) {
 
 	m.Material.RenderSetup(gl)
 	location := m.uni.Location(gl)
+	log.Error("Physical RenderSetup location:%v udata:%+v", location, m.udata)
 	gl.Uniform4fvUP(location, physicalVec4Count, unsafe.Pointer(&m.udata))
 
 	// Transfer optional textures

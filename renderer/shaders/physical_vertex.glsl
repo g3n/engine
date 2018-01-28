@@ -8,8 +8,6 @@ uniform mat4 ModelViewMatrix;
 uniform mat3 NormalMatrix;
 uniform mat4 MVP;
 
-#include <material>
-
 // Output variables for Fragment shader
 out vec4 Position;
 out vec3 Normal;
@@ -28,13 +26,13 @@ void main() {
     // The camera is at 0,0,0
     CamDir = normalize(-Position.xyz);
 
-    // Flips texture coordinate Y if requested.
-    vec2 texcoord = VertexTexcoord;
-#if MAT_TEXTURES>0
-    if (MatTexFlipY(0)) {
-        texcoord.y = 1 - texcoord.y;
-    }
-#endif
+//    // Flips texture coordinate Y if requested.
+   vec2 texcoord = VertexTexcoord;
+//#if MAT_TEXTURES>0
+//    if (MatTexFlipY(0)) {
+//        texcoord.y = 1 - texcoord.y;
+//    }
+//#endif
     FragTexcoord = texcoord;
 
     gl_Position = MVP * vec4(VertexPosition, 1.0);
