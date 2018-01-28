@@ -12,8 +12,8 @@ import (
 	"github.com/g3n/engine/texture"
 )
 
-// PbrMr is a physically based rendered material which uses the metallic-roughness model.
-type PbrMr struct {
+// Physical is a physically based rendered material which uses the metallic-roughness model.
+type Physical struct {
 	Material                                // Embedded material
 	baseColorTex         *texture.Texture2D // Optional base color texture
 	metallicRoughnessTex *texture.Texture2D // Optional metallic-roughness
@@ -30,14 +30,14 @@ type PbrMr struct {
 }
 
 // Number of glsl shader vec4 elements used by uniform data
-const pbrMrVec4Count = 3
+const physicalVec4Count = 3
 
-// NewPbrMr creates and returns a pointer to a new PbrMr material.
-func NewPbrMr() *PbrMr {
+// NewPhysical creates and returns a pointer to a new Physical material.
+func NewPhysical() *Physical {
 
-	m := new(PbrMr)
+	m := new(Physical)
 	m.Material.Init()
-	m.SetShader("pbr_mr")
+	m.SetShader("physical")
 
 	// Creates uniform and set defaulf values
 	m.uni.Init("Material")
@@ -51,7 +51,7 @@ func NewPbrMr() *PbrMr {
 // SetBaseColorFactor sets this material base color.
 // Its default value is {1,1,1,1}.
 // Returns pointer to this updated material.
-func (m *PbrMr) SetBaseColorFactor(c *math32.Color4) *PbrMr {
+func (m *Physical) SetBaseColorFactor(c *math32.Color4) *Physical {
 
 	m.udata.baseColorFactor = *c
 	return m
@@ -59,7 +59,7 @@ func (m *PbrMr) SetBaseColorFactor(c *math32.Color4) *PbrMr {
 
 // SetBaseColorTexture sets this material optional texture base color.
 // Returns pointer to this updated material.
-func (m *PbrMr) SetBaseColorTexture(tex *texture.Texture2D) *PbrMr {
+func (m *Physical) SetBaseColorTexture(tex *texture.Texture2D) *Physical {
 
 	m.baseColorTex = tex
 	if m.baseColorTex != nil {
@@ -74,7 +74,7 @@ func (m *PbrMr) SetBaseColorTexture(tex *texture.Texture2D) *PbrMr {
 // SetEmissiveFactor sets the emissive color of the material.
 // Its default is {0, 0, 0}.
 // Returns pointer to this updated material.
-func (m *PbrMr) SetEmissiveFactor(c *math32.Color) *PbrMr {
+func (m *Physical) SetEmissiveFactor(c *math32.Color) *Physical {
 
 	m.udata.emissiveFactor.R = c.R
 	m.udata.emissiveFactor.G = c.G
@@ -85,7 +85,7 @@ func (m *PbrMr) SetEmissiveFactor(c *math32.Color) *PbrMr {
 // SetMetallicFactor sets this material metallic factor.
 // Its default value is 1.0
 // Returns pointer to this updated material.
-func (m *PbrMr) SetMetallicFactor(v float32) *PbrMr {
+func (m *Physical) SetMetallicFactor(v float32) *Physical {
 
 	m.udata.metallicFactor = v
 	return m
@@ -93,7 +93,7 @@ func (m *PbrMr) SetMetallicFactor(v float32) *PbrMr {
 
 // SetMetallicRoughnessTexture sets this material optional metallic-roughness texture.
 // Returns pointer to this updated material.
-func (m *PbrMr) SetMetallicRoughnessTexture(tex *texture.Texture2D) *PbrMr {
+func (m *Physical) SetMetallicRoughnessTexture(tex *texture.Texture2D) *Physical {
 
 	m.metallicRoughnessTex = tex
 	if m.metallicRoughnessTex != nil {
@@ -107,7 +107,7 @@ func (m *PbrMr) SetMetallicRoughnessTexture(tex *texture.Texture2D) *PbrMr {
 
 // SetNormalTexture sets this material optional normal texture.
 // Returns pointer to this updated material.
-func (m *PbrMr) SetNormalTexture(tex *texture.Texture2D) *PbrMr {
+func (m *Physical) SetNormalTexture(tex *texture.Texture2D) *Physical {
 
 	m.normalTex = tex
 	if m.normalTex != nil {
@@ -121,7 +121,7 @@ func (m *PbrMr) SetNormalTexture(tex *texture.Texture2D) *PbrMr {
 
 // SetOcclusionTexture sets this material optional occlusion texture.
 // Returns pointer to this updated material.
-func (m *PbrMr) SetOcclusionTexture(tex *texture.Texture2D) *PbrMr {
+func (m *Physical) SetOcclusionTexture(tex *texture.Texture2D) *Physical {
 
 	m.occlusionTex = tex
 	if m.occlusionTex != nil {
@@ -135,7 +135,7 @@ func (m *PbrMr) SetOcclusionTexture(tex *texture.Texture2D) *PbrMr {
 
 // SetEmissiveTexture sets this material optional emissive texture.
 // Returns pointer to this updated material.
-func (m *PbrMr) SetEmissiveTexture(tex *texture.Texture2D) *PbrMr {
+func (m *Physical) SetEmissiveTexture(tex *texture.Texture2D) *Physical {
 
 	m.emissiveTex = tex
 	if m.emissiveTex != nil {
@@ -150,18 +150,18 @@ func (m *PbrMr) SetEmissiveTexture(tex *texture.Texture2D) *PbrMr {
 // SetRoughnessFactor sets this material roughness factor.
 // Its default value is 1.0
 // Returns pointer to this updated material.
-func (m *PbrMr) SetRoughnessFactor(v float32) *PbrMr {
+func (m *Physical) SetRoughnessFactor(v float32) *Physical {
 
 	m.udata.roughnessFactor = v
 	return m
 }
 
 // RenderSetup transfer this material uniforms and textures to the shader
-func (m *PbrMr) RenderSetup(gl *gls.GLS) {
+func (m *Physical) RenderSetup(gl *gls.GLS) {
 
 	m.Material.RenderSetup(gl)
 	location := m.uni.Location(gl)
-	gl.Uniform4fvUP(location, pbrMrVec4Count, unsafe.Pointer(&m.udata))
+	gl.Uniform4fvUP(location, physicalVec4Count, unsafe.Pointer(&m.udata))
 
 	// Transfer optional textures
 	if m.baseColorTex != nil {
