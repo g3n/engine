@@ -204,7 +204,7 @@ func (v *Vector2) Max(other *Vector2) *Vector2 {
 }
 
 // Clamp sets this vector components to be no less than the corresponding components of min
-// and not greater than the corresponding component of max.
+// and not greater than the corresponding components of max.
 // Assumes min < max, if this assumption isn't true it will not operate correctly.
 // Returns the pointer to this updated vector.
 func (v *Vector2) Clamp(min, max *Vector2) *Vector2 {
