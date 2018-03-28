@@ -43,6 +43,7 @@ func NewSkybox(data SkyboxData) (*Skybox, error) {
 		matFace.AddTexture(tex)
 		matFace.SetSide(material.SideBack)
 		matFace.SetUseLights(material.UseLightAmbient)
+		matFace.SetDepthMask(false)
 		skybox.AddGroupMaterial(skybox, matFace, i)
 	}
 
