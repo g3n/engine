@@ -40,7 +40,9 @@ In all cases it is necessary to have a gcc compatible C compiler installed.
 * For Windows the necessary audio libraries sources and `dlls` are supplied but they need to be installed
   manually. Please see [Audio libraries for Windows](audio/windows) for details.
   We tested the Windows build using the [mingw-w64](https://mingw-w64.org) toolchain.
-* Currently not tested on OS X.
+* On OSX, you should install the development files of OpenAL and Vorbis. If
+  your are using [Homebrew](https://brew.sh/) as your package manager, run:
+  `brew install libvorbis openal-soft`
 
 G3N was only tested with Go1.7.4+
 
