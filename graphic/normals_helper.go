@@ -21,7 +21,7 @@ type NormalsHelper struct {
 
 // NewNormalsHelper creates, initializes and returns a pointer to Normals helper object.
 // This helper shows the normal vectors of the specified object.
-func NewNormalsHelper(ig IGraphic, size float32, color *math32.Color, lineWidth float32) *NormalsHelper {
+func NewNormalsHelper(ig IGraphic, size float32, color *math32.Color) *NormalsHelper {
 
 	// Creates new Normals helper
 	nh := new(NormalsHelper)
@@ -44,7 +44,6 @@ func NewNormalsHelper(ig IGraphic, size float32, color *math32.Color, lineWidth 
 
 	// Creates this helper material
 	mat := material.NewStandard(color)
-	mat.SetLineWidth(lineWidth)
 
 	// Initialize graphic
 	nh.Lines.Init(geom, mat)

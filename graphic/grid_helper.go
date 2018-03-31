@@ -43,7 +43,6 @@ func NewGridHelper(size, step float32, color *math32.Color) *GridHelper {
 
 	// Creates material
 	mat := material.NewBasic()
-	mat.SetLineWidth(1.0)
 
 	// Initialize lines with the specified geometry and material
 	grid.Lines.Init(geom, mat)

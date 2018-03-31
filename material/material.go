@@ -205,11 +205,6 @@ func (mat *Material) SetBlending(blending Blending) {
 	mat.blending = blending
 }
 
-func (mat *Material) SetLineWidth(width float32) {
-
-	mat.lineWidth = width
-}
-
 func (mat *Material) SetPolygonOffset(factor, units float32) {
 
 	mat.polyOffsetFactor = factor
@@ -247,9 +242,6 @@ func (mat *Material) RenderSetup(gs *gls.GLS) {
 
 	// Set polygon offset if requested
 	gs.PolygonOffset(mat.polyOffsetFactor, mat.polyOffsetUnits)
-
-	// Sets line width
-	gs.LineWidth(mat.lineWidth)
 
 	// Sets blending
 	switch mat.blending {
