@@ -23,6 +23,7 @@ type Scroller struct {
 	adjustItem     bool            // adjust item to width or height
 	focus          bool            // has keyboard focus
 	cursorOver     bool            // mouse is over the list
+	autoButtonSize bool            // scroll button size is adjusted relative to content/view
 	scrollBarEvent bool
 }
 
@@ -279,10 +280,16 @@ func (s *Scroller) SetAutoHeight(maxHeight float32) {
 	s.maxAutoHeight = maxHeight
 }
 
+func (s *Scroller) SetAutoButtonSize(autoButtonSize bool) {
+
+	s.autoButtonSize = autoButtonSize
+}
+
 // initialize initializes this scroller and is normally used by other types which contains a scroller
 func (s *Scroller) initialize(vert bool, width, height float32) {
 
 	s.vert = vert
+	s.autoButtonSize = true
 	s.Panel.Initialize(width, height)
 	s.styles = &StyleDefault().Scroller
 
@@ -389,6 +396,18 @@ func (s *Scroller) vRecalc() {
 		}
 	}
 	s.setVScrollBar(scroll)
+
+	// Compute size of scroll button
+	if scroll && s.autoButtonSize {
+		var totalHeight float32 = 0
+		for _, item := range s.items {
+			// TODO OPTIMIZATION
+			// Break when the view/content proportion becomes smaller than the minimum button size
+			totalHeight += item.TotalHeight()
+		}
+		s.vscroll.SetButtonSize(s.height * s.height/totalHeight)
+	}
+
 	// Items width
 	width := s.ContentWidth()
 	if scroll {
@@ -442,6 +461,18 @@ func (s *Scroller) hRecalc() {
 		}
 	}
 	s.setHScrollBar(scroll)
+
+	// Compute size of scroll button
+	if scroll && s.autoButtonSize {
+		var totalWidth float32 = 0
+		for _, item := range s.items {
+			// TODO OPTIMIZATION
+			// Break when the view/content proportion becomes smaller than the minimum button size
+			totalWidth += item.GetPanel().Width()
+		}
+		s.hscroll.SetButtonSize(s.width * s.width/totalWidth)
+	}
+
 	// Items height
 	height := s.ContentHeight()
 	if scroll {
