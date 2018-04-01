@@ -30,11 +30,12 @@ type ScrollBar struct {
 }
 
 type scrollBarButton struct {
-	Panel              // Embedded panel
-	sb      *ScrollBar // pointer to parent scroll bar
-	pressed bool       // mouse button pressed flag
-	mouseX  float32    // last mouse click x position
-	mouseY  float32    // last mouse click y position
+	Panel               // Embedded panel
+	sb       *ScrollBar // pointer to parent scroll bar
+	pressed  bool       // mouse button pressed flag
+	mouseX   float32    // last mouse click x position
+	mouseY   float32    // last mouse click y position
+	Size     float32    // button size
 }
 
 type ScrollBarStyle struct {
@@ -49,7 +50,7 @@ type ScrollBarButtonStyle struct {
 	Borders      BorderSizes
 	BordersColor math32.Color4
 	Color        math32.Color
-	Size         float32
+	Size         float32 	   // This is the default/minimum button size
 }
 
 // NewVScrollBar creates and returns a pointer to a new vertical scroll bar
@@ -89,10 +90,23 @@ func (sb *ScrollBar) initialize(width, height float32, vertical bool) {
 	sb.button.Panel.Subscribe(OnMouseUp, sb.button.onMouse)
 	sb.button.Panel.Subscribe(OnCursor, sb.button.onCursor)
 	sb.button.SetMargins(1, 1, 1, 1)
+	sb.button.Size = sb.style.Button.Size
 	sb.button.sb = sb
 	sb.Add(&sb.button)
 
 	sb.update()
+	sb.recalc()
+}
+
+// SetButtonSize sets the button size
+func (sb *ScrollBar) SetButtonSize(size float32) {
+
+	// Clamp to minimum size if requested size smaller than minimum
+	if size > sb.style.Button.Size {
+		sb.button.Size = size
+	} else {
+		sb.button.Size = sb.style.Button.Size
+	}
 	sb.recalc()
 }
 
@@ -145,9 +159,9 @@ func (sb *ScrollBar) onMouse(evname string, ev interface{}) {
 func (sb *ScrollBar) recalc() {
 
 	if sb.vertical {
-		sb.button.SetSize(sb.content.Width, sb.style.Button.Size)
+		sb.button.SetSize(sb.content.Width, sb.button.Size)
 	} else {
-		sb.button.SetSize(sb.style.Button.Size, sb.content.Height)
+		sb.button.SetSize(sb.button.Size, sb.content.Height)
 	}
 }
 
@@ -196,11 +210,11 @@ func (button *scrollBarButton) onCursor(evname string, ev interface{}) {
 	if button.sb.vertical {
 		dy := button.mouseY - e.Ypos
 		py := button.Position().Y
-		button.SetPositionY(math32.Clamp(py-dy, 0, button.sb.content.Height-button.sb.style.Button.Size))
+		button.SetPositionY(math32.Clamp(py-dy, 0, button.sb.content.Height-button.Size))
 	} else {
 		dx := button.mouseX - e.Xpos
 		px := button.Position().X
-		button.SetPositionX(math32.Clamp(px-dx, 0, button.sb.content.Width-button.sb.style.Button.Size))
+		button.SetPositionX(math32.Clamp(px-dx, 0, button.sb.content.Width-button.Size))
 	}
 	button.mouseX = e.Xpos
 	button.mouseY = e.Ypos
