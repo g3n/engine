@@ -389,7 +389,7 @@ func (s *Scroller) vRecalc() {
 		var posY float32 = 0
 		for _, item := range s.items[s.first:] {
 			posY += item.TotalHeight()
-			if posY >= s.height {
+			if posY > s.height {
 				scroll = true
 				break
 			}
@@ -454,7 +454,7 @@ func (s *Scroller) hRecalc() {
 		var posX float32 = 0
 		for _, item := range s.items[s.first:] {
 			posX += item.GetPanel().Width()
-			if posX >= s.width {
+			if posX > s.width {
 				scroll = true
 				break
 			}
