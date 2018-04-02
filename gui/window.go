@@ -42,10 +42,10 @@ type Window struct {
 }
 
 type WindowStyle struct {
-	Border           BorderSizes
-	Paddings         BorderSizes
+	Border           RectBounds
+	Paddings         RectBounds
 	BorderColor      math32.Color4
-	TitleBorders     BorderSizes
+	TitleBorders     RectBounds
 	TitleBorderColor math32.Color4
 	TitleBgColor     math32.Color4
 	TitleFgColor     math32.Color4

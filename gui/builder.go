@@ -81,7 +81,7 @@ const (
 	AttribAspectHeight   = "aspectheight"  // float32
 	AttribAspectWidth    = "aspectwidth"   // float32
 	AttribBgColor        = "bgcolor"       // Color4
-	AttribBorders        = "borders"       // BorderSizes
+	AttribBorders        = "borders"       // RectBounds
 	AttribBorderColor    = "bordercolor"   // Color4
 	AttribChecked        = "checked"       // bool
 	AttribColor          = "color"         // Color4
@@ -114,12 +114,12 @@ const (
 	AttribLineSpacing    = "linespacing"   // float32
 	AttribLines          = "lines"         // int
 	AttribMargin         = "margin"        // float32
-	AttribMargins        = "margins"       // BorderSizes
+	AttribMargins        = "margins"       // RectBounds
 	AttribMinwidth       = "minwidth"      // float32 Table
 	AttribAutoHeight     = "autoheight"    // bool
 	AttribAutoWidth      = "autowidth"     // bool
 	AttribName           = "name"          // string
-	AttribPaddings       = "paddings"      // BorderSizes
+	AttribPaddings       = "paddings"      // RectBounds
 	AttribPanel0         = "panel0"        // map[string]interface{}
 	AttribPanel1         = "panel1"        // map[string]interface{}
 	AttribParentInternal = "parent_"       // string (internal attribute)
@@ -548,12 +548,12 @@ func (b *Builder) SetAttribs(am map[string]interface{}, ipan IPanel) error {
 
 	// Set optional margin sizes
 	if am[AttribMargins] != nil {
-		panel.SetMarginsFrom(am[AttribMargins].(*BorderSizes))
+		panel.SetMarginsFrom(am[AttribMargins].(*RectBounds))
 	}
 
 	// Set optional border sizes
 	if am[AttribBorders] != nil {
-		panel.SetBordersFrom(am[AttribBorders].(*BorderSizes))
+		panel.SetBordersFrom(am[AttribBorders].(*RectBounds))
 	}
 
 	// Set optional border color
@@ -563,7 +563,7 @@ func (b *Builder) SetAttribs(am map[string]interface{}, ipan IPanel) error {
 
 	// Set optional paddings sizes
 	if am[AttribPaddings] != nil {
-		panel.SetPaddingsFrom(am[AttribPaddings].(*BorderSizes))
+		panel.SetPaddingsFrom(am[AttribPaddings].(*RectBounds))
 	}
 
 	// Set optional panel color
@@ -968,10 +968,10 @@ func AttribCheckBorderSizes(b *Builder, am map[string]interface{}, fname string)
 		return nil
 	}
 	if len(va) == 1 {
-		am[fname] = &BorderSizes{va[0], va[0], va[0], va[0]}
+		am[fname] = &RectBounds{va[0], va[0], va[0], va[0]}
 		return nil
 	}
-	am[fname] = &BorderSizes{va[0], va[1], va[2], va[3]}
+	am[fname] = &RectBounds{va[0], va[1], va[2], va[3]}
 	return nil
 }
 

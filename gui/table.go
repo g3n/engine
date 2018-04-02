@@ -107,8 +107,8 @@ type TableFormatFunc func(cell TableCell) string
 
 // TableHeaderStyle describes the style of the table header
 type TableHeaderStyle struct {
-	Border      BorderSizes
-	Paddings    BorderSizes
+	Border      RectBounds
+	Paddings    RectBounds
 	BorderColor math32.Color4
 	BgColor     math32.Color
 	FgColor     math32.Color
@@ -116,8 +116,8 @@ type TableHeaderStyle struct {
 
 // TableRowStyle describes the style of the table row
 type TableRowStyle struct {
-	Border      BorderSizes
-	Paddings    BorderSizes
+	Border      RectBounds
+	Paddings    RectBounds
 	BorderColor math32.Color4
 	BgColor     math32.Color
 	FgColor     math32.Color
@@ -131,8 +131,8 @@ type TableRowStyles struct {
 
 // TableStatusStyle describes the style of the table status line panel
 type TableStatusStyle struct {
-	Border      BorderSizes
-	Paddings    BorderSizes
+	Border      RectBounds
+	Paddings    RectBounds
 	BorderColor math32.Color4
 	BgColor     math32.Color
 	FgColor     math32.Color
@@ -141,7 +141,7 @@ type TableStatusStyle struct {
 // TableResizerStyle describes the style of the table resizer panel
 type TableResizerStyle struct {
 	Width       float32
-	Border      BorderSizes
+	Border      RectBounds
 	BorderColor math32.Color4
 	BgColor     math32.Color4
 }

@@ -34,8 +34,8 @@ type Button struct {
 
 // Button style
 type ButtonStyle struct {
-	Border      BorderSizes
-	Paddings    BorderSizes
+	Border      RectBounds
+	Paddings    RectBounds
 	BorderColor math32.Color4
 	BgColor     math32.Color
 	FgColor     math32.Color
