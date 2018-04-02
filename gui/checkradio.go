@@ -32,8 +32,8 @@ type CheckRadio struct {
 }
 
 type CheckRadioStyle struct {
-	Border      BorderSizes
-	Paddings    BorderSizes
+	Border      RectBounds
+	Paddings    RectBounds
 	BorderColor math32.Color4
 	BgColor     math32.Color4
 	FgColor     math32.Color

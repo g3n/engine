@@ -4,14 +4,14 @@
 
 package gui
 
-type BorderSizes struct {
+type RectBounds struct {
 	Top    float32
 	Right  float32
 	Bottom float32
 	Left   float32
 }
 
-func (bs *BorderSizes) Set(top, right, bottom, left float32) {
+func (bs *RectBounds) Set(top, right, bottom, left float32) {
 
 	if top >= 0 {
 		bs.Top = top

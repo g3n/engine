@@ -47,15 +47,15 @@ type ScrollBarStyles struct {
 }
 
 type ScrollBarStyle struct {
-	Paddings     BorderSizes
-	Borders      BorderSizes
+	Paddings     RectBounds
+	Borders      RectBounds
 	BordersColor math32.Color4
 	Color        math32.Color
 	Button       ScrollBarButtonStyle
 }
 
 type ScrollBarButtonStyle struct {
-	Borders      BorderSizes
+	Borders      RectBounds
 	BordersColor math32.Color4
 	Color        math32.Color
 	Size         float32 	   // This is the default/minimum button size

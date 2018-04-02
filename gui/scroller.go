@@ -28,8 +28,8 @@ type Scroller struct {
 }
 
 type ScrollerStyle struct {
-	Border      BorderSizes
-	Paddings    BorderSizes
+	Border      RectBounds
+	Paddings    RectBounds
 	BorderColor math32.Color4
 	BgColor     math32.Color
 	FgColor     math32.Color

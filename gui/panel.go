@@ -54,30 +54,30 @@ type IPanel interface {
 // and a content area. The content area can be associated with a texture
 // It is the building block of most GUI widgets.
 type Panel struct {
-	*graphic.Graphic                    // Embedded graphic
-	root             *Root              // pointer to root container
-	width            float32            // external width in pixels
-	height           float32            // external height in pixels
-	mat              *material.Material // panel material
-	marginSizes      BorderSizes        // external margin sizes in pixel coordinates
-	borderSizes      BorderSizes        // border sizes in pixel coordinates
-	paddingSizes     BorderSizes        // padding sizes in pixel coordinates
-	content          Rect               // current content rectangle in pixel coordinates
-	pospix           math32.Vector3     // absolute position in pixels
-	posclip          math32.Vector3     // position in clip (NDC) coordinates
-	wclip            float32            // width in clip coordinates
-	hclip            float32            // height in clip coordinates
-	xmin             float32            // minimum absolute x this panel can use
-	xmax             float32            // maximum absolute x this panel can use
-	ymin             float32            // minimum absolute y this panel can use
-	ymax             float32            // maximum absolute y this panel can use
-	bounded          bool               // panel is bounded by its parent
-	enabled          bool               // enable event processing
-	cursorEnter      bool               // mouse enter dispatched
-	layout           ILayout            // current layout for children
-	layoutParams     interface{}        // current layout parameters used by container panel
-	uniMatrix        gls.Uniform        // model matrix uniform location cache
-	uniPanel         gls.Uniform        // panel parameters uniform location cache
+	*graphic.Graphic                // Embedded graphic
+	root         *Root              // pointer to root container
+	width        float32            // external width in pixels
+	height       float32            // external height in pixels
+	mat          *material.Material // panel material
+	marginSizes  RectBounds         // external margin sizes in pixel coordinates
+	borderSizes  RectBounds         // border sizes in pixel coordinates
+	paddingSizes RectBounds         // padding sizes in pixel coordinates
+	content      Rect               // current content rectangle in pixel coordinates
+	pospix       math32.Vector3     // absolute position in pixels
+	posclip      math32.Vector3     // position in clip (NDC) coordinates
+	wclip        float32            // width in clip coordinates
+	hclip        float32            // height in clip coordinates
+	xmin         float32            // minimum absolute x this panel can use
+	xmax         float32            // maximum absolute x this panel can use
+	ymin             float32        // minimum absolute y this panel can use
+	ymax             float32        // maximum absolute y this panel can use
+	bounded          bool           // panel is bounded by its parent
+	enabled          bool           // enable event processing
+	cursorEnter      bool           // mouse enter dispatched
+	layout           ILayout        // current layout for children
+	layoutParams     interface{}    // current layout parameters used by container panel
+	uniMatrix        gls.Uniform    // model matrix uniform location cache
+	uniPanel         gls.Uniform    // panel parameters uniform location cache
 	udata            struct {           // Combined uniform data 8 * vec4
 		bounds        math32.Vector4 // panel bounds in texture coordinates
 		borders       math32.Vector4 // panel borders in texture coordinates
@@ -328,15 +328,15 @@ func (p *Panel) SetMargins(top, right, bottom, left float32) {
 }
 
 // SetMarginsFrom sets this panel margins sizes from the specified
-// BorderSizes pointer and recalculates the panel external size
-func (p *Panel) SetMarginsFrom(src *BorderSizes) {
+// RectBounds pointer and recalculates the panel external size
+func (p *Panel) SetMarginsFrom(src *RectBounds) {
 
 	p.marginSizes = *src
 	p.resize(p.calcWidth(), p.calcHeight(), true)
 }
 
 // Margins returns the current margin sizes in pixels
-func (p *Panel) Margins() BorderSizes {
+func (p *Panel) Margins() RectBounds {
 
 	return p.marginSizes
 }
@@ -350,15 +350,15 @@ func (p *Panel) SetBorders(top, right, bottom, left float32) {
 }
 
 // SetBordersFrom sets this panel border sizes from the specified
-// BorderSizes pointer and recalculates the panel size
-func (p *Panel) SetBordersFrom(src *BorderSizes) {
+// RectBounds pointer and recalculates the panel size
+func (p *Panel) SetBordersFrom(src *RectBounds) {
 
 	p.borderSizes = *src
 	p.resize(p.calcWidth(), p.calcHeight(), true)
 }
 
 // Borders returns this panel current border sizes
-func (p *Panel) Borders() BorderSizes {
+func (p *Panel) Borders() RectBounds {
 
 	return p.borderSizes
 }
@@ -371,15 +371,15 @@ func (p *Panel) SetPaddings(top, right, bottom, left float32) {
 }
 
 // SetPaddingsFrom sets this panel padding sizes from the specified
-// BorderSizes pointer and recalculates the panel size
-func (p *Panel) SetPaddingsFrom(src *BorderSizes) {
+// RectBounds pointer and recalculates the panel size
+func (p *Panel) SetPaddingsFrom(src *RectBounds) {
 
 	p.paddingSizes = *src
 	p.resize(p.calcWidth(), p.calcHeight(), true)
 }
 
 // Paddings returns this panel padding sizes in pixels
-func (p *Panel) Paddings() BorderSizes {
+func (p *Panel) Paddings() RectBounds {
 
 	return p.paddingSizes
 }

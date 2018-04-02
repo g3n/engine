@@ -22,8 +22,8 @@ type Menu struct {
 
 // MenuBodyStyle describes the style of the menu body
 type MenuBodyStyle struct {
-	Border      BorderSizes
-	Paddings    BorderSizes
+	Border      RectBounds
+	Paddings    RectBounds
 	BorderColor math32.Color4
 	BgColor     math32.Color
 	FgColor     math32.Color
@@ -63,14 +63,14 @@ type MenuItem struct {
 
 // MenuItemStyle describes the style of a menu item
 type MenuItemStyle struct {
-	Border           BorderSizes
-	Paddings         BorderSizes
+	Border           RectBounds
+	Paddings         RectBounds
 	BorderColor      math32.Color4
 	BgColor          math32.Color
 	FgColor          math32.Color
-	IconPaddings     BorderSizes
-	ShortcutPaddings BorderSizes
-	RiconPaddings    BorderSizes
+	IconPaddings     RectBounds
+	ShortcutPaddings RectBounds
+	RiconPaddings    RectBounds
 }
 
 // MenuItemStyles describes all the menu item styles

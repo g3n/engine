@@ -27,8 +27,8 @@ type TabBar struct {
 
 // TabBarStyle describes the style of the TabBar
 type TabBarStyle struct {
-	Border      BorderSizes   // Border sizes
-	Paddings    BorderSizes   // Padding sizes
+	Border      RectBounds    // Border sizes
+	Paddings    RectBounds    // Padding sizes
 	BorderColor math32.Color4 // Border color
 	BgColor     math32.Color4 // Background color
 }
@@ -37,7 +37,7 @@ type TabBarStyle struct {
 type TabBarStyles struct {
 	SepHeight          float32     // Separator width
 	ListButtonIcon     string      // Icon for list button
-	ListButtonPaddings BorderSizes // Paddings for list button
+	ListButtonPaddings RectBounds  // Paddings for list button
 	Normal             TabBarStyle // Style for normal exhibition
 	Over               TabBarStyle // Style when cursor is over the TabBar
 	Focus              TabBarStyle // Style when the TabBar has key focus
@@ -47,9 +47,9 @@ type TabBarStyles struct {
 
 // TabStyle describes the style of the individual Tabs header
 type TabStyle struct {
-	Margins     BorderSizes   // Tab header margins
-	Border      BorderSizes   // Tab header borders
-	Paddings    BorderSizes   // Tab header paddings
+	Margins     RectBounds    // Tab header margins
+	Border      RectBounds    // Tab header borders
+	Paddings    RectBounds    // Tab header paddings
 	BorderColor math32.Color4 // Tab header border color
 	BgColor     math32.Color4 // Tab header background color
 	FgColor     math32.Color  // Tab header color for icon and text
@@ -57,14 +57,14 @@ type TabStyle struct {
 
 // TabStyles describes all Tab styles
 type TabStyles struct {
-	IconPaddings  BorderSizes // Paddings for optional icon
-	ImagePaddings BorderSizes // Paddings for optional image
-	IconClose     string      // Codepoint for close icon in Tab header
-	Normal        TabStyle    // Style for normal exhibition
-	Over          TabStyle    // Style when cursor is over the Tab
-	Focus         TabStyle    // Style when the Tab has key focus
-	Disabled      TabStyle    // Style when the Tab is disabled
-	Selected      TabStyle    // Style when the Tab is selected
+	IconPaddings  RectBounds // Paddings for optional icon
+	ImagePaddings RectBounds // Paddings for optional image
+	IconClose     string     // Codepoint for close icon in Tab header
+	Normal        TabStyle   // Style for normal exhibition
+	Over          TabStyle   // Style when cursor is over the Tab
+	Focus         TabStyle   // Style when the Tab has key focus
+	Disabled      TabStyle   // Style when the Tab is disabled
+	Selected      TabStyle   // Style when the Tab is selected
 }
 
 // NewTabBar creates and returns a pointer to a new TabBar widget

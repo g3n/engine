@@ -38,9 +38,9 @@ type Slider struct {
 
 // SliderStyle
 type SliderStyle struct {
-	Border      BorderSizes   // outer panel border sizes
+	Border      RectBounds    // outer panel border sizes
 	BorderColor math32.Color4 // outer panel border colors
-	Paddings    BorderSizes   // outer panel padding sizes
+	Paddings    RectBounds    // outer panel padding sizes
 	BgColor     math32.Color4 // outer panel color
 	FgColor     math32.Color4 // slider panel color
 }
