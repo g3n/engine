@@ -23,10 +23,11 @@ import (
 **/
 
 type ScrollBar struct {
-	Panel                    // Embedded panel
-	style    *ScrollBarStyle // pointer to current style
-	vertical bool            // type of scrollbar
-	button   scrollBarButton // scrollbar button
+	Panel                        // Embedded panel
+	styles      *ScrollBarStyles
+	vertical    bool             // type of scrollbar
+	button      scrollBarButton  // scrollbar button
+	cursorOver  bool
 }
 
 type scrollBarButton struct {
@@ -36,6 +37,13 @@ type scrollBarButton struct {
 	mouseX   float32    // last mouse click x position
 	mouseY   float32    // last mouse click y position
 	Size     float32    // button size
+	MinSize  float32    // minimum button size
+}
+
+type ScrollBarStyles struct {
+	Normal   ScrollBarStyle
+	Over     ScrollBarStyle
+	Disabled ScrollBarStyle
 }
 
 type ScrollBarStyle struct {
@@ -79,7 +87,7 @@ func newScrollBar(width, height float32, vertical bool) *ScrollBar {
 // initialize initializes this scrollbar
 func (sb *ScrollBar) initialize(width, height float32, vertical bool) {
 
-	sb.style = &StyleDefault().ScrollBar
+	sb.styles = &StyleDefault().ScrollBar
 	sb.vertical = vertical
 	sb.Panel.Initialize(width, height)
 	sb.Panel.Subscribe(OnMouseDown, sb.onMouse)
@@ -90,7 +98,7 @@ func (sb *ScrollBar) initialize(width, height float32, vertical bool) {
 	sb.button.Panel.Subscribe(OnMouseUp, sb.button.onMouse)
 	sb.button.Panel.Subscribe(OnCursor, sb.button.onCursor)
 	sb.button.SetMargins(1, 1, 1, 1)
-	sb.button.Size = sb.style.Button.Size
+	sb.button.Size = sb.styles.Normal.Button.Size
 	sb.button.sb = sb
 	sb.Add(&sb.button)
 
@@ -102,10 +110,10 @@ func (sb *ScrollBar) initialize(width, height float32, vertical bool) {
 func (sb *ScrollBar) SetButtonSize(size float32) {
 
 	// Clamp to minimum size if requested size smaller than minimum
-	if size > sb.style.Button.Size {
+	if size > sb.button.MinSize {
 		sb.button.Size = size
 	} else {
-		sb.button.Size = sb.style.Button.Size
+		sb.button.Size = sb.button.MinSize
 	}
 	sb.recalc()
 }
@@ -165,17 +173,35 @@ func (sb *ScrollBar) recalc() {
 	}
 }
 
-// update updates border sizes and colors
+// update updates the visual state
 func (sb *ScrollBar) update() {
 
-	sb.SetBordersFrom(&sb.style.Borders)
-	sb.SetPaddingsFrom(&sb.style.Paddings)
-	sb.SetBordersColor4(&sb.style.BordersColor)
-	sb.SetColor(&sb.style.Color)
+	// TODO disabling the scrollbar only affects style, needs to affect behavior
+	if !sb.Enabled() {
+		sb.applyStyle(&sb.styles.Disabled)
+		return
+	}
+	// TODO cursorOver is never set to true for the scrollbar
+	if sb.cursorOver {
+		sb.applyStyle(&sb.styles.Over)
+		return
+	}
+	sb.applyStyle(&sb.styles.Normal)
+}
 
-	sb.button.SetBordersFrom(&sb.style.Button.Borders)
-	sb.button.SetBordersColor4(&sb.style.Button.BordersColor)
-	sb.button.SetColor(&sb.style.Button.Color)
+// update updates border sizes and colors
+func (sb *ScrollBar) applyStyle(sbs *ScrollBarStyle) {
+
+	sb.SetBordersFrom(&sbs.Borders)
+	sb.SetPaddingsFrom(&sbs.Paddings)
+	sb.SetBordersColor4(&sbs.BordersColor)
+	sb.SetColor(&sbs.Color)
+
+	sb.button.SetBordersFrom(&sbs.Button.Borders)
+	sb.button.SetBordersColor4(&sbs.Button.BordersColor)
+	sb.button.SetColor(&sbs.Button.Color)
+
+	sb.button.MinSize = sbs.Button.Size
 }
 
 // onMouse receives subscribed mouse events for the scroll bar button

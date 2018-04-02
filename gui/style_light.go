@@ -170,16 +170,42 @@ func NewLightStyle() *Style {
 	}
 
 	// ScrollBar style
-	s.ScrollBar = ScrollBarStyle{
-		Paddings:     BorderSizes{1, 1, 1, 1},
-		Borders:      BorderSizes{1, 1, 1, 1},
-		BordersColor: borderColor,
-		Color:        math32.Color{0.8, 0.8, 0.8},
-		Button: ScrollBarButtonStyle{
+	s.ScrollBar = ScrollBarStyles{
+		Normal: ScrollBarStyle{
+			Paddings:     BorderSizes{1, 1, 1, 1},
 			Borders:      BorderSizes{1, 1, 1, 1},
 			BordersColor: borderColor,
-			Color:        math32.Color{0.5, 0.5, 0.5},
-			Size:         30,
+			Color:        math32.Color{0.8, 0.8, 0.8},
+			Button: ScrollBarButtonStyle{
+				Borders:      BorderSizes{1, 1, 1, 1},
+				BordersColor: borderColor,
+				Color:        math32.Color{0.5, 0.5, 0.5},
+				Size:         30,
+			},
+		},
+		Over: ScrollBarStyle{
+			Paddings:     BorderSizes{1, 1, 1, 1},
+			Borders:      BorderSizes{1, 1, 1, 1},
+			BordersColor: borderColor,
+			Color:        math32.Color{0.8, 0.8, 0.8},
+			Button: ScrollBarButtonStyle{
+				Borders:      BorderSizes{1, 1, 1, 1},
+				BordersColor: borderColor,
+				Color:        math32.Color{0.5, 0.5, 0.5},
+				Size:         30,
+			},
+		},
+		Disabled: ScrollBarStyle{
+			Paddings:     BorderSizes{1, 1, 1, 1},
+			Borders:      BorderSizes{1, 1, 1, 1},
+			BordersColor: borderColor,
+			Color:        math32.Color{0.8, 0.8, 0.8},
+			Button: ScrollBarButtonStyle{
+				Borders:      BorderSizes{1, 1, 1, 1},
+				BordersColor: borderColor,
+				Color:        math32.Color{0.5, 0.5, 0.5},
+				Size:         30,
+			},
 		},
 	}
 

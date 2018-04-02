@@ -15,7 +15,7 @@ type Style struct {
 	Button        ButtonStyles
 	CheckRadio    CheckRadioStyles
 	Edit          EditStyles
-	ScrollBar     ScrollBarStyle
+	ScrollBar     ScrollBarStyles
 	Slider        SliderStyles
 	Splitter      SplitterStyles
 	Window        WindowStyles
