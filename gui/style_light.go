@@ -44,7 +44,10 @@ func NewLightStyle() *Style {
 	fontIcon.SetBgColor4(math32.NewColor4("white", 0))
 	s.FontIcon = fontIcon
 
-	borderSizes := RectBounds{1, 1, 1, 1}
+	zeroBounds := RectBounds{0, 0, 0, 0}
+	oneBounds := RectBounds{1, 1, 1, 1}
+	twoBounds := RectBounds{2, 2, 2, 2}
+
 	borderColor := math32.Color4Name("DimGray")
 	borderColorDis := math32.Color4Name("LightGray")
 
@@ -59,842 +62,343 @@ func NewLightStyle() *Style {
 	fgColorDis := math32.Color{0.4, 0.4, 0.4}
 
 	// Button styles
-	s.Button = ButtonStyles{
-		Normal: ButtonStyle{
-			Border:      borderSizes,
-			Paddings:    RectBounds{2, 4, 2, 4},
-			BorderColor: borderColor,
-			BgColor:     bgColor,
-			FgColor:     fgColor,
-		},
-		Over: ButtonStyle{
-			Border:      borderSizes,
-			Paddings:    RectBounds{2, 4, 2, 4},
-			BorderColor: borderColor,
-			BgColor:     bgColorOver,
-			FgColor:     fgColor,
-		},
-		Focus: ButtonStyle{
-			Border:      borderSizes,
-			Paddings:    RectBounds{2, 4, 2, 4},
-			BorderColor: borderColor,
-			BgColor:     bgColorOver,
-			FgColor:     fgColor,
-		},
-		Pressed: ButtonStyle{
-			Border:      RectBounds{2, 2, 2, 2},
-			Paddings:    RectBounds{2, 4, 2, 4},
-			BorderColor: borderColor,
-			BgColor:     bgColorOver,
-			FgColor:     fgColor,
-		},
-		Disabled: ButtonStyle{
-			Border:      borderSizes,
-			Paddings:    RectBounds{2, 4, 2, 4},
-			BorderColor: borderColorDis,
-			BgColor:     bgColor,
-			FgColor:     fgColorDis,
-		},
+	s.Button = ButtonStyles{}
+	s.Button.Normal = ButtonStyle{
+		Border:      oneBounds,
+		Paddings:    RectBounds{2, 4, 2, 4},
+		BorderColor: borderColor,
+		BgColor:     bgColor,
+		FgColor:     fgColor,
 	}
+	s.Button.Over = s.Button.Normal
+	s.Button.Over.BgColor = bgColorOver
+	s.Button.Focus = s.Button.Over
+	s.Button.Pressed = s.Button.Over
+	s.Button.Pressed.Border = twoBounds
+	s.Button.Disabled = s.Button.Normal
+	s.Button.Disabled.BorderColor = borderColorDis
+	s.Button.Disabled.FgColor = fgColorDis
 
 	// CheckRadio styles
-	s.CheckRadio = CheckRadioStyles{
-		Normal: CheckRadioStyle{
-			Border:      RectBounds{0, 0, 0, 0},
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     bgColor4,
-			FgColor:     fgColor,
-		},
-		Over: CheckRadioStyle{
-			Border:      RectBounds{0, 0, 0, 0},
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     bgColor4Over,
-			FgColor:     fgColor,
-		},
-		Focus: CheckRadioStyle{
-			Border:      RectBounds{0, 0, 0, 0},
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     bgColor4Over,
-			FgColor:     fgColor,
-		},
-		Disabled: CheckRadioStyle{
-			Border:      RectBounds{0, 0, 0, 0},
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     bgColor4,
-			FgColor:     fgColorDis,
-		},
+	s.CheckRadio = CheckRadioStyles{}
+	s.CheckRadio.Normal = CheckRadioStyle{
+		Border:      zeroBounds,
+		Paddings:    zeroBounds,
+		BorderColor: borderColor,
+		BgColor:     bgColor4,
+		FgColor:     fgColor,
 	}
+	s.CheckRadio.Over = s.CheckRadio.Normal
+	s.CheckRadio.Over.BgColor = bgColor4Over
+	s.CheckRadio.Focus = s.CheckRadio.Over
+	s.CheckRadio.Disabled = s.CheckRadio.Normal
+	s.CheckRadio.Disabled.FgColor = fgColorDis
 
 	// Edit styles
-	s.Edit = EditStyles{
-		Normal: EditStyle{
-			Border:      RectBounds{1, 1, 1, 1},
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     bgColor,
-			BgAlpha:     1.0,
-			FgColor:     fgColor,
-			HolderColor: math32.Color{0.4, 0.4, 0.4},
-		},
-		Over: EditStyle{
-			Border:      RectBounds{1, 1, 1, 1},
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     bgColorOver,
-			BgAlpha:     1.0,
-			FgColor:     fgColor,
-			HolderColor: math32.Color{0.4, 0.4, 0.4},
-		},
-		Focus: EditStyle{
-			Border:      RectBounds{1, 1, 1, 1},
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     bgColorOver,
-			BgAlpha:     1.0,
-			FgColor:     fgColor,
-			HolderColor: math32.Color{0.4, 0.4, 0.4},
-		},
-		Disabled: EditStyle{
-			Border:      RectBounds{1, 1, 1, 1},
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     bgColor,
-			BgAlpha:     1.0,
-			FgColor:     fgColorDis,
-			HolderColor: math32.Color{0.4, 0.4, 0.4},
-		},
+	s.Edit = EditStyles{}
+	s.Edit.Normal = EditStyle{
+		Border:      oneBounds,
+		Paddings:    zeroBounds,
+		BorderColor: borderColor,
+		BgColor:     bgColor,
+		BgAlpha:     1.0,
+		FgColor:     fgColor,
+		HolderColor: math32.Color{0.4, 0.4, 0.4},
 	}
+	s.Edit.Over = s.Edit.Normal
+	s.Edit.Over.BgColor = bgColorOver
+	s.Edit.Focus = s.Edit.Over
+	s.Edit.Disabled = s.Edit.Normal
+	s.Edit.Disabled.FgColor = fgColorDis
 
-	// ScrollBar style
-	s.ScrollBar = ScrollBarStyles{
-		Normal: ScrollBarStyle{
-			Paddings:     RectBounds{1, 1, 1, 1},
-			Borders:      RectBounds{1, 1, 1, 1},
+	// ScrollBar styles
+	s.ScrollBar = ScrollBarStyles{}
+	s.ScrollBar.Normal = ScrollBarStyle{
+		Paddings:     oneBounds,
+		Borders:      oneBounds,
+		BordersColor: borderColor,
+		Color:        math32.Color{0.8, 0.8, 0.8},
+		Button: ScrollBarButtonStyle{
+			Borders:      oneBounds,
 			BordersColor: borderColor,
-			Color:        math32.Color{0.8, 0.8, 0.8},
-			Button: ScrollBarButtonStyle{
-				Borders:      RectBounds{1, 1, 1, 1},
-				BordersColor: borderColor,
-				Color:        math32.Color{0.5, 0.5, 0.5},
-				Size:         30,
-			},
-		},
-		Over: ScrollBarStyle{
-			Paddings:     RectBounds{1, 1, 1, 1},
-			Borders:      RectBounds{1, 1, 1, 1},
-			BordersColor: borderColor,
-			Color:        math32.Color{0.8, 0.8, 0.8},
-			Button: ScrollBarButtonStyle{
-				Borders:      RectBounds{1, 1, 1, 1},
-				BordersColor: borderColor,
-				Color:        math32.Color{0.5, 0.5, 0.5},
-				Size:         30,
-			},
-		},
-		Disabled: ScrollBarStyle{
-			Paddings:     RectBounds{1, 1, 1, 1},
-			Borders:      RectBounds{1, 1, 1, 1},
-			BordersColor: borderColor,
-			Color:        math32.Color{0.8, 0.8, 0.8},
-			Button: ScrollBarButtonStyle{
-				Borders:      RectBounds{1, 1, 1, 1},
-				BordersColor: borderColor,
-				Color:        math32.Color{0.5, 0.5, 0.5},
-				Size:         30,
-			},
+			Color:        math32.Color{0.5, 0.5, 0.5},
+			Size:         30,
 		},
 	}
+	s.ScrollBar.Over = s.ScrollBar.Normal
+	s.ScrollBar.Disabled = s.ScrollBar.Normal
 
 	// Slider styles
-	s.Slider = SliderStyles{
-		Normal: SliderStyle{
-			Border:      borderSizes,
-			BorderColor: borderColor,
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BgColor:     math32.Color4{0.8, 0.8, 0.8, 1},
-			FgColor:     math32.Color4{0, 0.8, 0, 1},
-		},
-		Over: SliderStyle{
-			Border:      borderSizes,
-			BorderColor: borderColor,
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BgColor:     math32.Color4{1, 1, 1, 1},
-			FgColor:     math32.Color4{0, 1, 0, 1},
-		},
-		Focus: SliderStyle{
-			Border:      borderSizes,
-			BorderColor: borderColor,
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BgColor:     math32.Color4{1, 1, 1, 1},
-			FgColor:     math32.Color4{0, 1, 0, 1},
-		},
-		Disabled: SliderStyle{
-			Border:      borderSizes,
-			BorderColor: borderColor,
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BgColor:     math32.Color4{0.8, 0.8, 0.8, 1},
-			FgColor:     math32.Color4{0, 0.8, 0, 1},
-		},
+	s.Slider = SliderStyles{}
+	s.Slider.Normal = SliderStyle{
+		Border:      oneBounds,
+		BorderColor: borderColor,
+		Paddings:    zeroBounds,
+		BgColor:     math32.Color4{0.8, 0.8, 0.8, 1},
+		FgColor:     math32.Color4{0, 0.8, 0, 1},
 	}
+	s.Slider.Over = s.Slider.Normal
+	s.Slider.Over.BgColor = math32.Color4{1, 1, 1, 1}
+	s.Slider.Over.FgColor = math32.Color4{0, 1, 0, 1}
+	s.Slider.Focus = s.Slider.Over
+	s.Slider.Disabled = s.Slider.Normal
 
 	// Splitter styles
-	s.Splitter = SplitterStyles{
-		Normal: SplitterStyle{
-			SpacerBorderColor: borderColor,
-			SpacerColor:       bgColor,
-			SpacerSize:        6,
-		},
-		Over: SplitterStyle{
-			SpacerBorderColor: borderColor,
-			SpacerColor:       bgColorOver,
-			SpacerSize:        6,
-		},
-		Drag: SplitterStyle{
-			SpacerBorderColor: borderColor,
-			SpacerColor:       bgColorOver,
-			SpacerSize:        6,
-		},
+	s.Splitter = SplitterStyles{}
+	s.Splitter.Normal = SplitterStyle{
+		SpacerBorderColor: borderColor,
+		SpacerColor:       bgColor,
+		SpacerSize:        6,
 	}
+	s.Splitter.Over = s.Splitter.Normal
+	s.Splitter.Over.SpacerColor = bgColorOver
+	s.Splitter.Drag = s.Splitter.Over
 
-	s.Window = WindowStyles{
-		Normal: WindowStyle{
-			Border:           RectBounds{4, 4, 4, 4},
-			Paddings:         RectBounds{0, 0, 0, 0},
-			BorderColor:      math32.Color4{0.2, 0.2, 0.2, 1},
-			TitleBorders:     RectBounds{0, 0, 1, 0},
-			TitleBorderColor: math32.Color4{0, 0, 0, 1},
-			TitleBgColor:     math32.Color4{0, 1, 0, 1},
-			TitleFgColor:     math32.Color4{0, 0, 0, 1},
-		},
-		Over: WindowStyle{
-			Border:           RectBounds{4, 4, 4, 4},
-			Paddings:         RectBounds{0, 0, 0, 0},
-			BorderColor:      math32.Color4{0.2, 0.2, 0.2, 1},
-			TitleBorders:     RectBounds{0, 0, 1, 0},
-			TitleBorderColor: math32.Color4{0, 0, 0, 1},
-			TitleBgColor:     math32.Color4{0, 1, 0, 1},
-			TitleFgColor:     math32.Color4{0, 0, 0, 1},
-		},
-		Focus: WindowStyle{
-			Border:           RectBounds{4, 4, 4, 4},
-			Paddings:         RectBounds{0, 0, 0, 0},
-			BorderColor:      math32.Color4{0.2, 0.2, 0.2, 1},
-			TitleBorders:     RectBounds{0, 0, 1, 0},
-			TitleBorderColor: math32.Color4{0, 0, 0, 1},
-			TitleBgColor:     math32.Color4{0, 1, 0, 1},
-			TitleFgColor:     math32.Color4{0, 0, 0, 1},
-		},
-		Disabled: WindowStyle{
-			Border:           RectBounds{4, 4, 4, 4},
-			Paddings:         RectBounds{0, 0, 0, 0},
-			BorderColor:      math32.Color4{0.2, 0.2, 0.2, 1},
-			TitleBorders:     RectBounds{0, 0, 1, 0},
-			TitleBorderColor: math32.Color4{0, 0, 0, 1},
-			TitleBgColor:     math32.Color4{0, 1, 0, 1},
-			TitleFgColor:     math32.Color4{0, 0, 0, 1},
-		},
+	// Window styles
+	s.Window = WindowStyles{}
+	s.Window.Normal = WindowStyle{
+		Border:           RectBounds{4, 4, 4, 4},
+		Paddings:         zeroBounds,
+		BorderColor:      math32.Color4{0.2, 0.2, 0.2, 1},
+		TitleBorders:     RectBounds{0, 0, 1, 0},
+		TitleBorderColor: math32.Color4{0, 0, 0, 1},
+		TitleBgColor:     math32.Color4{0, 1, 0, 1},
+		TitleFgColor:     math32.Color4{0, 0, 0, 1},
 	}
+	s.Window.Over = s.Window.Normal
+	s.Window.Focus = s.Window.Normal
+	s.Window.Disabled = s.Window.Normal
 
 	// Scroller styles
-	s.Scroller = ScrollerStyles{
-		Normal: ScrollerStyle{
-			Border:      RectBounds{1, 1, 1, 1},
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     bgColor,
-			FgColor:     fgColor,
-		},
-		Over: ScrollerStyle{
-			Border:      RectBounds{1, 1, 1, 1},
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     bgColorOver,
-			FgColor:     fgColor,
-		},
-		Focus: ScrollerStyle{
-			Border:      RectBounds{1, 1, 1, 1},
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     bgColorOver,
-			FgColor:     fgColor,
-		},
-		Disabled: ScrollerStyle{
-			Border:      RectBounds{1, 1, 1, 1},
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     bgColor,
-			FgColor:     fgColor,
-		},
+	s.Scroller = ScrollerStyles{}
+	s.Scroller.Normal = ScrollerStyle{
+		Border:      oneBounds,
+		Paddings:    zeroBounds,
+		BorderColor: borderColor,
+		BgColor:     bgColor,
+		FgColor:     fgColor,
 	}
+	s.Scroller.Over = s.Scroller.Normal
+	s.Scroller.Over.BgColor = bgColorOver
+	s.Scroller.Focus = s.Scroller.Over
+	s.Scroller.Disabled = s.Scroller.Normal
 
 	// List styles
-	s.List = ListStyles{
-		Scroller: &ScrollerStyles{
-			Normal: ScrollerStyle{
-				Border:      RectBounds{1, 1, 1, 1},
-				Paddings:    RectBounds{0, 0, 0, 0},
-				BorderColor: borderColor,
-				BgColor:     bgColor,
-				FgColor:     fgColor,
-			},
-			Over: ScrollerStyle{
-				Border:      RectBounds{1, 1, 1, 1},
-				Paddings:    RectBounds{0, 0, 0, 0},
-				BorderColor: borderColor,
-				BgColor:     bgColorOver,
-				FgColor:     fgColor,
-			},
-			Focus: ScrollerStyle{
-				Border:      RectBounds{1, 1, 1, 1},
-				Paddings:    RectBounds{0, 0, 0, 0},
-				BorderColor: borderColor,
-				BgColor:     bgColorOver,
-				FgColor:     fgColor,
-			},
-			Disabled: ScrollerStyle{
-				Border:      RectBounds{1, 1, 1, 1},
-				Paddings:    RectBounds{0, 0, 0, 0},
-				BorderColor: borderColor,
-				BgColor:     bgColor,
-				FgColor:     fgColor,
-			},
-		},
-		Item: &ListItemStyles{
-			Normal: ListItemStyle{
-				Border:      RectBounds{1, 0, 1, 0},
-				Paddings:    RectBounds{0, 0, 0, 2},
-				BorderColor: math32.Color4{0, 0, 0, 0},
-				BgColor:     bgColor4,
-				FgColor:     fgColor,
-			},
-			Selected: ListItemStyle{
-				Border:      RectBounds{1, 0, 1, 0},
-				Paddings:    RectBounds{0, 0, 0, 2},
-				BorderColor: math32.Color4{0, 0, 0, 0},
-				BgColor:     bgColor4Sel,
-				FgColor:     fgColorSel,
-			},
-			Highlighted: ListItemStyle{
-				Border:      RectBounds{1, 0, 1, 0},
-				Paddings:    RectBounds{0, 0, 0, 2},
-				BorderColor: math32.Color4{0, 0, 0, 1},
-				BgColor:     bgColor4Over,
-				FgColor:     fgColor,
-			},
-			SelHigh: ListItemStyle{
-				Border:      RectBounds{1, 0, 1, 0},
-				Paddings:    RectBounds{0, 0, 0, 2},
-				BorderColor: math32.Color4{0, 0, 0, 1},
-				BgColor:     bgColor4Sel,
-				FgColor:     fgColorSel,
-			},
-		},
+	s.List = ListStyles{}
+	s.List.Scroller = &s.Scroller
+	s.List.Item = &ListItemStyles{}
+	s.List.Item.Normal = ListItemStyle{
+		Border:      RectBounds{1, 0, 1, 0},
+		Paddings:    RectBounds{0, 0, 0, 2},
+		BorderColor: math32.Color4{0, 0, 0, 0},
+		BgColor:     bgColor4,
+		FgColor:     fgColor,
+	}
+	s.List.Item.Selected = s.List.Item.Normal
+	s.List.Item.Selected.BgColor = bgColor4Sel
+	s.List.Item.Selected.FgColor = fgColorSel
+	s.List.Item.Highlighted = s.List.Item.Normal
+	s.List.Item.Highlighted.BorderColor = math32.Color4{0, 0, 0, 1}
+	s.List.Item.Highlighted.BgColor = bgColor4Over
+	s.List.Item.Highlighted.FgColor = fgColor
+	s.List.Item.SelHigh = s.List.Item.Highlighted
+	s.List.Item.SelHigh.BgColor = bgColor4Sel
+	s.List.Item.SelHigh.FgColor = fgColorSel
+
+	// DropDown styles
+	s.DropDown = DropDownStyles{}
+	s.DropDown.Normal = DropDownStyle{
+		Border:      oneBounds,
+		Paddings:    RectBounds{0, 0, 0, 2},
+		BorderColor: borderColor,
+		BgColor:     bgColor,
+		FgColor:     fgColor,
+	}
+	s.DropDown.Over = s.DropDown.Normal
+	s.DropDown.Over.BgColor = bgColorOver
+	s.DropDown.Focus = s.DropDown.Over
+	s.DropDown.Disabled = s.DropDown.Normal
+
+	// Folder styles
+	s.Folder = FolderStyles{}
+	s.Folder.Normal = FolderStyle{
+		Margins:     zeroBounds,
+		Border:      oneBounds,
+		Paddings:    RectBounds{2, 0, 2, 2},
+		BorderColor: borderColor,
+		BgColor:     bgColor,
+		FgColor:     fgColor,
+		Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
+	}
+	s.Folder.Over = s.Folder.Normal
+	s.Folder.Over.BgColor = bgColorOver
+	s.Folder.Focus = s.Folder.Over
+	s.Folder.Focus.Paddings = twoBounds
+	s.Folder.Disabled = s.Folder.Focus
+
+	// Tree styles
+	s.Tree = TreeStyles{}
+	s.Tree.Padlevel = 16.0
+	s.Tree.List = &s.List
+	s.Tree.Node = &TreeNodeStyles{}
+	s.Tree.Node.Normal = TreeNodeStyle{
+		Border:      zeroBounds,
+		Paddings:    zeroBounds,
+		BorderColor: borderColor,
+		BgColor:     bgColor4,
+		FgColor:     fgColor,
+		Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
 	}
 
-	s.DropDown = DropDownStyles{
-		Normal: &DropDownStyle{
-			Border:      RectBounds{1, 1, 1, 1},
-			Paddings:    RectBounds{0, 0, 0, 2},
-			BorderColor: borderColor,
-			BgColor:     bgColor,
-			FgColor:     fgColor,
-		},
-		Over: &DropDownStyle{
-			Border:      RectBounds{1, 1, 1, 1},
-			Paddings:    RectBounds{0, 0, 0, 2},
-			BorderColor: borderColor,
-			BgColor:     bgColorOver,
-			FgColor:     fgColor,
-		},
-		Focus: &DropDownStyle{
-			Border:      RectBounds{1, 1, 1, 1},
-			Paddings:    RectBounds{0, 0, 0, 2},
-			BorderColor: borderColor,
-			BgColor:     bgColorOver,
-			FgColor:     fgColor,
-		},
-		Disabled: &DropDownStyle{
-			Border:      RectBounds{1, 1, 1, 1},
-			Paddings:    RectBounds{0, 0, 0, 2},
-			BorderColor: borderColor,
-			BgColor:     bgColor,
-			FgColor:     fgColor,
-		},
-	}
-
-	s.Folder = FolderStyles{
-		Normal: &FolderStyle{
-			Margins:     RectBounds{0, 0, 0, 0},
-			Border:      RectBounds{1, 1, 1, 1},
-			Paddings:    RectBounds{2, 0, 2, 2},
-			BorderColor: borderColor,
-			BgColor:     bgColor,
-			FgColor:     fgColor,
-			Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
-		},
-		Over: &FolderStyle{
-			Margins:     RectBounds{0, 0, 0, 0},
-			Border:      RectBounds{1, 1, 1, 1},
-			Paddings:    RectBounds{2, 0, 2, 2},
-			BorderColor: borderColor,
-			BgColor:     bgColorOver,
-			FgColor:     fgColor,
-			Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
-		},
-		Focus: &FolderStyle{
-			Margins:     RectBounds{0, 0, 0, 0},
-			Border:      RectBounds{1, 1, 1, 1},
-			Paddings:    RectBounds{2, 2, 2, 2},
-			BorderColor: borderColor,
-			BgColor:     bgColorOver,
-			FgColor:     fgColor,
-			Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
-		},
-		Disabled: &FolderStyle{
-			Margins:     RectBounds{0, 0, 0, 0},
-			Border:      RectBounds{1, 1, 1, 1},
-			Paddings:    RectBounds{2, 2, 2, 2},
-			BorderColor: borderColor,
-			BgColor:     bgColorOver,
-			FgColor:     fgColor,
-			Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
-		},
-	}
-
-	s.Tree = TreeStyles{
-		List: &ListStyles{
-			Scroller: &ScrollerStyles{
-				Normal: ScrollerStyle{
-					Border:      RectBounds{1, 1, 1, 1},
-					Paddings:    RectBounds{0, 0, 0, 0},
-					BorderColor: borderColor,
-					BgColor:     bgColor,
-					FgColor:     fgColor,
-				},
-				Over: ScrollerStyle{
-					Border:      RectBounds{1, 1, 1, 1},
-					Paddings:    RectBounds{0, 0, 0, 0},
-					BorderColor: borderColor,
-					BgColor:     bgColorOver,
-					FgColor:     fgColor,
-				},
-				Focus: ScrollerStyle{
-					Border:      RectBounds{1, 1, 1, 1},
-					Paddings:    RectBounds{0, 0, 0, 0},
-					BorderColor: borderColor,
-					BgColor:     bgColorOver,
-					FgColor:     fgColor,
-				},
-				Disabled: ScrollerStyle{
-					Border:      RectBounds{1, 1, 1, 1},
-					Paddings:    RectBounds{0, 0, 0, 0},
-					BorderColor: borderColor,
-					BgColor:     bgColor,
-					FgColor:     fgColor,
-				},
-			},
-			Item: &ListItemStyles{
-				Normal: ListItemStyle{
-					Border:      RectBounds{1, 0, 1, 0},
-					Paddings:    RectBounds{0, 0, 0, 2},
-					BorderColor: math32.Color4{0, 0, 0, 0},
-					BgColor:     bgColor4,
-					FgColor:     fgColor,
-				},
-				Selected: ListItemStyle{
-					Border:      RectBounds{1, 0, 1, 0},
-					Paddings:    RectBounds{0, 0, 0, 2},
-					BorderColor: math32.Color4{0, 0, 0, 0},
-					BgColor:     bgColor4Sel,
-					FgColor:     fgColorSel,
-				},
-				Highlighted: ListItemStyle{
-					Border:      RectBounds{1, 0, 1, 0},
-					Paddings:    RectBounds{0, 0, 0, 2},
-					BorderColor: math32.Color4{0, 0, 0, 1},
-					BgColor:     bgColor4Over,
-					FgColor:     fgColor,
-				},
-				SelHigh: ListItemStyle{
-					Border:      RectBounds{1, 0, 1, 0},
-					Paddings:    RectBounds{0, 0, 0, 2},
-					BorderColor: math32.Color4{0, 0, 0, 1},
-					BgColor:     bgColor4Sel,
-					FgColor:     fgColorSel,
-				},
-			},
-		},
-		Node: &TreeNodeStyles{
-			Normal: TreeNodeStyle{
-				Border:      RectBounds{0, 0, 0, 0},
-				Paddings:    RectBounds{0, 0, 0, 0},
-				BorderColor: borderColor,
-				BgColor:     bgColor4,
-				FgColor:     fgColor,
-				Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
-			},
-		},
-		Padlevel: 16.0,
-	}
-
-	s.ControlFolder = ControlFolderStyles{
-		Folder: &FolderStyles{
-			Normal: &FolderStyle{
-				Margins:     RectBounds{0, 0, 0, 0},
-				Border:      RectBounds{1, 1, 1, 1},
-				Paddings:    RectBounds{2, 0, 2, 2},
-				BorderColor: math32.Color4{0, 0, 0, 0},
-				BgColor:     math32.Color{0, 0.5, 1},
-				FgColor:     fgColor,
-				Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
-			},
-			Over: &FolderStyle{
-				Margins:     RectBounds{0, 0, 0, 0},
-				Border:      RectBounds{1, 1, 1, 1},
-				Paddings:    RectBounds{2, 0, 2, 2},
-				BorderColor: math32.Color4{0, 0, 0, 0},
-				BgColor:     math32.Color{0, 0.5, 1},
-				FgColor:     fgColor,
-				Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
-			},
-			Focus: &FolderStyle{
-				Margins:     RectBounds{0, 0, 0, 0},
-				Border:      RectBounds{1, 1, 1, 1},
-				Paddings:    RectBounds{2, 2, 2, 2},
-				BorderColor: math32.Color4{0, 0, 0, 0},
-				BgColor:     math32.Color{0, 0.5, 1},
-				FgColor:     fgColor,
-				Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
-			},
-			Disabled: &FolderStyle{
-				Margins:     RectBounds{0, 0, 0, 0},
-				Border:      RectBounds{1, 1, 1, 1},
-				Paddings:    RectBounds{2, 2, 2, 2},
-				BorderColor: math32.Color4{0, 0, 0, 0},
-				BgColor:     math32.Color{0, 0.5, 1},
-				FgColor:     fgColor,
-				Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
-			},
-		},
-		Tree: &TreeStyles{
-			List: &ListStyles{
-				Scroller: &ScrollerStyles{
-					Normal: ScrollerStyle{
-						Border:      RectBounds{1, 1, 1, 1},
-						Paddings:    RectBounds{0, 2, 0, 0},
-						BorderColor: borderColor,
-						BgColor:     bgColor,
-						FgColor:     fgColor,
-					},
-					Over: ScrollerStyle{
-						Border:      RectBounds{1, 1, 1, 1},
-						Paddings:    RectBounds{0, 2, 0, 0},
-						BorderColor: borderColor,
-						BgColor:     bgColorOver,
-						FgColor:     fgColor,
-					},
-					Focus: ScrollerStyle{
-						Border:      RectBounds{1, 1, 1, 1},
-						Paddings:    RectBounds{0, 2, 0, 0},
-						BorderColor: borderColor,
-						BgColor:     bgColorOver,
-						FgColor:     fgColor,
-					},
-					Disabled: ScrollerStyle{
-						Border:      RectBounds{1, 1, 1, 1},
-						Paddings:    RectBounds{0, 2, 0, 0},
-						BorderColor: borderColor,
-						BgColor:     bgColor,
-						FgColor:     fgColor,
-					},
-				},
-				Item: &ListItemStyles{
-					Normal: ListItemStyle{
-						Border:      RectBounds{1, 0, 1, 0},
-						Paddings:    RectBounds{0, 0, 0, 2},
-						BorderColor: math32.Color4{0, 0, 0, 0},
-						BgColor:     bgColor4,
-						FgColor:     fgColor,
-					},
-					Selected: ListItemStyle{
-						Border:      RectBounds{1, 0, 1, 0},
-						Paddings:    RectBounds{0, 0, 0, 2},
-						BorderColor: math32.Color4{0, 0, 0, 0},
-						BgColor:     bgColor4,
-						FgColor:     fgColor,
-					},
-					Highlighted: ListItemStyle{
-						Border:      RectBounds{1, 0, 1, 0},
-						Paddings:    RectBounds{0, 0, 0, 2},
-						BorderColor: math32.Color4{0, 0, 0, 1},
-						BgColor:     bgColor4Over,
-						FgColor:     fgColor,
-					},
-					SelHigh: ListItemStyle{
-						Border:      RectBounds{1, 0, 1, 0},
-						Paddings:    RectBounds{0, 0, 0, 2},
-						BorderColor: math32.Color4{0, 0, 0, 1},
-						BgColor:     bgColor4Sel,
-						FgColor:     fgColorSel,
-					},
-				},
-			},
-			Node: &TreeNodeStyles{
-				Normal: TreeNodeStyle{
-					Border:      RectBounds{0, 0, 0, 0},
-					Paddings:    RectBounds{0, 0, 0, 0},
-					BorderColor: borderColor,
-					BgColor:     bgColor4,
-					FgColor:     fgColor,
-					Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
-				},
-			},
-			Padlevel: 2.0,
-		},
-	}
+	// ControlFolder styles
+	s.ControlFolder = ControlFolderStyles{}
+	s.ControlFolder.Folder = &FolderStyles{}
+	s.ControlFolder.Folder.Normal = s.Folder.Normal
+	s.ControlFolder.Folder.Normal.BorderColor = math32.Color4{0, 0, 0, 0}
+	s.ControlFolder.Folder.Normal.BgColor = math32.Color{0, 0.5, 1}
+	s.ControlFolder.Folder.Over = s.ControlFolder.Folder.Normal
+	s.ControlFolder.Folder.Focus = s.ControlFolder.Folder.Normal
+	s.ControlFolder.Folder.Focus.Paddings = twoBounds
+	s.ControlFolder.Folder.Disabled = s.ControlFolder.Folder.Focus
+	s.ControlFolder.Tree = &TreeStyles{}
+	s.ControlFolder.Tree.Padlevel = 2.0
+	s.ControlFolder.Tree.List = &ListStyles{}
+	scrollerStylesCopy := *s.List.Scroller
+	s.ControlFolder.Tree.List.Scroller = &scrollerStylesCopy
+	s.ControlFolder.Tree.List.Scroller.Normal.Paddings = RectBounds{0, 2, 0, 0}
+	s.ControlFolder.Tree.List.Scroller.Over.Paddings = RectBounds{0, 2, 0, 0}
+	s.ControlFolder.Tree.List.Scroller.Focus.Paddings = RectBounds{0, 2, 0, 0}
+	s.ControlFolder.Tree.List.Scroller.Disabled.Paddings = RectBounds{0, 2, 0, 0}
+	s.ControlFolder.Tree.List.Item = s.List.Item
+	s.ControlFolder.Tree.Node = &TreeNodeStyles{}
+	s.ControlFolder.Tree.Node.Normal = s.Tree.Node.Normal
 
 	// Menu styles
-	s.Menu = MenuStyles{
-		Body: &MenuBodyStyles{
-			Normal: MenuBodyStyle{
-				Border:      RectBounds{1, 1, 1, 1},
-				Paddings:    RectBounds{2, 2, 2, 2},
-				BorderColor: borderColor,
-				BgColor:     bgColor,
-				FgColor:     fgColor,
-			},
-			Over: MenuBodyStyle{
-				Border:      RectBounds{1, 1, 1, 1},
-				Paddings:    RectBounds{2, 2, 2, 2},
-				BorderColor: borderColor,
-				BgColor:     bgColorOver,
-				FgColor:     fgColor,
-			},
-			Focus: MenuBodyStyle{
-				Border:      RectBounds{1, 1, 1, 1},
-				Paddings:    RectBounds{2, 2, 2, 2},
-				BorderColor: borderColor,
-				BgColor:     bgColorOver,
-				FgColor:     fgColor,
-			},
-			Disabled: MenuBodyStyle{
-				Border:      RectBounds{1, 1, 1, 1},
-				Paddings:    RectBounds{2, 2, 2, 2},
-				BorderColor: borderColor,
-				BgColor:     bgColor,
-				FgColor:     fgColor,
-			},
-		},
-		Item: &MenuItemStyles{
-			Normal: MenuItemStyle{
-				Border:           RectBounds{0, 0, 0, 0},
-				Paddings:         RectBounds{2, 4, 2, 2},
-				BorderColor:      borderColor,
-				BgColor:          bgColor,
-				FgColor:          fgColor,
-				IconPaddings:     RectBounds{0, 6, 0, 4},
-				ShortcutPaddings: RectBounds{0, 0, 0, 10},
-				RiconPaddings:    RectBounds{2, 0, 0, 4},
-			},
-			Over: MenuItemStyle{
-				Border:           RectBounds{0, 0, 0, 0},
-				Paddings:         RectBounds{2, 4, 2, 2},
-				BorderColor:      borderColor,
-				BgColor:          math32.Color{0.6, 0.6, 0.6},
-				FgColor:          fgColor,
-				IconPaddings:     RectBounds{0, 6, 0, 4},
-				ShortcutPaddings: RectBounds{0, 0, 0, 10},
-				RiconPaddings:    RectBounds{2, 0, 0, 4},
-			},
-			Disabled: MenuItemStyle{
-				Border:           RectBounds{0, 0, 0, 0},
-				Paddings:         RectBounds{2, 4, 2, 2},
-				BorderColor:      borderColor,
-				BgColor:          bgColor,
-				FgColor:          fgColorDis,
-				IconPaddings:     RectBounds{0, 6, 0, 4},
-				ShortcutPaddings: RectBounds{0, 0, 0, 10},
-				RiconPaddings:    RectBounds{2, 0, 0, 4},
-			},
-			Separator: MenuItemStyle{
-				Border:      RectBounds{2, 2, 2, 2},
-				Paddings:    RectBounds{0, 0, 0, 0},
-				BorderColor: math32.Color4{0, 0, 0, 0},
-				BgColor:     math32.Color{0.6, 0.6, 0.6},
-				FgColor:     fgColor,
-			},
-		},
+	s.Menu = MenuStyles{}
+	s.Menu.Body = &MenuBodyStyles{}
+	s.Menu.Body.Normal = MenuBodyStyle{
+		Border:      oneBounds,
+		Paddings:    twoBounds,
+		BorderColor: borderColor,
+		BgColor:     bgColor,
+		FgColor:     fgColor,
+	}
+	s.Menu.Body.Over = s.Menu.Body.Normal
+	s.Menu.Body.Over.BgColor = bgColorOver
+	s.Menu.Body.Focus = s.Menu.Body.Over
+	s.Menu.Body.Disabled = s.Menu.Body.Normal
+	s.Menu.Item = &MenuItemStyles{}
+	s.Menu.Item.Normal = MenuItemStyle{
+		Border:           zeroBounds,
+		Paddings:         RectBounds{2, 4, 2, 2},
+		BorderColor:      borderColor,
+		BgColor:          bgColor,
+		FgColor:          fgColor,
+		IconPaddings:     RectBounds{0, 6, 0, 4},
+		ShortcutPaddings: RectBounds{0, 0, 0, 10},
+		RiconPaddings:    RectBounds{2, 0, 0, 4},
+	}
+	s.Menu.Item.Over = s.Menu.Item.Normal
+	s.Menu.Item.Over.BgColor = math32.Color{0.6, 0.6, 0.6}
+	s.Menu.Item.Disabled = s.Menu.Item.Normal
+	s.Menu.Item.Disabled.FgColor = fgColorDis
+	s.Menu.Item.Separator = MenuItemStyle{
+		Border:      twoBounds,
+		Paddings:    zeroBounds,
+		BorderColor: math32.Color4{0, 0, 0, 0},
+		BgColor:     math32.Color{0.6, 0.6, 0.6},
+		FgColor:     fgColor,
 	}
 
 	// Table styles
-	s.Table = TableStyles{
-		Header: &TableHeaderStyle{
-			Border:      RectBounds{0, 1, 1, 0},
-			Paddings:    RectBounds{2, 2, 2, 2},
-			BorderColor: borderColor,
-			BgColor:     math32.Color{0.7, 0.7, 0.7},
-			FgColor:     fgColor,
-		},
-		RowEven: &TableRowStyle{
-			Border:      RectBounds{0, 1, 1, 0},
-			Paddings:    RectBounds{2, 2, 2, 2},
-			BorderColor: math32.Color4{0.6, 0.6, 0.6, 1},
-			BgColor:     math32.Color{0.90, 0.90, 0.90},
-			FgColor:     fgColor,
-		},
-		RowOdd: &TableRowStyle{
-			Border:      RectBounds{0, 1, 1, 0},
-			Paddings:    RectBounds{2, 2, 2, 2},
-			BorderColor: math32.Color4{0.6, 0.6, 0.6, 1},
-			BgColor:     math32.Color{0.88, 0.88, 0.88},
-			FgColor:     fgColor,
-		},
-		RowCursor: &TableRowStyle{
-			Border:      RectBounds{0, 1, 1, 0},
-			Paddings:    RectBounds{2, 2, 2, 2},
-			BorderColor: math32.Color4{0.6, 0.6, 0.6, 1},
-			BgColor:     math32.Color{0.75, 0.75, 0.75},
-			FgColor:     fgColor,
-		},
-		RowSel: &TableRowStyle{
-			Border:      RectBounds{0, 1, 1, 0},
-			Paddings:    RectBounds{2, 2, 2, 2},
-			BorderColor: math32.Color4{0.6, 0.6, 0.6, 1},
-			BgColor:     math32.Color{0.70, 0.70, 0.70},
-			FgColor:     fgColor,
-		},
-		Status: &TableStatusStyle{
-			Border:      RectBounds{1, 0, 0, 0},
-			Paddings:    RectBounds{2, 2, 2, 2},
-			BorderColor: borderColor,
-			BgColor:     math32.Color{0.9, 0.9, 0.9},
-			FgColor:     fgColor,
-		},
-		Resizer: &TableResizerStyle{
-			Width:       4,
-			Border:      RectBounds{0, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     math32.Color4{0.4, 0.4, 0.4, 0.6},
-		},
+	s.Table = TableStyles{}
+	s.Table.Header = TableHeaderStyle{
+		Border:      RectBounds{0, 1, 1, 0},
+		Paddings:    twoBounds,
+		BorderColor: borderColor,
+		BgColor:     math32.Color{0.7, 0.7, 0.7},
+		FgColor:     fgColor,
+	}
+	s.Table.RowEven = TableRowStyle{
+		Border:      RectBounds{0, 1, 1, 0},
+		Paddings:    twoBounds,
+		BorderColor: math32.Color4{0.6, 0.6, 0.6, 1},
+		BgColor:     math32.Color{0.90, 0.90, 0.90},
+		FgColor:     fgColor,
+	}
+	s.Table.RowOdd = s.Table.RowEven
+	s.Table.RowOdd.BgColor = math32.Color{0.88, 0.88, 0.88}
+	s.Table.RowCursor = s.Table.RowEven
+	s.Table.RowCursor.BgColor = math32.Color{0.75, 0.75, 0.75}
+	s.Table.RowSel = s.Table.RowEven
+	s.Table.RowSel.BgColor = math32.Color{0.70, 0.70, 0.70}
+	s.Table.Status = TableStatusStyle{
+		Border:      RectBounds{1, 0, 0, 0},
+		Paddings:    twoBounds,
+		BorderColor: borderColor,
+		BgColor:     math32.Color{0.9, 0.9, 0.9},
+		FgColor:     fgColor,
+	}
+	s.Table.Resizer = TableResizerStyle{
+		Width:       4,
+		Border:      zeroBounds,
+		BorderColor: borderColor,
+		BgColor:     math32.Color4{0.4, 0.4, 0.4, 0.6},
 	}
 
-	// Button styles
-	s.ImageButton = ImageButtonStyles{
-		Normal: ImageButtonStyle{
-			Border:      borderSizes,
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     bgColor4,
-			FgColor:     fgColor,
-		},
-		Over: ImageButtonStyle{
-			Border:      borderSizes,
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     bgColor4Over,
-			FgColor:     fgColor,
-		},
-		Focus: ImageButtonStyle{
-			Border:      borderSizes,
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     bgColor4Over,
-			FgColor:     fgColor,
-		},
-		Pressed: ImageButtonStyle{
-			Border:      RectBounds{2, 2, 2, 2},
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     bgColor4Over,
-			FgColor:     fgColor,
-		},
-		Disabled: ImageButtonStyle{
-			Border:      borderSizes,
-			Paddings:    RectBounds{0, 0, 0, 0},
-			BorderColor: borderColorDis,
-			BgColor:     bgColor4,
-			FgColor:     fgColorDis,
-		},
+	// ImageButton styles
+	s.ImageButton = ImageButtonStyles{}
+	s.ImageButton.Normal = ImageButtonStyle{
+		Border:      oneBounds,
+		Paddings:    zeroBounds,
+		BorderColor: borderColor,
+		BgColor:     bgColor4,
+		FgColor:     fgColor,
 	}
+	s.ImageButton.Over = s.ImageButton.Normal
+	s.ImageButton.Over.BgColor = bgColor4Over
+	s.ImageButton.Focus = s.ImageButton.Over
+	s.ImageButton.Pressed = s.ImageButton.Over
+	s.ImageButton.Disabled = s.ImageButton.Normal
+	s.ImageButton.Disabled.FgColor = fgColorDis
 
 	// TabBar styles
 	s.TabBar = TabBarStyles{
 		SepHeight:          1,
 		ListButtonIcon:     icon.MoreVert,
 		ListButtonPaddings: RectBounds{2, 4, 0, 0},
-		Normal: TabBarStyle{
-			Border:      borderSizes,
-			Paddings:    RectBounds{2, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     math32.Color4{0.7, 0.7, 0.7, 1},
-		},
-		Over: TabBarStyle{
-			Border:      borderSizes,
-			Paddings:    RectBounds{2, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     bgColor4Over,
-		},
-		Focus: TabBarStyle{
-			Border:      borderSizes,
-			Paddings:    RectBounds{2, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     bgColor4,
-		},
-		Disabled: TabBarStyle{
-			Border:      borderSizes,
-			Paddings:    RectBounds{2, 0, 0, 0},
-			BorderColor: borderColor,
-			BgColor:     bgColor4,
-		},
-		Tab: TabStyles{
-			IconPaddings:  RectBounds{2, 2, 0, 0},
-			ImagePaddings: RectBounds{0, 2, 0, 0},
-			IconClose:     icon.Clear,
-			Normal: TabStyle{
-				Margins:     RectBounds{0, 2, 0, 2},
-				Border:      RectBounds{1, 1, 0, 1},
-				Paddings:    RectBounds{2, 2, 2, 2},
-				BorderColor: borderColor,
-				BgColor:     bgColor4,
-				FgColor:     fgColor,
-			},
-			Over: TabStyle{
-				Margins:     RectBounds{0, 2, 0, 2},
-				Border:      RectBounds{1, 1, 0, 1},
-				Paddings:    RectBounds{2, 2, 2, 2},
-				BorderColor: borderColor,
-				BgColor:     bgColor4Over,
-				FgColor:     fgColor,
-			},
-			Focus: TabStyle{
-				Margins:     RectBounds{0, 2, 0, 2},
-				Border:      RectBounds{1, 1, 0, 1},
-				Paddings:    RectBounds{2, 2, 2, 2},
-				BorderColor: borderColor,
-				BgColor:     bgColor4,
-				FgColor:     fgColor,
-			},
-			Disabled: TabStyle{
-				Margins:     RectBounds{0, 2, 0, 2},
-				Border:      RectBounds{1, 1, 0, 1},
-				Paddings:    RectBounds{2, 2, 2, 2},
-				BorderColor: borderColor,
-				BgColor:     bgColor4,
-				FgColor:     fgColor,
-			},
-			Selected: TabStyle{
-				Margins:     RectBounds{0, 2, 0, 2},
-				Border:      RectBounds{1, 1, 0, 1},
-				Paddings:    RectBounds{2, 2, 2, 2},
-				BorderColor: borderColor,
-				BgColor:     math32.Color4{0.85, 0.85, 0.85, 1},
-				FgColor:     fgColor,
-			},
-		},
 	}
+	s.TabBar.Normal = TabBarStyle{
+		Border:      oneBounds,
+		Paddings:    RectBounds{2, 0, 0, 0},
+		BorderColor: borderColor,
+		BgColor:     math32.Color4{0.7, 0.7, 0.7, 1},
+	}
+	s.TabBar.Over = s.TabBar.Normal
+	s.TabBar.Over.BgColor = bgColor4Over
+	s.TabBar.Focus = s.TabBar.Normal
+	s.TabBar.Focus.BgColor = bgColor4
+	s.TabBar.Disabled = s.TabBar.Focus
+	s.TabBar.Tab = TabStyles{
+		IconPaddings:  RectBounds{2, 2, 0, 0},
+		ImagePaddings: RectBounds{0, 2, 0, 0},
+		IconClose:     icon.Clear,
+	}
+	s.TabBar.Tab.Normal = TabStyle{
+		Margins:     RectBounds{0, 2, 0, 2},
+		Border:      RectBounds{1, 1, 0, 1},
+		Paddings:    twoBounds,
+		BorderColor: borderColor,
+		BgColor:     bgColor4,
+		FgColor:     fgColor,
+	}
+	s.TabBar.Tab.Over = s.TabBar.Tab.Normal
+	s.TabBar.Tab.Over.BgColor = bgColor4Over
+	s.TabBar.Tab.Focus = s.TabBar.Tab.Normal
+	s.TabBar.Tab.Focus.BgColor = bgColor4
+	s.TabBar.Tab.Disabled = s.TabBar.Tab.Focus
+	s.TabBar.Tab.Selected = s.TabBar.Tab.Normal
+	s.TabBar.Tab.Selected.BgColor = math32.Color4{0.85, 0.85, 0.85, 1}
+
 	return s
 }

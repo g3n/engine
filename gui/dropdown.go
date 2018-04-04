@@ -34,10 +34,10 @@ type DropDownStyle struct {
 
 // DropDown list styles
 type DropDownStyles struct {
-	Normal   *DropDownStyle
-	Over     *DropDownStyle
-	Focus    *DropDownStyle
-	Disabled *DropDownStyle
+	Normal   DropDownStyle
+	Over     DropDownStyle
+	Focus    DropDownStyle
+	Disabled DropDownStyle
 }
 
 // NewDropDown creates and returns a pointer to a new drop down widget with the specified width.
@@ -264,16 +264,16 @@ func (dd *DropDown) recalc() {
 func (dd *DropDown) update() {
 
 	if dd.overDropdown || dd.overList {
-		dd.applyStyle(dd.styles.Over)
+		dd.applyStyle(&dd.styles.Over)
 		dd.list.ApplyStyle(StyleOver)
 		return
 	}
 	if dd.focus {
-		dd.applyStyle(dd.styles.Focus)
+		dd.applyStyle(&dd.styles.Focus)
 		dd.list.ApplyStyle(StyleFocus)
 		return
 	}
-	dd.applyStyle(dd.styles.Normal)
+	dd.applyStyle(&dd.styles.Normal)
 	dd.list.ApplyStyle(StyleNormal)
 }
 
