@@ -123,12 +123,6 @@ type TableRowStyle struct {
 	FgColor     math32.Color
 }
 
-// TableRowStyles describes all styles for the table row
-type TableRowStyles struct {
-	Normal   TableRowStyle
-	Selected TableRowStyle
-}
-
 // TableStatusStyle describes the style of the table status line panel
 type TableStatusStyle struct {
 	Border      RectBounds
@@ -148,13 +142,13 @@ type TableResizerStyle struct {
 
 // TableStyles describes all styles of the table header and rows
 type TableStyles struct {
-	Header    *TableHeaderStyle
-	RowEven   *TableRowStyle
-	RowOdd    *TableRowStyle
-	RowCursor *TableRowStyle
-	RowSel    *TableRowStyle
-	Status    *TableStatusStyle
-	Resizer   *TableResizerStyle
+	Header    TableHeaderStyle
+	RowEven   TableRowStyle
+	RowOdd    TableRowStyle
+	RowCursor TableRowStyle
+	RowSel    TableRowStyle
+	Status    TableStatusStyle
+	Resizer   TableResizerStyle
 }
 
 // TableClickEvent describes a mouse click event over a table
@@ -1569,7 +1563,7 @@ func (t *Table) calcMaxFirst() int {
 func (t *Table) updateRowStyle(ri int) {
 
 	row := t.rows[ri]
-	var trs *TableRowStyle
+	var trs TableRowStyle
 	if ri == t.rowCursor {
 		trs = t.styles.RowCursor
 	} else if row.selected {
@@ -1581,7 +1575,7 @@ func (t *Table) updateRowStyle(ri int) {
 			trs = t.styles.RowOdd
 		}
 	}
-	t.applyRowStyle(row, trs)
+	t.applyRowStyle(row, &trs)
 }
 
 // applyHeaderStyle applies style to the specified table header

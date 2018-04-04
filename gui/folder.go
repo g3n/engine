@@ -29,10 +29,10 @@ type FolderStyle struct {
 }
 
 type FolderStyles struct {
-	Normal   *FolderStyle
-	Over     *FolderStyle
-	Focus    *FolderStyle
-	Disabled *FolderStyle
+	Normal   FolderStyle
+	Over     FolderStyle
+	Focus    FolderStyle
+	Disabled FolderStyle
 }
 
 // NewFolder creates and returns a pointer to a new folder widget
@@ -139,10 +139,10 @@ func (f *Folder) onCursor(evname string, ev interface{}) {
 func (f *Folder) update() {
 
 	if f.cursorOver {
-		f.applyStyle(f.styles.Over)
+		f.applyStyle(&f.styles.Over)
 		return
 	}
-	f.applyStyle(f.styles.Normal)
+	f.applyStyle(&f.styles.Normal)
 }
 
 // applyStyle applies the specified style
