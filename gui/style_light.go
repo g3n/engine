@@ -51,25 +51,24 @@ func NewLightStyle() *Style {
 	borderColor := math32.Color4Name("DimGray")
 	borderColorDis := math32.Color4Name("LightGray")
 
-	bgColor := math32.Color{0.85, 0.85, 0.85}
+	bgColor := math32.Color4{0.85, 0.85, 0.85, 1}
 	bgColor4 := math32.Color4{0, 0, 0, 0}
-	bgColorOver := math32.Color{0.9, 0.9, 0.9}
+	bgColorOver := math32.Color4{0.9, 0.9, 0.9, 1}
 	bgColor4Over := math32.Color4{1, 1, 1, 0.5}
 	bgColor4Sel := math32.Color4{0.6, 0.6, 0.6, 1}
 
-	fgColor := math32.Color{0, 0, 0}
-	fgColorSel := math32.Color{0, 0, 0}
-	fgColorDis := math32.Color{0.4, 0.4, 0.4}
+	fgColor := math32.Color4{0, 0, 0, 1}
+	fgColorSel := math32.Color4{0, 0, 0, 1}
+	fgColorDis := math32.Color4{0.4, 0.4, 0.4, 1}
 
 	// Button styles
 	s.Button = ButtonStyles{}
-	s.Button.Normal = ButtonStyle{
-		Border:      oneBounds,
-		Paddings:    RectBounds{2, 4, 2, 4},
-		BorderColor: borderColor,
-		BgColor:     bgColor,
-		FgColor:     fgColor,
-	}
+	s.Button.Normal = ButtonStyle{}
+	s.Button.Normal.Border = oneBounds
+	s.Button.Normal.Padding = RectBounds{2, 4, 2, 4}
+	s.Button.Normal.BorderColor = borderColor
+	s.Button.Normal.BgColor = bgColor
+	s.Button.Normal.FgColor = fgColor
 	s.Button.Over = s.Button.Normal
 	s.Button.Over.BgColor = bgColorOver
 	s.Button.Focus = s.Button.Over
@@ -81,13 +80,10 @@ func NewLightStyle() *Style {
 
 	// CheckRadio styles
 	s.CheckRadio = CheckRadioStyles{}
-	s.CheckRadio.Normal = CheckRadioStyle{
-		Border:      zeroBounds,
-		Paddings:    zeroBounds,
-		BorderColor: borderColor,
-		BgColor:     bgColor4,
-		FgColor:     fgColor,
-	}
+	s.CheckRadio.Normal = CheckRadioStyle{}
+	s.CheckRadio.Normal.BorderColor = borderColor
+	s.CheckRadio.Normal.BgColor = bgColor4
+	s.CheckRadio.Normal.FgColor = fgColor
 	s.CheckRadio.Over = s.CheckRadio.Normal
 	s.CheckRadio.Over.BgColor = bgColor4Over
 	s.CheckRadio.Focus = s.CheckRadio.Over
@@ -103,7 +99,7 @@ func NewLightStyle() *Style {
 		BgColor:     bgColor,
 		BgAlpha:     1.0,
 		FgColor:     fgColor,
-		HolderColor: math32.Color{0.4, 0.4, 0.4},
+		HolderColor: math32.Color4{0.4, 0.4, 0.4, 1},
 	}
 	s.Edit.Over = s.Edit.Normal
 	s.Edit.Over.BgColor = bgColorOver
@@ -113,30 +109,27 @@ func NewLightStyle() *Style {
 
 	// ScrollBar styles
 	s.ScrollBar = ScrollBarStyles{}
-	s.ScrollBar.Normal = ScrollBarStyle{
-		Paddings:     oneBounds,
+	s.ScrollBar.Normal = ScrollBarStyle{}
+	s.ScrollBar.Normal.Padding = oneBounds
+	s.ScrollBar.Normal.Border = oneBounds
+	s.ScrollBar.Normal.BorderColor = borderColor
+	s.ScrollBar.Normal.BgColor = math32.Color4{0.8, 0.8, 0.8, 1}
+	s.ScrollBar.Normal.Button = ScrollBarButtonStyle{
 		Borders:      oneBounds,
 		BordersColor: borderColor,
-		Color:        math32.Color{0.8, 0.8, 0.8},
-		Button: ScrollBarButtonStyle{
-			Borders:      oneBounds,
-			BordersColor: borderColor,
-			Color:        math32.Color{0.5, 0.5, 0.5},
-			Size:         30,
-		},
+		Color:        math32.Color4{0.5, 0.5, 0.5, 1},
+		Size:         30,
 	}
 	s.ScrollBar.Over = s.ScrollBar.Normal
 	s.ScrollBar.Disabled = s.ScrollBar.Normal
 
 	// Slider styles
 	s.Slider = SliderStyles{}
-	s.Slider.Normal = SliderStyle{
-		Border:      oneBounds,
-		BorderColor: borderColor,
-		Paddings:    zeroBounds,
-		BgColor:     math32.Color4{0.8, 0.8, 0.8, 1},
-		FgColor:     math32.Color4{0, 0.8, 0, 1},
-	}
+	s.Slider.Normal = SliderStyle{}
+	s.Slider.Normal.Border = oneBounds
+	s.Slider.Normal.BorderColor = borderColor
+	s.Slider.Normal.BgColor = math32.Color4{0.8, 0.8, 0.8, 1}
+	s.Slider.Normal.FgColor = math32.Color4{0, 0.8, 0, 1}
 	s.Slider.Over = s.Slider.Normal
 	s.Slider.Over.BgColor = math32.Color4{1, 1, 1, 1}
 	s.Slider.Over.FgColor = math32.Color4{0, 1, 0, 1}
@@ -171,13 +164,11 @@ func NewLightStyle() *Style {
 
 	// Scroller styles
 	s.Scroller = ScrollerStyles{}
-	s.Scroller.Normal = ScrollerStyle{
-		Border:      oneBounds,
-		Paddings:    zeroBounds,
-		BorderColor: borderColor,
-		BgColor:     bgColor,
-		FgColor:     fgColor,
-	}
+	s.Scroller.Normal = ScrollerStyle{}
+	s.Scroller.Normal.Border = oneBounds
+	s.Scroller.Normal.BorderColor = borderColor
+	s.Scroller.Normal.BgColor = bgColor
+	s.Scroller.Normal.FgColor = fgColor
 	s.Scroller.Over = s.Scroller.Normal
 	s.Scroller.Over.BgColor = bgColorOver
 	s.Scroller.Focus = s.Scroller.Over
@@ -187,13 +178,12 @@ func NewLightStyle() *Style {
 	s.List = ListStyles{}
 	s.List.Scroller = &s.Scroller
 	s.List.Item = &ListItemStyles{}
-	s.List.Item.Normal = ListItemStyle{
-		Border:      RectBounds{1, 0, 1, 0},
-		Paddings:    RectBounds{0, 0, 0, 2},
-		BorderColor: math32.Color4{0, 0, 0, 0},
-		BgColor:     bgColor4,
-		FgColor:     fgColor,
-	}
+	s.List.Item.Normal = ListItemStyle{}
+	s.List.Item.Normal.Border = RectBounds{0, 0, 1, 0}
+	s.List.Item.Normal.Padding = RectBounds{0, 0, 0, 2}
+	s.List.Item.Normal.BorderColor = math32.Color4{0, 0, 0, 0}
+	s.List.Item.Normal.BgColor = bgColor4
+	s.List.Item.Normal.FgColor = fgColor
 	s.List.Item.Selected = s.List.Item.Normal
 	s.List.Item.Selected.BgColor = bgColor4Sel
 	s.List.Item.Selected.FgColor = fgColorSel
@@ -207,13 +197,12 @@ func NewLightStyle() *Style {
 
 	// DropDown styles
 	s.DropDown = DropDownStyles{}
-	s.DropDown.Normal = DropDownStyle{
-		Border:      oneBounds,
-		Paddings:    RectBounds{0, 0, 0, 2},
-		BorderColor: borderColor,
-		BgColor:     bgColor,
-		FgColor:     fgColor,
-	}
+	s.DropDown.Normal = DropDownStyle{}
+	s.DropDown.Normal.Border = oneBounds
+	s.DropDown.Normal.Padding = RectBounds{0, 0, 0, 2}
+	s.DropDown.Normal.BorderColor = borderColor
+	s.DropDown.Normal.BgColor = bgColor
+	s.DropDown.Normal.FgColor = fgColor
 	s.DropDown.Over = s.DropDown.Normal
 	s.DropDown.Over.BgColor = bgColorOver
 	s.DropDown.Focus = s.DropDown.Over
@@ -221,19 +210,17 @@ func NewLightStyle() *Style {
 
 	// Folder styles
 	s.Folder = FolderStyles{}
-	s.Folder.Normal = FolderStyle{
-		Margins:     zeroBounds,
-		Border:      oneBounds,
-		Paddings:    RectBounds{2, 0, 2, 2},
-		BorderColor: borderColor,
-		BgColor:     bgColor,
-		FgColor:     fgColor,
-		Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
-	}
+	s.Folder.Normal = FolderStyle{}
+	s.Folder.Normal.Border = oneBounds
+	s.Folder.Normal.Padding = RectBounds{2, 0, 2, 2}
+	s.Folder.Normal.BorderColor = borderColor
+	s.Folder.Normal.BgColor = bgColor
+	s.Folder.Normal.FgColor = fgColor
+	s.Folder.Normal.Icons = [2]string{icon.ExpandMore, icon.ExpandLess}
 	s.Folder.Over = s.Folder.Normal
 	s.Folder.Over.BgColor = bgColorOver
 	s.Folder.Focus = s.Folder.Over
-	s.Folder.Focus.Paddings = twoBounds
+	s.Folder.Focus.Padding = twoBounds
 	s.Folder.Disabled = s.Folder.Focus
 
 	// Tree styles
@@ -241,34 +228,31 @@ func NewLightStyle() *Style {
 	s.Tree.Padlevel = 16.0
 	s.Tree.List = &s.List
 	s.Tree.Node = &TreeNodeStyles{}
-	s.Tree.Node.Normal = TreeNodeStyle{
-		Border:      zeroBounds,
-		Paddings:    zeroBounds,
-		BorderColor: borderColor,
-		BgColor:     bgColor4,
-		FgColor:     fgColor,
-		Icons:       [2]string{icon.ExpandMore, icon.ExpandLess},
-	}
+	s.Tree.Node.Normal = TreeNodeStyle{}
+	s.Tree.Node.Normal.BorderColor = borderColor
+	s.Tree.Node.Normal.BgColor = bgColor4
+	s.Tree.Node.Normal.FgColor = fgColor
+	s.Tree.Node.Normal.Icons = [2]string{icon.ExpandMore, icon.ExpandLess}
 
 	// ControlFolder styles
 	s.ControlFolder = ControlFolderStyles{}
 	s.ControlFolder.Folder = &FolderStyles{}
 	s.ControlFolder.Folder.Normal = s.Folder.Normal
 	s.ControlFolder.Folder.Normal.BorderColor = math32.Color4{0, 0, 0, 0}
-	s.ControlFolder.Folder.Normal.BgColor = math32.Color{0, 0.5, 1}
+	s.ControlFolder.Folder.Normal.BgColor = math32.Color4{0, 0.5, 1, 1}
 	s.ControlFolder.Folder.Over = s.ControlFolder.Folder.Normal
 	s.ControlFolder.Folder.Focus = s.ControlFolder.Folder.Normal
-	s.ControlFolder.Folder.Focus.Paddings = twoBounds
+	s.ControlFolder.Folder.Focus.Padding = twoBounds
 	s.ControlFolder.Folder.Disabled = s.ControlFolder.Folder.Focus
 	s.ControlFolder.Tree = &TreeStyles{}
 	s.ControlFolder.Tree.Padlevel = 2.0
 	s.ControlFolder.Tree.List = &ListStyles{}
 	scrollerStylesCopy := *s.List.Scroller
 	s.ControlFolder.Tree.List.Scroller = &scrollerStylesCopy
-	s.ControlFolder.Tree.List.Scroller.Normal.Paddings = RectBounds{0, 2, 0, 0}
-	s.ControlFolder.Tree.List.Scroller.Over.Paddings = RectBounds{0, 2, 0, 0}
-	s.ControlFolder.Tree.List.Scroller.Focus.Paddings = RectBounds{0, 2, 0, 0}
-	s.ControlFolder.Tree.List.Scroller.Disabled.Paddings = RectBounds{0, 2, 0, 0}
+	s.ControlFolder.Tree.List.Scroller.Normal.Padding = RectBounds{0, 2, 0, 0}
+	s.ControlFolder.Tree.List.Scroller.Over.Padding = RectBounds{0, 2, 0, 0}
+	s.ControlFolder.Tree.List.Scroller.Focus.Padding = RectBounds{0, 2, 0, 0}
+	s.ControlFolder.Tree.List.Scroller.Disabled.Padding = RectBounds{0, 2, 0, 0}
 	s.ControlFolder.Tree.List.Item = s.List.Item
 	s.ControlFolder.Tree.Node = &TreeNodeStyles{}
 	s.ControlFolder.Tree.Node.Normal = s.Tree.Node.Normal
@@ -276,69 +260,62 @@ func NewLightStyle() *Style {
 	// Menu styles
 	s.Menu = MenuStyles{}
 	s.Menu.Body = &MenuBodyStyles{}
-	s.Menu.Body.Normal = MenuBodyStyle{
-		Border:      oneBounds,
-		Paddings:    twoBounds,
-		BorderColor: borderColor,
-		BgColor:     bgColor,
-		FgColor:     fgColor,
-	}
+	s.Menu.Body.Normal = MenuBodyStyle{}
+	s.Menu.Body.Normal.Border = oneBounds
+	s.Menu.Body.Normal.Padding = twoBounds
+	s.Menu.Body.Normal.BorderColor = borderColor
+	s.Menu.Body.Normal.BgColor = bgColor
+	s.Menu.Body.Normal.FgColor = fgColor
 	s.Menu.Body.Over = s.Menu.Body.Normal
 	s.Menu.Body.Over.BgColor = bgColorOver
 	s.Menu.Body.Focus = s.Menu.Body.Over
 	s.Menu.Body.Disabled = s.Menu.Body.Normal
 	s.Menu.Item = &MenuItemStyles{}
-	s.Menu.Item.Normal = MenuItemStyle{
-		Border:           zeroBounds,
-		Paddings:         RectBounds{2, 4, 2, 2},
-		BorderColor:      borderColor,
-		BgColor:          bgColor,
-		FgColor:          fgColor,
-		IconPaddings:     RectBounds{0, 6, 0, 4},
-		ShortcutPaddings: RectBounds{0, 0, 0, 10},
-		RiconPaddings:    RectBounds{2, 0, 0, 4},
-	}
+	s.Menu.Item.Normal = MenuItemStyle{}
+	s.Menu.Item.Normal.Padding = RectBounds{2, 4, 2, 2}
+	s.Menu.Item.Normal.BorderColor = borderColor
+	s.Menu.Item.Normal.BgColor = bgColor
+	s.Menu.Item.Normal.FgColor = fgColor
+	s.Menu.Item.Normal.IconPaddings = RectBounds{0, 6, 0, 4}
+	s.Menu.Item.Normal.ShortcutPaddings = RectBounds{0, 0, 0, 10}
+	s.Menu.Item.Normal.RiconPaddings = RectBounds{2, 0, 0, 4}
 	s.Menu.Item.Over = s.Menu.Item.Normal
-	s.Menu.Item.Over.BgColor = math32.Color{0.6, 0.6, 0.6}
+	s.Menu.Item.Over.BgColor = math32.Color4{0.6, 0.6, 0.6, 1}
 	s.Menu.Item.Disabled = s.Menu.Item.Normal
 	s.Menu.Item.Disabled.FgColor = fgColorDis
-	s.Menu.Item.Separator = MenuItemStyle{
-		Border:      twoBounds,
-		Paddings:    zeroBounds,
-		BorderColor: math32.Color4{0, 0, 0, 0},
-		BgColor:     math32.Color{0.6, 0.6, 0.6},
-		FgColor:     fgColor,
-	}
+	s.Menu.Item.Separator = MenuItemStyle{}
+	s.Menu.Item.Separator.Border = twoBounds
+	s.Menu.Item.Separator.Padding = zeroBounds
+	s.Menu.Item.Separator.BorderColor = math32.Color4{0, 0, 0, 0}
+	s.Menu.Item.Separator.BgColor = math32.Color4{0.6, 0.6, 0.6, 1}
+	s.Menu.Item.Separator.FgColor = fgColor
 
 	// Table styles
 	s.Table = TableStyles{}
-	s.Table.Header = TableHeaderStyle{
-		Border:      RectBounds{0, 1, 1, 0},
-		Paddings:    twoBounds,
-		BorderColor: borderColor,
-		BgColor:     math32.Color{0.7, 0.7, 0.7},
-		FgColor:     fgColor,
-	}
-	s.Table.RowEven = TableRowStyle{
-		Border:      RectBounds{0, 1, 1, 0},
-		Paddings:    twoBounds,
-		BorderColor: math32.Color4{0.6, 0.6, 0.6, 1},
-		BgColor:     math32.Color{0.90, 0.90, 0.90},
-		FgColor:     fgColor,
-	}
+	s.Table.Header = TableHeaderStyle{}
+	s.Table.Header.Border = RectBounds{0, 1, 1, 0}
+	s.Table.Header.Padding = twoBounds
+	s.Table.Header.BorderColor = borderColor
+	s.Table.Header.BgColor = math32.Color4{0.7, 0.7, 0.7, 1}
+	s.Table.Header.FgColor = fgColor
+	s.Table.RowEven = TableRowStyle{}
+	s.Table.RowEven.Border = RectBounds{0, 1, 1, 0}
+	s.Table.RowEven.Padding = twoBounds
+	s.Table.RowEven.BorderColor = math32.Color4{0.6, 0.6, 0.6, 1}
+	s.Table.RowEven.BgColor = math32.Color4{0.90, 0.90, 0.90, 1}
+	s.Table.RowEven.FgColor = fgColor
 	s.Table.RowOdd = s.Table.RowEven
-	s.Table.RowOdd.BgColor = math32.Color{0.88, 0.88, 0.88}
+	s.Table.RowOdd.BgColor = math32.Color4{0.88, 0.88, 0.88, 1}
 	s.Table.RowCursor = s.Table.RowEven
-	s.Table.RowCursor.BgColor = math32.Color{0.75, 0.75, 0.75}
+	s.Table.RowCursor.BgColor = math32.Color4{0.75, 0.75, 0.75, 1}
 	s.Table.RowSel = s.Table.RowEven
-	s.Table.RowSel.BgColor = math32.Color{0.70, 0.70, 0.70}
-	s.Table.Status = TableStatusStyle{
-		Border:      RectBounds{1, 0, 0, 0},
-		Paddings:    twoBounds,
-		BorderColor: borderColor,
-		BgColor:     math32.Color{0.9, 0.9, 0.9},
-		FgColor:     fgColor,
-	}
+	s.Table.RowSel.BgColor = math32.Color4{0.70, 0.70, 0.70, 1}
+	s.Table.Status = TableStatusStyle{}
+	s.Table.Status.Border = RectBounds{1, 0, 0, 0}
+	s.Table.Status.Padding = twoBounds
+	s.Table.Status.BorderColor = borderColor
+	s.Table.Status.BgColor = math32.Color4{0.9, 0.9, 0.9, 1}
+	s.Table.Status.FgColor = fgColor
 	s.Table.Resizer = TableResizerStyle{
 		Width:       4,
 		Border:      zeroBounds,
@@ -348,13 +325,11 @@ func NewLightStyle() *Style {
 
 	// ImageButton styles
 	s.ImageButton = ImageButtonStyles{}
-	s.ImageButton.Normal = ImageButtonStyle{
-		Border:      oneBounds,
-		Paddings:    zeroBounds,
-		BorderColor: borderColor,
-		BgColor:     bgColor4,
-		FgColor:     fgColor,
-	}
+	s.ImageButton.Normal = ImageButtonStyle{}
+	s.ImageButton.Normal.Border = oneBounds
+	s.ImageButton.Normal.BorderColor = borderColor
+	s.ImageButton.Normal.BgColor = bgColor4
+	s.ImageButton.Normal.FgColor = fgColor
 	s.ImageButton.Over = s.ImageButton.Normal
 	s.ImageButton.Over.BgColor = bgColor4Over
 	s.ImageButton.Focus = s.ImageButton.Over
@@ -368,12 +343,11 @@ func NewLightStyle() *Style {
 		ListButtonIcon:     icon.MoreVert,
 		ListButtonPaddings: RectBounds{2, 4, 0, 0},
 	}
-	s.TabBar.Normal = TabBarStyle{
-		Border:      oneBounds,
-		Paddings:    RectBounds{2, 0, 0, 0},
-		BorderColor: borderColor,
-		BgColor:     math32.Color4{0.7, 0.7, 0.7, 1},
-	}
+	s.TabBar.Normal = TabBarStyle{}
+	s.TabBar.Normal.Border = oneBounds
+	s.TabBar.Normal.Padding = RectBounds{2, 0, 0, 0}
+	s.TabBar.Normal.BorderColor = borderColor
+	s.TabBar.Normal.BgColor = math32.Color4{0.7, 0.7, 0.7, 1}
 	s.TabBar.Over = s.TabBar.Normal
 	s.TabBar.Over.BgColor = bgColor4Over
 	s.TabBar.Focus = s.TabBar.Normal
@@ -384,14 +358,13 @@ func NewLightStyle() *Style {
 		ImagePaddings: RectBounds{0, 2, 0, 0},
 		IconClose:     icon.Clear,
 	}
-	s.TabBar.Tab.Normal = TabStyle{
-		Margins:     RectBounds{0, 2, 0, 2},
-		Border:      RectBounds{1, 1, 0, 1},
-		Paddings:    twoBounds,
-		BorderColor: borderColor,
-		BgColor:     bgColor4,
-		FgColor:     fgColor,
-	}
+	s.TabBar.Tab.Normal = TabStyle{}
+	s.TabBar.Tab.Normal.Margin = RectBounds{0, 2, 0, 2}
+	s.TabBar.Tab.Normal.Border = RectBounds{1, 1, 0, 1}
+	s.TabBar.Tab.Normal.Padding = twoBounds
+	s.TabBar.Tab.Normal.BorderColor = borderColor
+	s.TabBar.Tab.Normal.BgColor = bgColor4
+	s.TabBar.Tab.Normal.FgColor = fgColor
 	s.TabBar.Tab.Over = s.TabBar.Tab.Normal
 	s.TabBar.Tab.Over.BgColor = bgColor4Over
 	s.TabBar.Tab.Focus = s.TabBar.Tab.Normal

@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 )
 
@@ -43,13 +42,7 @@ type ListItemStyles struct {
 	SelHigh     ListItemStyle
 }
 
-type ListItemStyle struct {
-	Border      RectBounds
-	Paddings    RectBounds
-	BorderColor math32.Color4
-	BgColor     math32.Color4
-	FgColor     math32.Color
-}
+type ListItemStyle BasicStyle
 
 // Event sent to list item child panel on resize
 const OnListItemResize = "gui.OnListItemResize"
@@ -538,10 +531,7 @@ func (litem *ListItem) update() {
 // applyStyle applies the specified style to this ListItem
 func (litem *ListItem) applyStyle(s *ListItemStyle) {
 
-	litem.SetBordersFrom(&s.Border)
-	litem.SetBordersColor4(&s.BorderColor)
-	pads := s.Paddings
-	pads.Left += litem.padLeft
-	litem.SetPaddingsFrom(&pads)
-	litem.SetColor4(&s.BgColor)
+	styleCopy := s.PanelStyle
+	styleCopy.Padding.Left += litem.padLeft
+	litem.Panel.ApplyStyle(&styleCopy)
 }

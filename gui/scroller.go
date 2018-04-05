@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 	"math"
 )
@@ -27,13 +26,7 @@ type Scroller struct {
 	scrollBarEvent bool
 }
 
-type ScrollerStyle struct {
-	Border      RectBounds
-	Paddings    RectBounds
-	BorderColor math32.Color4
-	BgColor     math32.Color
-	FgColor     math32.Color
-}
+type ScrollerStyle BasicStyle
 
 type ScrollerStyles struct {
 	Normal   ScrollerStyle
@@ -639,8 +632,5 @@ func (s *Scroller) update() {
 // applyStyle sets the specified style
 func (s *Scroller) applyStyle(st *ScrollerStyle) {
 
-	s.SetBordersFrom(&st.Border)
-	s.SetBordersColor4(&st.BorderColor)
-	s.SetPaddingsFrom(&st.Paddings)
-	s.SetColor(&st.BgColor)
+	s.Panel.ApplyStyle(&st.PanelStyle)
 }

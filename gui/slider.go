@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 )
 
@@ -37,13 +36,7 @@ type Slider struct {
 }
 
 // SliderStyle
-type SliderStyle struct {
-	Border      RectBounds    // outer panel border sizes
-	BorderColor math32.Color4 // outer panel border colors
-	Paddings    RectBounds    // outer panel padding sizes
-	BgColor     math32.Color4 // outer panel color
-	FgColor     math32.Color4 // slider panel color
-}
+type SliderStyle BasicStyle
 
 // All Slider styles
 type SliderStyles struct {
@@ -289,10 +282,7 @@ func (s *Slider) update() {
 // applyStyle applies the specified slider style
 func (s *Slider) applyStyle(ss *SliderStyle) {
 
-	s.SetBordersColor4(&ss.BorderColor)
-	s.SetBordersFrom(&ss.Border)
-	s.SetPaddingsFrom(&ss.Paddings)
-	s.Panel.SetColor4(&ss.BgColor)
+	s.Panel.ApplyStyle(&ss.PanelStyle)
 	s.slider.SetColor4(&ss.FgColor)
 }
 

@@ -30,10 +30,10 @@ type EditStyle struct {
 	Border      RectBounds
 	Paddings    RectBounds
 	BorderColor math32.Color4
-	BgColor     math32.Color
+	BgColor     math32.Color4
 	BgAlpha     float32
-	FgColor     math32.Color
-	HolderColor math32.Color
+	FgColor     math32.Color4
+	HolderColor math32.Color4
 }
 
 type EditStyles struct {
@@ -327,15 +327,15 @@ func (ed *Edit) applyStyle(s *EditStyle) {
 	ed.SetBordersFrom(&s.Border)
 	ed.SetBordersColor4(&s.BorderColor)
 	ed.SetPaddingsFrom(&s.Paddings)
-	ed.Label.SetColor(&s.FgColor)
-	ed.Label.SetBgColor(&s.BgColor)
+	ed.Label.SetColor4(&s.FgColor)
+	ed.Label.SetBgColor4(&s.BgColor)
 	//ed.Label.SetBgAlpha(s.BgAlpha)
 
 	if !ed.focus && len(ed.text) == 0 && len(ed.placeHolder) > 0 {
-		ed.Label.SetColor(&s.HolderColor)
+		ed.Label.SetColor4(&s.HolderColor)
 		ed.Label.setTextCaret(ed.placeHolder, editMarginX, ed.width, -1, ed.col)
 	} else {
-		ed.Label.SetColor(&s.FgColor)
+		ed.Label.SetColor4(&s.FgColor)
 		ed.redraw(ed.focus)
 	}
 }

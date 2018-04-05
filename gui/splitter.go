@@ -24,7 +24,7 @@ type Splitter struct {
 
 type SplitterStyle struct {
 	SpacerBorderColor math32.Color4
-	SpacerColor       math32.Color
+	SpacerColor       math32.Color4
 	SpacerSize        float32
 }
 
@@ -198,7 +198,7 @@ func (s *Splitter) update() {
 func (s *Splitter) applyStyle(ss *SplitterStyle) {
 
 	s.spacer.SetBordersColor4(&ss.SpacerBorderColor)
-	s.spacer.SetColor(&ss.SpacerColor)
+	s.spacer.SetColor4(&ss.SpacerColor)
 	if s.horiz {
 		s.spacer.SetWidth(ss.SpacerSize)
 	} else {

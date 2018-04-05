@@ -91,6 +91,19 @@ type Panel struct {
 	}
 }
 
+type PanelStyle struct {
+	Margin      RectBounds
+	Border      RectBounds
+	Padding     RectBounds
+	BorderColor math32.Color4
+	BgColor     math32.Color4
+}
+
+type BasicStyle struct {
+	PanelStyle
+	FgColor     math32.Color4
+}
+
 const (
 	deltaZ    = -0.000001      // delta Z for bounded panels
 	deltaZunb = deltaZ * 10000 // delta Z for unbounded panels
@@ -180,9 +193,9 @@ func (p *Panel) InitializeGraphic(width, height float32, gr *graphic.Graphic) {
 
 // GetPanel satisfies the IPanel interface and
 // returns pointer to this panel
-func (pan *Panel) GetPanel() *Panel {
+func (p *Panel) GetPanel() *Panel {
 
-	return pan
+	return p
 }
 
 // SetRoot satisfies the IPanel interface
@@ -434,6 +447,18 @@ func (p *Panel) SetColor4(color *math32.Color4) *Panel {
 func (p *Panel) Color4() math32.Color4 {
 
 	return p.udata.contentColor
+}
+
+// ApplyStyle applies the provided PanelStyle to the panel
+func (p *Panel) ApplyStyle(ps *PanelStyle) {
+
+	p.udata.bordersColor = ps.BorderColor
+	p.udata.paddingsColor = ps.BgColor
+	p.udata.contentColor = ps.BgColor
+	p.marginSizes = ps.Margin
+	p.borderSizes = ps.Border
+	p.paddingSizes = ps.Padding
+	p.resize(p.calcWidth(), p.calcHeight(), true)
 }
 
 // SetContentSize sets this panel content size to the specified dimensions.

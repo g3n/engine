@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 )
 
@@ -33,13 +32,7 @@ type Button struct {
 }
 
 // Button style
-type ButtonStyle struct {
-	Border      RectBounds
-	Paddings    RectBounds
-	BorderColor math32.Color4
-	BgColor     math32.Color
-	FgColor     math32.Color
-}
+type ButtonStyle BasicStyle
 
 // All Button styles
 type ButtonStyles struct {
@@ -199,14 +192,11 @@ func (b *Button) update() {
 // applyStyle applies the specified button style
 func (b *Button) applyStyle(bs *ButtonStyle) {
 
-	b.SetBordersColor4(&bs.BorderColor)
-	b.SetBordersFrom(&bs.Border)
-	b.SetPaddingsFrom(&bs.Paddings)
-	b.SetColor(&bs.BgColor)
+	b.Panel.ApplyStyle(&bs.PanelStyle)
 	if b.icon != nil {
-		b.icon.SetColor(&bs.FgColor)
+		b.icon.SetColor4(&bs.FgColor)
 	}
-	//b.Label.SetColor(&bs.FgColor)
+	b.Label.SetColor4(&bs.FgColor)
 }
 
 // recalc recalculates all dimensions and position from inside out

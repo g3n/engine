@@ -6,7 +6,6 @@ package gui
 
 import (
 	"github.com/g3n/engine/gui/assets/icon"
-	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 )
 
@@ -24,13 +23,7 @@ type DropDown struct {
 }
 
 // DropDown list style
-type DropDownStyle struct {
-	Border      RectBounds
-	Paddings    RectBounds
-	BorderColor math32.Color4
-	BgColor     math32.Color
-	FgColor     math32.Color
-}
+type DropDownStyle BasicStyle
 
 // DropDown list styles
 type DropDownStyles struct {
@@ -280,8 +273,5 @@ func (dd *DropDown) update() {
 // applyStyle applies the specified style
 func (dd *DropDown) applyStyle(s *DropDownStyle) {
 
-	dd.SetBordersFrom(&s.Border)
-	dd.SetBordersColor4(&s.BorderColor)
-	dd.SetPaddingsFrom(&s.Paddings)
-	dd.SetColor(&s.BgColor)
+	dd.Panel.ApplyStyle(&s.PanelStyle)
 }

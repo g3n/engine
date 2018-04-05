@@ -30,13 +30,7 @@ type ImageLabel struct {
 }
 
 // ImageLabel style
-type ImageLabelStyle struct {
-	Border      RectBounds
-	Paddings    RectBounds
-	BorderColor math32.Color4
-	BgColor     math32.Color4
-	FgColor     math32.Color4
-}
+type ImageLabelStyle BasicStyle
 
 // NewImageLabel creates and returns a pointer to a new image label widget
 // with the specified text for the label and no image/icon
@@ -194,10 +188,7 @@ func (il *ImageLabel) CopyFields(other *ImageLabel) {
 // applyStyle applies the specified image label style
 func (il *ImageLabel) applyStyle(s *ImageLabelStyle) {
 
-	il.SetBordersColor4(&s.BorderColor)
-	il.SetBordersFrom(&s.Border)
-	il.SetPaddingsFrom(&s.Paddings)
-	il.SetColor4(&s.BgColor)
+	il.Panel.ApplyStyle(&s.PanelStyle)
 	if il.icon != nil {
 		il.icon.SetColor4(&s.FgColor)
 	}

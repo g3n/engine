@@ -106,31 +106,13 @@ type TableCell struct {
 type TableFormatFunc func(cell TableCell) string
 
 // TableHeaderStyle describes the style of the table header
-type TableHeaderStyle struct {
-	Border      RectBounds
-	Paddings    RectBounds
-	BorderColor math32.Color4
-	BgColor     math32.Color
-	FgColor     math32.Color
-}
+type TableHeaderStyle BasicStyle
 
 // TableRowStyle describes the style of the table row
-type TableRowStyle struct {
-	Border      RectBounds
-	Paddings    RectBounds
-	BorderColor math32.Color4
-	BgColor     math32.Color
-	FgColor     math32.Color
-}
+type TableRowStyle BasicStyle
 
 // TableStatusStyle describes the style of the table status line panel
-type TableStatusStyle struct {
-	Border      RectBounds
-	Paddings    RectBounds
-	BorderColor math32.Color4
-	BgColor     math32.Color
-	FgColor     math32.Color
-}
+type TableStatusStyle BasicStyle
 
 // TableResizerStyle describes the style of the table resizer panel
 type TableResizerStyle struct {
@@ -1582,17 +1564,11 @@ func (t *Table) updateRowStyle(ri int) {
 // the last header panel does not the right border.
 func (t *Table) applyHeaderStyle(h *Panel, last bool) {
 
-	s := t.styles.Header
-	borders := s.Border
-	if !last {
-		h.SetBordersFrom(&borders)
-	} else {
-		borders.Right = 0
-		h.SetBordersFrom(&borders)
+	styleCopy := t.styles.Header.PanelStyle
+	if last {
+		styleCopy.Border.Right = 0
 	}
-	h.SetBordersColor4(&s.BorderColor)
-	h.SetPaddingsFrom(&s.Paddings)
-	h.SetColor(&s.BgColor)
+	h.ApplyStyle(&styleCopy)
 }
 
 // applyRowStyle applies the specified style to all cells for the specified table row
@@ -1600,10 +1576,7 @@ func (t *Table) applyRowStyle(trow *tableRow, trs *TableRowStyle) {
 
 	for i := 0; i < len(trow.cells); i++ {
 		cell := trow.cells[i]
-		cell.SetBordersFrom(&trs.Border)
-		cell.SetBordersColor4(&trs.BorderColor)
-		cell.SetPaddingsFrom(&trs.Paddings)
-		cell.SetColor(&trs.BgColor)
+		cell.ApplyStyle(&trs.PanelStyle)
 	}
 }
 
@@ -1611,10 +1584,7 @@ func (t *Table) applyRowStyle(trow *tableRow, trs *TableRowStyle) {
 func (t *Table) applyStatusStyle() {
 
 	s := t.styles.Status
-	t.statusPanel.SetBordersFrom(&s.Border)
-	t.statusPanel.SetBordersColor4(&s.BorderColor)
-	t.statusPanel.SetPaddingsFrom(&s.Paddings)
-	t.statusPanel.SetColor(&s.BgColor)
+	t.statusPanel.ApplyStyle(&s.PanelStyle)
 }
 
 // applyResizerStyle applies the status style

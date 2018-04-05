@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/texture"
 	"github.com/g3n/engine/window"
 )
@@ -32,13 +31,7 @@ const (
 )
 
 // ImageButton style
-type ImageButtonStyle struct {
-	Border      RectBounds
-	Paddings    RectBounds
-	BorderColor math32.Color4
-	BgColor     math32.Color4
-	FgColor     math32.Color
-}
+type ImageButtonStyle BasicStyle
 
 // All ImageButton styles
 type ImageButtonStyles struct {
@@ -253,12 +246,9 @@ func (b *ImageButton) update() {
 // applyStyle applies the specified button style
 func (b *ImageButton) applyStyle(bs *ImageButtonStyle) {
 
-	b.SetBordersColor4(&bs.BorderColor)
-	b.SetBordersFrom(&bs.Border)
-	b.SetPaddingsFrom(&bs.Paddings)
-	b.SetColor4(&bs.BgColor)
+	b.Panel.ApplyStyle(&bs.PanelStyle)
 	if b.label != nil {
-		b.label.SetColor(&bs.FgColor)
+		b.label.SetColor4(&bs.FgColor)
 	}
 }
 
