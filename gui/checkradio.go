@@ -6,7 +6,6 @@ package gui
 
 import (
 	"github.com/g3n/engine/gui/assets/icon"
-	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 )
 
@@ -31,13 +30,7 @@ type CheckRadio struct {
 	subroot    bool // indicates root subcription
 }
 
-type CheckRadioStyle struct {
-	Border      RectBounds
-	Paddings    RectBounds
-	BorderColor math32.Color4
-	BgColor     math32.Color4
-	FgColor     math32.Color
-}
+type CheckRadioStyle BasicStyle
 
 type CheckRadioStyles struct {
 	Normal   CheckRadioStyle
@@ -250,13 +243,9 @@ func (cb *CheckRadio) update() {
 // setStyle sets the specified checkradio style
 func (cb *CheckRadio) applyStyle(s *CheckRadioStyle) {
 
-	cb.Panel.SetBordersColor4(&s.BorderColor)
-	cb.Panel.SetBordersFrom(&s.Border)
-	cb.Panel.SetPaddingsFrom(&s.Paddings)
-	cb.Panel.SetColor4(&s.BgColor)
-
-	cb.icon.SetColor(&s.FgColor)
-	cb.Label.SetColor(&s.FgColor)
+	cb.Panel.ApplyStyle(&s.PanelStyle)
+	cb.icon.SetColor4(&s.FgColor)
+	cb.Label.SetColor4(&s.FgColor)
 }
 
 // recalc recalculates dimensions and position from inside out

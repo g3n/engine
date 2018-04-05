@@ -19,12 +19,8 @@ type Folder struct {
 }
 
 type FolderStyle struct {
-	Margins     RectBounds
-	Border      RectBounds
-	Paddings    RectBounds
-	BorderColor math32.Color4
-	BgColor     math32.Color
-	FgColor     math32.Color
+	PanelStyle
+	FgColor     math32.Color4
 	Icons       [2]string
 }
 
@@ -148,20 +144,16 @@ func (f *Folder) update() {
 // applyStyle applies the specified style
 func (f *Folder) applyStyle(s *FolderStyle) {
 
-	f.SetMarginsFrom(&s.Margins)
-	f.SetBordersColor4(&s.BorderColor)
-	f.SetBordersFrom(&s.Border)
-	f.SetPaddingsFrom(&s.Paddings)
-	f.SetColor(&s.BgColor)
+	f.Panel.ApplyStyle(&s.PanelStyle)
 
 	icode := 0
 	if f.contentPanel.GetPanel().Visible() {
 		icode = 1
 	}
 	f.icon.SetText(string(s.Icons[icode]))
-	f.icon.SetColor(&s.FgColor)
-	f.label.SetBgColor(&s.BgColor)
-	f.label.SetColor(&s.FgColor)
+	f.icon.SetColor4(&s.FgColor)
+	f.label.SetBgColor4(&s.BgColor)
+	f.label.SetColor4(&s.FgColor)
 }
 
 func (f *Folder) recalc() {

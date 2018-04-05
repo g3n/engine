@@ -47,17 +47,14 @@ type ScrollBarStyles struct {
 }
 
 type ScrollBarStyle struct {
-	Paddings     RectBounds
-	Borders      RectBounds
-	BordersColor math32.Color4
-	Color        math32.Color
+	PanelStyle
 	Button       ScrollBarButtonStyle
 }
 
 type ScrollBarButtonStyle struct {
 	Borders      RectBounds
 	BordersColor math32.Color4
-	Color        math32.Color
+	Color        math32.Color4
 	Size         float32 	   // This is the default/minimum button size
 }
 
@@ -192,14 +189,11 @@ func (sb *ScrollBar) update() {
 // update updates border sizes and colors
 func (sb *ScrollBar) applyStyle(sbs *ScrollBarStyle) {
 
-	sb.SetBordersFrom(&sbs.Borders)
-	sb.SetPaddingsFrom(&sbs.Paddings)
-	sb.SetBordersColor4(&sbs.BordersColor)
-	sb.SetColor(&sbs.Color)
+	sb.Panel.ApplyStyle(&sbs.PanelStyle)
 
 	sb.button.SetBordersFrom(&sbs.Button.Borders)
 	sb.button.SetBordersColor4(&sbs.Button.BordersColor)
-	sb.button.SetColor(&sbs.Button.Color)
+	sb.button.SetColor4(&sbs.Button.Color)
 
 	sb.button.MinSize = sbs.Button.Size
 }

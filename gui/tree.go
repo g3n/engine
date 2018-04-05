@@ -25,12 +25,8 @@ type TreeNodeStyles struct {
 }
 
 type TreeNodeStyle struct {
-	Margins     RectBounds
-	Border      RectBounds
-	Paddings    RectBounds
-	BorderColor math32.Color4
-	BgColor     math32.Color4
-	FgColor     math32.Color
+	PanelStyle
+	FgColor     math32.Color4
 	Icons       [2]string
 }
 
@@ -362,17 +358,14 @@ func (n *TreeNode) level() int {
 // applyStyles applies the specified style to this tree node
 func (n *TreeNode) applyStyle(s *TreeNodeStyle) {
 
-	n.SetMarginsFrom(&s.Margins)
-	n.SetBordersColor4(&s.BorderColor)
-	n.SetBordersFrom(&s.Border)
-	n.SetColor4(&s.BgColor)
+	n.Panel.ApplyStyle(&s.PanelStyle)
 	icode := 0
 	if n.expanded {
 		icode = 1
 	}
 	n.icon.SetText(string(s.Icons[icode]))
-	n.icon.SetColor(&s.FgColor)
-	n.label.SetColor(&s.FgColor)
+	n.icon.SetColor4(&s.FgColor)
+	n.label.SetColor4(&s.FgColor)
 }
 
 // update updates this tree node style

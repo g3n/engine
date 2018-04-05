@@ -7,7 +7,6 @@ package gui
 import (
 	"fmt"
 
-	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 )
 
@@ -26,12 +25,7 @@ type TabBar struct {
 }
 
 // TabBarStyle describes the style of the TabBar
-type TabBarStyle struct {
-	Border      RectBounds    // Border sizes
-	Paddings    RectBounds    // Padding sizes
-	BorderColor math32.Color4 // Border color
-	BgColor     math32.Color4 // Background color
-}
+type TabBarStyle BasicStyle
 
 // TabBarStyles describes all the TabBarStyles
 type TabBarStyles struct {
@@ -46,14 +40,7 @@ type TabBarStyles struct {
 }
 
 // TabStyle describes the style of the individual Tabs header
-type TabStyle struct {
-	Margins     RectBounds    // Tab header margins
-	Border      RectBounds    // Tab header borders
-	Paddings    RectBounds    // Tab header paddings
-	BorderColor math32.Color4 // Tab header border color
-	BgColor     math32.Color4 // Tab header background color
-	FgColor     math32.Color  // Tab header color for icon and text
-}
+type TabStyle BasicStyle
 
 // TabStyles describes all Tab styles
 type TabStyles struct {
@@ -293,10 +280,7 @@ func (tb *TabBar) onListChange(evname string, ev interface{}) {
 // applyStyle applies the specified TabBar style
 func (tb *TabBar) applyStyle(s *TabBarStyle) {
 
-	tb.SetBordersFrom(&s.Border)
-	tb.SetBordersColor4(&s.BorderColor)
-	tb.SetPaddingsFrom(&s.Paddings)
-	tb.SetColor4(&s.BgColor)
+	tb.Panel.ApplyStyle(&s.PanelStyle)
 	tb.separator.SetColor4(&s.BorderColor)
 }
 
@@ -626,11 +610,7 @@ func (tab *Tab) minWidth() float32 {
 // applyStyle applies the specified Tab style to the Tab header
 func (tab *Tab) applyStyle(s *TabStyle) {
 
-	tab.header.SetMarginsFrom(&s.Margins)
-	tab.header.SetBordersFrom(&s.Border)
-	tab.header.SetBordersColor4(&s.BorderColor)
-	tab.header.SetPaddingsFrom(&s.Paddings)
-	tab.header.SetColor4(&s.BgColor)
+	tab.header.GetPanel().ApplyStyle(&s.PanelStyle)
 }
 
 // update updates the Tab header visual style
@@ -657,7 +637,7 @@ func (tab *Tab) setBottomPanel() {
 
 	if tab.selected {
 		bwidth := tab.header.ContentWidth() + tab.header.Paddings().Left + tab.header.Paddings().Right
-		bx := tab.styles.Selected.Margins.Left + tab.styles.Selected.Border.Left
+		bx := tab.styles.Selected.Margin.Left + tab.styles.Selected.Border.Left
 		tab.bottom.SetSize(bwidth, tab.tb.styles.SepHeight)
 		tab.bottom.SetPosition(bx, tab.header.Height())
 	}
