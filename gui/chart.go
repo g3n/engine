@@ -653,12 +653,6 @@ func (lg *Graph) SetData(data []float32) {
 	lg.updateData()
 }
 
-// SetLineWidth sets the graph line width
-func (lg *Graph) SetLineWidth(width float32) {
-
-	lg.mat.SetLineWidth(width)
-}
-
 // updateData regenerates the lines for the current data
 func (lg *Graph) updateData() {
 

@@ -27,7 +27,6 @@ type GLS struct {
 	viewportY           int32             // cached last set viewport y
 	viewportWidth       int32             // cached last set viewport width
 	viewportHeight      int32             // cached last set viewport height
-	lineWidth           float32           // cached last set line width
 	sideView            int               // cached last set triangle side view mode
 	frontFace           uint32            // cached last set glFrontFace value
 	depthFunc           uint32            // cached last set depth function
@@ -127,7 +126,6 @@ func (gs *GLS) CheckErrors() bool {
 // reset resets the internal state kept of the OpenGL
 func (gs *GLS) reset() {
 
-	gs.lineWidth = 0.0
 	gs.sideView = uintUndef
 	gs.frontFace = 0
 	gs.depthFunc = 0
@@ -475,15 +473,6 @@ func (gs *GLS) GetUniformLocation(program uint32, name string) int32 {
 func (gs *GLS) GetViewport() (x, y, width, height int32) {
 
 	return gs.viewportX, gs.viewportY, gs.viewportWidth, gs.viewportHeight
-}
-
-func (gs *GLS) LineWidth(width float32) {
-
-	if gs.lineWidth == width {
-		return
-	}
-	C.glLineWidth(C.GLfloat(width))
-	gs.lineWidth = width
 }
 
 func (gs *GLS) LinkProgram(program uint32) {
