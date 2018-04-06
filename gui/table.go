@@ -1229,7 +1229,7 @@ func (t *Table) recalcHeader() {
 				continue
 			}
 			// There is space available and if column is expandable,
-			// expands it proportionaly to the other expandable columns
+			// expands it proportionally to the other expandable columns
 			factor := c.expand / totalExpand
 			w := factor * wspace
 			c.SetWidth(c.Width() + w)
@@ -1517,7 +1517,7 @@ func (t *Table) onVScrollBar(evname string, ev interface{}) {
 }
 
 // calcMaxFirst calculates the maximum index of the first visible row
-// such as the remaing rows fits completely inside the table
+// such as the remaining rows fits completely inside the table
 // It is used when scrolling the table vertically
 func (t *Table) calcMaxFirst() int {
 

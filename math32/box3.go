@@ -20,7 +20,7 @@ func NewBox3(min, max *Vector3) *Box3 {
 	return b
 }
 
-// Set sets this bounding box minumum and maximum coordinates.
+// Set sets this bounding box minimum and maximum coordinates.
 // Returns pointer to this updated bounding box.
 func (b *Box3) Set(min, max *Vector3) *Box3 {
 
@@ -49,7 +49,7 @@ func (b *Box3) SetFromPoints(points []Vector3) *Box3 {
 }
 
 // SetFromCenterAndSize set this bounding box from a center point and size.
-// Size is a vector from the minumum point to the maximum point.
+// Size is a vector from the minimum point to the maximum point.
 // Returns pointer to this updated bounding box.
 func (b *Box3) SetFromCenterAndSize(center, size *Vector3) *Box3 {
 
