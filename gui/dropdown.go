@@ -80,14 +80,14 @@ func (dd *DropDown) Add(item *ImageLabel) {
 }
 
 // InsertAt inserts a list item at the specified position
-// Returs true if the item was successfuly inserted
+// Returs true if the item was successfully inserted
 func (dd *DropDown) InsertAt(pos int, item *ImageLabel) {
 
 	dd.list.InsertAt(pos, item)
 }
 
 // RemoveAt removes the list item from the specified position
-// Returs true if the item was successfuly removed
+// Returs true if the item was successfully removed
 func (dd *DropDown) RemoveAt(pos int) {
 
 	dd.list.RemoveAt(pos)

@@ -271,7 +271,7 @@ func (sm *Shaman) preprocess(source string, defines map[string]string) (string, 
 		if err != nil {
 			return "", err
 		}
-		// Replace all occurances of the include directive with its processed source code
+		// Replace all occurrances of the include directive with its processed source code
 		newSource = strings.Replace(newSource, m[0], incSource, -1)
 	}
 	return prefix + newSource, nil

@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Stats contains several statistics usefull for performance evaluation
+// Stats contains several statistics useful for performance evaluation
 type Stats struct {
 	Glstats      gls.Stats // GLS statistics structure
 	UnilocHits   int       // Uniform location cache hits per frame

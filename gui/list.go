@@ -120,7 +120,7 @@ func (li *List) Add(item IPanel) {
 }
 
 // InsertAt inserts a list item at the specified position
-// Returs true if the item was successfuly inserted
+// Returs true if the item was successfully inserted
 func (li *List) InsertAt(pos int, item IPanel) {
 
 	litem := newListItem(li, item)

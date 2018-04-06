@@ -12,7 +12,7 @@ import (
 type Animator struct {
 	tex       *Texture2D    // pointer to texture being displayed
 	dispTime  time.Duration // disply duration of each tile (default = 1.0/30.0)
-	maxCycles int           // Maximum number of cycles (default = 0 - continous)
+	maxCycles int           // maximum number of cycles (default = 0 - continuous)
 	cycles    int           // current number of complete cycles
 	columns   int           // number of columns
 	rows      int           // number of rows
