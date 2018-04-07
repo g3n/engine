@@ -9,6 +9,7 @@ import (
 	"github.com/g3n/engine/window"
 )
 
+// Splitter is a GUI element that splits two panels and can be adjusted
 type Splitter struct {
 	Panel                     // Embedded panel
 	P0        Panel           // Left/Top panel
@@ -22,12 +23,14 @@ type Splitter struct {
 	mouseOver bool            // mouse is over the spacer panel
 }
 
+// SplitterStyle contains the styling of a Splitter
 type SplitterStyle struct {
 	SpacerBorderColor math32.Color4
 	SpacerColor       math32.Color4
 	SpacerSize        float32
 }
 
+// SplitterStyles contains a SplitterStyle for each valid GUI state
 type SplitterStyles struct {
 	Normal SplitterStyle
 	Over   SplitterStyle

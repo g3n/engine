@@ -22,6 +22,7 @@ import (
 
 **/
 
+// Slider is the GUI element for sliders and progress bars
 type Slider struct {
 	Panel                     // Embedded panel
 	slider      Panel         // embedded slider panel
@@ -35,10 +36,10 @@ type Slider struct {
 	scaleFactor float32       // scale factor (default = 1.0)
 }
 
-// SliderStyle
+// SliderStyle contains the styling of a Slider
 type SliderStyle BasicStyle
 
-// All Slider styles
+// SliderStyles contains a SliderStyle for each valid GUI state
 type SliderStyles struct {
 	Normal   SliderStyle
 	Over     SliderStyle

@@ -258,7 +258,6 @@ func (d *Decoder) decLibraryVisualScenes(start xml.StartElement, dom *Collada) e
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decVisualScene(vsStart xml.StartElement, lv *LibraryVisualScenes) error {
@@ -285,7 +284,6 @@ func (d *Decoder) decVisualScene(vsStart xml.StartElement, lv *LibraryVisualScen
 			}
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decNode(nodeStart xml.StartElement, parent *[]*Node) error {
@@ -350,7 +348,6 @@ func (d *Decoder) decNode(nodeStart xml.StartElement, parent *[]*Node) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decMatrix(cdata []byte, n *Node) error {
@@ -425,7 +422,6 @@ func (d *Decoder) decInstanceGeometry(start xml.StartElement, n *Node) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decBindMaterial(start xml.StartElement, dest **BindMaterial) error {
@@ -445,7 +441,6 @@ func (d *Decoder) decBindMaterial(start xml.StartElement, dest **BindMaterial) e
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decBindMaterialTechniqueCommon(start xml.StartElement, bm *BindMaterial) error {
@@ -464,7 +459,6 @@ func (d *Decoder) decBindMaterialTechniqueCommon(start xml.StartElement, bm *Bin
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decInstanceMaterial(start xml.StartElement, bm *BindMaterial) error {
@@ -494,5 +488,4 @@ func (d *Decoder) decInstanceMaterial(start xml.StartElement, bm *BindMaterial) 
 			continue
 		}
 	}
-	return nil
 }

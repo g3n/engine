@@ -116,7 +116,6 @@ func (d *Decoder) decLibraryAnimations(start xml.StartElement, dom *Collada) err
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decAnimation(start xml.StartElement, la *LibraryAnimations) error {
@@ -154,7 +153,6 @@ func (d *Decoder) decAnimation(start xml.StartElement, la *LibraryAnimations) er
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decSampler(start xml.StartElement, anim *Animation) error {
@@ -177,7 +175,6 @@ func (d *Decoder) decSampler(start xml.StartElement, anim *Animation) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decChannel(start xml.StartElement, anim *Animation) error {

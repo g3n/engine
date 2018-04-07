@@ -387,11 +387,8 @@ func (b *Builder) ParseString(desc string) error {
 				}
 			}
 			return ms, nil
-
-		default:
-			return v, nil
 		}
-		return nil, nil
+		return v, nil
 	}
 
 	// Get map[string]interface{} with lower case keys from parsed descritor
@@ -1017,10 +1014,8 @@ func AttribCheckFloat(b *Builder, am map[string]interface{}, fname string) error
 	case float64:
 		am[fname] = float32(n)
 		return nil
-	default:
-		return b.err(am, fname, fmt.Sprintf("Not a number:%T", v))
 	}
-	return nil
+	return b.err(am, fname, fmt.Sprintf("Not a number:%T", v))
 }
 
 // AttribCheckInt checks and convert attribute to int

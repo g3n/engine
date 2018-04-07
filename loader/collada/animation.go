@@ -344,8 +344,6 @@ func (si *SamplerInstance) Interpolate(inp float32) (float32, bool) {
 		return si.linearInterp(inp, idx), true
 	case "BSPLINE":
 		return si.linearInterp(inp, idx), true
-	default:
-		return 0, false
 	}
 
 	return 0, false

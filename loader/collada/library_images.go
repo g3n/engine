@@ -89,7 +89,6 @@ func (d *Decoder) decLibraryImages(start xml.StartElement, dom *Collada) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decImage(start xml.StartElement, li *LibraryImages) error {
@@ -112,7 +111,6 @@ func (d *Decoder) decImage(start xml.StartElement, li *LibraryImages) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decImageSource(start xml.StartElement, cdata []byte, img *Image) error {

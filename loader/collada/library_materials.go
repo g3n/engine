@@ -88,7 +88,6 @@ func (d *Decoder) decLibraryMaterials(start xml.StartElement, dom *Collada) erro
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decMaterial(start xml.StartElement, lm *LibraryMaterials) error {
@@ -111,7 +110,6 @@ func (d *Decoder) decMaterial(start xml.StartElement, lm *LibraryMaterials) erro
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decInstanceEffect(start xml.StartElement, ie *InstanceEffect) error {
@@ -134,5 +132,4 @@ func (d *Decoder) decInstanceEffect(start xml.StartElement, ie *InstanceEffect) 
 			continue
 		}
 	}
-	return nil
 }

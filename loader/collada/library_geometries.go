@@ -255,7 +255,6 @@ func (d *Decoder) decLibraryGeometries(start xml.StartElement, dom *Collada) err
 			continue
 		}
 	}
-	return nil
 }
 
 // decGeometry receives the start element of a geometry and
@@ -285,7 +284,6 @@ func (d *Decoder) decGeometry(start xml.StartElement, lg *LibraryGeometries) err
 			continue
 		}
 	}
-	return nil
 }
 
 // decMesh decodes the mesh from the specified geometry
@@ -337,7 +335,6 @@ func (d *Decoder) decMesh(start xml.StartElement, geom *Geometry) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decVertices(start xml.StartElement, mesh *Mesh) error {
@@ -360,7 +357,6 @@ func (d *Decoder) decVertices(start xml.StartElement, mesh *Mesh) error {
 			mesh.Vertices.Input = append(mesh.Vertices.Input, inp)
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decInput(start xml.StartElement) (Input, error) {
@@ -403,7 +399,6 @@ func (d *Decoder) decLines(start xml.StartElement, mesh *Mesh) error {
 			ln.P = p
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decPolylist(start xml.StartElement, mesh *Mesh) error {
@@ -447,7 +442,6 @@ func (d *Decoder) decPolylist(start xml.StartElement, mesh *Mesh) error {
 			pl.P = p
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decInputShared(start xml.StartElement) (InputShared, error) {

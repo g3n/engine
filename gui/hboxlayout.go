@@ -134,7 +134,7 @@ func (bl *HBoxLayout) Recalc(ipan IPanel) {
 	// Calculates the total width, expanded width, fixed width and
 	// the sum of the expand factor for all items.
 	var twidth float32
-	var ewidth float32
+	//var ewidth float32
 	var fwidth float32
 	var texpand float32
 	ecount := 0
@@ -157,10 +157,10 @@ func (bl *HBoxLayout) Recalc(ipan IPanel) {
 		// Calculate width of expanded items
 		if params.Expand > 0 {
 			texpand += params.Expand
-			ewidth += pan.Width()
-			if pos > 0 {
-				ewidth += bl.spacing
-			}
+			//ewidth += pan.Width()
+			//if pos > 0 {
+			//	ewidth += bl.spacing
+			//}
 			ecount++
 			// Calculate width of fixed items
 		} else {

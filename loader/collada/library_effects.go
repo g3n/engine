@@ -334,7 +334,6 @@ func (d *Decoder) decLibraryEffects(start xml.StartElement, dom *Collada) error 
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decEffect(start xml.StartElement, le *LibraryEffects) error {
@@ -358,7 +357,6 @@ func (d *Decoder) decEffect(start xml.StartElement, le *LibraryEffects) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decEffectProfileCommon(start xml.StartElement, e *Effect) error {
@@ -388,7 +386,6 @@ func (d *Decoder) decEffectProfileCommon(start xml.StartElement, e *Effect) erro
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decProfileCommonNewparam(start xml.StartElement, pc *ProfileCOMMON) error {
@@ -417,7 +414,6 @@ func (d *Decoder) decProfileCommonNewparam(start xml.StartElement, pc *ProfileCO
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decSurface(start xml.StartElement, np *Newparam) error {
@@ -436,7 +432,6 @@ func (d *Decoder) decSurface(start xml.StartElement, np *Newparam) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decSampler2D(start xml.StartElement, np *Newparam) error {
@@ -454,7 +449,6 @@ func (d *Decoder) decSampler2D(start xml.StartElement, np *Newparam) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decProfileCommonTechnique(start xml.StartElement, pc *ProfileCOMMON) error {
@@ -490,7 +484,6 @@ func (d *Decoder) decProfileCommonTechnique(start xml.StartElement, pc *ProfileC
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decBlinn(start xml.StartElement, pc *ProfileCOMMON) error {
@@ -571,7 +564,6 @@ func (d *Decoder) decBlinn(start xml.StartElement, pc *ProfileCOMMON) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decPhong(start xml.StartElement, pc *ProfileCOMMON) error {
@@ -652,7 +644,6 @@ func (d *Decoder) decPhong(start xml.StartElement, pc *ProfileCOMMON) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decColorOrTexture(start xml.StartElement, dest *interface{}) error {
