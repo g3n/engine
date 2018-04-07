@@ -190,7 +190,6 @@ func (d *Decoder) decLibraryLights(start xml.StartElement, dom *Collada) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decLight(start xml.StartElement, ll *LibraryLights) error {
@@ -213,7 +212,6 @@ func (d *Decoder) decLight(start xml.StartElement, ll *LibraryLights) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decLightTechniqueCommon(start xml.StartElement, li *Light) error {
@@ -327,7 +325,6 @@ func (d *Decoder) decPoint(start xml.StartElement, li *Light) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decSpot(start xml.StartElement, li *Light) error {
@@ -388,7 +385,6 @@ func (d *Decoder) decSpot(start xml.StartElement, li *Light) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decFloatValue(start xml.StartElement, cdata []byte) (*FloatValue, error) {

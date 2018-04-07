@@ -505,7 +505,6 @@ func (n *Node) Add(ichild INode) *Node {
 	child := ichild.GetNode()
 	if n == child {
 		panic("Node.Add: object can't be added as a child of itself")
-		return nil
 	}
 	// If this child already has a parent,
 	// removes it from this parent children list

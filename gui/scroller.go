@@ -9,6 +9,7 @@ import (
 	"math"
 )
 
+// Scroller is the GUI element that allows scrolling of IPanels
 type Scroller struct {
 	Panel                          // Embedded panel
 	vert           bool            // vertical/horizontal scroller flag
@@ -26,8 +27,10 @@ type Scroller struct {
 	scrollBarEvent bool
 }
 
+// ScrollerStyle contains the styling of a Scroller
 type ScrollerStyle BasicStyle
 
+// ScrollerStyles contains a ScrollerStyle for each valid GUI state
 type ScrollerStyles struct {
 	Normal   ScrollerStyle
 	Over     ScrollerStyle
@@ -145,7 +148,7 @@ func (s *Scroller) Remove(item IPanel) {
 	}
 }
 
-// GetItem returns the item at the specified position.
+// ItemAt returns the item at the specified position.
 // Returns nil if the position is invalid.
 func (s *Scroller) ItemAt(pos int) IPanel {
 
@@ -213,7 +216,7 @@ func (s *Scroller) ItemVisible(pos int) bool {
 
 	// Vertical scroller
 	if s.vert {
-		var height float32 = 0
+		var height float32
 		for i := s.first; i < len(s.items); i++ {
 			item := s.items[pos]
 			height += item.GetPanel().height
@@ -225,21 +228,21 @@ func (s *Scroller) ItemVisible(pos int) bool {
 			}
 		}
 		return false
-		// Horizontal scroller
-	} else {
-		var width float32 = 0
-		for i := s.first; i < len(s.items); i++ {
-			item := s.items[pos]
-			width += item.GetPanel().width
-			if width > s.width {
-				return false
-			}
-			if pos == i {
-				return true
-			}
-		}
-		return false
 	}
+
+	// Horizontal scroller
+	var width float32
+	for i := s.first; i < len(s.items); i++ {
+		item := s.items[pos]
+		width += item.GetPanel().width
+		if width > s.width {
+			return false
+		}
+		if pos == i {
+			return true
+		}
+	}
+	return false
 }
 
 // SetStyles set the scroller styles overriding the default style
@@ -249,6 +252,7 @@ func (s *Scroller) SetStyles(ss *ScrollerStyles) {
 	s.update()
 }
 
+// ApplyStyle applies the specified style to the Scroller
 func (s *Scroller) ApplyStyle(style int) {
 
 	switch style {
@@ -263,16 +267,19 @@ func (s *Scroller) ApplyStyle(style int) {
 	}
 }
 
+// SetAutoWidth sets the maximum automatic width
 func (s *Scroller) SetAutoWidth(maxWidth float32) {
 
 	s.maxAutoWidth = maxWidth
 }
 
+// SetAutoHeight sets the maximum automatic height
 func (s *Scroller) SetAutoHeight(maxHeight float32) {
 
 	s.maxAutoHeight = maxHeight
 }
 
+// SetAutoButtonSize specified whether the scrollbutton size should be adjusted relative to the size of the content/view
 func (s *Scroller) SetAutoButtonSize(autoButtonSize bool) {
 
 	s.autoButtonSize = autoButtonSize
@@ -337,8 +344,8 @@ func (s *Scroller) autoSize() {
 		return
 	}
 
-	var width float32 = 0
-	var height float32 = 0
+	var width float32
+	var height float32
 	for _, item := range s.items {
 		panel := item.GetPanel()
 		if panel.Width() > width {
@@ -379,7 +386,7 @@ func (s *Scroller) vRecalc() {
 	if s.first > 0 {
 		scroll = true
 	} else {
-		var posY float32 = 0
+		var posY float32
 		for _, item := range s.items[s.first:] {
 			posY += item.TotalHeight()
 			if posY > s.height {
@@ -392,7 +399,7 @@ func (s *Scroller) vRecalc() {
 
 	// Compute size of scroll button
 	if scroll && s.autoButtonSize {
-		var totalHeight float32 = 0
+		var totalHeight float32
 		for _, item := range s.items {
 			// TODO OPTIMIZATION
 			// Break when the view/content proportion becomes smaller than the minimum button size
@@ -407,7 +414,7 @@ func (s *Scroller) vRecalc() {
 		width -= s.vscroll.Width()
 	}
 
-	var posY float32 = 0
+	var posY float32
 	// Sets positions of all items
 	for pos, ipan := range s.items {
 		item := ipan.GetPanel()
@@ -444,7 +451,7 @@ func (s *Scroller) hRecalc() {
 	if s.first > 0 {
 		scroll = true
 	} else {
-		var posX float32 = 0
+		var posX float32
 		for _, item := range s.items[s.first:] {
 			posX += item.GetPanel().Width()
 			if posX > s.width {
@@ -457,7 +464,7 @@ func (s *Scroller) hRecalc() {
 
 	// Compute size of scroll button
 	if scroll && s.autoButtonSize {
-		var totalWidth float32 = 0
+		var totalWidth float32
 		for _, item := range s.items {
 			// TODO OPTIMIZATION
 			// Break when the view/content proportion becomes smaller than the minimum button size
@@ -472,7 +479,7 @@ func (s *Scroller) hRecalc() {
 		height -= s.hscroll.Height()
 	}
 
-	var posX float32 = 0
+	var posX float32
 	// Sets positions of all items
 	for pos, ipan := range s.items {
 		item := ipan.GetPanel()
@@ -507,7 +514,7 @@ func (s *Scroller) maxFirst() int {
 
 	// Vertical scroller
 	if s.vert {
-		var height float32 = 0
+		var height float32
 		pos := len(s.items) - 1
 		if pos < 0 {
 			return 0
@@ -524,26 +531,26 @@ func (s *Scroller) maxFirst() int {
 			}
 		}
 		return pos + 1
-		// Horizontal scroller
-	} else {
-		var width float32 = 0
-		pos := len(s.items) - 1
-		if pos < 0 {
-			return 0
-		}
-		for {
-			item := s.items[pos]
-			width += item.GetPanel().Width()
-			if width > s.Width() {
-				break
-			}
-			pos--
-			if pos < 0 {
-				break
-			}
-		}
-		return pos + 1
 	}
+
+	// Horizontal scroller
+	var width float32
+	pos := len(s.items) - 1
+	if pos < 0 {
+		return 0
+	}
+	for {
+		item := s.items[pos]
+		width += item.GetPanel().Width()
+		if width > s.Width() {
+			break
+		}
+		pos--
+		if pos < 0 {
+			break
+		}
+	}
+	return pos + 1
 }
 
 // setVScrollBar sets the visibility state of the vertical scrollbar

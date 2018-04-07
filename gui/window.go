@@ -42,7 +42,7 @@ type Window struct {
 	mouseY     float32
 }
 
-// WindowStyle
+// WindowStyle contains the styling of a Window
 type WindowStyle struct {
 	Border           RectBounds
 	Paddings         RectBounds
@@ -53,7 +53,7 @@ type WindowStyle struct {
 	TitleFgColor     math32.Color4
 }
 
-// WindowStyles
+// WindowStyles contains a WindowStyle for each valid GUI state
 type WindowStyles struct {
 	Normal   WindowStyle
 	Over     WindowStyle

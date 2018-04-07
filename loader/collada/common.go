@@ -148,7 +148,6 @@ func (d *Decoder) decSource(start xml.StartElement) (*Source, error) {
 			continue
 		}
 	}
-	return source, nil
 }
 
 // decSource decodes the float array from the specified source
@@ -232,7 +231,6 @@ func (d *Decoder) decAcessor(start xml.StartElement, source *Source) error {
 			}
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decParam(start xml.StartElement, accessor *Accessor) error {

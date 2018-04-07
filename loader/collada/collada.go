@@ -354,7 +354,6 @@ func (d *Decoder) decAsset(assetStart xml.StartElement, a *Asset) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decScene(start xml.StartElement, dom *Collada) error {
@@ -373,7 +372,6 @@ func (d *Decoder) decScene(start xml.StartElement, dom *Collada) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decInstanceVisualScene(start xml.StartElement, s *Scene) error {

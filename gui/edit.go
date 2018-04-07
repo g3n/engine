@@ -27,7 +27,7 @@ type Edit struct {
 	styles      *EditStyles
 }
 
-// EditStyle
+// EditStyle contains the styling of an Edit
 type EditStyle struct {
 	Border      RectBounds
 	Paddings    RectBounds
@@ -38,7 +38,7 @@ type EditStyle struct {
 	HolderColor math32.Color4
 }
 
-// EditStyles
+// EditStyles contains an EditStyle for each valid GUI state
 type EditStyles struct {
 	Normal   EditStyle
 	Over     EditStyle

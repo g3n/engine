@@ -16,6 +16,7 @@ const (
 	radioOFF = string(icon.RadioButtonUnchecked)
 )
 
+// CheckRadio is a GUI element that can be either a checkbox or a radio button
 type CheckRadio struct {
 	Panel             // Embedded panel
 	Label      *Label // Text label
@@ -30,8 +31,10 @@ type CheckRadio struct {
 	subroot    bool // indicates root subcription
 }
 
+// CheckRadioStyle contains the styling of a CheckRadio
 type CheckRadioStyle BasicStyle
 
+// CheckRadioStyles contains an CheckRadioStyle for each valid GUI state
 type CheckRadioStyles struct {
 	Normal   CheckRadioStyle
 	Over     CheckRadioStyle

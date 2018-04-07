@@ -65,7 +65,6 @@ func (d *Decoder) NewGeometry(id string) (geometry.IGeometry, uint32, error) {
 	default:
 		return nil, 0, fmt.Errorf("GeometryElement:%T not supported", gt)
 	}
-	return nil, 0, nil
 }
 
 func newMesh(m *Mesh) (*geometry.Geometry, uint32, error) {
