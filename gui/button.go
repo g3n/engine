@@ -21,6 +21,7 @@ import (
 
 ****************************************/
 
+// Button represents a button GUI element
 type Button struct {
 	*Panel                  // Embedded Panel
 	Label     *Label        // Label panel

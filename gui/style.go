@@ -8,7 +8,7 @@ import (
 	"github.com/g3n/engine/text"
 )
 
-// All styles
+// Style contains the styles for all GUI elements
 type Style struct {
 	Font          *text.Font
 	FontIcon      *text.Font
@@ -31,6 +31,7 @@ type Style struct {
 	TabBar        TabBarStyles
 }
 
+// States that a GUI element can be in
 const (
 	StyleOver = iota + 1
 	StyleFocus

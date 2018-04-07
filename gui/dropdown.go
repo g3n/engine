@@ -9,6 +9,7 @@ import (
 	"github.com/g3n/engine/window"
 )
 
+// DropDown represents a dropdown GUI element
 type DropDown struct {
 	Panel                        // Embedded panel
 	icon         *Label          // internal label with icon
@@ -22,10 +23,10 @@ type DropDown struct {
 	clickOut     bool
 }
 
-// DropDown list style
+// DropDownStyle
 type DropDownStyle BasicStyle
 
-// DropDown list styles
+// DropDownStyles
 type DropDownStyles struct {
 	Normal   DropDownStyle
 	Over     DropDownStyle
@@ -73,7 +74,7 @@ func NewDropDown(width float32, item *ImageLabel) *DropDown {
 	return dd
 }
 
-// Add add a list item at the end of the list
+// Add adds a list item at the end of the list
 func (dd *DropDown) Add(item *ImageLabel) {
 
 	dd.list.Add(item)
@@ -105,8 +106,7 @@ func (dd *DropDown) Len() int {
 	return dd.list.Len()
 }
 
-// Returns the currently selected item or nil if not item
-// was selected
+// Selected returns the currently selected item or nil if no item was selected
 func (dd *DropDown) Selected() *ImageLabel {
 
 	return dd.selItem

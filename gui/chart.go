@@ -282,7 +282,7 @@ func (ch *Chart) SetRangeYauto(auto bool) {
 	ch.updateGraphs()
 }
 
-// Returns the current y range
+// RangeY returns the current y range
 func (ch *Chart) RangeY() (minY, maxY float32) {
 
 	return ch.minY, ch.maxY

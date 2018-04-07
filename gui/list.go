@@ -8,6 +8,7 @@ import (
 	"github.com/g3n/engine/window"
 )
 
+// List represents a list GUI element
 type List struct {
 	Scroller             // Embedded scroller
 	styles   *ListStyles // Pointer to styles
@@ -18,8 +19,7 @@ type List struct {
 	keyPrev  window.Key  // Code of key to select previous item
 }
 
-// All items inserted into the list are
-// encapsulated inside a ListItem
+// ListItem encapsulates each item inserted into the list
 type ListItem struct {
 	Panel               // Container panel
 	item        IPanel  // Original item
@@ -29,11 +29,13 @@ type ListItem struct {
 	list        *List   // Pointer to list
 }
 
+// ListStyles
 type ListStyles struct {
 	Scroller *ScrollerStyles
 	Item     *ListItemStyles
 }
 
+// ListItemStyles
 type ListItemStyles struct {
 	Normal      ListItemStyle
 	Over        ListItemStyle
@@ -42,9 +44,10 @@ type ListItemStyles struct {
 	SelHigh     ListItemStyle
 }
 
+// ListItemStyle
 type ListItemStyle BasicStyle
 
-// Event sent to list item child panel on resize
+// OnListItemResize is the identifier of the event dispatched when a ListItem's child panel is resized
 const OnListItemResize = "gui.OnListItemResize"
 
 // NewVList creates and returns a pointer to a new vertical list panel
@@ -190,7 +193,7 @@ func (li *List) Selected() []IPanel {
 	return sel
 }
 
-// Select selects or unselects the specified item
+// SetSelected selects or unselects the specified item
 func (li *List) SetSelected(item IPanel, state bool) {
 
 	for _, curr := range li.items {
@@ -495,14 +498,14 @@ func (litem *ListItem) onCursor(evname string, ev interface{}) {
 	}
 }
 
-// setSelected sets this item selected state
+// SetSelected sets this item selected state
 func (litem *ListItem) SetSelected(state bool) {
 
 	litem.selected = state
 	//litem.item.SetSelected2(state)
 }
 
-// setHighlighted sets this item selected state
+// SetHighlighted sets this item selected state
 func (litem *ListItem) SetHighlighted(state bool) {
 
 	litem.highlighted = state

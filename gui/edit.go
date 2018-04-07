@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+// Edit represents a text edit box GUI element
 type Edit struct {
 	Label              // Embedded label
 	MaxLength   int    // Maximum number of characters
@@ -26,6 +27,7 @@ type Edit struct {
 	styles      *EditStyles
 }
 
+// EditStyle
 type EditStyle struct {
 	Border      RectBounds
 	Paddings    RectBounds
@@ -36,6 +38,7 @@ type EditStyle struct {
 	HolderColor math32.Color4
 }
 
+// EditStyles
 type EditStyles struct {
 	Normal   EditStyle
 	Over     EditStyle

@@ -17,6 +17,7 @@ import (
 	"github.com/g3n/engine/gls"
 )
 
+// Texture2D represents a texture
 type Texture2D struct {
 	gs           *gls.GLS    // Pointer to OpenGL state
 	refcount     int         // Current number of references
@@ -94,7 +95,7 @@ func NewTexture2DFromRGBA(rgba *image.RGBA) *Texture2D {
 	return t
 }
 
-// NewFromData creates a new texture from data
+// NewTexture2DFromData creates a new texture from data
 func NewTexture2DFromData(width, height int, format int, formatType, iformat int, data interface{}) *Texture2D {
 
 	t := newTexture2D()
@@ -179,9 +180,9 @@ func (t *Texture2D) Visible() bool {
 
 	if t.udata.visible == 0 {
 		return false
-	} else {
-		return true
 	}
+
+	return true
 }
 
 // SetMagFilter sets the filter to be applied when the texture element
@@ -290,7 +291,7 @@ func DecodeImage(imgfile string) (*image.RGBA, error) {
 	return rgba, nil
 }
 
-// Called by material render setup
+// RenderSetup is called by the material render setup
 func (t *Texture2D) RenderSetup(gs *gls.GLS, idx int) {
 
 	// One time initialization

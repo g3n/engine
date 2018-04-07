@@ -12,6 +12,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// Spot represents a spotlight
 type Spot struct {
 	core.Node                // Embedded node
 	color     math32.Color   // Light color

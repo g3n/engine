@@ -29,7 +29,7 @@ type ImageLabel struct {
 	icon  *Label // optional internal icon label
 }
 
-// ImageLabel style
+// ImageLabelStyle
 type ImageLabelStyle BasicStyle
 
 // NewImageLabel creates and returns a pointer to a new image label widget
@@ -203,7 +203,7 @@ func (il *ImageLabel) recalc() {
 	height := il.Panel.ContentHeight()
 
 	// Image or icon width
-	var imgWidth float32 = 0
+	var imgWidth float32
 	var spacing float32
 	if il.image != nil {
 		imgWidth = il.image.Width()

@@ -12,7 +12,7 @@ import (
 )
 
 //
-// Library Effects
+// LibraryEffects
 //
 type LibraryEffects struct {
 	Id     string
@@ -21,6 +21,7 @@ type LibraryEffects struct {
 	Effect []*Effect
 }
 
+// Dump prints out information about the LibraryEffects
 func (le *LibraryEffects) Dump(out io.Writer, indent int) {
 
 	if le == nil {
@@ -42,6 +43,7 @@ type Effect struct {
 	Profile []interface{}
 }
 
+// Dump prints out information about the Effect
 func (ef *Effect) Dump(out io.Writer, indent int) {
 
 	fmt.Printf("%sEffect id:%s name:%s\n", sIndent(indent), ef.Id, ef.Name)
@@ -56,7 +58,7 @@ func (ef *Effect) Dump(out io.Writer, indent int) {
 }
 
 //
-// Profile COMMON
+// ProfileCOMMON
 //
 type ProfileCOMMON struct {
 	Id        string
@@ -70,6 +72,7 @@ type ProfileCOMMON struct {
 	}
 }
 
+// Dump prints out information about the ProfileCOMMON
 func (pc *ProfileCOMMON) Dump(out io.Writer, indent int) {
 
 	fmt.Printf("%sProfileCOMMON id:%s\n", sIndent(indent), pc.Id)
@@ -97,6 +100,7 @@ type Newparam struct {
 	ParameterType interface{}
 }
 
+// Dump prints out information about the Newparam
 func (np *Newparam) Dump(out io.Writer, indent int) {
 
 	fmt.Printf("%sNewparam sid:%s\n", sIndent(indent), np.Sid)
@@ -117,6 +121,7 @@ type Surface struct {
 	Init interface{}
 }
 
+// Dump prints out information about the Surface
 func (sf *Surface) Dump(out io.Writer, indent int) {
 
 	fmt.Printf("%sSurface type:%s\n", sIndent(indent), sf.Type)
@@ -134,6 +139,7 @@ type Sampler2D struct {
 	Source string
 }
 
+// Dump prints out information about the Sampler2D
 func (sp *Sampler2D) Dump(out io.Writer, indent int) {
 
 	fmt.Printf("%sSampler2D\n", sIndent(indent))
@@ -157,6 +163,7 @@ type Blinn struct {
 	IndexOfRefraction interface{}
 }
 
+// Dump prints out information about the Blinn
 func (bl *Blinn) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sBlinn\n", sIndent(indent))
@@ -215,6 +222,7 @@ type Phong struct {
 	IndexOfRefraction interface{}
 }
 
+// Dump prints out information about the Phong
 func (ph *Phong) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sPhong\n", sIndent(indent))
@@ -231,6 +239,7 @@ func (ph *Phong) Dump(out io.Writer, indent int) {
 	DumpFloatOrParam("IndexOfRefraction", ph.IndexOfRefraction, out, ind)
 }
 
+// DumpColorOrTexture prints out information about the Color or Texture
 func DumpColorOrTexture(name string, v interface{}, out io.Writer, indent int) {
 
 	if v == nil {
@@ -246,6 +255,7 @@ func DumpColorOrTexture(name string, v interface{}, out io.Writer, indent int) {
 	}
 }
 
+// DumpFloatOrParam prints out information about the Float or Param
 func DumpFloatOrParam(name string, v interface{}, out io.Writer, indent int) {
 
 	if v == nil {
@@ -268,6 +278,7 @@ type Color struct {
 	Data [4]float32
 }
 
+// Dump prints out information about the Color
 func (c *Color) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sColor sid:%s data:%v\n", sIndent(indent), c.Sid, c.Data)
@@ -281,6 +292,7 @@ type Float struct {
 	Data float32
 }
 
+// Dump prints out information about the Float
 func (f *Float) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sFloat sid:%s data:%v\n", sIndent(indent), f.Sid, f.Data)
@@ -294,6 +306,7 @@ type Texture struct {
 	Texcoord string
 }
 
+// Dump prints out information about the Texture
 func (t *Texture) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sTexture texture:%s texcoord:%v\n", sIndent(indent), t.Texture, t.Texcoord)

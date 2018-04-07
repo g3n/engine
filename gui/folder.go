@@ -8,6 +8,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// Folder represents a folder GUI element
 type Folder struct {
 	Panel               // Embedded panel
 	label        Label  // Folder label
@@ -18,12 +19,14 @@ type Folder struct {
 	alignRight   bool
 }
 
+// FolderStyle
 type FolderStyle struct {
 	PanelStyle
 	FgColor     math32.Color4
 	Icons       [2]string
 }
 
+// FolderStyles
 type FolderStyles struct {
 	Normal   FolderStyle
 	Over     FolderStyle

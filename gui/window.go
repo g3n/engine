@@ -29,6 +29,7 @@ import (
 
 *********************************************/
 
+// Window represents a window GUI element
 type Window struct {
 	Panel      // Embedded Panel
 	styles     *WindowStyles
@@ -41,6 +42,7 @@ type Window struct {
 	mouseY     float32
 }
 
+// WindowStyle
 type WindowStyle struct {
 	Border           RectBounds
 	Paddings         RectBounds
@@ -51,7 +53,7 @@ type WindowStyle struct {
 	TitleFgColor     math32.Color4
 }
 
-// All Window styles
+// WindowStyles
 type WindowStyles struct {
 	Normal   WindowStyle
 	Over     WindowStyle
@@ -263,6 +265,7 @@ func (w *Window) recalc() {
 	w.client.SetSize(width, height)
 }
 
+// WindowTitle represents the title bar of a Window
 type WindowTitle struct {
 	Panel   // Embedded panel
 	win     *Window

@@ -9,6 +9,7 @@ import (
 	"github.com/g3n/engine/window"
 )
 
+// ImageButton represents an image button GUI element
 type ImageButton struct {
 	*Panel                                             // Embedded Panel
 	label       *Label                                 // Label panel

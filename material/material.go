@@ -11,9 +11,10 @@ import (
 	"github.com/g3n/engine/texture"
 )
 
-// Material visible side(s)
+// Side represents the material's visible side(s)
 type Side int
 
+// The face side(s) to be rendered. The non-rendered side will be culled to improve performance.
 const (
 	SideFront  Side = 0
 	SideBack   Side = 1
@@ -23,6 +24,7 @@ const (
 // Blending
 type Blending int
 
+// The various blending types
 const (
 	BlendingNone        Blending = 0
 	BlendingNormal      Blending = 1
@@ -32,7 +34,7 @@ const (
 	BlendingCustom      Blending = 5
 )
 
-// Use lights flags
+// UseLights flags
 type UseLights int
 
 const (
