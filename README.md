@@ -1,6 +1,7 @@
 # G3N - Go 3D Game Engine
 
 [![GoDoc](https://godoc.org/github.com/g3n/engine?status.svg)](https://godoc.org/github.com/g3n/engine)
+[![Go Report Card](https://goreportcard.com/badge/github.com/g3n/engine)](https://goreportcard.com/report/github.com/g3n/engine)
 
 G3N is a basic (for now!) OpenGL 3D game engine written in Go.
 G3N was heavily inspired and based on the [three.js](https://threejs.org/) Javascript 3D library.
