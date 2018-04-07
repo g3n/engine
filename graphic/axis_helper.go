@@ -11,10 +11,12 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// AxisHelper is the visual representation of the three axes
 type AxisHelper struct {
 	Lines
 }
 
+// NewAxisHelper returns a pointer to a new AxisHelper object
 func NewAxisHelper(size float32) *AxisHelper {
 
 	axis := new(AxisHelper)

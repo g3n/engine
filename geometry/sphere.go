@@ -10,6 +10,7 @@ import (
 	"math"
 )
 
+// Sphere represents a sphere geometry
 type Sphere struct {
 	Geometry
 	Radius         float64
@@ -21,6 +22,7 @@ type Sphere struct {
 	ThetaLength    float64
 }
 
+// NewSphere returns a pointer to a new Sphere geometry object
 func NewSphere(radius float64, widthSegments, heightSegments int, phiStart, phiLength, thetaStart, thetaLength float64) *Sphere {
 
 	s := new(Sphere)

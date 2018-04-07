@@ -17,6 +17,7 @@ import (
 	"strings"
 )
 
+// Font represents a TrueType font
 type Font struct {
 	ttf         *truetype.Font
 	face        font.Face
@@ -31,6 +32,7 @@ type Font struct {
 	changed     bool
 }
 
+// Font hinting types
 const (
 	HintingNone     = font.HintingNone
 	HintingVertical = font.HintingVertical
@@ -138,7 +140,7 @@ func (f *Font) SetFgColor4(color *math32.Color4) {
 	f.fg = image.NewUniform(Color4NRGBA(color))
 }
 
-// FgColor returns the current foreground color
+// FgColor4 returns the current foreground color
 func (f *Font) FgColor4() math32.Color4 {
 
 	return f.fgColor
@@ -155,14 +157,14 @@ func (f *Font) SetBgColor(color *math32.Color) {
 	f.bg = image.NewUniform(Color4NRGBA(&f.fgColor))
 }
 
-// SetBgColor sets the current background color of the font
+// SetBgColor4 sets the current background color of the font
 func (f *Font) SetBgColor4(color *math32.Color4) {
 
 	f.bgColor = *color
 	f.bg = image.NewUniform(Color4NRGBA(color))
 }
 
-// BgColor returns the current background color
+// BgColor4 returns the current background color
 func (f *Font) BgColor4() math32.Color4 {
 
 	return f.bgColor
@@ -201,6 +203,7 @@ func (f *Font) MeasureText(text string) (int, int) {
 	return width, height
 }
 
+// Metrics returns the font metrics
 func (f *Font) Metrics() font.Metrics {
 
 	f.updateFace()

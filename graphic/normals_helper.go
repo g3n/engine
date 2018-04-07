@@ -12,6 +12,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// NormalsHelper is the visual representation of the normals of a target object
 type NormalsHelper struct {
 	Lines
 	size   float32

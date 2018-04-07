@@ -33,7 +33,7 @@ type GraphicMaterial struct {
 	igraphic IGraphic           // Graphic which contains this GraphicMaterial
 }
 
-// Interface for all Graphics
+// IGraphic is the interface for all Graphic objects
 type IGraphic interface {
 	core.INode
 	GetGraphic() *Graphic
@@ -101,7 +101,7 @@ func (gr *Graphic) Renderable() bool {
 	return gr.renderable
 }
 
-// Add material for the specified subset of vertices.
+// AddMaterial adds a material for the specified subset of vertices.
 // If the material applies to all vertices, start and count must be 0.
 func (gr *Graphic) AddMaterial(igr IGraphic, imat material.IMaterial, start, count int) {
 
@@ -114,7 +114,7 @@ func (gr *Graphic) AddMaterial(igr IGraphic, imat material.IMaterial, start, cou
 	gr.materials = append(gr.materials, gmat)
 }
 
-// Add group material
+// AddGroupMaterial adds a material for the specified geometry group
 func (gr *Graphic) AddGroupMaterial(igr IGraphic, imat material.IMaterial, gindex int) {
 
 	geom := gr.igeom.GetGeometry()
@@ -146,6 +146,7 @@ func (gr *Graphic) GetMaterial(vpos int) material.IMaterial {
 	return nil
 }
 
+// GetMaterial returns the material associated with the GraphicMaterial
 func (grmat *GraphicMaterial) GetMaterial() material.IMaterial {
 
 	return grmat.imat

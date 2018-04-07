@@ -36,11 +36,13 @@ type ShaderSpecs struct {
 	MatTexturesMax   int                // Current Number of material textures
 }
 
+// ProgSpecs represents a compiled shader program along with its specs
 type ProgSpecs struct {
 	program *gls.Program // program object
 	specs   ShaderSpecs  // associated specs
 }
 
+// Shaman is the shader manager
 type Shaman struct {
 	gs       *gls.GLS
 	includes map[string]string              // include files sources
@@ -162,7 +164,7 @@ func (sm *Shaman) SetProgram(s *ShaderSpecs) (bool, error) {
 	return true, nil
 }
 
-// Generates shader program from the specified specs
+// GenProgram generates shader program from the specified specs
 func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 
 	// Get info for the specified shader program

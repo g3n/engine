@@ -56,6 +56,7 @@ func (at *AnimationTarget) SetLoop(loop bool) {
 	at.loop = loop
 }
 
+// SetStart sets the initial offset value
 func (at *AnimationTarget) SetStart(v float32) {
 
 	at.start = v

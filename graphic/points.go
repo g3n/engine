@@ -12,6 +12,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// Points represents a geometry containing only points
 type Points struct {
 	Graphic             // Embedded graphic
 	uniMVPM gls.Uniform // Model view projection matrix uniform location cache

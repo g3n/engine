@@ -18,6 +18,7 @@ type Lines struct {
 	uniMVP  gls.Uniform // Model view projection matrix uniform location cache
 }
 
+// Init initializes the Lines object and adds the specified material
 func (l *Lines) Init(igeom geometry.IGeometry, imat material.IMaterial) {
 
 	l.Graphic.Init(igeom, gls.LINES)
@@ -25,6 +26,7 @@ func (l *Lines) Init(igeom geometry.IGeometry, imat material.IMaterial) {
 	l.uniMVP.Init("MVP")
 }
 
+// NewLines returns a pointer to a new Lines object
 func NewLines(igeom geometry.IGeometry, imat material.IMaterial) *Lines {
 
 	l := new(Lines)

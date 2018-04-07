@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// Animator
 type Animator struct {
 	tex       *Texture2D    // pointer to texture being displayed
 	dispTime  time.Duration // disply duration of each tile (default = 1.0/30.0)

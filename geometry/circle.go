@@ -10,6 +10,7 @@ import (
 	"math"
 )
 
+// Circle represents a circle geometry
 type Circle struct {
 	Geometry
 	Radius      float64
