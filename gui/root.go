@@ -234,8 +234,8 @@ func (r *Root) onCursor(evname string, ev interface{}) {
 	r.sendPanels(cev.Xpos, cev.Ypos, evname, ev)
 }
 
-// sendPanel sends mouse or cursor event to focused panel or panels
-// which contains the specified screen position
+// sendPanel sends a mouse or cursor event to focused panel or panels
+// which contain the specified screen position
 func (r *Root) sendPanels(x, y float32, evname string, ev interface{}) {
 
 	// If there is panel with MouseFocus send only to this panel
@@ -255,7 +255,7 @@ func (r *Root) sendPanels(x, y float32, evname string, ev interface{}) {
 	r.targets = r.targets[0:0]
 
 	// checkPanel checks recursively if the specified panel and
-	// any of its child contains the mouse position
+	// any of its children contain the mouse position
 	var checkPanel func(ipan IPanel)
 	checkPanel = func(ipan IPanel) {
 		pan := ipan.GetPanel()

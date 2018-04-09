@@ -39,7 +39,7 @@ type BuilderFunc func(*Builder, map[string]interface{}) (IPanel, error)
 // AttribCheckFunc is the type for all attribute check functions
 type AttribCheckFunc func(b *Builder, am map[string]interface{}, fname string) error
 
-// IgnoreSuffix specified the suffix of ignored keys
+// IgnoreSuffix specifies the suffix of ignored keys
 const IgnoreSuffix = "_"
 
 // Panel and layout types
