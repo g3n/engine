@@ -114,11 +114,11 @@ func NewLightStyle() *Style {
 	s.ScrollBar.Normal.Border = oneBounds
 	s.ScrollBar.Normal.BorderColor = borderColor
 	s.ScrollBar.Normal.BgColor = math32.Color4{0.8, 0.8, 0.8, 1}
-	s.ScrollBar.Normal.Button = ScrollBarButtonStyle{
-		Borders:      oneBounds,
-		BordersColor: borderColor,
-		Color:        math32.Color4{0.5, 0.5, 0.5, 1},
-		Size:         30,
+	s.ScrollBar.Normal.ButtonLength = 32
+	s.ScrollBar.Normal.Button = PanelStyle{
+		Border:      oneBounds,
+		BorderColor: borderColor,
+		BgColor:     math32.Color4{0.5, 0.5, 0.5, 1},
 	}
 	s.ScrollBar.Over = s.ScrollBar.Normal
 	s.ScrollBar.Disabled = s.ScrollBar.Normal
@@ -162,21 +162,39 @@ func NewLightStyle() *Style {
 	s.Window.Focus = s.Window.Normal
 	s.Window.Disabled = s.Window.Normal
 
-	// Scroller styles
-	s.Scroller = ScrollerStyles{}
-	s.Scroller.Normal = ScrollerStyle{}
-	s.Scroller.Normal.Border = oneBounds
-	s.Scroller.Normal.BorderColor = borderColor
-	s.Scroller.Normal.BgColor = bgColor
-	s.Scroller.Normal.FgColor = fgColor
-	s.Scroller.Over = s.Scroller.Normal
-	s.Scroller.Over.BgColor = bgColorOver
-	s.Scroller.Focus = s.Scroller.Over
-	s.Scroller.Disabled = s.Scroller.Normal
+	// ItemScroller styles
+	s.Scroller = ScrollerStyle{}
+	s.Scroller.VerticalScrollbar = ScrollerScrollbarStyle{}
+	s.Scroller.VerticalScrollbar.ScrollBarStyle = s.ScrollBar.Normal
+	s.Scroller.VerticalScrollbar.Broadness = 16
+	s.Scroller.VerticalScrollbar.Position = ScrollbarRight
+	s.Scroller.VerticalScrollbar.OverlapContent = false
+	s.Scroller.VerticalScrollbar.AutoSizeButton = true
+	s.Scroller.HorizontalScrollbar = s.Scroller.VerticalScrollbar
+	s.Scroller.HorizontalScrollbar.Position = ScrollbarBottom
+	s.Scroller.ScrollbarInterlocking = ScrollbarInterlockingNone
+	s.Scroller.CornerCovered = true
+	s.Scroller.CornerPanel = PanelStyle{}
+	s.Scroller.CornerPanel.BgColor = math32.Color4Name("silver")
+	s.Scroller.Border = oneBounds
+	s.Scroller.BorderColor = borderColor
+	s.Scroller.BgColor = bgColor
+
+	// ItemScroller styles
+	s.ItemScroller = ItemScrollerStyles{}
+	s.ItemScroller.Normal = ItemScrollerStyle{}
+	s.ItemScroller.Normal.Border = oneBounds
+	s.ItemScroller.Normal.BorderColor = borderColor
+	s.ItemScroller.Normal.BgColor = bgColor
+	s.ItemScroller.Normal.FgColor = fgColor
+	s.ItemScroller.Over = s.ItemScroller.Normal
+	s.ItemScroller.Over.BgColor = bgColorOver
+	s.ItemScroller.Focus = s.ItemScroller.Over
+	s.ItemScroller.Disabled = s.ItemScroller.Normal
 
 	// List styles
 	s.List = ListStyles{}
-	s.List.Scroller = &s.Scroller
+	s.List.Scroller = &s.ItemScroller
 	s.List.Item = &ListItemStyles{}
 	s.List.Item.Normal = ListItemStyle{}
 	s.List.Item.Normal.Border = RectBounds{0, 0, 1, 0}
