@@ -46,7 +46,11 @@ type IPanel interface {
 	SetRoot(*Root)
 	LostKeyFocus()
 	TotalHeight() float32
+	TotalWidth() float32
 	SetLayout(ILayout)
+	SetPosition(x, y float32)
+	SetPositionX(x float32)
+	SetPositionY(y float32)
 }
 
 // Panel is 2D rectangular graphic which by default has a quad (2 triangles) geometry.
@@ -219,7 +223,14 @@ func (p *Panel) LostKeyFocus() {
 // height of this panel considering visible not bounded children
 func (p *Panel) TotalHeight() float32 {
 
-	return p.Height()
+	return p.height
+}
+
+// TotalWidth satisfies the IPanel interface and returns the total
+// width of this panel considering visible not bounded children
+func (p *Panel) TotalWidth() float32 {
+
+	return p.width
 }
 
 // Material returns a pointer for this panel core.Material
@@ -470,14 +481,14 @@ func (p *Panel) SetContentSize(width, height float32) {
 }
 
 // SetContentWidth sets this panel content width to the specified dimension in pixels.
-// The external size of the panel may increase or decrease to acomodate the new width
+// The external size of the panel may increase or decrease to accommodate the new width
 func (p *Panel) SetContentWidth(width float32) {
 
 	p.SetContentSize(width, p.content.Height)
 }
 
 // SetContentHeight sets this panel content height to the specified dimension in pixels.
-// The external size of the panel may increase or decrease to acomodate the new width
+// The external size of the panel may increase or decrease to accommodate the new width
 func (p *Panel) SetContentHeight(height float32) {
 
 	p.SetContentSize(p.content.Width, height)
@@ -585,10 +596,8 @@ func (p *Panel) ContainsPosition(x, y float32) bool {
 // Unlike "ContainsPosition" is does not consider the panel margins.
 func (p *Panel) InsideBorders(x, y float32) bool {
 
-	if x < (p.pospix.X+p.marginSizes.Left) || x >= (p.pospix.X+p.width-p.marginSizes.Right) {
-		return false
-	}
-	if y < (p.pospix.Y+p.marginSizes.Top) || y >= (p.pospix.Y+p.height-p.marginSizes.Bottom) {
+	if 	x < (p.pospix.X + p.marginSizes.Left) || x >= (p.pospix.X + p.width - p.marginSizes.Right) ||
+		y < (p.pospix.Y + p.marginSizes.Top) ||	y >= (p.pospix.Y + p.height - p.marginSizes.Bottom) {
 		return false
 	}
 	return true

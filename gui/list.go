@@ -10,7 +10,7 @@ import (
 
 // List represents a list GUI element
 type List struct {
-	Scroller             // Embedded scroller
+	ItemScroller         // Embedded scroller
 	styles   *ListStyles // Pointer to styles
 	single   bool        // Single selection flag (default is true)
 	focus    bool        // has keyboard focus
@@ -31,7 +31,7 @@ type ListItem struct {
 
 // ListStyles
 type ListStyles struct {
-	Scroller *ScrollerStyles
+	Scroller *ItemScrollerStyles
 	Item     *ListItemStyles
 }
 
@@ -78,12 +78,12 @@ func (li *List) initialize(vert bool, width, height float32) {
 	li.styles = &StyleDefault().List
 	li.single = true
 
-	li.Scroller.initialize(vert, width, height)
-	li.Scroller.SetStyles(li.styles.Scroller)
-	li.Scroller.adjustItem = true
-	li.Scroller.Subscribe(OnMouseDown, li.onMouseEvent)
-	li.Scroller.Subscribe(OnKeyDown, li.onKeyEvent)
-	li.Scroller.Subscribe(OnKeyRepeat, li.onKeyEvent)
+	li.ItemScroller.initialize(vert, width, height)
+	li.ItemScroller.SetStyles(li.styles.Scroller)
+	li.ItemScroller.adjustItem = true
+	li.ItemScroller.Subscribe(OnMouseDown, li.onMouseEvent)
+	li.ItemScroller.Subscribe(OnKeyDown, li.onKeyEvent)
+	li.ItemScroller.Subscribe(OnKeyRepeat, li.onKeyEvent)
 
 	if vert {
 		li.keyNext = window.KeyDown
@@ -112,7 +112,7 @@ func (li *List) Single() bool {
 func (li *List) SetStyles(s *ListStyles) {
 
 	li.styles = s
-	li.Scroller.SetStyles(li.styles.Scroller)
+	li.ItemScroller.SetStyles(li.styles.Scroller)
 	li.update()
 }
 
@@ -127,7 +127,7 @@ func (li *List) Add(item IPanel) {
 func (li *List) InsertAt(pos int, item IPanel) {
 
 	litem := newListItem(li, item)
-	li.Scroller.InsertAt(pos, litem)
+	li.ItemScroller.InsertAt(pos, litem)
 	litem.Panel.Subscribe(OnMouseDown, litem.onMouse)
 	litem.Panel.Subscribe(OnCursorEnter, litem.onCursor)
 }
@@ -136,7 +136,7 @@ func (li *List) InsertAt(pos int, item IPanel) {
 func (li *List) RemoveAt(pos int) IPanel {
 
 	// Remove the list item from the internal scroller
-	pan := li.Scroller.RemoveAt(pos)
+	pan := li.ItemScroller.RemoveAt(pos)
 	litem := pan.(*ListItem)
 
 	// Remove item from the list item children and disposes of the list item panel
@@ -160,7 +160,7 @@ func (li *List) Remove(item IPanel) {
 // ItemAt returns the list item at the specified position
 func (li *List) ItemAt(pos int) IPanel {
 
-	item := li.Scroller.ItemAt(pos)
+	item := li.ItemScroller.ItemAt(pos)
 	if item == nil {
 		return nil
 	}

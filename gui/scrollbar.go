@@ -23,21 +23,21 @@ import (
 **/
 
 type ScrollBar struct {
-	Panel                        // Embedded panel
-	styles      *ScrollBarStyles
-	vertical    bool             // type of scrollbar
-	button      scrollBarButton  // scrollbar button
-	cursorOver  bool
+	Panel                       // Embedded panel
+	styles     *ScrollBarStyles // styles of the scrollbar
+	vertical   bool             // type of scrollbar
+	button     scrollBarButton  // scrollbar button
+	cursorOver bool
 }
 
 type scrollBarButton struct {
-	Panel               // Embedded panel
-	sb       *ScrollBar // pointer to parent scroll bar
-	pressed  bool       // mouse button pressed flag
-	mouseX   float32    // last mouse click x position
-	mouseY   float32    // last mouse click y position
-	Size     float32    // button size
-	MinSize  float32    // minimum button size
+	Panel              // Embedded panel
+	sb      *ScrollBar // pointer to parent scroll bar
+	pressed bool       // mouse button pressed flag
+	mouseX  float32    // last mouse click x position
+	mouseY  float32    // last mouse click y position
+	Size    float32    // button size
+	MinSize float32    // minimum button size
 }
 
 type ScrollBarStyles struct {
@@ -48,14 +48,9 @@ type ScrollBarStyles struct {
 
 type ScrollBarStyle struct {
 	PanelStyle
-	Button       ScrollBarButtonStyle
-}
-
-type ScrollBarButtonStyle struct {
-	Borders      RectBounds
-	BordersColor math32.Color4
-	Color        math32.Color4
-	Size         float32 	   // This is the default/minimum button size
+	Button       PanelStyle
+	ButtonLength float32 // This is the default/minimum button length
+	// TODO ScrollSpeed ?
 }
 
 // NewVScrollBar creates and returns a pointer to a new vertical scroll bar
@@ -95,7 +90,7 @@ func (sb *ScrollBar) initialize(width, height float32, vertical bool) {
 	sb.button.Panel.Subscribe(OnMouseUp, sb.button.onMouse)
 	sb.button.Panel.Subscribe(OnCursor, sb.button.onCursor)
 	sb.button.SetMargins(1, 1, 1, 1)
-	sb.button.Size = sb.styles.Normal.Button.Size
+	sb.button.Size = sb.styles.Normal.ButtonLength
 	sb.button.sb = sb
 	sb.Add(&sb.button)
 
@@ -120,9 +115,17 @@ func (sb *ScrollBar) SetButtonSize(size float32) {
 func (sb *ScrollBar) Value() float64 {
 
 	if sb.vertical {
-		return float64(sb.button.Position().Y) / (float64(sb.content.Height) - float64(sb.button.height))
+		den := float64(sb.content.Height) - float64(sb.button.height)
+		if den == 0 {
+			return 0
+		}
+		return float64(sb.button.Position().Y) / den
 	} else {
-		return float64(sb.button.Position().X) / (float64(sb.content.Width) - float64(sb.button.width))
+		den := float64(sb.content.Width) - float64(sb.button.width)
+		if den == 0 {
+			return 0
+		}
+		return float64(sb.button.Position().X) / den
 	}
 }
 
@@ -190,12 +193,8 @@ func (sb *ScrollBar) update() {
 func (sb *ScrollBar) applyStyle(sbs *ScrollBarStyle) {
 
 	sb.Panel.ApplyStyle(&sbs.PanelStyle)
-
-	sb.button.SetBordersFrom(&sbs.Button.Borders)
-	sb.button.SetBordersColor4(&sbs.Button.BordersColor)
-	sb.button.SetColor4(&sbs.Button.Color)
-
-	sb.button.MinSize = sbs.Button.Size
+	sb.button.ApplyStyle(&sbs.Button)
+	sb.button.MinSize = sbs.ButtonLength
 }
 
 // onMouse receives subscribed mouse events for the scroll bar button

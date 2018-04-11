@@ -19,7 +19,8 @@ type Style struct {
 	Slider        SliderStyles
 	Splitter      SplitterStyles
 	Window        WindowStyles
-	Scroller      ScrollerStyles
+	ItemScroller  ItemScrollerStyles
+	Scroller      ScrollerStyle
 	List          ListStyles
 	DropDown      DropDownStyles
 	Folder        FolderStyles
