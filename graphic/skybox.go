@@ -13,12 +13,7 @@ import (
 	"github.com/g3n/engine/texture"
 )
 
-type SkyboxData struct {
-	DirAndPrefix string
-	Extension    string
-	Suffixes     [6]string
-}
-
+// Skybox is the Graphic that represents a skybox
 type Skybox struct {
 	Graphic             // embedded graphic object
 	uniMVM  gls.Uniform // model view matrix uniform location cache
@@ -26,7 +21,14 @@ type Skybox struct {
 	uniNM   gls.Uniform // normal matrix uniform cache
 }
 
-// NewSkybox creates and returns a pointer to a skybox with the specified textures
+// SkyboxData contains the data necessary to locate the textures for a Skybox in a concise manner.
+type SkyboxData struct {
+	DirAndPrefix string
+	Extension    string
+	Suffixes     [6]string
+}
+
+// NewSkybox creates and returns a pointer to a Skybox with the specified textures.
 func NewSkybox(data SkyboxData) (*Skybox, error) {
 
 	skybox := new(Skybox)
@@ -43,7 +45,12 @@ func NewSkybox(data SkyboxData) (*Skybox, error) {
 		matFace.AddTexture(tex)
 		matFace.SetSide(material.SideBack)
 		matFace.SetUseLights(material.UseLightAmbient)
+
+		// Disable writes to the depth buffer (call glDepthMask(GL_FALSE)).
+		// This will cause every other object to draw over the skybox, making it always appear behind everything else.
+		// It doesn't matter how small/big the skybox is as long as it's visible by the camera (within near/far planes).
 		matFace.SetDepthMask(false)
+
 		skybox.AddGroupMaterial(skybox, matFace, i)
 	}
 
@@ -59,11 +66,6 @@ func NewSkybox(data SkyboxData) (*Skybox, error) {
 // It is responsible to updating the current shader uniforms with
 // the model matrices.
 func (skybox *Skybox) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
-
-	// TODO
-	// Disable writes to the depth buffer (call glDepthMask(GL_FALSE)).
-	// This will cause every other object to draw over the skybox, making it always appear "behind" everything else.
-	// Since writes to the depth buffer are off, it doesn't matter how small the skybox is as long as it's larger than the camera's near clip plane.
 
 	var mvm math32.Matrix4
 	mvm.Copy(&rinfo.ViewMatrix)

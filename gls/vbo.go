@@ -88,7 +88,7 @@ func (vbo *VBO) Dispose() {
 	vbo.gs = nil
 }
 
-// Sets the VBO buffer
+// SetBuffer sets the VBO buffer
 func (vbo *VBO) SetBuffer(buffer math32.ArrayF32) *VBO {
 
 	vbo.buffer = buffer
@@ -96,7 +96,7 @@ func (vbo *VBO) SetBuffer(buffer math32.ArrayF32) *VBO {
 	return vbo
 }
 
-// Sets the expected usage pattern of the buffer.
+// SetUsage sets the expected usage pattern of the buffer.
 // The default value is GL_STATIC_DRAW.
 func (vbo *VBO) SetUsage(usage uint32) {
 
@@ -109,7 +109,7 @@ func (vbo *VBO) Buffer() *math32.ArrayF32 {
 	return &vbo.buffer
 }
 
-// Updates sets the update flag to force the VBO update
+// Update sets the update flag to force the VBO update
 func (vbo *VBO) Update() {
 
 	vbo.update = true
@@ -144,8 +144,8 @@ func (vbo *VBO) Transfer(gs *GLS) {
 		// Calculates stride
 		stride := vbo.Stride()
 		// For each attribute
-		var items uint32 = 0
-		var offset uint32 = 0
+		var items uint32
+		var offset uint32
 		elsize := int32(unsafe.Sizeof(float32(0)))
 		for _, attrib := range vbo.attribs {
 			// Get attribute location in the current program

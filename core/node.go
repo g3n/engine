@@ -11,7 +11,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
-// Interface for all node types
+// INode is the interface for all node types
 type INode interface {
 	GetNode() *Node
 	UpdateMatrixWorld()
@@ -20,6 +20,7 @@ type INode interface {
 	Dispose()
 }
 
+// Node is an object that can be positioned in space and also within a hierarchy of Node objects.
 type Node struct {
 	Dispatcher                    // Embedded event dispatcher
 	loaderID    string            // ID used by loader

@@ -241,7 +241,7 @@ func actionScaleZ(at *AnimationTarget, v float32) {
 	at.target.GetNode().SetScaleZ(v)
 }
 
-// NewSampler creates and returns a pointer to a new SamplerInstance built
+// NewSamplerInstance creates and returns a pointer to a new SamplerInstance built
 // with data from the specified Collada animation and URI
 func NewSamplerInstance(ca *Animation, uri string) (*SamplerInstance, error) {
 

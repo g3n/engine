@@ -36,7 +36,7 @@ const (
 	ScrollBoth       = ScrollMode(ScrollVertical | ScrollHorizontal) // Both vertical and horizontal scrolling allowed
 )
 
-// ScrollBarInterlocking specifies what happens where the vertical and horizontal scrollbars meet.
+// ScrollbarInterlocking specifies what happens where the vertical and horizontal scrollbars meet.
 type ScrollbarInterlocking int
 
 const (
@@ -85,7 +85,7 @@ const ScrollPreference = ScrollVertical
 // ScrollModifierKey is the Key that changes the scrolling direction to the non-preferred direction
 const ScrollModifierKey = window.KeyLeftShift
 
-// newScroller creates and returns a pointer to a new Scroller with the specified
+// NewScroller creates and returns a pointer to a new Scroller with the specified
 // target IPanel and ScrollMode.
 func NewScroller(width, height float32, mode ScrollMode, target IPanel) *Scroller {
 
@@ -587,53 +587,12 @@ func (s *Scroller) recalcH() {
 	s.hscroll.SetWidth(hscrollWidth)
 }
 
-// update updates the visibility of the scrollbars, corner panel, and then recalculates
+// Update updates the visibility of the scrollbars, corner panel, and then recalculates
 func (s *Scroller) Update() {
 
 	s.updateScrollbarsVisibility()
 	s.recalc()
 }
-
-//if s.cursorOver {
-//	s.applyStyle(&s.styles.Over)
-//	return
-//}
-//if s.focus {
-//	s.applyStyle(&s.styles.Focus)
-//	return
-//}
-//s.applyStyle(&s.styles.Normal)
-
-//// applyStyle sets the specified style
-//func (s *Scroller) applyStyle(st *ScrollerStyle) {
-//
-//	s.Panel.ApplyStyle(&st.PanelStyle)
-//}
-
-
-
-//
-//// SetStyles sets the scroller styles overriding the default style
-//func (s *Scroller) SetStyles(ss *ScrollerStyles) {
-//
-//	s.styles = ss
-//	s.Update()
-//}
-//
-//// ApplyStyle applies the specified style to the Scroller
-//func (s *Scroller) ApplyStyle(style int) {
-//
-//	switch style {
-//	case StyleOver:
-//		s.applyStyle(&s.styles.Over)
-//	case StyleFocus:
-//		s.applyStyle(&s.styles.Focus)
-//	case StyleNormal:
-//		s.applyStyle(&s.styles.Normal)
-//	case StyleDef:
-//		s.update()
-//	}
-//}
 
 // TODO - if the style is changed this needs to be called to update the scrollbars and corner panel
 func (s *Scroller) applyStyle(ss *ScrollerStyle) {

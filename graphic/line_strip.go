@@ -12,6 +12,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// LineStrip is a Graphic which is rendered as a collection of connected lines
 type LineStrip struct {
 	Graphic             // Embedded graphic object
 	uniMVP  gls.Uniform // Model view projection matrix uniform location cache

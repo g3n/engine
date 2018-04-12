@@ -12,6 +12,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// Mesh is a Graphic with uniforms for the model, view, projection, and normal matrices.
 type Mesh struct {
 	Graphic             // Embedded graphic
 	uniMVM  gls.Uniform // Model view matrix uniform location cache
@@ -19,9 +20,9 @@ type Mesh struct {
 	uniNM   gls.Uniform // Normal matrix uniform cache
 }
 
-// NewMesh creates and returns a pointer to a mesh with the specified geometry and material
+// NewMesh creates and returns a pointer to a mesh with the specified geometry and material.
 // If the mesh has multi materials, the material specified here must be nil and the
-// individual materials must be add using "AddMateria" or AddGroupMaterial"
+// individual materials must be add using "AddMaterial" or AddGroupMaterial".
 func NewMesh(igeom geometry.IGeometry, imat material.IMaterial) *Mesh {
 
 	m := new(Mesh)
@@ -29,6 +30,7 @@ func NewMesh(igeom geometry.IGeometry, imat material.IMaterial) *Mesh {
 	return m
 }
 
+// Init initializes the Mesh and its uniforms
 func (m *Mesh) Init(igeom geometry.IGeometry, imat material.IMaterial) {
 
 	m.Graphic.Init(igeom, gls.TRIANGLES)
@@ -44,12 +46,13 @@ func (m *Mesh) Init(igeom geometry.IGeometry, imat material.IMaterial) {
 	}
 }
 
+// AddMaterial adds a material for the specified subset of vertices
 func (m *Mesh) AddMaterial(imat material.IMaterial, start, count int) {
 
 	m.Graphic.AddMaterial(m, imat, start, count)
 }
 
-// Add group material
+// AddGroupMaterial adds a material for the specified geometry group
 func (m *Mesh) AddGroupMaterial(imat material.IMaterial, gindex int) {
 
 	m.Graphic.AddGroupMaterial(m, imat, gindex)

@@ -61,6 +61,7 @@ type WindowStyles struct {
 	Disabled WindowStyle
 }
 
+// ResizeBorders specifies which window borders can be resized
 type ResizeBorders int
 
 const (

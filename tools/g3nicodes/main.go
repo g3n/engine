@@ -25,14 +25,14 @@ const (
 	VMINOR   = 1
 )
 
-type ConstInfo struct {
+type constInfo struct {
 	Name  string
 	Value string
 }
 
-type TemplateData struct {
+type templateData struct {
 	Packname string
-	Consts   []ConstInfo
+	Consts   []constInfo
 }
 
 func main() {
@@ -64,7 +64,7 @@ func main() {
 	}
 
 	// Parse input file
-	var td TemplateData
+	var td templateData
 	td.Packname = *oPackage
 	err = parse(finput, &td)
 	if err != nil {
@@ -99,7 +99,7 @@ func main() {
 	fout.Write(p)
 }
 
-func parse(fin io.Reader, td *TemplateData) error {
+func parse(fin io.Reader, td *templateData) error {
 
 	// Read words from input reader and builds words map
 	scanner := bufio.NewScanner(fin)
@@ -131,7 +131,7 @@ func parse(fin io.Reader, td *TemplateData) error {
 		if unicode.IsDigit(runes[0]) {
 			finalName = "N" + finalName
 		}
-		td.Consts = append(td.Consts, ConstInfo{Name: finalName, Value: "0x" + code})
+		td.Consts = append(td.Consts, constInfo{Name: finalName, Value: "0x" + code})
 	}
 	return nil
 }
