@@ -66,6 +66,7 @@ func NewDropDown(width float32, item *ImageLabel) *DropDown {
 	dd.list.Subscribe(OnMouseDown, dd.onListMouse)
 	dd.list.Subscribe(OnMouseOut, dd.onListMouse)
 	dd.list.Subscribe(OnChange, dd.onListChangeEvent)
+	dd.list.Subscribe(OnCursor, func(evname string, ev interface{}) { dd.root.StopPropagation(StopAll) })
 	dd.Panel.Add(dd.list)
 
 	dd.update()
@@ -158,14 +159,12 @@ func (dd *DropDown) onCursor(evname string, ev interface{}) {
 
 	if evname == OnCursorEnter {
 		dd.overDropdown = true
-		dd.update()
-		return
 	}
 	if evname == OnCursorLeave {
 		dd.overDropdown = false
-		dd.update()
-		return
 	}
+	dd.update()
+	dd.root.StopPropagation(StopAll)
 }
 
 // onListMouseEvent receives mouse events over the list
@@ -201,20 +200,20 @@ func (dd *DropDown) onListMouse(evname string, ev interface{}) {
 }
 
 // onListCursor receives subscribed events over the list
-func (dd *DropDown) onListCursor(evname string, ev interface{}) {
-
-	if evname == OnCursorEnter {
-		dd.overList = true
-		dd.update()
-		return
-	}
-	if evname == OnCursorLeave {
-		dd.overList = false
-		dd.update()
-		return
-	}
-
-}
+//func (dd *DropDown) onListCursor(evname string, ev interface{}) {
+//
+//	if evname == OnCursorEnter {
+//		dd.overList = true
+//		dd.update()
+//		return
+//	}
+//	if evname == OnCursorLeave {
+//		dd.overList = false
+//		dd.update()
+//		return
+//	}
+//	dd.root.StopPropagation(StopAll)
+//}
 
 // copySelected copy to the dropdown panel the selected item
 // from the list.
