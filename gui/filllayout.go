@@ -4,6 +4,7 @@
 
 package gui
 
+// FillLayout is the simple layout where the assigned panel "fills" its parent in the specified dimension(s)
 type FillLayout struct {
 	width  bool
 	height bool

@@ -95,6 +95,7 @@ type Panel struct {
 	}
 }
 
+// PanelStyle contains all the styling attributes of a Panel.
 type PanelStyle struct {
 	Margin      RectBounds
 	Border      RectBounds
@@ -103,6 +104,8 @@ type PanelStyle struct {
 	BgColor     math32.Color4
 }
 
+// BasicStyle extends PanelStyle by adding a foreground color.
+// Many GUI components can be styled using BasicStyle or redeclared versions thereof (e.g. ButtonStyle)
 type BasicStyle struct {
 	PanelStyle
 	FgColor     math32.Color4
@@ -423,7 +426,7 @@ func (p *Panel) SetBordersColor4(color *math32.Color4) {
 	p.SetChanged(true)
 }
 
-// BorderColor4 returns current border color
+// BordersColor4 returns current border color
 func (p *Panel) BordersColor4() math32.Color4 {
 
 	return p.udata.bordersColor
@@ -735,16 +738,16 @@ func (p *Panel) setZ(z, zunb float32) (float32, float32) {
 			z, zunb = ichild.(IPanel).GetPanel().setZ(z, zunb)
 		}
 		return z, zunb
-		// Unbounded panel
-	} else {
-		p.SetPositionZ(zunb)
-		zchild := zunb + deltaZ
-		zunb += deltaZunb
-		for _, ichild := range p.Children() {
-			_, zunb = ichild.(IPanel).GetPanel().setZ(zchild, zunb)
-		}
-		return z, zunb
 	}
+
+	// Unbounded panel
+	p.SetPositionZ(zunb)
+	zchild := zunb + deltaZ
+	zunb += deltaZunb
+	for _, ichild := range p.Children() {
+		_, zunb = ichild.(IPanel).GetPanel().setZ(zchild, zunb)
+	}
+	return z, zunb
 }
 
 // updateBounds is called by UpdateMatrixWorld() and calculates this panel

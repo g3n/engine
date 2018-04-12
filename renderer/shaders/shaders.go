@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package shader contains the several shaders used by the engine
+// Package shaders contains the several shaders used by the engine
 package shaders
 
 // Generates shaders sources from this directory and include directory *.glsl files
@@ -25,7 +25,7 @@ func AddInclude(name string, source string) {
 	includeMap[name] = source
 }
 
-// AddShaders add a shader to default shaders registry.
+// AddShader add a shader to default shaders registry.
 // The specified name can be used when adding programs to the registry
 func AddShader(name string, source string) {
 
@@ -66,14 +66,14 @@ func AddProgram(name string, vertex string, frag string, others ...string) {
 func Includes() []string {
 
 	list := make([]string, 0)
-	for name, _ := range includeMap {
+	for name := range includeMap {
 		list = append(list, name)
 	}
 	return list
 }
 
-// GetInclude returns the source code of the specified shader include chunk.
-// If the name is not found an empty string is returned
+// IncludeSource returns the source code of the specified shader include chunk.
+// If the name is not found an empty string is returned.
 func IncludeSource(name string) string {
 
 	return includeMap[name]
@@ -83,7 +83,7 @@ func IncludeSource(name string) string {
 func Shaders() []string {
 
 	list := make([]string, 0)
-	for name, _ := range shaderMap {
+	for name := range shaderMap {
 		list = append(list, name)
 	}
 	return list
@@ -100,13 +100,13 @@ func ShaderSource(name string) string {
 func Programs() []string {
 
 	list := make([]string, 0)
-	for name, _ := range programMap {
+	for name := range programMap {
 		list = append(list, name)
 	}
 	return list
 }
 
-// GetProgram returns ProgramInfo struct for the specified program name
+// GetProgramInfo returns ProgramInfo struct for the specified program name
 // in the default shaders registry
 func GetProgramInfo(name string) ProgramInfo {
 

@@ -55,15 +55,15 @@ func NewButton(text string) *Button {
 	b.Panel = NewPanel(0, 0)
 
 	// Subscribe to panel events
-	b.Panel.Subscribe(OnKeyDown, b.onKey)
-	b.Panel.Subscribe(OnKeyUp, b.onKey)
-	b.Panel.Subscribe(OnMouseUp, b.onMouse)
-	b.Panel.Subscribe(OnMouseDown, b.onMouse)
-	b.Panel.Subscribe(OnCursor, b.onCursor)
-	b.Panel.Subscribe(OnCursorEnter, b.onCursor)
-	b.Panel.Subscribe(OnCursorLeave, b.onCursor)
-	b.Panel.Subscribe(OnEnable, func(name string, ev interface{}) { b.update() })
-	b.Panel.Subscribe(OnResize, func(name string, ev interface{}) { b.recalc() })
+	b.Subscribe(OnKeyDown, b.onKey)
+	b.Subscribe(OnKeyUp, b.onKey)
+	b.Subscribe(OnMouseUp, b.onMouse)
+	b.Subscribe(OnMouseDown, b.onMouse)
+	b.Subscribe(OnCursor, b.onCursor)
+	b.Subscribe(OnCursorEnter, b.onCursor)
+	b.Subscribe(OnCursorLeave, b.onCursor)
+	b.Subscribe(OnEnable, func(name string, ev interface{}) { b.update() })
+	b.Subscribe(OnResize, func(name string, ev interface{}) { b.recalc() })
 
 	// Creates label
 	b.Label = NewLabel(text)
