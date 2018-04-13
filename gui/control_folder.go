@@ -8,20 +8,20 @@ import (
 	"fmt"
 )
 
-// ControlFolder represents a folder with controls
+// ControlFolder represents a folder with controls.
 type ControlFolder struct {
 	Folder                      // Embedded folder
 	tree   Tree                 // control tree
 	styles *ControlFolderStyles // Pointer to styles
 }
 
-// ControlFolderStyles
+// ControlFolderStyles contains the styling for the valid GUI states of the components of a ControlFolder.
 type ControlFolderStyles struct {
 	Folder *FolderStyles
 	Tree   *TreeStyles
 }
 
-// ControlFolderGroup
+// ControlFolderGroup represents a group of controls in the control folder.
 type ControlFolderGroup struct {
 	control *ControlFolder
 	node    *TreeNode

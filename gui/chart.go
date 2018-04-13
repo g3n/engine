@@ -601,7 +601,8 @@ func (sy *chartScaleY) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 }
 
 //
-// Graph
+// Graph is the GUI element that represents a single plotted function.
+// A Chart has an array of Graph objects.
 //
 type Graph struct {
 	Panel                   // Embedded panel

@@ -9,6 +9,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// Box represents a box or cube geometry.
 type Box struct {
 	Geometry
 	Width          float64
@@ -40,17 +41,17 @@ func NewBox(width, height, depth float64, widthSegments, heightSegments, depthSe
 	uvs := math32.NewArrayF32(0, 16)
 	indices := math32.NewArrayU32(0, 16)
 
-	width_half := width / 2
-	height_half := height / 2
-	depth_half := depth / 2
+	wHalf := width / 2
+	vHalf := height / 2
+	dHalf := depth / 2
 
 	// Internal function to build each box plane
 	buildPlane := func(u, v string, udir, vdir int, width, height, depth float64, materialIndex uint) {
 
 		gridX := widthSegments
 		gridY := heightSegments
-		width_half := width / 2
-		height_half := height / 2
+		wHalf := width / 2
+		hHalf := height / 2
 		offset := positions.Len() / 3
 		var w string
 
@@ -66,8 +67,8 @@ func NewBox(width, height, depth float64, widthSegments, heightSegments, depthSe
 
 		gridX1 := gridX + 1
 		gridY1 := gridY + 1
-		segment_width := width / float64(gridX)
-		segment_height := height / float64(gridY)
+		segmentWidth := width / float64(gridX)
+		segmentHeight := height / float64(gridY)
 		var normal math32.Vector3
 		if depth > 0 {
 			normal.SetByName(w, 1)
@@ -79,8 +80,8 @@ func NewBox(width, height, depth float64, widthSegments, heightSegments, depthSe
 		for iy := 0; iy < gridY1; iy++ {
 			for ix := 0; ix < gridX1; ix++ {
 				var vector math32.Vector3
-				vector.SetByName(u, float32((float64(ix)*segment_width-width_half)*float64(udir)))
-				vector.SetByName(v, float32((float64(iy)*segment_height-height_half)*float64(vdir)))
+				vector.SetByName(u, float32((float64(ix)*segmentWidth-wHalf)*float64(udir)))
+				vector.SetByName(v, float32((float64(iy)*segmentHeight-hHalf)*float64(vdir)))
 				vector.SetByName(w, float32(depth))
 				positions.AppendVector3(&vector)
 				normals.AppendVector3(&normal)
@@ -104,12 +105,12 @@ func NewBox(width, height, depth float64, widthSegments, heightSegments, depthSe
 		box.AddGroup(gstart, gcount, int(matIndex))
 	}
 
-	buildPlane("z", "y", -1, -1, depth, height, width_half, 0)  // px
-	buildPlane("z", "y", 1, -1, depth, height, -width_half, 1)  // nx
-	buildPlane("x", "z", 1, 1, width, depth, height_half, 2)    // py
-	buildPlane("x", "z", 1, -1, width, depth, -height_half, 3)  // ny
-	buildPlane("x", "y", 1, -1, width, height, depth_half, 4)   // pz
-	buildPlane("x", "y", -1, -1, width, height, -depth_half, 5) // nz
+	buildPlane("z", "y", -1, -1, depth, height, wHalf, 0)  // px
+	buildPlane("z", "y", 1, -1, depth, height, -wHalf, 1)  // nx
+	buildPlane("x", "z", 1, 1, width, depth, vHalf, 2)     // py
+	buildPlane("x", "z", 1, -1, width, depth, -vHalf, 3)   // ny
+	buildPlane("x", "y", 1, -1, width, height, dHalf, 4)   // pz
+	buildPlane("x", "y", -1, -1, width, height, -dHalf, 5) // nz
 
 	box.SetIndices(indices)
 	box.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(positions))

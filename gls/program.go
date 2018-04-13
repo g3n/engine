@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-// Shader Program Object
+// Program represents a shader program.
 type Program struct {
 	// Shows source code in error messages
 	ShowSource bool
@@ -50,7 +50,7 @@ func (gs *GLS) NewProgram() *Program {
 	return prog
 }
 
-// AddShaders adds a shader to this program.
+// AddShader adds a shader to this program.
 // This must be done before the program is built.
 func (prog *Program) AddShader(stype uint32, source string, defines map[string]interface{}) {
 
@@ -144,7 +144,7 @@ func (prog *Program) Handle() uint32 {
 	return prog.handle
 }
 
-// GetAttributeLocation returns the location of the specified attribute
+// GetAttribLocation returns the location of the specified attribute
 // in this program. This location is internally cached.
 func (prog *Program) GetAttribLocation(name string) int32 {
 

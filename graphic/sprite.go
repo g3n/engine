@@ -12,6 +12,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// Sprite is a potentially animated image positioned in space that always faces the camera.
 type Sprite struct {
 	Graphic             // Embedded graphic
 	uniMVPM gls.Uniform // Model view projection matrix uniform location cache
@@ -55,6 +56,7 @@ func NewSprite(width, height float32, imat material.IMaterial) *Sprite {
 	return s
 }
 
+// RenderSetup sets up the rendering of the sprite.
 func (s *Sprite) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 
 	// Calculates model view matrix
@@ -73,12 +75,12 @@ func (s *Sprite) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 	rotation.X = 0
 	rotation.Y = 0
 	quaternion.SetFromEuler(&rotation)
-	var mvm_new math32.Matrix4
-	mvm_new.Compose(&position, &quaternion, &scale)
+	var mvmNew math32.Matrix4
+	mvmNew.Compose(&position, &quaternion, &scale)
 
 	// Calculates final MVP and updates uniform
 	var mvpm math32.Matrix4
-	mvpm.MultiplyMatrices(&rinfo.ProjMatrix, &mvm_new)
+	mvpm.MultiplyMatrices(&rinfo.ProjMatrix, &mvmNew)
 	location := s.uniMVPM.Location(gs)
 	gs.UniformMatrix4fv(location, 1, false, &mvpm[0])
 }

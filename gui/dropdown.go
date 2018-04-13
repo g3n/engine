@@ -9,7 +9,7 @@ import (
 	"github.com/g3n/engine/window"
 )
 
-// DropDown represents a dropdown GUI element
+// DropDown represents a dropdown GUI element.
 type DropDown struct {
 	Panel                        // Embedded panel
 	icon         *Label          // internal label with icon
@@ -23,10 +23,10 @@ type DropDown struct {
 	clickOut     bool
 }
 
-// DropDownStyle
+// DropDownStyle contains the styling of a DropDown.
 type DropDownStyle BasicStyle
 
-// DropDownStyles
+// DropDownStyles contains a DropDownStyle for each valid GUI state.
 type DropDownStyles struct {
 	Normal   DropDownStyle
 	Over     DropDownStyle
