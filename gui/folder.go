@@ -8,7 +8,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
-// Folder represents a folder GUI element
+// Folder represents a folder GUI element.
 type Folder struct {
 	Panel               // Embedded panel
 	label        Label  // Folder label
@@ -19,14 +19,14 @@ type Folder struct {
 	alignRight   bool
 }
 
-// FolderStyle
+// FolderStyle contains the styling of a Folder.
 type FolderStyle struct {
 	PanelStyle
 	FgColor     math32.Color4
 	Icons       [2]string
 }
 
-// FolderStyles
+// FolderStyles contains a FolderStyle for each valid GUI state.
 type FolderStyles struct {
 	Normal   FolderStyle
 	Over     FolderStyle
@@ -35,7 +35,7 @@ type FolderStyles struct {
 }
 
 // NewFolder creates and returns a pointer to a new folder widget
-// with the specified text and initial width
+// with the specified text and initial width.
 func NewFolder(text string, width float32, contentPanel IPanel) *Folder {
 
 	f := new(Folder)
@@ -44,7 +44,7 @@ func NewFolder(text string, width float32, contentPanel IPanel) *Folder {
 }
 
 // Initialize initializes the Folder with the specified text and initial width
-// It is normally used when the folder is embedded in another object
+// It is normally used when the folder is embedded in another object.
 func (f *Folder) Initialize(text string, width float32, contentPanel IPanel) {
 
 	f.Panel.Initialize(width, 0)
@@ -75,7 +75,7 @@ func (f *Folder) Initialize(text string, width float32, contentPanel IPanel) {
 	f.recalc()
 }
 
-// SetStyles set the folder styles overriding the default style
+// SetStyles set the folder styles overriding the default style.
 func (f *Folder) SetStyles(fs *FolderStyles) {
 
 	f.styles = fs
@@ -83,7 +83,7 @@ func (f *Folder) SetStyles(fs *FolderStyles) {
 }
 
 // SetAlignRight sets the side of the alignment of the content panel
-// in relation to the folder
+// in relation to the folder.
 func (f *Folder) SetAlignRight(state bool) {
 
 	f.alignRight = state
@@ -91,7 +91,7 @@ func (f *Folder) SetAlignRight(state bool) {
 }
 
 // TotalHeight returns this folder total height
-// considering the contents panel, if visible
+// considering the contents panel, if visible.
 func (f *Folder) TotalHeight() float32 {
 
 	height := f.Height()
@@ -101,7 +101,7 @@ func (f *Folder) TotalHeight() float32 {
 	return height
 }
 
-// onMouse receives mouse button events over the folder panel
+// onMouse receives mouse button events over the folder panel.
 func (f *Folder) onMouse(evname string, ev interface{}) {
 
 	switch evname {

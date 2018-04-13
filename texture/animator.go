@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// Animator
+// Animator can generate a texture animation based on a texture sheet
 type Animator struct {
 	tex       *Texture2D    // pointer to texture being displayed
 	dispTime  time.Duration // disply duration of each tile (default = 1.0/30.0)

@@ -7,16 +7,19 @@ import (
 	"text/template"
 )
 
+// GLHeader is the definition of an OpenGL header file, with functions and constant definitions.
 type GLHeader struct {
 	Defines []GLDefine
 	Funcs   []GLFunc
 }
 
+// GLDefine is the definition of an OpenGL constant.
 type GLDefine struct {
 	Name  string
 	Value string
 }
 
+// GLFunc is the definition of an OpenGL function.
 type GLFunc struct {
 	Ptype    string    // type of function pointer (ex: PFNCULLFACEPROC)
 	Spacer   string    // spacer string for formatting
@@ -30,6 +33,7 @@ type GLFunc struct {
 	Params   []GLParam // array of function parameters
 }
 
+// GLParam is the definition of an argument to an OpenGL function (GLFunc).
 type GLParam struct {
 	Qualif string // optional parameter qualifier (ex: const)
 	CType  string // parameter C type
@@ -37,7 +41,7 @@ type GLParam struct {
 	Name   string // parameter name with possible pointer operator
 }
 
-// genFile generates file from the specified template
+// genFile generates file from the specified template.
 func genFile(templText string, td *GLHeader, fout string, gosrc bool) error {
 
 	// Parses the template

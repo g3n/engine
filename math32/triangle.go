@@ -4,14 +4,14 @@
 
 package math32
 
-// Triangle represents a triangle of vertices
+// Triangle represents a triangle made of three vertices.
 type Triangle struct {
 	a Vector3
 	b Vector3
 	c Vector3
 }
 
-// New Triangle returns a pointer to a new Triangle object
+// NewTriangle returns a pointer to a new Triangle object.
 func NewTriangle(a, b, c *Vector3) *Triangle {
 
 	t := new(Triangle)
@@ -27,7 +27,7 @@ func NewTriangle(a, b, c *Vector3) *Triangle {
 	return t
 }
 
-// Normal returns the triangle's normal
+// Normal returns the triangle's normal.
 func Normal(a, b, c, optionalTarget *Vector3) *Vector3 {
 
 	var v0 Vector3
@@ -49,7 +49,7 @@ func Normal(a, b, c, optionalTarget *Vector3) *Vector3 {
 	return result.Set(0, 0, 0)
 }
 
-// BarycoordFromPoint returns the barycentric coordinates for the specified point
+// BarycoordFromPoint returns the barycentric coordinates for the specified point.
 func BarycoordFromPoint(point, a, b, c, optionalTarget *Vector3) *Vector3 {
 
 	var v0 Vector3
@@ -91,7 +91,7 @@ func BarycoordFromPoint(point, a, b, c, optionalTarget *Vector3) *Vector3 {
 
 }
 
-// ContainsPoint returns whether a triangle contains a point
+// ContainsPoint returns whether a triangle contains a point.
 func ContainsPoint(point, a, b, c *Vector3) bool {
 
 	var v1 Vector3
@@ -100,7 +100,7 @@ func ContainsPoint(point, a, b, c *Vector3) bool {
 	return (result.X >= 0) && (result.Y >= 0) && ((result.X + result.Y) <= 1)
 }
 
-// Set sets the triangle's three vertices
+// Set sets the triangle's three vertices.
 func (t *Triangle) Set(a, b, c *Vector3) *Triangle {
 
 	t.a = *a
@@ -109,7 +109,7 @@ func (t *Triangle) Set(a, b, c *Vector3) *Triangle {
 	return t
 }
 
-// SetFromPointsAndIndices sets the triangle's vertices based on the specified points and indices
+// SetFromPointsAndIndices sets the triangle's vertices based on the specified points and indices.
 func (t *Triangle) SetFromPointsAndIndices(points []*Vector3, i0, i1, i2 int) *Triangle {
 
 	t.a = *points[i0]
@@ -118,14 +118,14 @@ func (t *Triangle) SetFromPointsAndIndices(points []*Vector3, i0, i1, i2 int) *T
 	return t
 }
 
-// Copy modifies the receiver triangle to match the provided triangle
+// Copy modifies the receiver triangle to match the provided triangle.
 func (t *Triangle) Copy(triangle *Triangle) *Triangle {
 
 	*t = *triangle
 	return t
 }
 
-// Area returns the triangle's area
+// Area returns the triangle's area.
 func (t *Triangle) Area() float32 {
 
 	var v0 Vector3
@@ -136,7 +136,7 @@ func (t *Triangle) Area() float32 {
 	return v0.Cross(&v1).Length() * 0.5
 }
 
-// Midpoint returns the triangle's midpoint
+// Midpoint returns the triangle's midpoint.
 func (t *Triangle) Midpoint(optionalTarget *Vector3) *Vector3 {
 
 	var result *Vector3
@@ -148,13 +148,13 @@ func (t *Triangle) Midpoint(optionalTarget *Vector3) *Vector3 {
 	return result.AddVectors(&t.a, &t.b).Add(&t.c).MultiplyScalar(1 / 3)
 }
 
-// Normal returns the triangle's normal
+// Normal returns the triangle's normal.
 func (t *Triangle) Normal(optionalTarget *Vector3) *Vector3 {
 
 	return Normal(&t.a, &t.b, &t.c, optionalTarget)
 }
 
-// Plane returns a Plane object aligned with the triangle
+// Plane returns a Plane object aligned with the triangle.
 func (t *Triangle) Plane(optionalTarget *Plane) *Plane {
 
 	var result *Plane
@@ -166,25 +166,25 @@ func (t *Triangle) Plane(optionalTarget *Plane) *Plane {
 	return result.SetFromCoplanarPoints(&t.a, &t.b, &t.c)
 }
 
-// BarycoordFromPoint returns the barycentric coordinates for the specified point
+// BarycoordFromPoint returns the barycentric coordinates for the specified point.
 func (t *Triangle) BarycoordFromPoint(point, optionalTarget *Vector3) *Vector3 {
 
 	return BarycoordFromPoint(point, &t.a, &t.b, &t.c, optionalTarget)
 }
 
-// ContainsPoint returns whether the triangle contains a point
+// ContainsPoint returns whether the triangle contains a point.
 func (t *Triangle) ContainsPoint(point *Vector3) bool {
 
 	return ContainsPoint(point, &t.a, &t.b, &t.c)
 }
 
-// Equals returns whether the triangles are equal in all their vertices
+// Equals returns whether the triangles are equal in all their vertices.
 func (t *Triangle) Equals(triangle *Triangle) bool {
 
 	return triangle.a.Equals(&t.a) && triangle.b.Equals(&t.b) && triangle.c.Equals(&t.c)
 }
 
-// Clone clones a triangle
+// Clone clones a triangle.
 func (t *Triangle) Clone(triangle *Triangle) *Triangle {
 
 	return NewTriangle(nil, nil, nil).Copy(t)

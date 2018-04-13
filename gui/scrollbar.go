@@ -22,6 +22,7 @@ import (
 
 **/
 
+// ScrollBar is the scrollbar GUI element.
 type ScrollBar struct {
 	Panel                       // Embedded panel
 	styles     *ScrollBarStyles // styles of the scrollbar
@@ -40,12 +41,14 @@ type scrollBarButton struct {
 	MinSize float32    // minimum button size
 }
 
+// ScrollBarStyles contains a ScrollBarStyle for each valid GUI state.
 type ScrollBarStyles struct {
 	Normal   ScrollBarStyle
 	Over     ScrollBarStyle
 	Disabled ScrollBarStyle
 }
 
+// ScrollBarStyle contains the styling of a ScrollBar.
 type ScrollBarStyle struct {
 	PanelStyle
 	Button       PanelStyle
@@ -120,13 +123,14 @@ func (sb *ScrollBar) Value() float64 {
 			return 0
 		}
 		return float64(sb.button.Position().Y) / den
-	} else {
-		den := float64(sb.content.Width) - float64(sb.button.width)
-		if den == 0 {
-			return 0
-		}
-		return float64(sb.button.Position().X) / den
 	}
+
+	// horizontal
+	den := float64(sb.content.Width) - float64(sb.button.width)
+	if den == 0 {
+		return 0
+	}
+	return float64(sb.button.Position().X) / den
 }
 
 // SetValue sets the position of the button of the scrollbar

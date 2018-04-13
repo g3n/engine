@@ -9,6 +9,7 @@ import (
 	"sort"
 )
 
+// Raycaster represents an empty object that can cast rays and check for ray intersections.
 type Raycaster struct {
 	// The distance from the ray origin to the intersected points
 	// must be greater than the value of this field to be considered.
@@ -51,7 +52,7 @@ type Intersect struct {
 	Index uint32
 }
 
-// New creates and returns a pointer to a new raycaster object
+// NewRaycaster creates and returns a pointer to a new raycaster object
 // with the specified origin and direction.
 func NewRaycaster(origin, direction *math32.Vector3) *Raycaster {
 
@@ -105,7 +106,7 @@ func (rc *Raycaster) intersectObject(inode INode, intersects *[]Intersect, recur
 	return
 }
 
-// For sorting Intersects by distance
+// Intersects is the array type for Intersect objects. It's used for sorting intersects by distance.
 type Intersects []Intersect
 
 func (is Intersects) Len() int      { return len(is) }
