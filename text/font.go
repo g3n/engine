@@ -130,14 +130,14 @@ func (f *Font) SetFgColor(color *math32.Color) {
 	f.fgColor.G = color.G
 	f.fgColor.B = color.B
 	f.fgColor.A = 1.0
-	f.fg = image.NewUniform(Color4NRGBA(&f.fgColor))
+	f.fg = image.NewUniform(Color4RGBA(&f.fgColor))
 }
 
 // SetFgColor4 sets the current foreground color of the font
 func (f *Font) SetFgColor4(color *math32.Color4) {
 
 	f.fgColor = *color
-	f.fg = image.NewUniform(Color4NRGBA(color))
+	f.fg = image.NewUniform(Color4RGBA(color))
 }
 
 // FgColor4 returns the current foreground color
@@ -154,14 +154,14 @@ func (f *Font) SetBgColor(color *math32.Color) {
 	f.bgColor.G = color.G
 	f.bgColor.B = color.B
 	f.bgColor.A = 1.0
-	f.bg = image.NewUniform(Color4NRGBA(&f.fgColor))
+	f.bg = image.NewUniform(Color4RGBA(&f.fgColor))
 }
 
 // SetBgColor4 sets the current background color of the font
 func (f *Font) SetBgColor4(color *math32.Color4) {
 
 	f.bgColor = *color
-	f.bg = image.NewUniform(Color4NRGBA(color))
+	f.bg = image.NewUniform(Color4RGBA(color))
 }
 
 // BgColor4 returns the current background color
@@ -237,7 +237,7 @@ func NewCanvas(width, height int, bgColor *math32.Color4) *Canvas {
 	c.RGBA = image.NewRGBA(image.Rect(0, 0, width, height))
 
 	// Creates the image.Uniform for the background color
-	c.bgColor = image.NewUniform(Color4NRGBA(bgColor))
+	c.bgColor = image.NewUniform(Color4RGBA(bgColor))
 
 	// Draw image
 	draw.Draw(c.RGBA, c.RGBA.Bounds(), c.bgColor, image.ZP, draw.Src)
@@ -287,7 +287,7 @@ func (c Canvas) DrawTextCaret(x, y int, text string, f *Font, line, col int) err
 			caretH := int(f.fontSize) + 2
 			//caretY := int(pt.Y>>6) - int(f.fontSize) + 2
 			caretY := int(d.Dot.Y>>6) - int(f.fontSize) + 2
-			color := Color4NRGBA(&math32.Color4{0, 0, 0, 1})
+			color := Color4RGBA(&math32.Color4{0, 0, 0, 1})
 			for j := caretY; j < caretY+caretH; j++ {
 				c.RGBA.Set(x+width, j, color)
 			}
@@ -310,7 +310,7 @@ func (c Canvas) DrawTextCaret(x, y int, text string, f *Font, line, col int) err
 	//			// Draw caret vertical line
 	//			caretH := int(font.fontSize) + 2
 	//			caretY := int(pt.Y>>6) - int(font.fontSize) + 2
-	//			color := Color4NRGBA(&math32.Color4{0, 0, 0, 1})
+	//			color := Color4RGBA(&math32.Color4{0, 0, 0, 1})
 	//			for j := caretY; j < caretY+caretH; j++ {
 	//				c.RGBA.Set(x+width, j, color)
 	//			}
@@ -321,13 +321,12 @@ func (c Canvas) DrawTextCaret(x, y int, text string, f *Font, line, col int) err
 	return nil
 }
 
-// Color4NRGBA converts a math32.Color4 to Go's image/color.NRGBA
-// NON pre-multiplied alpha.
-func Color4NRGBA(c *math32.Color4) color.NRGBA {
+// Color4RGBA converts a math32.Color4 to Go's color.RGBA
+func Color4RGBA(c *math32.Color4) color.RGBA {
 
 	red := uint8(c.R * 0xFF)
 	green := uint8(c.G * 0xFF)
 	blue := uint8(c.B * 0xFF)
 	al := uint8(c.A * 0xFF)
-	return color.NRGBA{red, green, blue, al}
+	return color.RGBA{red, green, blue, al}
 }
