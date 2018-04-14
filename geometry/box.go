@@ -15,12 +15,12 @@ import (
 // of segments in each dimension. All properties must be greater than zero.
 type Box struct {
 	Geometry
-	Width          float32 // > 0
-	Height         float32 // > 0
-	Length         float32 // > 0
-	WidthSegments  int     // > 0
-	HeightSegments int     // > 0
-	LengthSegments int     // > 0
+	Width          float32
+	Height         float32
+	Length         float32
+	WidthSegments  int // > 0
+	HeightSegments int // > 0
+	LengthSegments int // > 0
 }
 
 // NewCube creates a new cube geometry of the specified size.
@@ -45,9 +45,9 @@ func NewSegmentedBox(width, height, length float32, widthSegments, heightSegment
 	box := new(Box)
 	box.Geometry.Init()
 
-	// Validate BoxSpec and set defaults
-	if width <= 0 || height <= 0 || length <= 0 || widthSegments <= 0 || heightSegments <= 0 || lengthSegments <= 0 {
-		panic("Invalid argument(s). All arguments should be greater than zero.")
+	// Validate arguments
+	if widthSegments <= 0 || heightSegments <= 0 || lengthSegments <= 0 {
+		panic("Invalid argument(s). All segment quantities should be greater than zero.")
 	}
 
 	box.Width = width
