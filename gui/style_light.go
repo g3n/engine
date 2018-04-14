@@ -353,6 +353,7 @@ func NewLightStyle() *Style {
 	s.ImageButton.Over.BgColor = bgColor4Over
 	s.ImageButton.Focus = s.ImageButton.Over
 	s.ImageButton.Pressed = s.ImageButton.Over
+	s.ImageButton.Pressed.Border = twoBounds
 	s.ImageButton.Disabled = s.ImageButton.Normal
 	s.ImageButton.Disabled.FgColor = fgColorDis
 
