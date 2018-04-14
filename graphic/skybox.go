@@ -33,7 +33,7 @@ func NewSkybox(data SkyboxData) (*Skybox, error) {
 
 	skybox := new(Skybox)
 
-	geom := geometry.NewBox(50, 50, 50, 1, 1, 1)
+	geom := geometry.NewCube(1)
 	skybox.Graphic.Init(geom, gls.TRIANGLES)
 
 	for i := 0; i < 6; i++ {
