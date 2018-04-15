@@ -11,8 +11,8 @@ import (
 	"github.com/g3n/engine/texture"
 )
 
-// Label is a panel which contains a texture for rendering text
-// The content size of the label panel is the exact size of texture
+// Label is a panel which contains a texture for rendering text.
+// The content size of the label panel is the exact size of the texture.
 type Label struct {
 	Panel       // Embedded panel
 	fontSize    float64
@@ -28,6 +28,7 @@ type Label struct {
 // NewLabel creates and returns a label panel with the specified text
 // drawn using the current default text font.
 // If icon is true the text is drawn using the default icon font
+// TODO allow passing in any font
 func NewLabel(msg string, icon ...bool) *Label {
 
 	l := new(Label)
@@ -45,6 +46,12 @@ func (l *Label) initialize(msg string, font *text.Font) {
 
 	l.font = font
 	l.Panel.Initialize(0, 0)
+
+	// TODO: Remove this hack in an elegant way
+	if font != StyleDefault().FontIcon {
+		l.Panel.SetPaddings(2, 0, 2, 0)
+	}
+
 	l.fontSize = 14
 	l.fontDPI = 72
 	l.lineSpacing = 1.0
