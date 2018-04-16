@@ -119,7 +119,7 @@ func (gs *GLS) SetCheckErrors(enable bool) {
 	gs.checkErrors = enable
 }
 
-// ChecksErrors returns if error checking is enabled or not.
+// CheckErrors returns if error checking is enabled or not.
 func (gs *GLS) CheckErrors() bool {
 
 	return gs.checkErrors
@@ -220,7 +220,7 @@ func (gs *GLS) BindVertexArray(vao uint32) {
 	C.glBindVertexArray(C.GLuint(vao))
 }
 
-// BlendEquationSeparate sets the blend equations for all draw buffers.
+// BlendEquation sets the blend equations for all draw buffers.
 func (gs *GLS) BlendEquation(mode uint32) {
 
 	if gs.blendEquation == mode {
@@ -242,7 +242,7 @@ func (gs *GLS) BlendEquationSeparate(modeRGB uint32, modeAlpha uint32) {
 	gs.blendEquationAlpha = modeAlpha
 }
 
-// BlendFuncSeparate defines the operation of blending for
+// BlendFunc defines the operation of blending for
 // all draw buffers when blending is enabled.
 func (gs *GLS) BlendFunc(sfactor, dfactor uint32) {
 
@@ -666,7 +666,7 @@ func (gs *GLS) Uniform1fv(location int32, count int32, v []float32) {
 	gs.stats.Unisets++
 }
 
-// Uniform1fv sets the value of one or many vec2 uniform variables for the current program object.
+// Uniform2fv sets the value of one or many vec2 uniform variables for the current program object.
 func (gs *GLS) Uniform2fv(location int32, count int32, v *float32) {
 
 	C.glUniform2fv(C.GLint(location), C.GLsizei(count), (*C.GLfloat)(v))
@@ -721,7 +721,7 @@ func (gs *GLS) Viewport(x, y, width, height int32) {
 	gs.viewportHeight = height
 }
 
-// Use set this program as the current program.
+// UseProgram sets the specified program as the current program.
 func (gs *GLS) UseProgram(prog *Program) {
 
 	if prog.handle == 0 {
