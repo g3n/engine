@@ -19,6 +19,7 @@ var (
 	oPackage = flag.String("pkg", "icon", "Package name")
 )
 
+// Program name and version
 const (
 	PROGNAME = "g3nicodes"
 	VMAJOR   = 0
