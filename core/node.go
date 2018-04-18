@@ -5,13 +5,12 @@
 package core
 
 import (
-	"strings"
-
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/math32"
+	"strings"
 )
 
-// INode is the interface for all node types
+// INode is the interface for all node types.
 type INode interface {
 	GetNode() *Node
 	UpdateMatrixWorld()
@@ -20,26 +19,28 @@ type INode interface {
 	Dispose()
 }
 
-// Node is an object that can be positioned in space and also within a hierarchy of Node objects.
+// Node represents an object in 3D space existing within a hierarchy.
 type Node struct {
-	Dispatcher                    // Embedded event dispatcher
-	loaderID    string            // ID used by loader
-	name        string            // Optional node name
-	position    math32.Vector3    // Node position, specified as a Vector3
-	rotation    math32.Vector3    // Node rotation, specified in Euler angles.
-	quaternion  math32.Quaternion // Node rotation, specified as a Quaternion.
-	scale       math32.Vector3    // Node scale as a Vector3
-	direction   math32.Vector3    // Initial direction
-	matrix      math32.Matrix4    // Transform matrix relative to this node parent.
-	matrixWorld math32.Matrix4    // Transform world matrix
-	visible     bool              // Visible flag
-	changed     bool              // Node position/orientation/scale changed
-	parent      INode             // Parent node
-	children    []INode           // Array with node children
-	userData    interface{}       // Generic user data
+	Dispatcher             // Embedded event dispatcher
+	parent     INode       // Parent node
+	children   []INode     // Children nodes
+	name       string      // Optional node name
+	loaderID   string      // ID used by loader
+	visible    bool        // Whether the node is visible
+	changed    bool        // Whether the position/orientation/scale changed
+	userData   interface{} // Generic user data
+
+	// Spatial properties
+	position    math32.Vector3    // Node position in 3D space (relative to parent)
+	scale       math32.Vector3    // Node scale (relative to parent)
+	direction   math32.Vector3    // Initial direction (relative to parent)
+	rotation    math32.Vector3    // Node rotation specified in Euler angles (relative to parent)
+	quaternion  math32.Quaternion // Node rotation specified as a Quaternion (relative to parent)
+	matrix      math32.Matrix4    // Local transform matrix. Contains all position/rotation/scale information (relative to parent)
+	matrixWorld math32.Matrix4    // World transform matrix. Contains all absolute position/rotation/scale information (i.e. relative to very top parent, generally the scene)
 }
 
-// NewNode creates and returns a pointer to a new Node
+// NewNode returns a pointer to a new Node.
 func NewNode() *Node {
 
 	n := new(Node)
@@ -47,44 +48,72 @@ func NewNode() *Node {
 	return n
 }
 
-// Init initializes this Node
-// It is normally use by other types which embed a Node
+// Init initializes the node.
+// Normally called by other types which embed a Node.
 func (n *Node) Init() {
 
 	n.Dispatcher.Initialize()
-	n.position.Set(0, 0, 0)
-	n.rotation.Set(0, 0, 0)
-	n.quaternion.Set(0, 0, 0, 1)
-	n.scale.Set(1, 1, 1)
-	n.direction.Set(0, 0, 1)
-	n.matrix.Identity()
-	n.matrixWorld.Identity()
+
 	n.children = make([]INode, 0)
 	n.visible = true
 	n.changed = true
+
+	// Initialize spatial properties
+	n.position.Set(0, 0, 0)
+	n.scale.Set(1, 1, 1)
+	n.direction.Set(0, 0, 1)
+	n.rotation.Set(0, 0, 0)
+	n.quaternion.Set(0, 0, 0, 1)
+	n.matrix.Identity()
+	n.matrixWorld.Identity()
 }
 
-// GetNode satisfies the INode interface and returns
-// a pointer to the embedded Node
+// GetNode satisfies the INode interface
+// and returns a pointer to the embedded Node.
 func (n *Node) GetNode() *Node {
 
 	return n
 }
 
-// Raycast satisfies the INode interface
+// Raycast satisfies the INode interface.
 func (n *Node) Raycast(rc *Raycaster, intersects *[]Intersect) {
 }
 
-// Render satisfies the INode interface
+// Render satisfies the INode interface.
 func (n *Node) Render(gs *gls.GLS) {
 }
 
-// Dispose satisfies the INode interface
+// Dispose satisfies the INode interface.
 func (n *Node) Dispose() {
 }
 
+// SetParent sets the parent.
+func (n *Node) SetParent(iparent INode) {
+
+	n.parent = iparent
+}
+
+// Parent returns the parent.
+func (n *Node) Parent() INode {
+
+	return n.parent
+}
+
+// SetName sets the (optional) name.
+// The name can be used for debugging or other purposes.
+func (n *Node) SetName(name string) {
+
+	n.name = name
+}
+
+// Name returns the (optional) name.
+func (n *Node) Name() string {
+
+	return n.name
+}
+
 // SetLoaderID is normally used by external loaders, such as Collada,
-// to assign an ID to the node with the ID value in the node description
+// to assign an ID to the node with the ID value in the node description.
 // Can be used to find other loaded nodes.
 func (n *Node) SetLoaderID(id string) {
 
@@ -92,10 +121,47 @@ func (n *Node) SetLoaderID(id string) {
 }
 
 // LoaderID returns an optional ID set when this node was
-// created by an external loader such as Collada
+// created by an external loader such as Collada.
 func (n *Node) LoaderID() string {
 
 	return n.loaderID
+}
+
+// SetVisible sets the visibility of the node.
+func (n *Node) SetVisible(state bool) {
+
+	n.visible = state
+	n.changed = true
+}
+
+// Visible returns the visibility of the node.
+func (n *Node) Visible() bool {
+
+	return n.visible
+}
+
+// SetChanged sets the changed flag of the node.
+func (n *Node) SetChanged(changed bool) {
+
+	n.changed = changed
+}
+
+// Changed returns the changed flag of the node.
+func (n *Node) Changed() bool {
+
+	return n.changed
+}
+
+// SetUserData sets the generic user data associated to the node.
+func (n *Node) SetUserData(data interface{}) {
+
+	n.userData = data
+}
+
+// UserData returns the generic user data associated to the node.
+func (n *Node) UserData() interface{} {
+
+	return n.userData
 }
 
 // FindPath finds a node with the specified path starting with this node and
@@ -135,9 +201,9 @@ func (n *Node) FindPath(path string) INode {
 	return finder(n, path)
 }
 
-// FindLoaderID looks in the specified node and all its children
-// for a node with the specifid loaderID and if found returns it.
-// Returns nil if not found
+// FindLoaderID looks in the specified node and in all its children
+// for a node with the specified loaderID and if found returns it.
+// Returns nil if not found.
 func (n *Node) FindLoaderID(id string) INode {
 
 	var finder func(parent INode, id string) INode
@@ -157,74 +223,116 @@ func (n *Node) FindLoaderID(id string) INode {
 	return finder(n, id)
 }
 
-// SetChanged sets this node changed flag
-func (n *Node) SetChanged(changed bool) {
+// Children returns the list of children.
+func (n *Node) Children() []INode {
 
-	n.changed = changed
+	return n.children
 }
 
-// Changed returns this Node changed flag
-func (n *Node) Changed() bool {
+// Add adds the specified INode to the list of children.
+func (n *Node) Add(ichild INode) *Node {
 
-	return n.changed
+	child := ichild.GetNode()
+	if n == child {
+		panic("Node.Add: object can't be added as a child of itself")
+	}
+	// If this child already has a parent,
+	// removes it from this parent children list
+	if child.parent != nil {
+		child.parent.GetNode().Remove(ichild)
+	}
+	child.parent = n
+	n.children = append(n.children, ichild)
+	return n
 }
 
-// SetName set an option name for the node.
-// This name can be used for debugging or other purposes.
-func (n *Node) SetName(name string) {
+// Remove removes the specified INode from the list of children.
+// Returns true if found or false otherwise.
+func (n *Node) Remove(ichild INode) bool {
 
-	n.name = name
+	for pos, current := range n.children {
+		if current == ichild {
+			copy(n.children[pos:], n.children[pos+1:])
+			n.children[len(n.children)-1] = nil
+			n.children = n.children[:len(n.children)-1]
+			ichild.GetNode().parent = nil
+			return true
+		}
+	}
+	return false
 }
 
-// Name returns current optional name for this node
-func (n *Node) Name() string {
+// RemoveAll removes all children.
+func (n *Node) RemoveAll(recurs bool) {
 
-	return n.name
+	for pos, ichild := range n.children {
+		n.children[pos] = nil
+		ichild.GetNode().parent = nil
+		if recurs {
+			ichild.GetNode().RemoveAll(recurs)
+		}
+	}
+	n.children = n.children[0:0]
 }
 
-// SetPosition sets this node world position
+// DisposeChildren removes and disposes of all children.
+// If 'recurs' is true, call DisposeChidren on each child recursively.
+func (n *Node) DisposeChildren(recurs bool) {
+
+	for pos, ichild := range n.children {
+		n.children[pos] = nil
+		ichild.GetNode().parent = nil
+		if recurs {
+			ichild.GetNode().DisposeChildren(true)
+		}
+		ichild.Dispose()
+	}
+	n.children = n.children[0:0]
+}
+
+// SetPosition sets the position.
 func (n *Node) SetPosition(x, y, z float32) {
 
 	n.position.Set(x, y, z)
 	n.changed = true
 }
 
-// SetPositionVec sets this node position from the specified vector pointer
+// SetPositionVec sets the position based on the specified vector pointer.
 func (n *Node) SetPositionVec(vpos *math32.Vector3) {
 
 	n.position = *vpos
 	n.changed = true
 }
 
-// SetPositionX sets the x coordinate of this node position
+// SetPositionX sets the X coordinate of the position.
 func (n *Node) SetPositionX(x float32) {
 
 	n.position.X = x
 	n.changed = true
 }
 
-// SetPositionY sets the y coordinate of this node position
+// SetPositionY sets the Y coordinate of the position.
 func (n *Node) SetPositionY(y float32) {
 
 	n.position.Y = y
 	n.changed = true
 }
 
-// SetPositionZ sets the z coordinate of this node position
+// SetPositionZ sets the Z coordinate of the position.
 func (n *Node) SetPositionZ(z float32) {
 
 	n.position.Z = z
 	n.changed = true
 }
 
-// Position returns the current node position as a vector
+// Position returns the position as a vector.
 func (n *Node) Position() math32.Vector3 {
 
 	return n.position
 }
 
-// SetRotation sets the three fields of the node rotation in radians
-// The node quaternion is updated
+// SetRotation sets the rotation in radians.
+// The stored quaternion is updated accordingly.
 func (n *Node) SetRotation(x, y, z float32) {
 
 	n.rotation.Set(x, y, z)
@@ -232,8 +340,17 @@ func (n *Node) SetRotation(x, y, z float32) {
 	n.changed = true
 }
 
-// SetRotationX sets the x rotation angle in radians
-// The node quaternion is updated
+// SetRotationVec sets the rotation in radians based on the specified vector pointer.
+// The stored quaternion is updated accordingly.
+func (n *Node) SetRotationVec(vrot *math32.Vector3) {
+
+	n.rotation = *vrot
+	n.quaternion.SetFromEuler(&n.rotation)
+	n.changed = true
+}
+
+// SetRotationX sets the X rotation to the specified angle in radians.
+// The stored quaternion is updated accordingly.
 func (n *Node) SetRotationX(x float32) {
 
 	n.rotation.X = x
@@ -241,8 +358,8 @@ func (n *Node) SetRotationX(x float32) {
 	n.changed = true
 }
 
-// SetRotationY sets the y rotation angle in radians
-// The node quaternion is updated
+// SetRotationY sets the Y rotation to the specified angle in radians.
+// The stored quaternion is updated accordingly.
 func (n *Node) SetRotationY(y float32) {
 
 	n.rotation.Y = y
@@ -250,8 +367,8 @@ func (n *Node) SetRotationY(y float32) {
 	n.changed = true
 }
 
-// SetRotationZ sets the z rotation angle in radians
-// The node quaternion is updated
+// SetRotationZ sets the Z rotation to the specified angle in radians.
+// The stored quaternion is updated accordingly.
 func (n *Node) SetRotationZ(z float32) {
 
 	n.rotation.Z = z
@@ -259,8 +376,8 @@ func (n *Node) SetRotationZ(z float32) {
 	n.changed = true
 }
 
-// AddRotationX adds to the current rotation x coordinate in radians
-// The node quaternion is updated
+// AddRotationX adds to the current X rotation the specified angle in radians.
+// The stored quaternion is updated accordingly.
 func (n *Node) AddRotationX(x float32) {
 
 	n.rotation.X += x
@@ -268,8 +385,8 @@ func (n *Node) AddRotationX(x float32) {
 	n.changed = true
 }
 
-// AddRotationY adds to the current rotation y coordinate in radians
-// The node quaternion is updated
+// AddRotationY adds to the current Y rotation the specified angle in radians.
+// The stored quaternion is updated accordingly.
 func (n *Node) AddRotationY(y float32) {
 
 	n.rotation.Y += y
@@ -277,8 +394,8 @@ func (n *Node) AddRotationY(y float32) {
 	n.changed = true
 }
 
-// AddRotationZ adds to the current rotation z coordinate in radians
-// The node quaternion is updated
+// AddRotationZ adds to the current Z rotation the specified angle in radians.
+// The stored quaternion is updated accordingly.
 func (n *Node) AddRotationZ(z float32) {
 
 	n.rotation.Z += z
@@ -286,124 +403,111 @@ func (n *Node) AddRotationZ(z float32) {
 	n.changed = true
 }
 
-// Rotation returns the current rotation
+// Rotation returns the current rotation.
 func (n *Node) Rotation() math32.Vector3 {
 
 	return n.rotation
 }
 
-// SetQuaternion sets this node  quaternion with the specified fields
+// SetQuaternion sets the quaternion based on the specified quaternion unit multiples.
 func (n *Node) SetQuaternion(x, y, z, w float32) {
 
 	n.quaternion.Set(x, y, z, w)
 	n.changed = true
 }
 
-// SetQuaternionQuat sets this node quaternion from the specified quaternion pointer
+// SetQuaternionQuat sets the quaternion based on the specified quaternion pointer.
 func (n *Node) SetQuaternionQuat(q *math32.Quaternion) {
 
 	n.quaternion = *q
 	n.changed = true
 }
 
-// QuaternionMult multiplies the quaternion by the specified quaternion
+// QuaternionMult multiplies the current quaternion by the specified quaternion.
 func (n *Node) QuaternionMult(q *math32.Quaternion) {
 
 	n.quaternion.Multiply(q)
 	n.changed = true
 }
 
-// Quaternion returns the current quaternion
+// Quaternion returns the current quaternion.
 func (n *Node) Quaternion() math32.Quaternion {
 
 	return n.quaternion
 }
 
-// SetScale sets this node scale fields
+// SetScale sets the scale.
 func (n *Node) SetScale(x, y, z float32) {
 
 	n.scale.Set(x, y, z)
 	n.changed = true
 }
 
-// SetScaleVec sets this node scale from a pointer to a Vector3
+// SetScaleVec sets the scale based on the specified vector pointer.
 func (n *Node) SetScaleVec(scale *math32.Vector3) {
 
 	n.scale = *scale
 	n.changed = true
 }
 
-// SetScaleX sets the X scale of this node
+// SetScaleX sets the X scale.
 func (n *Node) SetScaleX(sx float32) {
 
 	n.scale.X = sx
 	n.changed = true
 }
 
-// SetScaleY sets the Y scale of this node
+// SetScaleY sets the Y scale.
 func (n *Node) SetScaleY(sy float32) {
 
 	n.scale.Y = sy
 	n.changed = true
 }
 
-// SetScaleZ sets the Z scale of this node
+// SetScaleZ sets the Z scale.
 func (n *Node) SetScaleZ(sz float32) {
 
 	n.scale.Z = sz
 	n.changed = true
 }
 
-// Scale returns the current scale
+// Scale returns the current scale.
 func (n *Node) Scale() math32.Vector3 {
 
 	return n.scale
 }
 
-// SetDirection sets this node initial direction vector
+// SetDirection sets the direction.
 func (n *Node) SetDirection(x, y, z float32) {
 
 	n.direction.Set(x, y, z)
 	n.changed = true
 }
 
-// SetDirectionVec sets this node initial direction vector from a pointer to Vector3
+// SetDirectionVec sets the direction based on a vector pointer.
 func (n *Node) SetDirectionVec(vdir *math32.Vector3) {
 
 	n.direction = *vdir
 	n.changed = true
 }
 
-// Direction returns this node initial direction
+// Direction returns the direction.
 func (n *Node) Direction() math32.Vector3 {
 
 	return n.direction
 }
 
-// SetMatrix sets this node local transformation matrix
+// SetMatrix sets the local transformation matrix.
 func (n *Node) SetMatrix(m *math32.Matrix4) {
 
 	n.matrix = *m
 	n.changed = true
 }
 
-// Matrix returns a copy of this node local transformation matrix
+// Matrix returns a copy of the local transformation matrix.
 func (n *Node) Matrix() math32.Matrix4 {
 
 	return n.matrix
-}
-
-// SetVisible sets the node visibility state
-func (n *Node) SetVisible(state bool) {
-
-	n.visible = state
-	n.changed = true
-}
-
-// Visible returns the node visibility state
-func (n *Node) Visible() bool {
-
-	return n.visible
 }
 
 // WorldPosition updates this node world matrix and gets
@@ -480,95 +584,4 @@ func (n *Node) UpdateMatrixWorld() {
 	for _, ichild := range n.children {
 		ichild.UpdateMatrixWorld()
 	}
-}
-
-// SetParent sets this node parent
-func (n *Node) SetParent(iparent INode) {
-
-	n.parent = iparent
-}
-
-// Parent returns this node parent
-func (n *Node) Parent() INode {
-
-	return n.parent
-}
-
-// Children returns the list of this node children
-func (n *Node) Children() []INode {
-
-	return n.children
-}
-
-// Add adds the specified INode to this node list of children
-func (n *Node) Add(ichild INode) *Node {
-
-	child := ichild.GetNode()
-	if n == child {
-		panic("Node.Add: object can't be added as a child of itself")
-	}
-	// If this child already has a parent,
-	// removes it from this parent children list
-	if child.parent != nil {
-		child.parent.GetNode().Remove(ichild)
-	}
-	child.parent = n
-	n.children = append(n.children, ichild)
-	return n
-}
-
-// Remove removes the specified INode from this node list of children
-// Returns true if found or false otherwise
-func (n *Node) Remove(ichild INode) bool {
-
-	for pos, current := range n.children {
-		if current == ichild {
-			copy(n.children[pos:], n.children[pos+1:])
-			n.children[len(n.children)-1] = nil
-			n.children = n.children[:len(n.children)-1]
-			ichild.GetNode().parent = nil
-			return true
-		}
-	}
-	return false
-}
-
-// RemoveAll removes all children from this node
-func (n *Node) RemoveAll(recurs bool) {
-
-	for pos, ichild := range n.children {
-		n.children[pos] = nil
-		ichild.GetNode().parent = nil
-		if recurs {
-			ichild.GetNode().RemoveAll(recurs)
-		}
-	}
-	n.children = n.children[0:0]
-}
-
-// DisposeChildren removes and disposes all children of this
-// node and if 'recurs' is true for each of its children recursively.
-func (n *Node) DisposeChildren(recurs bool) {
-
-	for pos, ichild := range n.children {
-		n.children[pos] = nil
-		ichild.GetNode().parent = nil
-		if recurs {
-			ichild.GetNode().DisposeChildren(true)
-		}
-		ichild.Dispose()
-	}
-	n.children = n.children[0:0]
-}
-
-// SetUserData sets this node associated generic user data
-func (n *Node) SetUserData(data interface{}) {
-
-	n.userData = data
-}
-
-// UserData returns this node associated generic user data
-func (n *Node) UserData() interface{} {
-
-	return n.userData
 }
