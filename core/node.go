@@ -229,21 +229,68 @@ func (n *Node) Children() []INode {
 	return n.children
 }
 
-// Add adds the specified INode to the list of children.
+// Add adds the specified node to the list of children and sets its parent pointer.
+// If the specified node had a parent, the specified node is removed from the original parent's list of children.
 func (n *Node) Add(ichild INode) *Node {
+
+	n.setParentOf(ichild)
+	n.children = append(n.children, ichild)
+	return n
+}
+
+// AddAt adds the specified node to the list of children at the specified index and sets its parent pointer.
+// If the specified node had a parent, the specified node is removed from the original parent's list of children.
+func (n *Node) AddAt(idx int, ichild INode) {
+
+	// Validate position
+	if idx < 0 || idx > len(n.children) {
+		panic("Node.AddAt: invalid position")
+	}
+
+	n.setParentOf(ichild)
+
+	// Insert child in the specified position
+	n.children = append(n.children, nil)
+	copy(n.children[idx+1:], n.children[idx:])
+	n.children[idx] = ichild
+}
+
+// setParentOf is used by Add and AddAt.
+// It verifies that the node is not being added to itself and sets the parent pointer of the specified node.
+// If the specified node had a parent, the specified node is removed from the original parent's list of children.
+// It does not add the specified node to the list of children.
+func (n *Node) setParentOf(ichild INode) {
 
 	child := ichild.GetNode()
 	if n == child {
-		panic("Node.Add: object can't be added as a child of itself")
+		panic("Node.{Add,AddAt}: object can't be added as a child of itself")
 	}
-	// If this child already has a parent,
-	// removes it from this parent children list
+	// If the specified node already has a parent,
+	// remove it from the original parent's list of children
 	if child.parent != nil {
 		child.parent.GetNode().Remove(ichild)
 	}
 	child.parent = n
-	n.children = append(n.children, ichild)
-	return n
+}
+
+// ChildAt returns the child at the specified index.
+func (n *Node) ChildAt(idx int) INode {
+
+	if idx < 0 || idx >= len(n.children) {
+		return nil
+	}
+	return n.children[idx]
+}
+
+// ChildIndex returns the index of the specified child (-1 if not found).
+func (n *Node) ChildIndex(ichild INode) int {
+
+	for idx := 0; idx < len(n.children); idx++ {
+		if n.children[idx] == ichild {
+			return idx
+		}
+	}
+	return -1
 }
 
 // Remove removes the specified INode from the list of children.
@@ -260,6 +307,24 @@ func (n *Node) Remove(ichild INode) bool {
 		}
 	}
 	return false
+}
+
+// RemoveAt removes the child at the specified index.
+func (n *Node) RemoveAt(idx int) INode {
+
+	// Validate position
+	if idx < 0 || idx >= len(n.children) {
+		panic("Node.RemoveAt: invalid position")
+	}
+
+	child := n.children[idx]
+
+	// Remove child from children list
+	copy(n.children[idx:], n.children[idx+1:])
+	n.children[len(n.children)-1] = nil
+	n.children = n.children[:len(n.children)-1]
+
+	return child
 }
 
 // RemoveAll removes all children.
