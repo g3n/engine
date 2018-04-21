@@ -56,7 +56,7 @@ func (f *Folder) Initialize(text string, width float32, contentPanel IPanel) {
 
 	// Create icon
 	f.icon.initialize("", StyleDefault().FontIcon)
-	f.icon.SetFontSize(f.label.FontSize() * 1.3)
+	f.icon.SetFontSize(StyleDefault().Label.PointSize * 1.3)
 	f.Panel.Add(&f.icon)
 
 	// Setup content panel

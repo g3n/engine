@@ -95,7 +95,7 @@ func (ed *Edit) Text() string {
 // SetFontSize sets label font size (overrides Label.SetFontSize)
 func (ed *Edit) SetFontSize(size float64) *Edit {
 
-	ed.Label.fontSize = size
+	ed.Label.SetFontSize(size)
 	ed.redraw(ed.focus)
 	return ed
 }

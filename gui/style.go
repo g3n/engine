@@ -12,6 +12,7 @@ import (
 type Style struct {
 	Font          *text.Font
 	FontIcon      *text.Font
+	Label         LabelStyle
 	Button        ButtonStyles
 	CheckRadio    CheckRadioStyles
 	Edit          EditStyles

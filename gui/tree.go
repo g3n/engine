@@ -212,7 +212,7 @@ func newTreeNode(text string, tree *Tree, parNode *TreeNode) *TreeNode {
 
 	// Create node icon
 	n.icon.initialize("", StyleDefault().FontIcon)
-	n.icon.SetFontSize(n.label.FontSize() * 1.3)
+	n.icon.SetFontSize(StyleDefault().Label.PointSize * 1.3)
 	n.Panel.Add(&n.icon)
 
 	// Subscribe to events

@@ -79,7 +79,7 @@ func NewButton(text string) *Button {
 // If there is currently a selected image, it is removed
 func (b *Button) SetIcon(icode string) {
 
-	ico := NewLabel(icode, true)
+	ico := NewIcon(icode)
 	if b.image != nil {
 		b.Panel.Remove(b.image)
 		b.image = nil

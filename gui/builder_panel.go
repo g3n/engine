@@ -89,7 +89,7 @@ func buildLabel(b *Builder, am map[string]interface{}) (IPanel, error) {
 
 	var label *Label
 	if am[AttribIcon] != nil {
-		label = NewLabel(am[AttribIcon].(string), true)
+		label = NewIcon(am[AttribIcon].(string))
 	} else if am[AttribText] != nil {
 		label = NewLabel(am[AttribText].(string))
 	} else {
