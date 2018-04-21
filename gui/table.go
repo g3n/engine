@@ -794,8 +794,8 @@ func (t *Table) onCursor(evname string, ev interface{}) {
 func (t *Table) onCursorPos(evname string, ev interface{}) {
 
 	// Convert mouse window coordinates to table content coordinates
-	kev := ev.(*window.CursorEvent)
-	cx, _ := t.ContentCoords(kev.Xpos, kev.Ypos)
+	cev := ev.(*window.CursorEvent)
+	cx, _ := t.ContentCoords(cev.Xpos, cev.Ypos)
 
 	// If user is dragging the resizer, updates its position
 	if t.resizing {
