@@ -152,33 +152,43 @@ func (r *Root) StopPropagation(events int) {
 	r.stopPropagation |= events
 }
 
-// SetCursorNormal sets the cursor of the associated window to
-// standard type
+// SetCursorNormal sets the cursor over the associated window to the standard type.
 func (r *Root) SetCursorNormal() {
 
 	r.win.SetStandardCursor(window.ArrowCursor)
 }
 
-// SetCursorDrag sets the cursor of the associated window to
-// drag type
-func (r *Root) SetCursorDrag() {
+// SetCursorText sets the cursor over the associated window to the I-Beam type.
+func (r *Root) SetCursorText() {
+
+	r.win.SetStandardCursor(window.IBeamCursor)
+}
+
+// SetCursorText sets the cursor over the associated window to the crosshair type.
+func (r *Root) SetCursorCrosshair() {
+
+	r.win.SetStandardCursor(window.CrosshairCursor)
+}
+
+// SetCursorHand sets the cursor over the associated window to the hand type.
+func (r *Root) SetCursorHand() {
 
 	r.win.SetStandardCursor(window.HandCursor)
 }
 
-// SetCursorHResize sets the cursor of the associated window to
-// horizontal resize type
+// SetCursorHResize sets the cursor over the associated window to the horizontal resize type.
 func (r *Root) SetCursorHResize() {
 
 	r.win.SetStandardCursor(window.HResizeCursor)
 }
 
-// SetCursorVResize sets the cursor of the associated window to
-// vertical resize type
+// SetCursorVResize sets the cursor over the associated window to the vertical resize type.
 func (r *Root) SetCursorVResize() {
 
 	r.win.SetStandardCursor(window.VResizeCursor)
 }
+
+// TODO allow setting a custom cursor
 
 // onKey is called when key events are received
 func (r *Root) onKey(evname string, ev interface{}) {
@@ -400,6 +410,11 @@ func (r *Root) canDispatch(ipan IPanel) bool {
 	}
 	return checkChildren(r.modalPanel)
 }
+
+//func (r *Root) applyStyleRecursively(s *Style) {
+//	// TODO
+//	// This should probably be in Panel ?
+//}
 
 // For sorting panels by Z coordinate
 type listPanelZ []IPanel

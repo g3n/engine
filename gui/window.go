@@ -320,7 +320,7 @@ func (wt *WindowTitle) onMouse(evname string, ev interface{}) {
 func (wt *WindowTitle) onCursor(evname string, ev interface{}) {
 
 	if evname == OnCursorEnter {
-		wt.win.root.SetCursorDrag()
+		wt.win.root.SetCursorHand()
 	} else if evname == OnCursorLeave {
 		wt.win.root.SetCursorNormal()
 	} else if evname == OnCursor {
