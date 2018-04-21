@@ -25,11 +25,6 @@ func NewLightStyle() *Style {
 	if err != nil {
 		panic(err)
 	}
-	font.SetLineSpacing(1.0)
-	font.SetSize(14)
-	font.SetDPI(72)
-	font.SetFgColor4(math32.NewColor4("black"))
-	font.SetBgColor4(math32.NewColor4("black", 0))
 	s.Font = font
 
 	// Creates icon font
@@ -38,11 +33,6 @@ func NewLightStyle() *Style {
 	if err != nil {
 		panic(err)
 	}
-	fontIcon.SetLineSpacing(1.0)
-	fontIcon.SetSize(14)
-	fontIcon.SetDPI(72)
-	fontIcon.SetFgColor4(math32.NewColor4("black"))
-	fontIcon.SetBgColor4(math32.NewColor4("white", 0))
 	s.FontIcon = fontIcon
 
 	zeroBounds := RectBounds{0, 0, 0, 0}
@@ -62,6 +52,16 @@ func NewLightStyle() *Style {
 	fgColorSel := math32.Color4{0, 0, 0, 1}
 	fgColorDis := math32.Color4{0.4, 0.4, 0.4, 1}
 
+	// Label style
+	s.Label = LabelStyle{}
+	s.Label.FontAttributes = text.FontAttributes{}
+	s.Label.FontAttributes.PointSize = 14
+	s.Label.FontAttributes.DPI = 72
+	s.Label.FontAttributes.Hinting = text.HintingNone
+	s.Label.FontAttributes.LineSpacing = 1.0
+	s.Label.BgColor = math32.Color4{0,0,0,0}
+	s.Label.FgColor = math32.Color4{0,0,0,1}
+
 	// Button styles
 	s.Button = ButtonStyles{}
 	s.Button.Normal = ButtonStyle{}
@@ -74,7 +74,8 @@ func NewLightStyle() *Style {
 	s.Button.Over.BgColor = bgColorOver
 	s.Button.Focus = s.Button.Over
 	s.Button.Pressed = s.Button.Over
-	s.Button.Pressed.Border = twoBounds
+	s.Button.Pressed.Border = RectBounds{2, 2, 2, 2}
+	s.Button.Pressed.Padding = RectBounds{2, 2, 0, 4}
 	s.Button.Disabled = s.Button.Normal
 	s.Button.Disabled.BorderColor = borderColorDis
 	s.Button.Disabled.FgColor = fgColorDis

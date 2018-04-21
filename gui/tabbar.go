@@ -78,7 +78,7 @@ func NewTabBar(width, height float32) *TabBar {
 	tb.Add(tb.list)
 
 	// Creates list icon button
-	tb.listButton = NewLabel(tb.styles.ListButtonIcon, true)
+	tb.listButton = NewIcon(tb.styles.ListButtonIcon)
 	tb.listButton.SetPaddingsFrom(&tb.styles.ListButtonPaddings)
 	tb.listButton.Subscribe(OnMouseDown, tb.onListButton)
 	tb.Add(tb.listButton)
@@ -409,7 +409,7 @@ func newTab(text string, tb *TabBar, styles *TabStyles) *Tab {
 	// Setup the header panel
 	tab.header.Initialize(0, 0)
 	tab.label = NewLabel(text)
-	tab.iconClose = NewLabel(styles.IconClose, true)
+	tab.iconClose = NewIcon(styles.IconClose)
 	tab.header.Add(tab.label)
 	tab.header.Add(tab.iconClose)
 	// Creates the bottom panel
@@ -493,7 +493,7 @@ func (tab *Tab) SetIcon(icon string) *Tab {
 	}
 	// Creates or updates icon
 	if tab.icon == nil {
-		tab.icon = NewLabel(icon, true)
+		tab.icon = NewIcon(icon)
 		tab.icon.SetPaddingsFrom(&tab.styles.IconPaddings)
 		tab.header.Add(tab.icon)
 	} else {
