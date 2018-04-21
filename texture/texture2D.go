@@ -140,7 +140,7 @@ func (t *Texture2D) SetImage(imgfile string) error {
 	return nil
 }
 
-// SetFromRGBA sets the texture data from the speficied image.RGBA object
+// SetFromRGBA sets the texture data from the specified image.RGBA object
 func (t *Texture2D) SetFromRGBA(rgba *image.RGBA) {
 
 	t.SetData(

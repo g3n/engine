@@ -18,7 +18,7 @@ package gui
 // 	AlignCenter: Try to align the group of children in the center if the panel height is
 // 	greater the the sum of the children heights + spacing.
 //
-// 	AlignHeight - Try to align the individual children vertically with the same same space between each other.
+// 	AlignHeight: Try to align the individual children vertically with the same same space between each other.
 // 	Each individual child can be aligned horizontally by SetLayoutParameters()
 //
 // If the layout method SetAutoHeight(true) is called, the panel minimum content height will be the
