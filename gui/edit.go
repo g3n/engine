@@ -279,12 +279,14 @@ func (ed *Edit) onMouse(evname string, ev interface{}) {
 func (ed *Edit) onCursor(evname string, ev interface{}) {
 
 	if evname == OnCursorEnter {
+		ed.root.SetCursorText()
 		ed.cursorOver = true
 		ed.update()
 		ed.root.StopPropagation(Stop3D)
 		return
 	}
 	if evname == OnCursorLeave {
+		ed.root.SetCursorNormal()
 		ed.cursorOver = false
 		ed.update()
 		ed.root.StopPropagation(Stop3D)
