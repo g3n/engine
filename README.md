@@ -12,7 +12,7 @@ G3N was heavily inspired by [three.js](https://threejs.org/).
 ### **To see G3N in action try the [G3N demo](https://github.com/g3n/g3nd) or the [Gokoban](https://github.com/danaugrs/gokoban) award winning game.**
 
 <p align="center">
-  <img style="float: right;" src="https://github.com/g3n/g3nd/blob/master/data/images/g3nd_screenshots.png" alt="G3ND In Action"/>
+  <img style="float: right;" src="https://raw.githubusercontent.com/g3n/g3nd/master/data/images/g3nd_screenshots.png" alt="G3ND In Action"/>
 </p>
 
 ## Highlighted Projects
