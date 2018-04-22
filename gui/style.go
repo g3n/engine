@@ -5,11 +5,13 @@
 package gui
 
 import (
+	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/text"
 )
 
 // Style contains the styles for all GUI elements
 type Style struct {
+	Color         ColorStyle
 	Font          *text.Font
 	FontIcon      *text.Font
 	Label         LabelStyle
@@ -31,6 +33,18 @@ type Style struct {
 	Table         TableStyles
 	ImageButton   ImageButtonStyles
 	TabBar        TabBarStyles
+}
+
+// ColorStyle defines the main colors used.
+type ColorStyle struct {
+	BgDark    math32.Color4
+	BgMed     math32.Color4
+	BgNormal  math32.Color4
+	BgOver    math32.Color4
+	Highlight math32.Color4
+	Select    math32.Color4
+	Text      math32.Color4
+	TextDis   math32.Color4
 }
 
 // States that a GUI element can be in
