@@ -9,7 +9,7 @@ var defaultStyle *Style
 // init sets the default style
 func init() {
 
-	defaultStyle = NewLightStyle()
+	defaultStyle = NewDarkStyle()
 }
 
 // StyleDefault returns a pointer to the current default style

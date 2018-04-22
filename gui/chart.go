@@ -101,6 +101,7 @@ func (ch *Chart) SetTitle(title string, size float64) {
 	// Sets title
 	if ch.title == nil {
 		ch.title = NewLabel(title)
+		ch.title.SetColor4(math32.NewColor4("black"))
 		ch.Add(ch.title)
 	}
 	ch.title.SetText(title)
@@ -170,6 +171,7 @@ func (ch *Chart) SetScaleX(lines int, color *math32.Color) {
 	value := ch.firstX
 	for i := 0; i < lines; i++ {
 		l := NewLabel(fmt.Sprintf(ch.formatX, value))
+		l.SetColor4(math32.NewColor4("black"))
 		l.SetFontSize(ch.fontSizeX)
 		ch.Add(l)
 		ch.labelsX = append(ch.labelsX, l)
@@ -220,6 +222,7 @@ func (ch *Chart) SetScaleY(lines int, color *math32.Color) {
 	step := (ch.maxY - ch.minY) / float32(lines-1)
 	for i := 0; i < lines; i++ {
 		l := NewLabel(fmt.Sprintf(ch.formatY, value))
+		l.SetColor4(math32.NewColor4("black"))
 		l.SetFontSize(ch.fontSizeY)
 		ch.Add(l)
 		ch.labelsY = append(ch.labelsY, l)
