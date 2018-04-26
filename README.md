@@ -7,12 +7,12 @@
 <p><h1 align="center">G3N - Go 3D Game Engine</h1></p>
 
 G3N (pronounced "gen") is an OpenGL 3D game engine written in Go.
-G3N was heavily inspired by the [three.js](https://threejs.org/) Javascript 3D library.
+G3N was heavily inspired by [three.js](https://threejs.org/).
 
-### **To see G3N in action try the [G3N demo](https://github.com/g3n/g3nd) or the [Gokoban](https://github.com/danaugrs/gokoban) highlighted project.**
+### **To see G3N in action try the [G3N demo](https://github.com/g3n/g3nd) or the [Gokoban](https://github.com/danaugrs/gokoban) award winning game.**
 
 <p align="center">
-  <img style="float: right;" src="https://github.com/g3n/g3n.github.io/blob/master/g3n_banner_small.png" alt="G3N Banner"/>
+  <img style="float: right;" src="https://raw.githubusercontent.com/g3n/g3nd/master/data/images/g3nd_screenshots.png" alt="G3ND In Action"/>
 </p>
 
 ## Highlighted Projects
@@ -73,6 +73,10 @@ install the packages. Make sure your GOPATH is set correctly.
   (horizontal box, vertical box, grid, dock)
 * Spatial audio support allowing playing sound from wave or Ogg Vorbis files.
 * Users' applications can use their own vertex and fragment shaders.
+
+<p align="center">
+  <img style="float: right;" src="https://github.com/g3n/g3n.github.io/blob/master/g3n_banner_small.png" alt="G3N Banner"/>
+</p>
 
 ## Basic application
 
@@ -207,4 +211,3 @@ send pull requests.
 ## Community
 
 Join our [channel](https://gophers.slack.com/messages/g3n) on Gophers Slack.
-
