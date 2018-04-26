@@ -6,10 +6,10 @@
 // See API reference at: https://xiph.org/vorbis/doc/libvorbis/reference.html
 package vorbis
 
-// #cgo darwin   CFLAGS:  -DGO_DARWIN  -I/usr/include/vorbis
+// #cgo darwin   CFLAGS:  -DGO_DARWIN  -I/usr/include/vorbis -I/usr/local/include/vorbis
 // #cgo linux    CFLAGS:  -DGO_LINUX   -I/usr/include/vorbis
 // #cgo windows  CFLAGS:  -DGO_WINDOWS -I${SRCDIR}/../windows/libvorbis-1.3.5/include/vorbis -I${SRCDIR}/../windows/libogg-1.3.3/include
-// #cgo darwin   LDFLAGS: -lvorbis
+// #cgo darwin   LDFLAGS: -L/usr/lib -L/usr/local/lib -lvorbis
 // #cgo linux    LDFLAGS: -lvorbis
 // #cgo windows  LDFLAGS: -L${SRCDIR}/../windows/bin -llibvorbis
 // #include "codec.h"

@@ -153,8 +153,38 @@ void glapiCheckError(int check) {
 // Internal function to abort process when error
 static void panic(GLenum err, const char* fname) {
 
-	printf("\nGLAPI Error: %d calling: %s\n", err, fname);
-	exit(1);
+		const char *msg;
+		switch(err) {
+    	case GL_NO_ERROR:
+    		msg = "No error";
+    		break;
+    	case GL_INVALID_ENUM:
+    		msg = "An unacceptable value is specified for an enumerated argument";
+    		break;
+    	case GL_INVALID_VALUE:
+    		msg = "A numeric argument is out of range";
+    		break;
+    	case GL_INVALID_OPERATION:
+    		msg = "The specified operation is not allowed in the current state";
+    		break;
+    	case GL_INVALID_FRAMEBUFFER_OPERATION:
+    		msg = "The framebuffer object is not complete";
+    		break;
+    	case GL_OUT_OF_MEMORY:
+    		msg = "There is not enough memory left to execute the command";
+    		break;
+    	case GL_STACK_UNDERFLOW:
+    		msg = "An attempt has been made to perform an operation that would cause an internal stack to underflow";
+    		break;
+    	case GL_STACK_OVERFLOW:
+    		msg = "An attempt has been made to perform an operation that would cause an internal stack to overflow";
+    		break;
+    	default:
+    		msg = "Unexpected error";
+    		break;
+    }
+    printf("\nGLAPI Error: %s (%d) calling: %s\n", msg, err, fname);
+    exit(1);
 }
 
 
