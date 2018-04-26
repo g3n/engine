@@ -41,7 +41,6 @@ func NewAxisHelper(size float32) *AxisHelper {
 
 	// Creates line material
 	mat := material.NewBasic()
-	mat.SetLineWidth(2.0)
 
 	// Initialize lines with the specified geometry and material
 	axis.Lines.Init(geom, mat)
