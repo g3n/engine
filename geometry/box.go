@@ -12,7 +12,7 @@ import (
 // Box represents the geometry of a rectangular cuboid.
 // See https://en.wikipedia.org/wiki/Cuboid#Rectangular_cuboid for more details.
 // A Box geometry is defined by its width, height, and length and also by the number
-// of segments in each dimension. All properties must be greater than zero.
+// of segments in each dimension.
 type Box struct {
 	Geometry
 	Width          float32
