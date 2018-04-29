@@ -12,30 +12,30 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
-// NormalsHelper is the visual representation of the normals of a target object
+// NormalsHelper is the visual representation of the normals of a target object.
 type NormalsHelper struct {
 	Lines
-	size   float32
-	target *core.Node
-	tgeom  *geometry.Geometry
+	size           float32
+	targetNode     *core.Node
+	targetGeometry *geometry.Geometry
 }
 
 // NewNormalsHelper creates, initializes and returns a pointer to Normals helper object.
-// This helper shows the normal vectors of the specified object.
+// This helper shows the surface normals of the specified object.
 func NewNormalsHelper(ig IGraphic, size float32, color *math32.Color, lineWidth float32) *NormalsHelper {
 
 	// Creates new Normals helper
 	nh := new(NormalsHelper)
 	nh.size = size
 
-	// Saves the object to show the normals
-	nh.target = ig.GetNode()
+	// Save the object to show the normals
+	nh.targetNode = ig.GetNode()
 
 	// Get the geometry of the target object
-	nh.tgeom = ig.GetGeometry()
+	nh.targetGeometry = ig.GetGeometry()
 
 	// Get the number of target vertex positions
-	vertices := nh.tgeom.VBO("VertexPosition")
+	vertices := nh.targetGeometry.VBO("VertexPosition")
 	n := vertices.Buffer().Size() * 2
 
 	// Creates this helper geometry
@@ -54,8 +54,8 @@ func NewNormalsHelper(ig IGraphic, size float32, color *math32.Color, lineWidth 
 	return nh
 }
 
-// Update should be called in the render loop to update the normals from the
-// target object
+// Update should be called in the render loop to
+// update the normals based on the target object.
 func (nh *NormalsHelper) Update() {
 
 	var v1 math32.Vector3
@@ -63,29 +63,29 @@ func (nh *NormalsHelper) Update() {
 	var normalMatrix math32.Matrix3
 
 	// Updates the target object matrix and get its normal matrix
-	matrixWorld := nh.target.MatrixWorld()
+	matrixWorld := nh.targetNode.MatrixWorld()
 	normalMatrix.GetNormalMatrix(&matrixWorld)
 
 	// Get the target positions and normals buffers
-	tposvbo := nh.tgeom.VBO("VertexPosition")
-	tpositions := tposvbo.Buffer()
-	tnormvbo := nh.tgeom.VBO("VertexNormal")
-	tnormals := tnormvbo.Buffer()
+	tPosVBO := nh.targetGeometry.VBO("VertexPosition")
+	tPositions := tPosVBO.Buffer()
+	tNormVBO := nh.targetGeometry.VBO("VertexNormal")
+	tNormals := tNormVBO.Buffer()
 
 	// Get this object positions buffer
 	geom := nh.GetGeometry()
-	posvbo := geom.VBO("VertexPosition")
-	positions := posvbo.Buffer()
+	posVBO := geom.VBO("VertexPosition")
+	positions := posVBO.Buffer()
 
 	// For each target object vertex position:
-	for pos := 0; pos < tpositions.Size(); pos += 3 {
+	for pos := 0; pos < tPositions.Size(); pos += 3 {
 		// Get the target vertex position and apply the current world matrix transform
 		// to get the base for this normal line segment.
-		tpositions.GetVector3(pos, &v1)
+		tPositions.GetVector3(pos, &v1)
 		v1.ApplyMatrix4(&matrixWorld)
 
 		// Calculates the end position of the normal line segment
-		tnormals.GetVector3(pos, &v2)
+		tNormals.GetVector3(pos, &v2)
 		v2.ApplyMatrix3(&normalMatrix).Normalize().MultiplyScalar(nh.size).Add(&v1)
 
 		// Sets the line segment representing the normal of the current target position
@@ -93,5 +93,5 @@ func (nh *NormalsHelper) Update() {
 		positions.SetVector3(2*pos, &v1)
 		positions.SetVector3(2*pos+3, &v2)
 	}
-	posvbo.Update()
+	posVBO.Update()
 }
