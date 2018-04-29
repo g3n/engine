@@ -139,5 +139,8 @@ func NewSegmentedBox(width, height, length float32, widthSegments, heightSegment
 	box.AddVBO(gls.NewVBO().AddAttrib("VertexNormal", 3).SetBuffer(normals))
 	box.AddVBO(gls.NewVBO().AddAttrib("VertexTexcoord", 2).SetBuffer(uvs))
 
+	box.boundingBox = math32.Box3{math32.Vector3{-wHalf, -hHalf, -lHalf}, math32.Vector3{wHalf, hHalf, lHalf}}
+	box.boundingBoxValid = true
+
 	return box
 }

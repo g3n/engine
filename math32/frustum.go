@@ -9,29 +9,19 @@ type Frustum struct {
 	planes []Plane
 }
 
+func NewFrustumFromMatrix(m *Matrix4) *Frustum {
+	f := new(Frustum)
+	f.planes = make([]Plane, 6)
+	f.SetFromMatrix(m)
+	return f
+}
+
 // NewFrustum returns a pointer to a new Frustum object
 func NewFrustum(p0, p1, p2, p3, p4, p5 *Plane) *Frustum {
 
 	f := new(Frustum)
 	f.planes = make([]Plane, 6)
-	if p0 != nil {
-		f.planes[0] = *p0
-	}
-	if p1 != nil {
-		f.planes[1] = *p1
-	}
-	if p2 != nil {
-		f.planes[2] = *p2
-	}
-	if p3 != nil {
-		f.planes[3] = *p3
-	}
-	if p4 != nil {
-		f.planes[4] = *p4
-	}
-	if p5 != nil {
-		f.planes[5] = *p5
-	}
+	f.Set(p0, p1, p2, p3, p4, p5)
 	return f
 }
 
@@ -143,9 +133,9 @@ func (f *Frustum) IntersectsBox(box *Box3) bool {
 			p2.X = box.Min.X
 		}
 		if plane.normal.Y > 0 {
-			p2.Y = box.Min.Y
+			p1.Y = box.Min.Y
 		} else {
-			p2.Y = box.Max.Y
+			p1.Y = box.Max.Y
 		}
 		if plane.normal.Y > 0 {
 			p2.Y = box.Max.Y
@@ -158,7 +148,7 @@ func (f *Frustum) IntersectsBox(box *Box3) bool {
 			p1.Z = box.Max.Z
 		}
 		if plane.normal.Z > 0 {
-			p1.Z = box.Max.Z
+			p2.Z = box.Max.Z
 		} else {
 			p2.Z = box.Min.Z
 		}

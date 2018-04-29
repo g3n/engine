@@ -11,6 +11,7 @@ import (
 	"github.com/g3n/engine/graphic"
 	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/light"
+	"github.com/g3n/engine/math32"
 )
 
 // Renderer renders a 3D scene and/or a 2D GUI on the current window.
@@ -27,7 +28,8 @@ type Renderer struct {
 	pointLights  []*light.Point             // Array of point
 	spotLights   []*light.Spot              // Array of spot lights for the scene
 	others       []core.INode               // Other nodes (audio, players, etc)
-	grmats       []*graphic.GraphicMaterial // Array of all graphic materials for scene
+	grmats       []*graphic.GraphicMaterial // Array of rendered graphic materials for scene
+	cgrmats      []*graphic.GraphicMaterial // Array of culled graphic materials for scene
 	rinfo        core.RenderInfo            // Preallocated Render info
 	specs        ShaderSpecs                // Preallocated Shader specs
 	redrawGui    bool                       // Flag indicating the gui must be redrawn completely
@@ -59,6 +61,7 @@ func NewRenderer(gs *gls.GLS) *Renderer {
 	r.spotLights = make([]*light.Spot, 0)
 	r.others = make([]core.INode, 0)
 	r.grmats = make([]*graphic.GraphicMaterial, 0)
+	r.cgrmats = make([]*graphic.GraphicMaterial, 0)
 	r.panList = make([]gui.IPanel, 0)
 	r.frameBuffers = 2
 	return r
@@ -170,6 +173,12 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 	r.spotLights = r.spotLights[0:0]
 	r.others = r.others[0:0]
 	r.grmats = r.grmats[0:0]
+	r.cgrmats = r.cgrmats[0:0]
+
+	// Prepare for frustum culling
+	var proj math32.Matrix4
+	proj.MultiplyMatrices(&r.rinfo.ProjMatrix, &r.rinfo.ViewMatrix)
+	frustum := math32.NewFrustumFromMatrix(&proj)
 
 	// Internal function to classify a node and its children
 	var classifyNode func(inode core.INode)
@@ -185,9 +194,26 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		igr, ok := inode.(graphic.IGraphic)
 		if ok {
 			if igr.Renderable() {
-				// Appends to list each graphic material for this graphic
+
 				gr := igr.GetGraphic()
 				materials := gr.Materials()
+
+				// Frustum culling
+				if igr.Cullable() {
+					mw := gr.MatrixWorld()
+					geom := igr.GetGeometry()
+					bb := geom.BoundingBox()
+					bb.ApplyMatrix4(&mw)
+					if !frustum.IntersectsBox(&bb) {
+						for i := 0; i < len(materials); i++ {
+							// Record any culled materials
+							r.cgrmats = append(r.cgrmats, &materials[i])
+						}
+						return
+					}
+				}
+
+				// Appends to list each graphic material for this graphic
 				for i := 0; i < len(materials); i++ {
 					r.grmats = append(r.grmats, &materials[i])
 				}
@@ -223,6 +249,8 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 
 	// Classify all scene nodes
 	classifyNode(scene)
+
+	//log.Debug("Rendered/Culled: %v/%v", len(r.grmats), len(r.cgrmats))
 
 	// Sets lights count in shader specs
 	r.specs.AmbientLightsMax = len(r.ambLights)
@@ -304,7 +332,7 @@ func (r *Renderer) renderGui() error {
 
 	// If no 3D scene was rendered sets Gui panels as renderable for background
 	// User must define the colors
-	if len(r.grmats) == 0 {
+	if (len(r.grmats) == 0) && (len(r.cgrmats) == 0) {
 		r.panelGui.SetRenderable(true)
 		if r.panel3D != nil {
 			r.panel3D.SetRenderable(true)

@@ -21,6 +21,7 @@ type Graphic struct {
 	materials  []GraphicMaterial  // Materials
 	mode       uint32             // OpenGL primitive
 	renderable bool               // Renderable flag
+	cullable   bool               // Cullable flag
 }
 
 // GraphicMaterial specifies the material to be used for
@@ -40,6 +41,8 @@ type IGraphic interface {
 	GetGeometry() *geometry.Geometry
 	Renderable() bool
 	SetRenderable(bool)
+	Cullable() bool
+	SetCullable(bool)
 	RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo)
 }
 
@@ -61,6 +64,7 @@ func (gr *Graphic) Init(igeom geometry.IGeometry, mode uint32) *Graphic {
 	gr.mode = mode
 	gr.materials = make([]GraphicMaterial, 0)
 	gr.renderable = true
+	gr.cullable = true
 	return gr
 }
 
@@ -88,17 +92,31 @@ func (gr *Graphic) Dispose() {
 }
 
 // SetRenderable satisfies the IGraphic interface and
-// sets the renderable state of this Graphic (default = true)
+// sets the renderable state of this Graphic (default = true).
 func (gr *Graphic) SetRenderable(state bool) {
 
 	gr.renderable = state
 }
 
 // Renderable satisfies the IGraphic interface and
-// returns the renderable state of this graphic
+// returns the renderable state of this graphic.
 func (gr *Graphic) Renderable() bool {
 
 	return gr.renderable
+}
+
+// SetCullable satisfies the IGraphic interface and
+// sets the cullable state of this Graphic (default = true).
+func (gr *Graphic) SetCullable(state bool) {
+
+	gr.cullable = state
+}
+
+// Cullable satisfies the IGraphic interface and
+// returns the cullable state of this graphic.
+func (gr *Graphic) Cullable() bool {
+
+	return gr.cullable
 }
 
 // AddMaterial adds a material for the specified subset of vertices.
