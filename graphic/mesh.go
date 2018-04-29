@@ -155,9 +155,7 @@ func (m *Mesh) Raycast(rc *core.Raycaster, intersects *[]core.Intersect) {
 	positions := vboPos.Buffer()
 	indices := geom.Indices()
 
-	var vA math32.Vector3
-	var vB math32.Vector3
-	var vC math32.Vector3
+	var vA, vB, vC math32.Vector3
 
 	// Geometry has indexed vertices
 	if indices.Size() > 0 {
@@ -181,7 +179,9 @@ func (m *Mesh) Raycast(rc *core.Raycaster, intersects *[]core.Intersect) {
 		}
 		// Geometry has NO indexed vertices
 	} else {
-		for i := 0; i < positions.Size(); i += 9 {
+		stride := vboPos.Stride()
+		offset := vboPos.AttribOffset("VertexPosition")
+		for i := offset; i < positions.Size(); i += stride {
 			// Get face indices
 			a := i / 3
 			b := a + 1

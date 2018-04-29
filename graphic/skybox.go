@@ -35,6 +35,7 @@ func NewSkybox(data SkyboxData) (*Skybox, error) {
 
 	geom := geometry.NewCube(1)
 	skybox.Graphic.Init(geom, gls.TRIANGLES)
+	skybox.Graphic.SetCullable(false)
 
 	for i := 0; i < 6; i++ {
 		tex, err := texture.NewTexture2DFromImage(data.DirAndPrefix + data.Suffixes[i] + "." + data.Extension)

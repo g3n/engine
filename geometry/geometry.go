@@ -139,10 +139,19 @@ func (g *Geometry) Indices() math32.ArrayU32 {
 // AddVBO adds a Vertex Buffer Object for this geometry
 func (g *Geometry) AddVBO(vbo *gls.VBO) {
 
+	// Check that the provided VBO doesn't have conflicting attributes with existing VBOs
+	for _, existingVbo := range g.vbos {
+		for _, attrib := range vbo.Attributes() {
+			if existingVbo.Attrib(attrib.Name) != nil {
+				panic("Geometry.AddVBO: geometry already has a VBO with attribute " + attrib.Name)
+			}
+		}
+	}
+
 	g.vbos = append(g.vbos, vbo)
 }
 
-// VBO returns a pointer to this geometry VBO for the specified attribute.
+// VBO returns a pointer to this geometry's VBO which contain the specified attribute.
 // Returns nil if the VBO is not found.
 func (g *Geometry) VBO(attrib string) *gls.VBO {
 
@@ -166,7 +175,7 @@ func (g *Geometry) Items() int {
 	if vbo.AttribCount() == 0 {
 		return 0
 	}
-	return vbo.Buffer().Bytes() / vbo.Stride()
+	return vbo.Buffer().Bytes() / vbo.StrideSize()
 }
 
 // BoundingBox computes the bounding box of the geometry if necessary
@@ -179,17 +188,19 @@ func (g *Geometry) BoundingBox() math32.Box3 {
 	}
 
 	// Get buffer with position vertices
-	vbPos := g.VBO("VertexPosition")
-	if vbPos == nil {
+	vboPos := g.VBO("VertexPosition")
+	if vboPos == nil {
 		return g.boundingBox
 	}
-	positions := vbPos.Buffer()
+	stride := vboPos.Stride()
+	offset := vboPos.AttribOffset("VertexPosition")
+	positions := vboPos.Buffer()
 
 	// Calculates bounding box
 	var vertex math32.Vector3
 	g.boundingBox.Min.Set(0, 0, 0)
 	g.boundingBox.Max.Set(0, 0, 0)
-	for i := 0; i < positions.Size(); i += 3 {
+	for i := offset; i < positions.Size(); i += stride {
 		positions.GetVector3(i, &vertex)
 		g.boundingBox.ExpandByPoint(&vertex)
 	}
@@ -207,11 +218,13 @@ func (g *Geometry) BoundingSphere() math32.Sphere {
 	}
 
 	// Get buffer with position vertices
-	vbPos := g.VBO("VertexPosition")
-	if vbPos == nil {
+	vboPos := g.VBO("VertexPosition")
+	if vboPos == nil {
 		return g.boundingSphere
 	}
-	positions := vbPos.Buffer()
+	stride := vboPos.Stride()
+	offset := vboPos.AttribOffset("VertexPosition")
+	positions := vboPos.Buffer()
 
 	// Get/calculates the bounding box
 	box := g.BoundingBox()
@@ -222,7 +235,7 @@ func (g *Geometry) BoundingSphere() math32.Sphere {
 
 	// Find the radius of the bounding sphere
 	maxRadiusSq := float32(0.0)
-	for i := 0; i < positions.Size(); i += 3 {
+	for i := offset; i < positions.Size(); i += stride {
 		var vertex math32.Vector3
 		positions.GetVector3(i, &vertex)
 		maxRadiusSq = math32.Max(maxRadiusSq, center.DistanceToSquared(&vertex))
@@ -247,9 +260,11 @@ func (g *Geometry) ApplyMatrix(m *math32.Matrix4) {
 	if vboPos == nil {
 		return
 	}
+	stride := vboPos.Stride()
+	offset := vboPos.AttribOffset("VertexPosition")
 	positions := vboPos.Buffer()
 	// Apply matrix to all position vertices
-	for i := 0; i < positions.Size(); i += 3 {
+	for i := offset; i < positions.Size(); i += stride {
 		var vertex math32.Vector3
 		positions.GetVector3(i, &vertex)
 		vertex.ApplyMatrix4(m)
@@ -262,11 +277,13 @@ func (g *Geometry) ApplyMatrix(m *math32.Matrix4) {
 	if vboNormals == nil {
 		return
 	}
+	stride = vboNormals.Stride()
+	offset = vboNormals.AttribOffset("VertexNormal")
 	normals := vboNormals.Buffer()
 	// Apply normal matrix to all normal vectors
 	var normalMatrix math32.Matrix3
 	normalMatrix.GetNormalMatrix(m)
-	for i := 0; i < normals.Size(); i += 3 {
+	for i := offset; i < normals.Size(); i += stride {
 		var vertex math32.Vector3
 		normals.GetVector3(i, &vertex)
 		vertex.ApplyMatrix3(&normalMatrix).Normalize()

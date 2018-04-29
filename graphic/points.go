@@ -96,11 +96,11 @@ func (p *Points) Raycast(rc *core.Raycaster, intersects *[]core.Intersect) {
 	}
 
 	// Get buffer with position vertices
-	vbPos := geom.VBO("VertexPosition")
-	if vbPos == nil {
+	vboPos := geom.VBO("VertexPosition")
+	if vboPos == nil {
 		panic("points.Raycast(): VertexPosition VBO not found")
 	}
-	positions := vbPos.Buffer()
+	positions := vboPos.Buffer()
 
 	var point math32.Vector3
 	indices := geom.Indices()
@@ -112,8 +112,10 @@ func (p *Points) Raycast(rc *core.Raycaster, intersects *[]core.Intersect) {
 			testPoint(&point, i)
 		}
 	} else {
-		for i := 0; i < positions.Size()/3; i++ {
-			positions.GetVector3(i*3, &point)
+		stride := vboPos.Stride()
+		offset := vboPos.AttribOffset("VertexPosition")
+		for i := offset; i < positions.Size(); i += stride {
+			positions.GetVector3(i, &point)
 			testPoint(&point, i)
 		}
 	}
