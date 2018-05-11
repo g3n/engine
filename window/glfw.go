@@ -339,3 +339,11 @@ func (w *glfwWindow) SetStandardCursor(cursor StandardCursor) {
 		panic("Invalid cursor")
 	}
 }
+
+func (w *glfwWindow) SetInputMode(mode InputMode, state int) {
+	w.win.SetInputMode(glfw.InputMode(mode), state)
+}
+
+func (w *glfwWindow) SetCursorPos(xpos, ypos float64) {
+	w.win.SetCursorPos(xpos, ypos)
+}
