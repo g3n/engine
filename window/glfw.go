@@ -344,10 +344,14 @@ func (w *glfwWindow) SetStandardCursor(cursor StandardCursor) {
 	}
 }
 
+// SetInputMode changes specified input to specified state
+// Reference: http://www.glfw.org/docs/latest/group__input.html#gaa92336e173da9c8834558b54ee80563b
 func (w *glfwWindow) SetInputMode(mode InputMode, state int) {
 	w.win.SetInputMode(glfw.InputMode(mode), state)
 }
 
+// SetCursorPos sets cursor position in window coordinates
+// Reference: http://www.glfw.org/docs/latest/group__input.html#ga04b03af936d906ca123c8f4ee08b39e7
 func (w *glfwWindow) SetCursorPos(xpos, ypos float64) {
 	w.win.SetCursorPos(xpos, ypos)
 }
