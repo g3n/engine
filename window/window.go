@@ -24,12 +24,15 @@ type IWindowManager interface {
 type IWindow interface {
 	core.IDispatcher
 	MakeContextCurrent()
+	FramebufferSize() (width int, height int)
 	Size() (width int, height int)
 	SetSize(width int, height int)
 	Pos() (xpos, ypos int)
 	SetPos(xpos, ypos int)
 	SetTitle(title string)
 	SetStandardCursor(cursor StandardCursor)
+	SetInputMode(mode InputMode, state int)
+	SetCursorPos(xpos, ypos float64)
 	ShouldClose() bool
 	SetShouldClose(bool)
 	FullScreen() bool
