@@ -38,6 +38,8 @@ type glfwWindow struct {
 	lastY           int
 	lastWidth       int
 	lastHeight      int
+	scaleX          float64
+	scaleY          float64
 }
 
 // glfw manager singleton
@@ -120,6 +122,10 @@ func (m *glfwManager) CreateWindow(width, height int, title string, fullscreen b
 	w.mgr = m
 	w.Dispatcher.Initialize()
 
+	fbw, fbh := w.FramebufferSize()
+	w.scaleX = float64(fbw) / float64(width)
+	w.scaleY = float64(fbh) / float64(height)
+
 	// Set key callback to dispatch event
 	win.SetKeyCallback(func(x *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 
@@ -155,18 +161,13 @@ func (m *glfwManager) CreateWindow(width, height int, title string, fullscreen b
 	win.SetMouseButtonCallback(func(x *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
 
 		xpos, ypos := x.GetCursorPos()
-		fbw, fbh := x.GetFramebufferSize()
-		ww, wh := x.GetSize()
-
-		xpos *= float64(fbw) / float64(ww)
-		ypos *= float64(fbh) / float64(wh)
 
 		w.mouseEv.W = w
 		w.mouseEv.Button = MouseButton(button)
 		w.mouseEv.Action = Action(action)
 		w.mouseEv.Mods = ModifierKey(mods)
-		w.mouseEv.Xpos = float32(xpos)
-		w.mouseEv.Ypos = float32(ypos)
+		w.mouseEv.Xpos = float32(xpos * w.scaleX)
+		w.mouseEv.Ypos = float32(ypos * w.scaleY)
 
 		if action == glfw.Press {
 			w.Dispatch(OnMouseDown, &w.mouseEv)
@@ -181,9 +182,12 @@ func (m *glfwManager) CreateWindow(width, height int, title string, fullscreen b
 	// Set window size callback to dispatch event
 	win.SetSizeCallback(func(x *glfw.Window, width int, height int) {
 
+		fbw, fbh := x.GetFramebufferSize()
 		w.sizeEv.W = w
 		w.sizeEv.Width = width
 		w.sizeEv.Height = height
+		w.scaleX = float64(fbw) / float64(width)
+		w.scaleY = float64(fbh) / float64(height)
 		w.Dispatch(OnWindowSize, &w.sizeEv)
 	})
 
@@ -199,15 +203,9 @@ func (m *glfwManager) CreateWindow(width, height int, title string, fullscreen b
 	// Set window cursor position event callback to dispatch event
 	win.SetCursorPosCallback(func(x *glfw.Window, xpos float64, ypos float64) {
 
-		fbw, fbh := x.GetFramebufferSize()
-		ww, wh := x.GetSize()
-
-		xpos *= float64(fbw) / float64(ww)
-		ypos *= float64(fbh) / float64(wh)
-
 		w.cursorEv.W = w
-		w.cursorEv.Xpos = float32(xpos)
-		w.cursorEv.Ypos = float32(ypos)
+		w.cursorEv.Xpos = float32(xpos * w.scaleX)
+		w.cursorEv.Ypos = float32(ypos * w.scaleY)
 		w.Dispatch(OnCursor, &w.cursorEv)
 	})
 
@@ -299,6 +297,11 @@ func (w *glfwWindow) Size() (width int, height int) {
 func (w *glfwWindow) FramebufferSize() (width int, height int) {
 
 	return w.win.GetFramebufferSize()
+}
+
+// Scale returns this window's DPI scale factor (FramebufferSize / Size)
+func (w *glfwWindow) Scale() (x float64, y float64) {
+	return w.scaleX, w.scaleY
 }
 
 // SetSize sets the size, in screen coordinates, of the client area of this window

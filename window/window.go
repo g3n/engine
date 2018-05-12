@@ -26,6 +26,7 @@ type IWindow interface {
 	MakeContextCurrent()
 	FramebufferSize() (width int, height int)
 	Size() (width int, height int)
+	Scale() (x float64, y float64)
 	SetSize(width int, height int)
 	Pos() (xpos, ypos int)
 	SetPos(xpos, ypos int)
