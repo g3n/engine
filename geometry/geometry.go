@@ -126,6 +126,7 @@ func (g *Geometry) GroupAt(idx int) *Group {
 func (g *Geometry) SetIndices(indices math32.ArrayU32) {
 
 	g.indices = indices
+	g.updateIndices = true
 	g.boundingBoxValid = false
 	g.boundingSphereValid = false
 }
