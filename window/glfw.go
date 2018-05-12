@@ -301,6 +301,7 @@ func (w *glfwWindow) FramebufferSize() (width int, height int) {
 
 // Scale returns this window's DPI scale factor (FramebufferSize / Size)
 func (w *glfwWindow) Scale() (x float64, y float64) {
+
 	return w.scaleX, w.scaleY
 }
 

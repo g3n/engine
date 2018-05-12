@@ -547,6 +547,7 @@ func (app *Application) Quit() {
 
 // OnWindowResize is default handler for window resize events.
 func (app *Application) OnWindowResize() {
+
 	// Get framebuffer size and sets the viewport accordingly
 	width, height := app.win.FramebufferSize()
 	app.gl.Viewport(0, 0, int32(width), int32(height))
