@@ -22,7 +22,7 @@ type Root struct {
 	mouseFocus        IPanel         // current child panel with mouse focus
 	scrollFocus       IPanel         // current child panel with scroll focus
 	modalPanel        IPanel         // current modal panel
-	targets           listPanelZ     // preallocated list of target panels
+	targets           []IPanel       // preallocated list of target panels
 }
 
 const (
@@ -317,7 +317,12 @@ func (r *Root) sendPanels(x, y float32, evname string, ev interface{}) {
 
 	// Sorts panels by absolute Z with the most foreground panels first
 	// and sends event to all panels or until a stop is requested
-	sort.Sort(r.targets)
+	sort.Slice(r.targets, func(i, j int) bool {
+		iz := r.targets[i].GetPanel().Position().Z
+		jz := r.targets[j].GetPanel().Position().Z
+		return iz < jz
+	})
+
 	r.stopPropagation = 0
 
 	// Send events to panels
@@ -415,15 +420,3 @@ func (r *Root) canDispatch(ipan IPanel) bool {
 //	// TODO
 //	// This should probably be in Panel ?
 //}
-
-// For sorting panels by Z coordinate
-type listPanelZ []IPanel
-
-func (p listPanelZ) Len() int      { return len(p) }
-func (p listPanelZ) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
-func (p listPanelZ) Less(i, j int) bool {
-
-	iz := p[i].GetPanel().Position().Z
-	jz := p[j].GetPanel().Position().Z
-	return iz < jz
-}

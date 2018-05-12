@@ -48,7 +48,7 @@ In all cases it is necessary to have a gcc compatible C compiler installed.
   your are using [Homebrew](https://brew.sh/) as your package manager, run:
   `brew install libvorbis openal-soft`
 
-G3N was only tested with Go1.7.4+
+G3N requires Go 1.8+
 
 ## Installation
 
