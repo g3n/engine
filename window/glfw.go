@@ -282,6 +282,12 @@ func (w *glfwWindow) Size() (width int, height int) {
 	return w.win.GetSize()
 }
 
+// FramebufferSize returns framebuffer size of this window
+func (w *glfwWindow) FramebufferSize() (width int, height int) {
+
+	return w.win.GetFramebufferSize()
+}
+
 // SetSize sets the size, in screen coordinates, of the client area of this window
 func (w *glfwWindow) SetSize(width int, height int) {
 
@@ -338,4 +344,18 @@ func (w *glfwWindow) SetStandardCursor(cursor StandardCursor) {
 	default:
 		panic("Invalid cursor")
 	}
+}
+
+// SetInputMode changes specified input to specified state
+// Reference: http://www.glfw.org/docs/latest/group__input.html#gaa92336e173da9c8834558b54ee80563b
+func (w *glfwWindow) SetInputMode(mode InputMode, state int) {
+
+	w.win.SetInputMode(glfw.InputMode(mode), state)
+}
+
+// SetCursorPos sets cursor position in window coordinates
+// Reference: http://www.glfw.org/docs/latest/group__input.html#ga04b03af936d906ca123c8f4ee08b39e7
+func (w *glfwWindow) SetCursorPos(xpos, ypos float64) {
+
+	w.win.SetCursorPos(xpos, ypos)
 }
