@@ -547,16 +547,15 @@ func (app *Application) Quit() {
 
 // OnWindowResize is default handler for window resize events.
 func (app *Application) OnWindowResize() {
-
-	// Get window size and sets the viewport to the same size
-	width, height := app.win.Size()
+	// Get framebuffer size and sets the viewport accordingly
+	width, height := app.win.FramebufferSize()
 	app.gl.Viewport(0, 0, int32(width), int32(height))
 
 	// Sets perspective camera aspect ratio
 	aspect := float32(width) / float32(height)
 	app.camPersp.SetAspect(aspect)
 
-	// Sets the GUI root panel size to the size of the screen
+	// Sets the GUI root panel size to the size of the framebuffer
 	if app.guiroot != nil {
 		app.guiroot.SetSize(float32(width), float32(height))
 	}
