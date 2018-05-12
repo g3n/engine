@@ -31,7 +31,7 @@ type IWindow interface {
 	SetPos(xpos, ypos int)
 	SetTitle(title string)
 	SetStandardCursor(cursor StandardCursor)
-	SetInputMode(InputMode, int)
+	SetInputMode(mode InputMode, state int)
 	SetCursorPos(xpos, ypos float64)
 	ShouldClose() bool
 	SetShouldClose(bool)
