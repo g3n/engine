@@ -73,7 +73,9 @@ func (rc *Raycaster) IntersectObject(inode INode, recursive bool) []Intersect {
 
 	intersects := []Intersect{}
 	rc.intersectObject(inode, &intersects, recursive)
-	sort.Sort(Intersects(intersects))
+	sort.Slice(intersects, func(i, j int) bool {
+		return intersects[i].Distance < intersects[j].Distance
+	})
 	return intersects
 }
 
@@ -87,7 +89,9 @@ func (rc *Raycaster) IntersectObjects(inodes []INode, recursive bool) []Intersec
 	for _, inode := range inodes {
 		rc.intersectObject(inode, &intersects, recursive)
 	}
-	sort.Sort(Intersects(intersects))
+	sort.Slice(intersects, func(i, j int) bool {
+		return intersects[i].Distance < intersects[j].Distance
+	})
 	return intersects
 }
 
@@ -104,14 +108,4 @@ func (rc *Raycaster) intersectObject(inode INode, intersects *[]Intersect, recur
 		}
 	}
 	return
-}
-
-// Intersects is the array type for Intersect objects. It's used for sorting intersects by distance.
-type Intersects []Intersect
-
-func (is Intersects) Len() int      { return len(is) }
-func (is Intersects) Swap(i, j int) { is[i], is[j] = is[j], is[i] }
-func (is Intersects) Less(i, j int) bool {
-
-	return is[i].Distance < is[j].Distance
 }

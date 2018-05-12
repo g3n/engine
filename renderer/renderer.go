@@ -12,35 +12,38 @@ import (
 	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/light"
 	"github.com/g3n/engine/math32"
+	"sort"
 )
 
 // Renderer renders a 3D scene and/or a 2D GUI on the current window.
 type Renderer struct {
 	gs           *gls.GLS
-	shaman       Shaman                     // Internal shader manager
-	stats        Stats                      // Renderer statistics
-	prevStats    Stats                      // Renderer statistics for previous frame
-	scene        core.INode                 // Node containing 3D scene to render
-	panelGui     gui.IPanel                 // Panel containing GUI to render
-	panel3D      gui.IPanel                 // Panel which contains the 3D scene
-	ambLights    []*light.Ambient           // Array of ambient lights for last scene
-	dirLights    []*light.Directional       // Array of directional lights for last scene
-	pointLights  []*light.Point             // Array of point
-	spotLights   []*light.Spot              // Array of spot lights for the scene
-	others       []core.INode               // Other nodes (audio, players, etc)
-	grmats       []*graphic.GraphicMaterial // Array of rendered graphic materials for scene
-	cgrmats      []*graphic.GraphicMaterial // Array of culled graphic materials for scene
-	rinfo        core.RenderInfo            // Preallocated Render info
-	specs        ShaderSpecs                // Preallocated Shader specs
-	redrawGui    bool                       // Flag indicating the gui must be redrawn completely
-	rendered     bool                       // Flag indicating if anything was rendered
-	panList      []gui.IPanel               // list of panels to render
-	frameBuffers int                        // Number of frame buffers
-	frameCount   int                        // Current number of frame buffers to write
+	shaman       Shaman                    // Internal shader manager
+	stats        Stats                     // Renderer statistics
+	prevStats    Stats                     // Renderer statistics for previous frame
+	scene        core.INode                // Node containing 3D scene to render
+	panelGui     gui.IPanel                // Panel containing GUI to render
+	panel3D     gui.IPanel                 // Panel which contains the 3D scene
+	ambLights   []*light.Ambient           // Array of ambient lights for last scene
+	dirLights   []*light.Directional       // Array of directional lights for last scene
+	pointLights []*light.Point             // Array of point
+	spotLights  []*light.Spot              // Array of spot lights for the scene
+	others      []core.INode               // Other nodes (audio, players, etc)
+	rgraphics   []graphic.IGraphic         // Array of rendered graphics for scene
+	cgraphics   []graphic.IGraphic         // Array of culled graphics for scene
+	grmats      []*graphic.GraphicMaterial // Array of rendered graphic materials for scene
+	rinfo       core.RenderInfo            // Preallocated Render info
+	specs       ShaderSpecs                // Preallocated Shader specs
+	sortObjects bool                       // Flag indicating whether objects should be sorted before rendering
+	redrawGui   bool                       // Flag indicating the gui must be redrawn completely
+	rendered    bool                       // Flag indicating if anything was rendered
+	panList      []gui.IPanel              // list of panels to render
+	frameBuffers int                       // Number of frame buffers
+	frameCount   int                       // Current number of frame buffers to write
 }
 
-// Stats describes how many object types were rendered
-// It is cleared at the start of each render
+// Stats describes how many object types were rendered.
+// It is cleared at the start of each render.
 type Stats struct {
 	Graphics int // Number of graphic objects rendered
 	Lights   int // Number of lights rendered
@@ -48,7 +51,7 @@ type Stats struct {
 	Others   int // Number of other objects rendered
 }
 
-// NewRenderer creates and returns a pointer to a new Renderer
+// NewRenderer creates and returns a pointer to a new Renderer.
 func NewRenderer(gs *gls.GLS) *Renderer {
 
 	r := new(Renderer)
@@ -60,10 +63,12 @@ func NewRenderer(gs *gls.GLS) *Renderer {
 	r.pointLights = make([]*light.Point, 0)
 	r.spotLights = make([]*light.Spot, 0)
 	r.others = make([]core.INode, 0)
+	r.rgraphics = make([]graphic.IGraphic, 0)
+	r.cgraphics = make([]graphic.IGraphic, 0)
 	r.grmats = make([]*graphic.GraphicMaterial, 0)
-	r.cgrmats = make([]*graphic.GraphicMaterial, 0)
 	r.panList = make([]gui.IPanel, 0)
 	r.frameBuffers = 2
+	r.sortObjects = true
 	return r
 }
 
@@ -74,27 +79,27 @@ func (r *Renderer) AddDefaultShaders() error {
 	return r.shaman.AddDefaultShaders()
 }
 
-// AddChunk adds a shader chunk with the specified name and source code
+// AddChunk adds a shader chunk with the specified name and source code.
 func (r *Renderer) AddChunk(name, source string) {
 
 	r.shaman.AddChunk(name, source)
 }
 
-// AddShader adds a shader program with the specified name and source code
+// AddShader adds a shader program with the specified name and source code.
 func (r *Renderer) AddShader(name, source string) {
 
 	r.shaman.AddShader(name, source)
 }
 
-// AddProgram adds a program with the specified name and associated vertex
-// and fragment shaders names (previously registered)
+// AddProgram adds the program with the specified name,
+// with associated vertex and fragment shaders (previously registered).
 func (r *Renderer) AddProgram(name, vertex, frag string, others ...string) {
 
 	r.shaman.AddProgram(name, vertex, frag, others...)
 }
 
 // SetGui sets the gui panel which contains the Gui to render.
-// If set to nil, no Gui will be rendered
+// If set to nil, no Gui will be rendered.
 func (r *Renderer) SetGui(gui gui.IPanel) {
 
 	r.panelGui = gui
@@ -109,14 +114,14 @@ func (r *Renderer) SetGuiPanel3D(panel3D gui.IPanel) {
 	r.panel3D = panel3D
 }
 
-// Panel3D returns the current gui panel over the 3D scene
+// Panel3D returns the current gui panel over the 3D scene.
 func (r *Renderer) Panel3D() gui.IPanel {
 
 	return r.panel3D
 }
 
-// SetScene sets the 3D scene to render
-// If set to nil, no 3D scene will be rendered
+// SetScene sets the 3D scene to be rendered.
+// If set to nil, no 3D scene will be rendered.
 func (r *Renderer) SetScene(scene core.INode) {
 
 	r.scene = scene
@@ -129,8 +134,20 @@ func (r *Renderer) Stats() Stats {
 	return r.stats
 }
 
-// Render renders the previously set Scene and Gui using the specified camera
-// Returns an indication if anything was rendered and an error
+// SetSortObjects sets whether objects will be Z-sorted before rendering.
+func (r *Renderer) SetSortObjects(sort bool) {
+
+	r.sortObjects = sort
+}
+
+// SortObjects returns whether objects will be Z-sorted before rendering.
+func (r *Renderer) SortObjects() bool {
+
+	return r.sortObjects
+}
+
+// Render renders the previously set Scene and Gui using the specified camera.
+// Returns an indication if anything was rendered and an error.
 func (r *Renderer) Render(icam camera.ICamera) (bool, error) {
 
 	r.redrawGui = false
@@ -155,7 +172,7 @@ func (r *Renderer) Render(icam camera.ICamera) (bool, error) {
 	return r.rendered, nil
 }
 
-// renderScene renders the 3D scene using the specified camera
+// renderScene renders the 3D scene using the specified camera.
 func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 
 	// Updates world matrices of all scene nodes
@@ -172,8 +189,9 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 	r.pointLights = r.pointLights[0:0]
 	r.spotLights = r.spotLights[0:0]
 	r.others = r.others[0:0]
+	r.rgraphics = r.rgraphics[0:0]
+	r.cgraphics = r.cgraphics[0:0]
 	r.grmats = r.grmats[0:0]
-	r.cgrmats = r.cgrmats[0:0]
 
 	// Prepare for frustum culling
 	var proj math32.Matrix4
@@ -195,27 +213,23 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		if ok {
 			if igr.Renderable() {
 
-				gr := igr.GetGraphic()
-				materials := gr.Materials()
-
 				// Frustum culling
 				if igr.Cullable() {
+					gr := igr.GetGraphic()
 					mw := gr.MatrixWorld()
 					geom := igr.GetGeometry()
 					bb := geom.BoundingBox()
 					bb.ApplyMatrix4(&mw)
-					if !frustum.IntersectsBox(&bb) {
-						for i := 0; i < len(materials); i++ {
-							// Record any culled materials
-							r.cgrmats = append(r.cgrmats, &materials[i])
-						}
-						return
+					if frustum.IntersectsBox(&bb) {
+						// Append graphic to list of graphics to be rendered
+						r.rgraphics = append(r.rgraphics, igr)
+					} else {
+						// Append graphic to list of culled graphics
+						r.cgraphics = append(r.cgraphics, igr)
 					}
-				}
-
-				// Appends to list each graphic material for this graphic
-				for i := 0; i < len(materials); i++ {
-					r.grmats = append(r.grmats, &materials[i])
+				} else {
+					// Append graphic to list of graphics to be rendered
+					r.rgraphics = append(r.rgraphics, igr)
 				}
 			}
 			// Node is not a Graphic
@@ -257,6 +271,41 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 	r.specs.DirLightsMax = len(r.dirLights)
 	r.specs.PointLightsMax = len(r.pointLights)
 	r.specs.SpotLightsMax = len(r.spotLights)
+
+	// Z-sort graphics
+	if r.sortObjects {
+		sort.Slice(r.rgraphics, func(i, j int) bool {
+
+			gr1 := r.rgraphics[i].GetGraphic()
+			gr2 := r.rgraphics[j].GetGraphic()
+
+			mw1 := gr1.MatrixWorld()
+			mw2 := gr2.MatrixWorld()
+
+			// TODO OPTIMIZATION - this calculation is already done in IGraphic.RenderSetup, should cache results in Graphic.
+			var mvm1, mvm2 math32.Matrix4
+			mvm1.MultiplyMatrices(&r.rinfo.ViewMatrix, &mw1)
+			mvm2.MultiplyMatrices(&r.rinfo.ViewMatrix, &mw2)
+
+			g1pos := gr1.Position()
+			g2pos := gr2.Position()
+
+			g1pos.ApplyMatrix4(&mvm1)
+			g2pos.ApplyMatrix4(&mvm2)
+
+			return g1pos.Z < g2pos.Z
+		})
+	}
+
+	// Compile list of all graphic materials to be rendered
+	for i := 0; i < len(r.rgraphics); i++ {
+		gr := r.rgraphics[i].GetGraphic()
+		materials := gr.Materials()
+		// Appends to list each graphic material for this graphic
+		for j := 0; j < len(materials); j++ {
+			r.grmats = append(r.grmats, &materials[j])
+		}
+	}
 
 	// Render other nodes (audio players, etc)
 	for i := 0; i < len(r.others); i++ {
@@ -332,7 +381,7 @@ func (r *Renderer) renderGui() error {
 
 	// If no 3D scene was rendered sets Gui panels as renderable for background
 	// User must define the colors
-	if (len(r.grmats) == 0) && (len(r.cgrmats) == 0) {
+	if (len(r.grmats) == 0) && (len(r.cgraphics) == 0) {
 		r.panelGui.SetRenderable(true)
 		if r.panel3D != nil {
 			r.panel3D.SetRenderable(true)
