@@ -155,12 +155,19 @@ func (m *glfwManager) CreateWindow(width, height int, title string, fullscreen b
 	win.SetMouseButtonCallback(func(x *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
 
 		xpos, ypos := x.GetCursorPos()
+		fbw, fbh := x.GetFramebufferSize()
+		ww, wh := x.GetSize()
+
+		xpos *= float64(fbw) / float64(ww)
+		ypos *= float64(fbh) / float64(wh)
+
 		w.mouseEv.W = w
 		w.mouseEv.Button = MouseButton(button)
 		w.mouseEv.Action = Action(action)
 		w.mouseEv.Mods = ModifierKey(mods)
 		w.mouseEv.Xpos = float32(xpos)
 		w.mouseEv.Ypos = float32(ypos)
+
 		if action == glfw.Press {
 			w.Dispatch(OnMouseDown, &w.mouseEv)
 			return
@@ -191,6 +198,12 @@ func (m *glfwManager) CreateWindow(width, height int, title string, fullscreen b
 
 	// Set window cursor position event callback to dispatch event
 	win.SetCursorPosCallback(func(x *glfw.Window, xpos float64, ypos float64) {
+
+		fbw, fbh := x.GetFramebufferSize()
+		ww, wh := x.GetSize()
+
+		xpos *= float64(fbw) / float64(ww)
+		ypos *= float64(fbh) / float64(wh)
 
 		w.cursorEv.W = w
 		w.cursorEv.Xpos = float32(xpos)
