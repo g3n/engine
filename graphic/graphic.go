@@ -9,6 +9,7 @@ import (
 	"github.com/g3n/engine/geometry"
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/material"
+	"github.com/g3n/engine/math32"
 )
 
 // Graphic is a Node which has a visible representation in the scene.
@@ -22,7 +23,9 @@ type Graphic struct {
 	mode       uint32             // OpenGL primitive
 	renderable bool               // Renderable flag
 	cullable   bool               // Cullable flag
-	// TODO store cached mv, mvp matrices ?
+
+	mvm        math32.Matrix4     // Cached ModelView matrix
+	mvpm       math32.Matrix4     // Cached ModelViewProjection matrix
 }
 
 // GraphicMaterial specifies the material to be used for
@@ -163,6 +166,27 @@ func (gr *Graphic) GetMaterial(vpos int) material.IMaterial {
 		}
 	}
 	return nil
+}
+
+// CalculateMatrices calculates the model view and model view projection matrices.
+func (g *Graphic) CalculateMatrices(gs *gls.GLS, rinfo *core.RenderInfo) {
+
+	// Calculate model view and model view projection matrices
+	mw := g.MatrixWorld()
+	g.mvm.MultiplyMatrices(&rinfo.ViewMatrix, &mw)
+	g.mvpm.MultiplyMatrices(&rinfo.ProjMatrix, &g.mvm)
+}
+
+// ModelViewMatrix returns the last cached model view matrix for this graphic.
+func (g *Graphic) ModelViewMatrix() *math32.Matrix4 {
+
+	return &g.mvm
+}
+
+// ModelViewProjectionMatrix returns the last cached model view projection matrix for this graphic.
+func (g *Graphic) ModelViewProjectionMatrix() *math32.Matrix4 {
+
+	return &g.mvpm
 }
 
 // GetMaterial returns the material associated with the GraphicMaterial.
