@@ -62,6 +62,7 @@ type Material struct {
 	shaderUnique     bool                 // shader has only one instance (does not depend on lights or textures)
 	uselights        UseLights            // consider lights for shader selection
 	sidevis          Side                 // sides visible
+	transparent      bool                 // whether at all transparent
 	wireframe        bool                 // show as wirefrme
 	depthMask        bool                 // Enable writing into the depth buffer
 	depthTest        bool                 // Enable depth buffer test
@@ -91,6 +92,7 @@ func (mat *Material) Init() *Material {
 	mat.refcount = 1
 	mat.uselights = UseLightAll
 	mat.sidevis = SideFront
+	mat.transparent = false
 	mat.wireframe = false
 	mat.depthMask = true
 	mat.depthFunc = gls.LEQUAL
@@ -185,6 +187,18 @@ func (mat *Material) SetSide(side Side) {
 func (mat *Material) Side() Side {
 
 	return mat.sidevis
+}
+
+// SetTransparent sets whether this material is transparent
+func (mat *Material) SetTransparent(state bool) {
+
+	mat.transparent = state
+}
+
+// Transparent returns whether this material is transparent
+func (mat *Material) Transparent() bool {
+
+	return mat.transparent
 }
 
 func (mat *Material) SetWireframe(state bool) {
