@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+// Edit represents a text edit box GUI element
 type Edit struct {
 	Label              // Embedded label
 	MaxLength   int    // Maximum number of characters
@@ -26,16 +27,18 @@ type Edit struct {
 	styles      *EditStyles
 }
 
+// EditStyle contains the styling of an Edit
 type EditStyle struct {
-	Border      BorderSizes
-	Paddings    BorderSizes
+	Border      RectBounds
+	Paddings    RectBounds
 	BorderColor math32.Color4
-	BgColor     math32.Color
+	BgColor     math32.Color4
 	BgAlpha     float32
-	FgColor     math32.Color
-	HolderColor math32.Color
+	FgColor     math32.Color4
+	HolderColor math32.Color4
 }
 
+// EditStyles contains an EditStyle for each valid GUI state
 type EditStyles struct {
 	Normal   EditStyle
 	Over     EditStyle
@@ -92,7 +95,7 @@ func (ed *Edit) Text() string {
 // SetFontSize sets label font size (overrides Label.SetFontSize)
 func (ed *Edit) SetFontSize(size float64) *Edit {
 
-	ed.Label.fontSize = size
+	ed.Label.SetFontSize(size)
 	ed.redraw(ed.focus)
 	return ed
 }
@@ -276,12 +279,14 @@ func (ed *Edit) onMouse(evname string, ev interface{}) {
 func (ed *Edit) onCursor(evname string, ev interface{}) {
 
 	if evname == OnCursorEnter {
+		ed.root.SetCursorText()
 		ed.cursorOver = true
 		ed.update()
 		ed.root.StopPropagation(Stop3D)
 		return
 	}
 	if evname == OnCursorLeave {
+		ed.root.SetCursorNormal()
 		ed.cursorOver = false
 		ed.update()
 		ed.root.StopPropagation(Stop3D)
@@ -327,15 +332,15 @@ func (ed *Edit) applyStyle(s *EditStyle) {
 	ed.SetBordersFrom(&s.Border)
 	ed.SetBordersColor4(&s.BorderColor)
 	ed.SetPaddingsFrom(&s.Paddings)
-	ed.Label.SetColor(&s.FgColor)
-	ed.Label.SetBgColor(&s.BgColor)
+	ed.Label.SetColor4(&s.FgColor)
+	ed.Label.SetBgColor4(&s.BgColor)
 	//ed.Label.SetBgAlpha(s.BgAlpha)
 
 	if !ed.focus && len(ed.text) == 0 && len(ed.placeHolder) > 0 {
-		ed.Label.SetColor(&s.HolderColor)
+		ed.Label.SetColor4(&s.HolderColor)
 		ed.Label.setTextCaret(ed.placeHolder, editMarginX, ed.width, -1, ed.col)
 	} else {
-		ed.Label.SetColor(&s.FgColor)
+		ed.Label.SetColor4(&s.FgColor)
 		ed.redraw(ed.focus)
 	}
 }

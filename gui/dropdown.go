@@ -6,10 +6,10 @@ package gui
 
 import (
 	"github.com/g3n/engine/gui/assets/icon"
-	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 )
 
+// DropDown represents a dropdown GUI element.
 type DropDown struct {
 	Panel                        // Embedded panel
 	icon         *Label          // internal label with icon
@@ -23,21 +23,15 @@ type DropDown struct {
 	clickOut     bool
 }
 
-// DropDown list style
-type DropDownStyle struct {
-	Border      BorderSizes
-	Paddings    BorderSizes
-	BorderColor math32.Color4
-	BgColor     math32.Color
-	FgColor     math32.Color
-}
+// DropDownStyle contains the styling of a DropDown.
+type DropDownStyle BasicStyle
 
-// DropDown list styles
+// DropDownStyles contains a DropDownStyle for each valid GUI state.
 type DropDownStyles struct {
-	Normal   *DropDownStyle
-	Over     *DropDownStyle
-	Focus    *DropDownStyle
-	Disabled *DropDownStyle
+	Normal   DropDownStyle
+	Over     DropDownStyle
+	Focus    DropDownStyle
+	Disabled DropDownStyle
 }
 
 // NewDropDown creates and returns a pointer to a new drop down widget with the specified width.
@@ -58,8 +52,8 @@ func NewDropDown(width float32, item *ImageLabel) *DropDown {
 	dd.Panel.Add(dd.litem)
 
 	// Create icon
-	dd.icon = NewLabel(" ", true)
-	dd.icon.SetFontSize(StyleDefault().Font.Size() * 1.3)
+	dd.icon = NewIcon(" ")
+	dd.icon.SetFontSize(StyleDefault().Label.PointSize * 1.3)
 	dd.icon.SetText(string(icon.ArrowDropDown))
 	dd.Panel.Add(dd.icon)
 
@@ -72,6 +66,7 @@ func NewDropDown(width float32, item *ImageLabel) *DropDown {
 	dd.list.Subscribe(OnMouseDown, dd.onListMouse)
 	dd.list.Subscribe(OnMouseOut, dd.onListMouse)
 	dd.list.Subscribe(OnChange, dd.onListChangeEvent)
+	dd.list.Subscribe(OnCursor, func(evname string, ev interface{}) { dd.root.StopPropagation(StopAll) })
 	dd.Panel.Add(dd.list)
 
 	dd.update()
@@ -80,21 +75,21 @@ func NewDropDown(width float32, item *ImageLabel) *DropDown {
 	return dd
 }
 
-// Add add a list item at the end of the list
+// Add adds a list item at the end of the list
 func (dd *DropDown) Add(item *ImageLabel) {
 
 	dd.list.Add(item)
 }
 
 // InsertAt inserts a list item at the specified position
-// Returs true if the item was successfuly inserted
+// Returs true if the item was successfully inserted
 func (dd *DropDown) InsertAt(pos int, item *ImageLabel) {
 
 	dd.list.InsertAt(pos, item)
 }
 
 // RemoveAt removes the list item from the specified position
-// Returs true if the item was successfuly removed
+// Returs true if the item was successfully removed
 func (dd *DropDown) RemoveAt(pos int) {
 
 	dd.list.RemoveAt(pos)
@@ -112,8 +107,7 @@ func (dd *DropDown) Len() int {
 	return dd.list.Len()
 }
 
-// Returns the currently selected item or nil if not item
-// was selected
+// Selected returns the currently selected item or nil if no item was selected
 func (dd *DropDown) Selected() *ImageLabel {
 
 	return dd.selItem
@@ -165,14 +159,12 @@ func (dd *DropDown) onCursor(evname string, ev interface{}) {
 
 	if evname == OnCursorEnter {
 		dd.overDropdown = true
-		dd.update()
-		return
 	}
 	if evname == OnCursorLeave {
 		dd.overDropdown = false
-		dd.update()
-		return
 	}
+	dd.update()
+	dd.root.StopPropagation(StopAll)
 }
 
 // onListMouseEvent receives mouse events over the list
@@ -208,20 +200,20 @@ func (dd *DropDown) onListMouse(evname string, ev interface{}) {
 }
 
 // onListCursor receives subscribed events over the list
-func (dd *DropDown) onListCursor(evname string, ev interface{}) {
-
-	if evname == OnCursorEnter {
-		dd.overList = true
-		dd.update()
-		return
-	}
-	if evname == OnCursorLeave {
-		dd.overList = false
-		dd.update()
-		return
-	}
-
-}
+//func (dd *DropDown) onListCursor(evname string, ev interface{}) {
+//
+//	if evname == OnCursorEnter {
+//		dd.overList = true
+//		dd.update()
+//		return
+//	}
+//	if evname == OnCursorLeave {
+//		dd.overList = false
+//		dd.update()
+//		return
+//	}
+//	dd.root.StopPropagation(StopAll)
+//}
 
 // copySelected copy to the dropdown panel the selected item
 // from the list.
@@ -264,24 +256,21 @@ func (dd *DropDown) recalc() {
 func (dd *DropDown) update() {
 
 	if dd.overDropdown || dd.overList {
-		dd.applyStyle(dd.styles.Over)
+		dd.applyStyle(&dd.styles.Over)
 		dd.list.ApplyStyle(StyleOver)
 		return
 	}
 	if dd.focus {
-		dd.applyStyle(dd.styles.Focus)
+		dd.applyStyle(&dd.styles.Focus)
 		dd.list.ApplyStyle(StyleFocus)
 		return
 	}
-	dd.applyStyle(dd.styles.Normal)
+	dd.applyStyle(&dd.styles.Normal)
 	dd.list.ApplyStyle(StyleNormal)
 }
 
 // applyStyle applies the specified style
 func (dd *DropDown) applyStyle(s *DropDownStyle) {
 
-	dd.SetBordersFrom(&s.Border)
-	dd.SetBordersColor4(&s.BorderColor)
-	dd.SetPaddingsFrom(&s.Paddings)
-	dd.SetColor(&s.BgColor)
+	dd.Panel.ApplyStyle(&s.PanelStyle)
 }

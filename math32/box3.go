@@ -4,82 +4,93 @@
 
 package math32
 
+// Box3 represents a 3D bounding box defined by two points:
+// the point with minimum coordinates and the point with maximum coordinates.
 type Box3 struct {
 	Min Vector3
 	Max Vector3
 }
 
+// NewBox3 creates and returns a pointer to a new Box3 defined
+// by its minimum and maximum coordinates.
 func NewBox3(min, max *Vector3) *Box3 {
 
-	this := new(Box3)
-	this.Set(min, max)
-	return this
+	b := new(Box3)
+	b.Set(min, max)
+	return b
 }
 
-func (this *Box3) Set(min, max *Vector3) *Box3 {
+// Set sets this bounding box minimum and maximum coordinates.
+// Returns pointer to this updated bounding box.
+func (b *Box3) Set(min, max *Vector3) *Box3 {
 
 	if min != nil {
-		this.Min = *min
+		b.Min = *min
 	} else {
-		this.Min.Set(Infinity, Infinity, Infinity)
+		b.Min.Set(Infinity, Infinity, Infinity)
 	}
 	if max != nil {
-		this.Max = *max
+		b.Max = *max
 	} else {
-		this.Max.Set(-Infinity, -Infinity, -Infinity)
+		b.Max.Set(-Infinity, -Infinity, -Infinity)
 	}
-	return this
+	return b
 }
 
-func (this *Box3) SetFromPoints(points []Vector3) *Box3 {
+// SetFromPoints set this bounding box from the specified array of points.
+// Returns pointer to this updated bounding box.
+func (b *Box3) SetFromPoints(points []Vector3) *Box3 {
 
-	this.MakeEmpty()
+	b.MakeEmpty()
 	for i := 0; i < len(points); i++ {
-		this.ExpandByPoint(&points[i])
+		b.ExpandByPoint(&points[i])
 	}
-	return this
+	return b
 }
 
-func (this *Box3) SetFromCenterAndSize(center, size *Vector3) *Box3 {
+// SetFromCenterAndSize set this bounding box from a center point and size.
+// Size is a vector from the minimum point to the maximum point.
+// Returns pointer to this updated bounding box.
+func (b *Box3) SetFromCenterAndSize(center, size *Vector3) *Box3 {
 
 	v1 := NewVector3(0, 0, 0)
 	halfSize := v1.Copy(size).MultiplyScalar(0.5)
-	this.Min.Copy(center).Sub(halfSize)
-	this.Max.Copy(center).Add(halfSize)
-	return this
+	b.Min.Copy(center).Sub(halfSize)
+	b.Max.Copy(center).Add(halfSize)
+	return b
 }
 
-//func (this *Box3) SetFromObject(object *Object3D) *Box3 {
-//
-//	// TODO object.UpdateMatrixWorld(true)
-//
-//	return this
-//}
+// Copy copy other to this bounding box.
+// Returns pointer to this updated bounding box.
+func (b *Box3) Copy(other *Box3) *Box3 {
 
-func (this *Box3) Copy(box *Box3) *Box3 {
-
-	this.Min = box.Min
-	this.Max = box.Max
-	return this
+	b.Min = other.Min
+	b.Max = other.Max
+	return b
 }
 
-func (this *Box3) MakeEmpty() *Box3 {
+// MakeEmpty set this bounding box to empty.
+// Returns pointer to this updated bounding box.
+func (b *Box3) MakeEmpty() *Box3 {
 
-	this.Min.X = Infinity
-	this.Min.Y = Infinity
-	this.Min.Z = Infinity
-	this.Max.X = -Infinity
-	this.Max.Y = -Infinity
-	this.Max.Z = -Infinity
-	return this
+	b.Min.X = Infinity
+	b.Min.Y = Infinity
+	b.Min.Z = Infinity
+	b.Max.X = -Infinity
+	b.Max.Y = -Infinity
+	b.Max.Z = -Infinity
+	return b
 }
 
-func (this *Box3) Empty() bool {
+// Empty returns if this bounding box is empty.
+func (b *Box3) Empty() bool {
 
-	return (this.Max.X < this.Min.X) || (this.Max.Y < this.Min.Y) || (this.Max.Z < this.Min.Z)
+	return (b.Max.X < b.Min.X) || (b.Max.Y < b.Min.Y) || (b.Max.Z < b.Min.Z)
 }
 
-func (this *Box3) Center(optionalTarget *Vector3) *Vector3 {
+// Center calculates the center point of this bounding box and
+// stores its pointer to optionalTarget, if not nil, and also returns it.
+func (b *Box3) Center(optionalTarget *Vector3) *Vector3 {
 
 	var result *Vector3
 	if optionalTarget == nil {
@@ -87,10 +98,14 @@ func (this *Box3) Center(optionalTarget *Vector3) *Vector3 {
 	} else {
 		result = optionalTarget
 	}
-	return result.AddVectors(&this.Min, &this.Max).MultiplyScalar(0.5)
+	return result.AddVectors(&b.Min, &b.Max).MultiplyScalar(0.5)
 }
 
-func (this *Box3) Size(optionalTarget *Vector3) *Vector3 {
+// Size calculates the size of this bounding box: the vector  from
+// its minimum point to its maximum point.
+// Store pointer to the calculated size into optionalTarget, if not nil,
+// and also returns it.
+func (b *Box3) Size(optionalTarget *Vector3) *Vector3 {
 
 	var result *Vector3
 	if optionalTarget == nil {
@@ -98,80 +113,74 @@ func (this *Box3) Size(optionalTarget *Vector3) *Vector3 {
 	} else {
 		result = optionalTarget
 	}
-	return result.SubVectors(&this.Min, &this.Max)
+	return result.SubVectors(&b.Min, &b.Max)
 }
 
-func (this *Box3) ExpandByPoint(point *Vector3) *Box3 {
+// ExpandByPoint may expand this bounding box to include the specified point.
+// Returns pointer to this updated bounding box.
+func (b *Box3) ExpandByPoint(point *Vector3) *Box3 {
 
-	this.Min.Min(point)
-	this.Max.Max(point)
-	return this
+	b.Min.Min(point)
+	b.Max.Max(point)
+	return b
 }
 
-func (this *Box3) ExpandByVector(vector *Vector3) *Box3 {
+// ExpandByVector expands this bounding box by the specified vector.
+// Returns pointer to this updated bounding box.
+func (b *Box3) ExpandByVector(vector *Vector3) *Box3 {
 
-	this.Min.Sub(vector)
-	this.Max.Add(vector)
-	return this
+	b.Min.Sub(vector)
+	b.Max.Add(vector)
+	return b
 }
 
-func (this *Box3) ExpandByScalar(scalar float32) *Box3 {
+// ExpandByScalar expands this bounding box by the specified scalar.
+// Returns pointer to this updated bounding box.
+func (b *Box3) ExpandByScalar(scalar float32) *Box3 {
 
-	this.Min.AddScalar(-scalar)
-	this.Max.AddScalar(scalar)
-	return this
+	b.Min.AddScalar(-scalar)
+	b.Max.AddScalar(scalar)
+	return b
 }
 
-func (this *Box3) ContainsPoint(point *Vector3) bool {
+// ContainsPoint returns if this bounding box contains the specified point.
+func (b *Box3) ContainsPoint(point *Vector3) bool {
 
-	if point.X < this.Min.X || point.X > this.Max.X ||
-		point.Y < this.Min.Y || point.Y > this.Max.Y ||
-		point.Z < this.Min.Z || point.Z > this.Max.Z {
+	if point.X < b.Min.X || point.X > b.Max.X ||
+		point.Y < b.Min.Y || point.Y > b.Max.Y ||
+		point.Z < b.Min.Z || point.Z > b.Max.Z {
 		return false
 	}
 	return true
 }
 
-func (this *Box3) ContainsBox(box *Box3) bool {
+// ContainsBox returns if this bounding box contains other box.
+func (b *Box3) ContainsBox(box *Box3) bool {
 
-	if (this.Min.X <= box.Max.X) && (box.Max.X <= this.Max.X) &&
-		(this.Min.Y <= box.Min.Y) && (box.Max.Y <= this.Max.Y) &&
-		(this.Min.Z <= box.Min.Z) && (box.Max.Z <= this.Max.Z) {
+	if (b.Min.X <= box.Max.X) && (box.Max.X <= b.Max.X) &&
+		(b.Min.Y <= box.Min.Y) && (box.Max.Y <= b.Max.Y) &&
+		(b.Min.Z <= box.Min.Z) && (box.Max.Z <= b.Max.Z) {
 		return true
 
 	}
 	return false
 }
 
-func (this *Box3) GetParameter(point *Vector3, optionalTarget *Vector3) *Vector3 {
-
-	// This can potentially have a divide by zero if the box
-	// has a size dimension of 0.
-	var result *Vector3
-	if optionalTarget == nil {
-		result = NewVector3(0, 0, 0)
-	} else {
-		result = optionalTarget
-	}
-	return result.Set(
-		(point.X-this.Min.X)/(this.Max.X-this.Min.X),
-		(point.Y-this.Min.Y)/(this.Max.Y-this.Min.Y),
-		(point.Z-this.Min.Z)/(this.Max.Z-this.Min.Z),
-	)
-}
-
-func (this *Box3) IsIntersectionBox(box *Box3) bool {
+// IsIntersectionBox returns if other box intersects this one.
+func (b *Box3) IsIntersectionBox(other *Box3) bool {
 
 	// using 6 splitting planes to rule out intersections.
-	if box.Max.X < this.Min.X || box.Min.X > this.Max.X ||
-		box.Max.Y < this.Min.Y || box.Min.Y > this.Max.Y ||
-		box.Max.Z < this.Min.Z || box.Min.Z > this.Max.Z {
+	if other.Max.X < b.Min.X || other.Min.X > b.Max.X ||
+		other.Max.Y < b.Min.Y || other.Min.Y > b.Max.Y ||
+		other.Max.Z < b.Min.Z || other.Min.Z > b.Max.Z {
 		return false
 	}
 	return true
 }
 
-func (this *Box3) ClampPoint(point *Vector3, optionalTarget *Vector3) *Vector3 {
+// ClampPoint calculates a new point which is the specified point clamped inside this box.
+// Stores the pointer to this new point into optionaTarget, if not nil, and also returns it.
+func (b *Box3) ClampPoint(point *Vector3, optionalTarget *Vector3) *Vector3 {
 
 	var result *Vector3
 	if optionalTarget == nil {
@@ -179,17 +188,20 @@ func (this *Box3) ClampPoint(point *Vector3, optionalTarget *Vector3) *Vector3 {
 	} else {
 		result = optionalTarget
 	}
-	return result.Copy(point).Clamp(&this.Min, &this.Max)
+	return result.Copy(point).Clamp(&b.Min, &b.Max)
 }
 
-func (this *Box3) DistanceToPoint(point *Vector3) float32 {
+// DistanceToPoint returns the distance from this box to the specified point.
+func (b *Box3) DistanceToPoint(point *Vector3) float32 {
 
 	var v1 Vector3
-	clampedPoint := v1.Copy(point).Clamp(&this.Min, &this.Max)
+	clampedPoint := v1.Copy(point).Clamp(&b.Min, &b.Max)
 	return clampedPoint.Sub(point).Length()
 }
 
-func (this *Box3) GetBoundingSphere(optionalTarget *Sphere) *Sphere {
+// GetBoundingSphere creates a bounding sphere to this bounding box.
+// Store its pointer into optionalTarget, if not nil, and also returns it.
+func (b *Box3) GetBoundingSphere(optionalTarget *Sphere) *Sphere {
 
 	var v1 Vector3
 	var result *Sphere
@@ -199,27 +211,33 @@ func (this *Box3) GetBoundingSphere(optionalTarget *Sphere) *Sphere {
 		result = optionalTarget
 	}
 
-	result.Center = *this.Center(nil)
-	result.Radius = this.Size(&v1).Length() * 0.5
+	result.Center = *b.Center(nil)
+	result.Radius = b.Size(&v1).Length() * 0.5
 
 	return result
 }
 
-func (this *Box3) Intersect(box *Box3) *Box3 {
+// Intersect sets this box to the intersection with other box.
+// Returns pointer to this updated bounding box.
+func (b *Box3) Intersect(other *Box3) *Box3 {
 
-	this.Min.Max(&box.Min)
-	this.Max.Min(&box.Max)
-	return this
+	b.Min.Max(&other.Min)
+	b.Max.Min(&other.Max)
+	return b
 }
 
-func (this *Box3) Union(box *Box3) *Box3 {
+// Union set this box to the union with other box.
+// Returns pointer to this updated bounding box.
+func (b *Box3) Union(other *Box3) *Box3 {
 
-	this.Min.Min(&box.Min)
-	this.Max.Max(&box.Max)
-	return this
+	b.Min.Min(&other.Min)
+	b.Max.Max(&other.Max)
+	return b
 }
 
-func (this *Box3) ApplyMatrix4(matrix *Matrix4) *Box3 {
+// ApplyMatrix4 applies the specified matrix to the vertices of this bounding box.
+// Returns pointer to this updated bounding box.
+func (b *Box3) ApplyMatrix4(matrix *Matrix4) *Box3 {
 
 	points := []Vector3{
 		Vector3{},
@@ -232,34 +250,38 @@ func (this *Box3) ApplyMatrix4(matrix *Matrix4) *Box3 {
 		Vector3{},
 	}
 
-	points[0].Set(this.Min.X, this.Min.Y, this.Min.Z).ApplyMatrix4(matrix) // 000
-	points[1].Set(this.Min.X, this.Min.Y, this.Max.Z).ApplyMatrix4(matrix) // 001
-	points[2].Set(this.Min.X, this.Max.Y, this.Min.Z).ApplyMatrix4(matrix) // 010
-	points[3].Set(this.Min.X, this.Max.Y, this.Max.Z).ApplyMatrix4(matrix) // 011
-	points[4].Set(this.Max.X, this.Min.Y, this.Min.Z).ApplyMatrix4(matrix) // 100
-	points[5].Set(this.Max.X, this.Min.Y, this.Max.Z).ApplyMatrix4(matrix) // 101
-	points[6].Set(this.Max.X, this.Max.Y, this.Min.Z).ApplyMatrix4(matrix) // 110
-	points[7].Set(this.Max.X, this.Max.Y, this.Max.Z).ApplyMatrix4(matrix) // 111
+	points[0].Set(b.Min.X, b.Min.Y, b.Min.Z).ApplyMatrix4(matrix) // 000
+	points[1].Set(b.Min.X, b.Min.Y, b.Max.Z).ApplyMatrix4(matrix) // 001
+	points[2].Set(b.Min.X, b.Max.Y, b.Min.Z).ApplyMatrix4(matrix) // 010
+	points[3].Set(b.Min.X, b.Max.Y, b.Max.Z).ApplyMatrix4(matrix) // 011
+	points[4].Set(b.Max.X, b.Min.Y, b.Min.Z).ApplyMatrix4(matrix) // 100
+	points[5].Set(b.Max.X, b.Min.Y, b.Max.Z).ApplyMatrix4(matrix) // 101
+	points[6].Set(b.Max.X, b.Max.Y, b.Min.Z).ApplyMatrix4(matrix) // 110
+	points[7].Set(b.Max.X, b.Max.Y, b.Max.Z).ApplyMatrix4(matrix) // 111
 
-	this.MakeEmpty()
-	this.SetFromPoints(points)
+	b.MakeEmpty()
+	b.SetFromPoints(points)
 
-	return this
+	return b
 }
 
-func (this *Box3) Translate(offset *Vector3) *Box3 {
+// Translate translates the position of this box by offset.
+// Returns pointer to this updated box.
+func (b *Box3) Translate(offset *Vector3) *Box3 {
 
-	this.Min.Add(offset)
-	this.Max.Add(offset)
-	return this
+	b.Min.Add(offset)
+	b.Max.Add(offset)
+	return b
 }
 
-func (this *Box3) Equals(box *Box3) bool {
+// Equals returns if this box is equal to other
+func (b *Box3) Equals(other *Box3) bool {
 
-	return box.Min.Equals(&this.Min) && box.Max.Equals(&this.Max)
+	return other.Min.Equals(&b.Min) && other.Max.Equals(&b.Max)
 }
 
-func (this *Box3) Clone() *Box3 {
+// Clone creates and returns a pointer to copy of this bounding box
+func (b *Box3) Clone() *Box3 {
 
-	return NewBox3(&this.Min, &this.Max)
+	return NewBox3(&b.Min, &b.Max)
 }

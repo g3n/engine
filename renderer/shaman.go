@@ -37,11 +37,13 @@ type ShaderSpecs struct {
 	Defines          map[string]string  // Additional shader defines
 }
 
+// ProgSpecs represents a compiled shader program along with its specs
 type ProgSpecs struct {
 	program *gls.Program // program object
 	specs   ShaderSpecs  // associated specs
 }
 
+// Shaman is the shader manager
 type Shaman struct {
 	gs       *gls.GLS
 	includes map[string]string              // include files sources
@@ -164,7 +166,7 @@ func (sm *Shaman) SetProgram(s *ShaderSpecs) (bool, error) {
 	return true, nil
 }
 
-// Generates shader program from the specified specs
+// GenProgram generates shader program from the specified specs
 func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 
 	// Get info for the specified shader program
@@ -282,7 +284,7 @@ func (sm *Shaman) preprocess(source string, defines map[string]string) (string, 
 		if err != nil {
 			return "", err
 		}
-		// Replace all occurances of the include directive with its processed source code
+		// Replace all occurrences of the include directive with its processed source code
 		newSource = strings.Replace(newSource, m[0], incSource, -1)
 	}
 	return prefix + newSource, nil

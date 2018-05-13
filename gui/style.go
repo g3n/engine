@@ -5,21 +5,25 @@
 package gui
 
 import (
+	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/text"
 )
 
-// All styles
+// Style contains the styles for all GUI elements
 type Style struct {
+	Color         ColorStyle
 	Font          *text.Font
 	FontIcon      *text.Font
+	Label         LabelStyle
 	Button        ButtonStyles
 	CheckRadio    CheckRadioStyles
 	Edit          EditStyles
-	ScrollBar     ScrollBarStyle
+	ScrollBar     ScrollBarStyles
 	Slider        SliderStyles
 	Splitter      SplitterStyles
 	Window        WindowStyles
-	Scroller      ScrollerStyles
+	ItemScroller  ItemScrollerStyles
+	Scroller      ScrollerStyle
 	List          ListStyles
 	DropDown      DropDownStyles
 	Folder        FolderStyles
@@ -31,6 +35,19 @@ type Style struct {
 	TabBar        TabBarStyles
 }
 
+// ColorStyle defines the main colors used.
+type ColorStyle struct {
+	BgDark    math32.Color4
+	BgMed     math32.Color4
+	BgNormal  math32.Color4
+	BgOver    math32.Color4
+	Highlight math32.Color4
+	Select    math32.Color4
+	Text      math32.Color4
+	TextDis   math32.Color4
+}
+
+// States that a GUI element can be in
 const (
 	StyleOver = iota + 1
 	StyleFocus

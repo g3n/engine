@@ -12,13 +12,14 @@ import (
 )
 
 //
-// Library Visual Scenes
+// LibraryVisualScenes
 //
 type LibraryVisualScenes struct {
 	Asset       *Asset
 	VisualScene []*VisualScene
 }
 
+// Dump prints out information about the LibraryVisualScenes
 func (lv *LibraryVisualScenes) Dump(out io.Writer, indent int) {
 
 	if lv == nil {
@@ -35,7 +36,7 @@ func (lv *LibraryVisualScenes) Dump(out io.Writer, indent int) {
 }
 
 //
-// A visual scene contain all the nodes of a visual scene
+// VisualScene contains all the nodes of a visual scene
 //
 type VisualScene struct {
 	Id   string
@@ -43,6 +44,7 @@ type VisualScene struct {
 	Node []*Node // Array of nodes
 }
 
+// Dump prints out information about the VisualScene
 func (vs *VisualScene) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sVisualScene id:%s name:%s\n", sIndent(indent), vs.Id, vs.Name)
@@ -52,7 +54,7 @@ func (vs *VisualScene) Dump(out io.Writer, indent int) {
 }
 
 //
-// Base Node is embedded in each node instance
+// Node is embedded in each node instance
 //
 type Node struct {
 	Id                     string
@@ -65,6 +67,7 @@ type Node struct {
 	Node                   []*Node // Array of children nodes
 }
 
+// Dump prints out information about the Node
 func (n *Node) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sNode id:%s name:%s sid:%s type:%s layer:%v\n",
@@ -101,6 +104,7 @@ type Matrix struct {
 	Data [16]float32
 }
 
+// Dump prints out information about the Matrix
 func (m *Matrix) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sMatrix sid:%s data:%v\n", sIndent(indent), m.Sid, m.Data)
@@ -114,6 +118,7 @@ type Rotate struct {
 	Data [4]float32
 }
 
+// Dump prints out information about the Rotate
 func (r *Rotate) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sRotate sid:%s data:%v\n", sIndent(indent), r.Sid, r.Data)
@@ -127,6 +132,7 @@ type Translate struct {
 	Data [3]float32
 }
 
+// Dump prints out information about the Translate
 func (t *Translate) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sTranslate sid:%s data:%v\n", sIndent(indent), t.Sid, t.Data)
@@ -140,6 +146,7 @@ type Scale struct {
 	Data [3]float32
 }
 
+// Dump prints out information about the Scale
 func (s *Scale) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sScale sid:%s data:%v\n", sIndent(indent), s.Sid, s.Data)
@@ -154,6 +161,7 @@ type InstanceGeometry struct {
 	BindMaterial *BindMaterial
 }
 
+// Dump prints out information about the InstanceGeometry
 func (ig *InstanceGeometry) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sInstanceGeometry url:%s name:%s\n", sIndent(indent), ig.Url, ig.Name)
@@ -172,6 +180,7 @@ type BindMaterial struct {
 	}
 }
 
+// Dump prints out information about the BindMaterial
 func (bm *BindMaterial) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sBindMaterial\n", sIndent(indent))
@@ -195,6 +204,7 @@ type InstanceMaterial struct {
 	BindVertexInput []BindVertexInput
 }
 
+// Dump prints out information about the InstanceMaterial
 func (im *InstanceMaterial) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sInstanceMaterial sid:%s name:%s target:%s symbol:%s\n",
@@ -222,6 +232,7 @@ type BindVertexInput struct {
 	InputSet      uint
 }
 
+// Dump prints out information about the BindVertexInput
 func (bvi *BindVertexInput) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sBindVertexInput semantic:%s InputSemantic:%s InputSet:%d\n",
@@ -247,7 +258,6 @@ func (d *Decoder) decLibraryVisualScenes(start xml.StartElement, dom *Collada) e
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decVisualScene(vsStart xml.StartElement, lv *LibraryVisualScenes) error {
@@ -274,7 +284,6 @@ func (d *Decoder) decVisualScene(vsStart xml.StartElement, lv *LibraryVisualScen
 			}
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decNode(nodeStart xml.StartElement, parent *[]*Node) error {
@@ -339,7 +348,6 @@ func (d *Decoder) decNode(nodeStart xml.StartElement, parent *[]*Node) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decMatrix(cdata []byte, n *Node) error {
@@ -414,7 +422,6 @@ func (d *Decoder) decInstanceGeometry(start xml.StartElement, n *Node) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decBindMaterial(start xml.StartElement, dest **BindMaterial) error {
@@ -434,7 +441,6 @@ func (d *Decoder) decBindMaterial(start xml.StartElement, dest **BindMaterial) e
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decBindMaterialTechniqueCommon(start xml.StartElement, bm *BindMaterial) error {
@@ -453,7 +459,6 @@ func (d *Decoder) decBindMaterialTechniqueCommon(start xml.StartElement, bm *Bin
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decInstanceMaterial(start xml.StartElement, bm *BindMaterial) error {
@@ -483,5 +488,4 @@ func (d *Decoder) decInstanceMaterial(start xml.StartElement, bm *BindMaterial) 
 			continue
 		}
 	}
-	return nil
 }

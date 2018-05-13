@@ -9,6 +9,7 @@ import (
 	"sort"
 )
 
+// Raycaster represents an empty object that can cast rays and check for ray intersections.
 type Raycaster struct {
 	// The distance from the ray origin to the intersected points
 	// must be greater than the value of this field to be considered.
@@ -51,7 +52,7 @@ type Intersect struct {
 	Index uint32
 }
 
-// New creates and returns a pointer to a new raycaster object
+// NewRaycaster creates and returns a pointer to a new raycaster object
 // with the specified origin and direction.
 func NewRaycaster(origin, direction *math32.Vector3) *Raycaster {
 
@@ -72,7 +73,9 @@ func (rc *Raycaster) IntersectObject(inode INode, recursive bool) []Intersect {
 
 	intersects := []Intersect{}
 	rc.intersectObject(inode, &intersects, recursive)
-	sort.Sort(Intersects(intersects))
+	sort.Slice(intersects, func(i, j int) bool {
+		return intersects[i].Distance < intersects[j].Distance
+	})
 	return intersects
 }
 
@@ -86,7 +89,9 @@ func (rc *Raycaster) IntersectObjects(inodes []INode, recursive bool) []Intersec
 	for _, inode := range inodes {
 		rc.intersectObject(inode, &intersects, recursive)
 	}
-	sort.Sort(Intersects(intersects))
+	sort.Slice(intersects, func(i, j int) bool {
+		return intersects[i].Distance < intersects[j].Distance
+	})
 	return intersects
 }
 
@@ -103,14 +108,4 @@ func (rc *Raycaster) intersectObject(inode INode, intersects *[]Intersect, recur
 		}
 	}
 	return
-}
-
-// For sorting Intersects by distance
-type Intersects []Intersect
-
-func (is Intersects) Len() int      { return len(is) }
-func (is Intersects) Swap(i, j int) { is[i], is[j] = is[j], is[i] }
-func (is Intersects) Less(i, j int) bool {
-
-	return is[i].Distance < is[j].Distance
 }

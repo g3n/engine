@@ -8,6 +8,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// Folder represents a folder GUI element.
 type Folder struct {
 	Panel               // Embedded panel
 	label        Label  // Folder label
@@ -18,25 +19,23 @@ type Folder struct {
 	alignRight   bool
 }
 
+// FolderStyle contains the styling of a Folder.
 type FolderStyle struct {
-	Margins     BorderSizes
-	Border      BorderSizes
-	Paddings    BorderSizes
-	BorderColor math32.Color4
-	BgColor     math32.Color
-	FgColor     math32.Color
+	PanelStyle
+	FgColor     math32.Color4
 	Icons       [2]string
 }
 
+// FolderStyles contains a FolderStyle for each valid GUI state.
 type FolderStyles struct {
-	Normal   *FolderStyle
-	Over     *FolderStyle
-	Focus    *FolderStyle
-	Disabled *FolderStyle
+	Normal   FolderStyle
+	Over     FolderStyle
+	Focus    FolderStyle
+	Disabled FolderStyle
 }
 
 // NewFolder creates and returns a pointer to a new folder widget
-// with the specified text and initial width
+// with the specified text and initial width.
 func NewFolder(text string, width float32, contentPanel IPanel) *Folder {
 
 	f := new(Folder)
@@ -45,7 +44,7 @@ func NewFolder(text string, width float32, contentPanel IPanel) *Folder {
 }
 
 // Initialize initializes the Folder with the specified text and initial width
-// It is normally used when the folder is embedded in another object
+// It is normally used when the folder is embedded in another object.
 func (f *Folder) Initialize(text string, width float32, contentPanel IPanel) {
 
 	f.Panel.Initialize(width, 0)
@@ -57,7 +56,7 @@ func (f *Folder) Initialize(text string, width float32, contentPanel IPanel) {
 
 	// Create icon
 	f.icon.initialize("", StyleDefault().FontIcon)
-	f.icon.SetFontSize(f.label.FontSize() * 1.3)
+	f.icon.SetFontSize(StyleDefault().Label.PointSize * 1.3)
 	f.Panel.Add(&f.icon)
 
 	// Setup content panel
@@ -76,7 +75,7 @@ func (f *Folder) Initialize(text string, width float32, contentPanel IPanel) {
 	f.recalc()
 }
 
-// SetStyles set the folder styles overriding the default style
+// SetStyles set the folder styles overriding the default style.
 func (f *Folder) SetStyles(fs *FolderStyles) {
 
 	f.styles = fs
@@ -84,7 +83,7 @@ func (f *Folder) SetStyles(fs *FolderStyles) {
 }
 
 // SetAlignRight sets the side of the alignment of the content panel
-// in relation to the folder
+// in relation to the folder.
 func (f *Folder) SetAlignRight(state bool) {
 
 	f.alignRight = state
@@ -92,7 +91,7 @@ func (f *Folder) SetAlignRight(state bool) {
 }
 
 // TotalHeight returns this folder total height
-// considering the contents panel, if visible
+// considering the contents panel, if visible.
 func (f *Folder) TotalHeight() float32 {
 
 	height := f.Height()
@@ -102,7 +101,7 @@ func (f *Folder) TotalHeight() float32 {
 	return height
 }
 
-// onMouse receives mouse button events over the folder panel
+// onMouse receives mouse button events over the folder panel.
 func (f *Folder) onMouse(evname string, ev interface{}) {
 
 	switch evname {
@@ -139,29 +138,25 @@ func (f *Folder) onCursor(evname string, ev interface{}) {
 func (f *Folder) update() {
 
 	if f.cursorOver {
-		f.applyStyle(f.styles.Over)
+		f.applyStyle(&f.styles.Over)
 		return
 	}
-	f.applyStyle(f.styles.Normal)
+	f.applyStyle(&f.styles.Normal)
 }
 
 // applyStyle applies the specified style
 func (f *Folder) applyStyle(s *FolderStyle) {
 
-	f.SetMarginsFrom(&s.Margins)
-	f.SetBordersColor4(&s.BorderColor)
-	f.SetBordersFrom(&s.Border)
-	f.SetPaddingsFrom(&s.Paddings)
-	f.SetColor(&s.BgColor)
+	f.Panel.ApplyStyle(&s.PanelStyle)
 
 	icode := 0
 	if f.contentPanel.GetPanel().Visible() {
 		icode = 1
 	}
 	f.icon.SetText(string(s.Icons[icode]))
-	f.icon.SetColor(&s.FgColor)
-	f.label.SetBgColor(&s.BgColor)
-	f.label.SetColor(&s.FgColor)
+	f.icon.SetColor4(&s.FgColor)
+	f.label.SetBgColor4(&s.BgColor)
+	f.label.SetColor4(&s.FgColor)
 }
 
 func (f *Folder) recalc() {

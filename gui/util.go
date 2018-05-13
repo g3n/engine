@@ -4,14 +4,17 @@
 
 package gui
 
-type BorderSizes struct {
+// RectBounds specifies the size of the boundaries of a rectangle.
+// It can represent the thickness of the borders, the margins, or the padding of a rectangle.
+type RectBounds struct {
 	Top    float32
 	Right  float32
 	Bottom float32
 	Left   float32
 }
 
-func (bs *BorderSizes) Set(top, right, bottom, left float32) {
+// Set sets the values of the RectBounds.
+func (bs *RectBounds) Set(top, right, bottom, left float32) {
 
 	if top >= 0 {
 		bs.Top = top
@@ -27,6 +30,7 @@ func (bs *BorderSizes) Set(top, right, bottom, left float32) {
 	}
 }
 
+// Rect represents a rectangle.
 type Rect struct {
 	X      float32
 	Y      float32
@@ -34,6 +38,7 @@ type Rect struct {
 	Height float32
 }
 
+// Contains determines whether a 2D point is inside the Rect.
 func (r *Rect) Contains(x, y float32) bool {
 
 	if x < r.X || x > r.X+r.Width {

@@ -12,16 +12,17 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// Mesh is a Graphic with uniforms for the model, view, projection, and normal matrices.
 type Mesh struct {
 	Graphic             // Embedded graphic
-	uniMVM  gls.Uniform // Model view matrix uniform location cache
-	uniMVPM gls.Uniform // Model view projection matrix uniform cache
-	uniNM   gls.Uniform // Normal matrix uniform cache
+	uniMVm  gls.Uniform // Model view matrix uniform location cache
+	uniMVPm gls.Uniform // Model view projection matrix uniform cache
+	uniNm   gls.Uniform // Normal matrix uniform cache
 }
 
-// NewMesh creates and returns a pointer to a mesh with the specified geometry and material
+// NewMesh creates and returns a pointer to a mesh with the specified geometry and material.
 // If the mesh has multi materials, the material specified here must be nil and the
-// individual materials must be add using "AddMateria" or AddGroupMaterial"
+// individual materials must be add using "AddMaterial" or AddGroupMaterial".
 func NewMesh(igeom geometry.IGeometry, imat material.IMaterial) *Mesh {
 
 	m := new(Mesh)
@@ -29,14 +30,15 @@ func NewMesh(igeom geometry.IGeometry, imat material.IMaterial) *Mesh {
 	return m
 }
 
+// Init initializes the Mesh and its uniforms.
 func (m *Mesh) Init(igeom geometry.IGeometry, imat material.IMaterial) {
 
 	m.Graphic.Init(igeom, gls.TRIANGLES)
 
 	// Initialize uniforms
-	m.uniMVM.Init("ModelViewMatrix")
-	m.uniMVPM.Init("MVP")
-	m.uniNM.Init("NormalMatrix")
+	m.uniMVm.Init("ModelViewMatrix")
+	m.uniMVPm.Init("MVP")
+	m.uniNm.Init("NormalMatrix")
 
 	// Adds single material if not nil
 	if imat != nil {
@@ -44,12 +46,13 @@ func (m *Mesh) Init(igeom geometry.IGeometry, imat material.IMaterial) {
 	}
 }
 
+// AddMaterial adds a material for the specified subset of vertices.
 func (m *Mesh) AddMaterial(imat material.IMaterial, start, count int) {
 
 	m.Graphic.AddMaterial(m, imat, start, count)
 }
 
-// Add group material
+// AddGroupMaterial adds a material for the specified geometry group.
 func (m *Mesh) AddGroupMaterial(imat material.IMaterial, gindex int) {
 
 	m.Graphic.AddGroupMaterial(m, imat, gindex)
@@ -60,23 +63,20 @@ func (m *Mesh) AddGroupMaterial(imat material.IMaterial, gindex int) {
 // the model matrices.
 func (m *Mesh) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 
-	// Calculates model view matrix and transfer uniform
-	mw := m.MatrixWorld()
-	var mvm math32.Matrix4
-	mvm.MultiplyMatrices(&rinfo.ViewMatrix, &mw)
-	location := m.uniMVM.Location(gs)
+	// Transfer uniform for model view matrix
+	mvm := m.ModelViewMatrix()
+	location := m.uniMVm.Location(gs)
 	gs.UniformMatrix4fv(location, 1, false, &mvm[0])
 
-	// Calculates model view projection matrix and updates uniform
-	var mvpm math32.Matrix4
-	mvpm.MultiplyMatrices(&rinfo.ProjMatrix, &mvm)
-	location = m.uniMVPM.Location(gs)
+	// Transfer uniform for model view projection matrix
+	mvpm := m.ModelViewProjectionMatrix()
+	location = m.uniMVPm.Location(gs)
 	gs.UniformMatrix4fv(location, 1, false, &mvpm[0])
 
-	// Calculates normal matrix and updates uniform
+	// Calculates normal matrix and transfer uniform
 	var nm math32.Matrix3
-	nm.GetNormalMatrix(&mvm)
-	location = m.uniNM.Location(gs)
+	nm.GetNormalMatrix(mvm)
+	location = m.uniNm.Location(gs)
 	gs.UniformMatrix3fv(location, 1, false, &nm[0])
 }
 
@@ -152,9 +152,7 @@ func (m *Mesh) Raycast(rc *core.Raycaster, intersects *[]core.Intersect) {
 	positions := vboPos.Buffer()
 	indices := geom.Indices()
 
-	var vA math32.Vector3
-	var vB math32.Vector3
-	var vC math32.Vector3
+	var vA, vB, vC math32.Vector3
 
 	// Geometry has indexed vertices
 	if indices.Size() > 0 {
@@ -178,7 +176,9 @@ func (m *Mesh) Raycast(rc *core.Raycaster, intersects *[]core.Intersect) {
 		}
 		// Geometry has NO indexed vertices
 	} else {
-		for i := 0; i < positions.Size(); i += 9 {
+		stride := vboPos.Stride()
+		offset := vboPos.AttribOffset("VertexPosition")
+		for i := offset; i < positions.Size(); i += stride {
 			// Get face indices
 			a := i / 3
 			b := a + 1

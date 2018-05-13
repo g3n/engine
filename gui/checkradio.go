@@ -6,7 +6,6 @@ package gui
 
 import (
 	"github.com/g3n/engine/gui/assets/icon"
-	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 )
 
@@ -17,6 +16,7 @@ const (
 	radioOFF = string(icon.RadioButtonUnchecked)
 )
 
+// CheckRadio is a GUI element that can be either a checkbox or a radio button
 type CheckRadio struct {
 	Panel             // Embedded panel
 	Label      *Label // Text label
@@ -31,14 +31,10 @@ type CheckRadio struct {
 	subroot    bool // indicates root subcription
 }
 
-type CheckRadioStyle struct {
-	Border      BorderSizes
-	Paddings    BorderSizes
-	BorderColor math32.Color4
-	BgColor     math32.Color4
-	FgColor     math32.Color
-}
+// CheckRadioStyle contains the styling of a CheckRadio
+type CheckRadioStyle BasicStyle
 
+// CheckRadioStyles contains an CheckRadioStyle for each valid GUI state
 type CheckRadioStyles struct {
 	Normal   CheckRadioStyle
 	Over     CheckRadioStyle
@@ -94,7 +90,7 @@ func newCheckRadio(check bool, text string) *CheckRadio {
 	cb.Panel.Add(cb.Label)
 
 	// Creates icon label
-	cb.icon = NewLabel(" ", true)
+	cb.icon = NewIcon(" ")
 	cb.Panel.Add(cb.icon)
 
 	cb.recalc()
@@ -250,13 +246,9 @@ func (cb *CheckRadio) update() {
 // setStyle sets the specified checkradio style
 func (cb *CheckRadio) applyStyle(s *CheckRadioStyle) {
 
-	cb.Panel.SetBordersColor4(&s.BorderColor)
-	cb.Panel.SetBordersFrom(&s.Border)
-	cb.Panel.SetPaddingsFrom(&s.Paddings)
-	cb.Panel.SetColor4(&s.BgColor)
-
-	cb.icon.SetColor(&s.FgColor)
-	cb.Label.SetColor(&s.FgColor)
+	cb.Panel.ApplyStyle(&s.PanelStyle)
+	cb.icon.SetColor4(&s.FgColor)
+	cb.Label.SetColor4(&s.FgColor)
 }
 
 // recalc recalculates dimensions and position from inside out

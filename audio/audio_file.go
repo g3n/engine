@@ -13,6 +13,7 @@ import (
 	"unsafe"
 )
 
+// AudioInfo represents the information associated to an audio file
 type AudioInfo struct {
 	Format     int     // OpenAl Format
 	Channels   int     // Number of channels
@@ -23,6 +24,7 @@ type AudioInfo struct {
 	TotalTime  float64 // Total time in seconds
 }
 
+// AudioFile represents an audio file
 type AudioFile struct {
 	wavef   *os.File  // Pointer to wave file opened filed (nil for vorbis)
 	vorbisf *ov.File  // Pointer to vorbis file structure (nil for wave)
@@ -131,26 +133,24 @@ func (af *AudioFile) Seek(pos uint) error {
 	return ov.PcmSeek(af.vorbisf, int64(pos))
 }
 
-// AudioInfo returns the audio info structure for this audio file
+// Info returns the audio info structure for this audio file
 func (af *AudioFile) Info() AudioInfo {
 
 	return af.info
 }
 
-// CurrenTime returns the current time in seconds for the current
-// file read position
+// CurrentTime returns the current time in seconds for the current file read position
 func (af *AudioFile) CurrentTime() float64 {
 
 	if af.vorbisf != nil {
 		pos, _ := ov.TimeTell(af.vorbisf)
 		return pos
-	} else {
-		pos, err := af.wavef.Seek(0, 1)
-		if err != nil {
-			return 0
-		}
-		return float64(pos) / float64(af.info.BytesSec)
 	}
+	pos, err := af.wavef.Seek(0, 1)
+	if err != nil {
+		return 0
+	}
+	return float64(pos) / float64(af.info.BytesSec)
 }
 
 // Looping returns the current looping state of this audio file

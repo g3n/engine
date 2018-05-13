@@ -65,7 +65,6 @@ func (d *Decoder) NewGeometry(id string) (geometry.IGeometry, uint32, error) {
 	default:
 		return nil, 0, fmt.Errorf("GeometryElement:%T not supported", gt)
 	}
-	return nil, 0, nil
 }
 
 func newMesh(m *Mesh) (*geometry.Geometry, uint32, error) {
@@ -141,7 +140,7 @@ func newMeshPolylist(m *Mesh, pels []interface{}) (*geometry.Geometry, uint32, e
 
 	// Creates vertices attributes map for reusing indices
 	mVindex := make(map[[8]float32]uint32)
-	var index uint32 = 0
+	var index uint32
 	geomGroups := make([]geometry.Group, 0)
 	groupMatindex := 0
 	// For each Polylist
@@ -358,7 +357,7 @@ func newMeshLines(m *Mesh, ln *Lines) (*geometry.Geometry, uint32, error) {
 
 	mVindex := make(map[[3]float32]uint32)
 	inputCount := len(ln.Input)
-	var index uint32 = 0
+	var index uint32
 	for i := 0; i < len(ln.P); i += inputCount {
 		// Vertex position
 		var vx [3]float32

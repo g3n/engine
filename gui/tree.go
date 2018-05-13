@@ -9,31 +9,32 @@ import (
 	"github.com/g3n/engine/window"
 )
 
+// Tree is the tree structure GUI element.
 type Tree struct {
 	List               // Embedded list panel
 	styles *TreeStyles // Pointer to styles
 }
 
+// TreeStyles contains the styling of all tree components for each valid GUI state.
 type TreeStyles struct {
 	List     *ListStyles     // Styles for the embedded list
 	Node     *TreeNodeStyles // Styles for the node panel
 	Padlevel float32         // Left padding indentation
 }
 
+// TreeNodeStyles contains a TreeNodeStyle for each valid GUI state.
 type TreeNodeStyles struct {
 	Normal TreeNodeStyle
 }
 
+// TreeNodeStyle contains the styling of a TreeNode.
 type TreeNodeStyle struct {
-	Margins     BorderSizes
-	Border      BorderSizes
-	Paddings    BorderSizes
-	BorderColor math32.Color4
-	BgColor     math32.Color4
-	FgColor     math32.Color
+	PanelStyle
+	FgColor     math32.Color4
 	Icons       [2]string
 }
 
+// TreeNode is a tree node.
 type TreeNode struct {
 	Panel              // Embedded panel
 	label    Label     // Node label
@@ -44,7 +45,7 @@ type TreeNode struct {
 	expanded bool      // Node expanded flag
 }
 
-// NewTree creates and returns a pointer to a new tree widget
+// NewTree creates and returns a pointer to a new tree widget.
 func NewTree(width, height float32) *Tree {
 
 	t := new(Tree)
@@ -53,7 +54,7 @@ func NewTree(width, height float32) *Tree {
 }
 
 // Initialize initializes the tree with the specified initial width and height
-// It is normally used when the folder is embedded in another object
+// It is normally used when the folder is embedded in another object.
 func (t *Tree) Initialize(width, height float32) {
 
 	t.List.initialize(true, width, height)
@@ -63,7 +64,7 @@ func (t *Tree) Initialize(width, height float32) {
 	t.List.Subscribe(OnCursor, t.onCursor)
 }
 
-// SetStyles set the tree styles overriding the default style
+// SetStyles sets the tree styles overriding the default style.
 func (t *Tree) SetStyles(s *TreeStyles) {
 
 	t.styles = s
@@ -71,13 +72,13 @@ func (t *Tree) SetStyles(s *TreeStyles) {
 	t.update()
 }
 
-// InsertAt inserts a child panel at the specified position in the tree
+// InsertAt inserts a child panel at the specified position in the tree.
 func (t *Tree) InsertAt(pos int, child IPanel) {
 
 	t.List.InsertAt(pos, child)
 }
 
-// Add child panel to the end tree
+// Add child panel to the end tree.
 func (t *Tree) Add(ichild IPanel) {
 
 	t.List.Add(ichild)
@@ -85,7 +86,7 @@ func (t *Tree) Add(ichild IPanel) {
 
 // InsertNodeAt inserts at the specified position a new tree node
 // with the specified text at the end of this tree
-// and returns pointer to the new node
+// and returns pointer to the new node.
 func (t *Tree) InsertNodeAt(pos int, text string) *TreeNode {
 
 	n := newTreeNode(text, t, nil)
@@ -95,8 +96,8 @@ func (t *Tree) InsertNodeAt(pos int, text string) *TreeNode {
 	return n
 }
 
-// Add adds a new tree node with the specified text
-// at the end of this tree and returns pointer to the new node
+// AddNode adds a new tree node with the specified text
+// at the end of this tree and returns a pointer to the new node.
 func (t *Tree) AddNode(text string) *TreeNode {
 
 	n := newTreeNode(text, t, nil)
@@ -211,7 +212,7 @@ func newTreeNode(text string, tree *Tree, parNode *TreeNode) *TreeNode {
 
 	// Create node icon
 	n.icon.initialize("", StyleDefault().FontIcon)
-	n.icon.SetFontSize(n.label.FontSize() * 1.3)
+	n.icon.SetFontSize(StyleDefault().Label.PointSize * 1.3)
 	n.Panel.Add(&n.icon)
 
 	// Subscribe to events
@@ -362,17 +363,14 @@ func (n *TreeNode) level() int {
 // applyStyles applies the specified style to this tree node
 func (n *TreeNode) applyStyle(s *TreeNodeStyle) {
 
-	n.SetMarginsFrom(&s.Margins)
-	n.SetBordersColor4(&s.BorderColor)
-	n.SetBordersFrom(&s.Border)
-	n.SetColor4(&s.BgColor)
+	n.Panel.ApplyStyle(&s.PanelStyle)
 	icode := 0
 	if n.expanded {
 		icode = 1
 	}
 	n.icon.SetText(string(s.Icons[icode]))
-	n.icon.SetColor(&s.FgColor)
-	n.label.SetColor(&s.FgColor)
+	n.icon.SetColor4(&s.FgColor)
+	n.label.SetColor4(&s.FgColor)
 }
 
 // update updates this tree node style

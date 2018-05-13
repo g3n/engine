@@ -8,7 +8,7 @@ package gui
 type Align int
 
 const (
-	AlignNone   = Align(iota) // No aligh
+	AlignNone   = Align(iota) // No alignment
 	AlignLeft                 // Align horizontally at left
 	AlignRight                // Align horizontally at right
 	AlignWidth                // Align horizontally using all width

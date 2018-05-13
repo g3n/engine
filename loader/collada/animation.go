@@ -56,6 +56,7 @@ func (at *AnimationTarget) SetLoop(loop bool) {
 	at.loop = loop
 }
 
+// SetStart sets the initial offset value
 func (at *AnimationTarget) SetStart(v float32) {
 
 	at.start = v
@@ -240,7 +241,7 @@ func actionScaleZ(at *AnimationTarget, v float32) {
 	at.target.GetNode().SetScaleZ(v)
 }
 
-// NewSampler creates and returns a pointer to a new SamplerInstance built
+// NewSamplerInstance creates and returns a pointer to a new SamplerInstance built
 // with data from the specified Collada animation and URI
 func NewSamplerInstance(ca *Animation, uri string) (*SamplerInstance, error) {
 
@@ -343,8 +344,6 @@ func (si *SamplerInstance) Interpolate(inp float32) (float32, bool) {
 		return si.linearInterp(inp, idx), true
 	case "BSPLINE":
 		return si.linearInterp(inp, idx), true
-	default:
-		return 0, false
 	}
 
 	return 0, false

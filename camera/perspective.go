@@ -9,6 +9,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// Perspective represents a perspective camera
 type Perspective struct {
 	Camera                     // Embedded camera
 	fov         float32        // field of view in degrees

@@ -8,6 +8,7 @@ import (
 	"github.com/g3n/engine/gui/assets/icon"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
+
 	"time"
 )
 
@@ -21,13 +22,7 @@ type Menu struct {
 }
 
 // MenuBodyStyle describes the style of the menu body
-type MenuBodyStyle struct {
-	Border      BorderSizes
-	Paddings    BorderSizes
-	BorderColor math32.Color4
-	BgColor     math32.Color
-	FgColor     math32.Color
-}
+type MenuBodyStyle BasicStyle
 
 // MenuBodyStyles describes all styles of the menu body
 type MenuBodyStyles struct {
@@ -63,14 +58,11 @@ type MenuItem struct {
 
 // MenuItemStyle describes the style of a menu item
 type MenuItemStyle struct {
-	Border           BorderSizes
-	Paddings         BorderSizes
-	BorderColor      math32.Color4
-	BgColor          math32.Color
-	FgColor          math32.Color
-	IconPaddings     BorderSizes
-	ShortcutPaddings BorderSizes
-	RiconPaddings    BorderSizes
+	PanelStyle
+	FgColor          math32.Color4
+	IconPaddings     RectBounds
+	ShortcutPaddings RectBounds
+	RiconPaddings    RectBounds
 }
 
 // MenuItemStyles describes all the menu item styles
@@ -206,7 +198,7 @@ func (m *Menu) AddMenu(text string, subm *Menu) *MenuItem {
 	mi.submenu.autoOpen = true
 	mi.menu = m
 	if !m.bar {
-		mi.ricon = NewLabel(string(icon.PlayArrow), true)
+		mi.ricon = NewIcon(string(icon.PlayArrow))
 		mi.Panel.Add(mi.ricon)
 	}
 	mi.Panel.Add(mi.submenu)
@@ -478,10 +470,7 @@ func (m *Menu) update() {
 // applyStyle applies the specified menu body style
 func (m *Menu) applyStyle(mbs *MenuBodyStyle) {
 
-	m.SetBordersFrom(&mbs.Border)
-	m.SetBordersColor4(&mbs.BorderColor)
-	m.SetPaddingsFrom(&mbs.Paddings)
-	m.SetColor(&mbs.BgColor)
+	m.Panel.ApplyStyle(&mbs.PanelStyle)
 }
 
 // recalc recalculates the positions of this menu internal items
@@ -605,7 +594,7 @@ func (mi *MenuItem) SetIcon(icon string) *MenuItem {
 		mi.licon = nil
 	}
 	// Sets the new icon
-	mi.licon = NewLabel(icon, true)
+	mi.licon = NewIcon(icon)
 	mi.Panel.Add(mi.licon)
 	mi.update()
 	return mi
@@ -827,15 +816,12 @@ func (mi *MenuItem) update() {
 // applyStyle applies the specified menu item style
 func (mi *MenuItem) applyStyle(mis *MenuItemStyle) {
 
-	mi.SetBordersFrom(&mis.Border)
-	mi.SetBordersColor4(&mis.BorderColor)
-	mi.SetPaddingsFrom(&mis.Paddings)
-	mi.SetColor(&mis.BgColor)
+	mi.Panel.ApplyStyle(&mis.PanelStyle)
 	if mi.licon != nil {
 		mi.licon.SetPaddingsFrom(&mis.IconPaddings)
 	}
 	if mi.label != nil {
-		mi.label.SetColor(&mis.FgColor)
+		mi.label.SetColor4(&mis.FgColor)
 	}
 	if mi.shortcut != nil {
 		mi.shortcut.SetPaddingsFrom(&mis.ShortcutPaddings)

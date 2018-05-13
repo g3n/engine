@@ -7,10 +7,10 @@
 package al
 
 /*
-#cgo darwin   CFLAGS:  -DGO_DARWIN  -I/usr/include/AL
+#cgo darwin   CFLAGS:  -DGO_DARWIN  -I/usr/local/opt/openal-soft/include/AL -I/usr/include/AL
 #cgo linux    CFLAGS:  -DGO_LINUX   -I/usr/include/AL
 #cgo windows  CFLAGS:  -DGO_WINDOWS -I${SRCDIR}/../windows/openal-soft-1.18.2/include/AL
-#cgo darwin   LDFLAGS: -lopenal
+#cgo darwin   LDFLAGS: -L/usr/local/opt/openal-soft/lib -lopenal
 #cgo linux    LDFLAGS: -lopenal
 #cgo windows  LDFLAGS: -L${SRCDIR}/../windows/bin -lOpenAL32
 

@@ -9,30 +9,53 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// Box represents the geometry of a rectangular cuboid.
+// See https://en.wikipedia.org/wiki/Cuboid#Rectangular_cuboid for more details.
+// A Box geometry is defined by its width, height, and length and also by the number
+// of segments in each dimension.
 type Box struct {
 	Geometry
-	Width          float64
-	Height         float64
-	Depth          float64
-	WidthSegments  int
-	HeightSegments int
-	DepthSegments  int
+	Width          float32
+	Height         float32
+	Length         float32
+	WidthSegments  int // > 0
+	HeightSegments int // > 0
+	LengthSegments int // > 0
 }
 
-// NewBox creates and returns a pointer to a new Box geometry object.
-// The geometry is defined by its width, height, depth and the number of
-// segments of each dimension (minimum = 1).
-func NewBox(width, height, depth float64, widthSegments, heightSegments, depthSegments int) *Box {
+// NewCube creates a new cube geometry of the specified size.
+func NewCube(size float32) *Box {
+	return NewSegmentedBox(size, size, size, 1, 1, 1)
+}
+
+// NewSegmentedCube creates a cube geometry of the specified size and number of segments.
+func NewSegmentedCube(size float32, segments int) *Box {
+	return NewSegmentedBox(size, size, size, segments, segments, segments)
+}
+
+// NewBox creates a box geometry of the specified width, height, and length.
+func NewBox(width, height, length float32) *Box {
+	return NewSegmentedBox(width, height, length, 1, 1, 1)
+}
+
+// NewSegmentedBox creates a box geometry of the specified size and with the specified number
+// of segments in each dimension. This is the Box constructor with most tunable parameters.
+func NewSegmentedBox(width, height, length float32, widthSegments, heightSegments, lengthSegments int) *Box {
 
 	box := new(Box)
 	box.Geometry.Init()
 
+	// Validate arguments
+	if widthSegments <= 0 || heightSegments <= 0 || lengthSegments <= 0 {
+		panic("Invalid argument(s). All segment quantities should be greater than zero.")
+	}
+
 	box.Width = width
 	box.Height = height
-	box.Depth = depth
+	box.Length = length
 	box.WidthSegments = widthSegments
 	box.HeightSegments = heightSegments
-	box.DepthSegments = depthSegments
+	box.LengthSegments = lengthSegments
 
 	// Create buffers
 	positions := math32.NewArrayF32(0, 16)
@@ -40,57 +63,53 @@ func NewBox(width, height, depth float64, widthSegments, heightSegments, depthSe
 	uvs := math32.NewArrayF32(0, 16)
 	indices := math32.NewArrayU32(0, 16)
 
-	width_half := width / 2
-	height_half := height / 2
-	depth_half := depth / 2
+	// Internal function to build each of the six box planes
+	buildPlane := func(u, v string, udir, vdir int, width, height, length float32, materialIndex uint) {
 
-	// Internal function to build each box plane
-	buildPlane := func(u, v string, udir, vdir int, width, height, depth float64, materialIndex uint) {
-
-		gridX := widthSegments
-		gridY := heightSegments
-		width_half := width / 2
-		height_half := height / 2
 		offset := positions.Len() / 3
+		gridX := box.WidthSegments
+		gridY := box.HeightSegments
 		var w string
 
 		if (u == "x" && v == "y") || (u == "y" && v == "x") {
 			w = "z"
 		} else if (u == "x" && v == "z") || (u == "z" && v == "x") {
 			w = "y"
-			gridY = depthSegments
+			gridY = box.LengthSegments
 		} else if (u == "z" && v == "y") || (u == "y" && v == "z") {
 			w = "x"
-			gridX = depthSegments
+			gridX = box.LengthSegments
 		}
 
-		gridX1 := gridX + 1
-		gridY1 := gridY + 1
-		segment_width := width / float64(gridX)
-		segment_height := height / float64(gridY)
 		var normal math32.Vector3
-		if depth > 0 {
+		if length > 0 {
 			normal.SetByName(w, 1)
 		} else {
 			normal.SetByName(w, -1)
 		}
 
-		// Generates the plane vertices, normals and uv coordinates.
+		wHalf := width / 2
+		hHalf := height / 2
+		gridX1 := gridX + 1
+		gridY1 := gridY + 1
+		segmentWidth := width / float32(gridX)
+		segmentHeight := height / float32(gridY)
+
+		// Generate the plane vertices, normals, and uv coordinates
 		for iy := 0; iy < gridY1; iy++ {
 			for ix := 0; ix < gridX1; ix++ {
 				var vector math32.Vector3
-				vector.SetByName(u, float32((float64(ix)*segment_width-width_half)*float64(udir)))
-				vector.SetByName(v, float32((float64(iy)*segment_height-height_half)*float64(vdir)))
-				vector.SetByName(w, float32(depth))
+				vector.SetByName(u, (float32(ix)*segmentWidth-wHalf)*float32(udir))
+				vector.SetByName(v, (float32(iy)*segmentHeight-hHalf)*float32(vdir))
+				vector.SetByName(w, length)
 				positions.AppendVector3(&vector)
 				normals.AppendVector3(&normal)
-				uvs.Append(float32(float64(ix)/float64(gridX)), float32(float64(1)-(float64(iy)/float64(gridY))))
+				uvs.Append(float32(ix)/float32(gridX), float32(1)-(float32(iy)/float32(gridY)))
 			}
 		}
 
+		// Generate the indices for the vertices, normals and uv coordinates
 		gstart := indices.Size()
-		matIndex := materialIndex
-		// Generates the indices for the vertices, normals and uvs
 		for iy := 0; iy < gridY; iy++ {
 			for ix := 0; ix < gridX; ix++ {
 				a := ix + gridX1*iy
@@ -101,20 +120,27 @@ func NewBox(width, height, depth float64, widthSegments, heightSegments, depthSe
 			}
 		}
 		gcount := indices.Size() - gstart
-		box.AddGroup(gstart, gcount, int(matIndex))
+		box.AddGroup(gstart, gcount, int(materialIndex))
 	}
 
-	buildPlane("z", "y", -1, -1, depth, height, width_half, 0)  // px
-	buildPlane("z", "y", 1, -1, depth, height, -width_half, 1)  // nx
-	buildPlane("x", "z", 1, 1, width, depth, height_half, 2)    // py
-	buildPlane("x", "z", 1, -1, width, depth, -height_half, 3)  // ny
-	buildPlane("x", "y", 1, -1, width, height, depth_half, 4)   // pz
-	buildPlane("x", "y", -1, -1, width, height, -depth_half, 5) // nz
+	wHalf := box.Width / 2
+	hHalf := box.Height / 2
+	lHalf := box.Length / 2
+
+	buildPlane("z", "y", -1, -1, box.Length, box.Height, wHalf, 0) // px
+	buildPlane("z", "y", 1, -1, box.Length, box.Height, -wHalf, 1) // nx
+	buildPlane("x", "z", 1, 1, box.Width, box.Length, hHalf, 2)    // py
+	buildPlane("x", "z", 1, -1, box.Width, box.Length, -hHalf, 3)  // ny
+	buildPlane("x", "y", 1, -1, box.Width, box.Height, lHalf, 4)   // pz
+	buildPlane("x", "y", -1, -1, box.Width, box.Height, -lHalf, 5) // nz
 
 	box.SetIndices(indices)
 	box.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(positions))
 	box.AddVBO(gls.NewVBO().AddAttrib("VertexNormal", 3).SetBuffer(normals))
 	box.AddVBO(gls.NewVBO().AddAttrib("VertexTexcoord", 2).SetBuffer(uvs))
+
+	box.boundingBox = math32.Box3{math32.Vector3{-wHalf, -hHalf, -lHalf}, math32.Vector3{wHalf, hHalf, lHalf}}
+	box.boundingBoxValid = true
 
 	return box
 }
