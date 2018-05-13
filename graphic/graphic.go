@@ -22,11 +22,12 @@ type Graphic struct {
 	mode       uint32             // OpenGL primitive
 	renderable bool               // Renderable flag
 	cullable   bool               // Cullable flag
+	// TODO store cached mv, mvp matrices ?
 }
 
 // GraphicMaterial specifies the material to be used for
 // a subset of vertices from the Graphic geometry
-// A Graphic object has at least one GraphicMaterial
+// A Graphic object has at least one GraphicMaterial.
 type GraphicMaterial struct {
 	imat     material.IMaterial // Associated material
 	start    int                // Index of first element in the geometry
@@ -34,7 +35,7 @@ type GraphicMaterial struct {
 	igraphic IGraphic           // Graphic which contains this GraphicMaterial
 }
 
-// IGraphic is the interface for all Graphic objects
+// IGraphic is the interface for all Graphic objects.
 type IGraphic interface {
 	core.INode
 	GetGraphic() *Graphic
@@ -69,20 +70,20 @@ func (gr *Graphic) Init(igeom geometry.IGeometry, mode uint32) *Graphic {
 }
 
 // GetGraphic satisfies the IGraphic interface and
-// returns pointer to the base Graphic
+// returns pointer to the base Graphic.
 func (gr *Graphic) GetGraphic() *Graphic {
 
 	return gr
 }
 
 // GetGeometry satisfies the IGraphic interface and returns
-// a pointer to the geometry associated with this graphic
+// a pointer to the geometry associated with this graphic.
 func (gr *Graphic) GetGeometry() *geometry.Geometry {
 
 	return gr.igeom.GetGeometry()
 }
 
-// Dispose overrides the embedded Node Dispose method
+// Dispose overrides the embedded Node Dispose method.
 func (gr *Graphic) Dispose() {
 
 	gr.igeom.Dispose()
@@ -132,7 +133,7 @@ func (gr *Graphic) AddMaterial(igr IGraphic, imat material.IMaterial, start, cou
 	gr.materials = append(gr.materials, gmat)
 }
 
-// AddGroupMaterial adds a material for the specified geometry group
+// AddGroupMaterial adds a material for the specified geometry group.
 func (gr *Graphic) AddGroupMaterial(igr IGraphic, imat material.IMaterial, gindex int) {
 
 	geom := gr.igeom.GetGeometry()
@@ -143,13 +144,13 @@ func (gr *Graphic) AddGroupMaterial(igr IGraphic, imat material.IMaterial, ginde
 	gr.AddMaterial(igr, imat, group.Start, group.Count)
 }
 
-// Materials returns slice with this graphic materials
+// Materials returns slice with this graphic materials.
 func (gr *Graphic) Materials() []GraphicMaterial {
 
 	return gr.materials
 }
 
-// GetMaterial returns the  material associated with the specified vertex position
+// GetMaterial returns the material associated with the specified vertex position.
 func (gr *Graphic) GetMaterial(vpos int) material.IMaterial {
 
 	for _, gmat := range gr.materials {
@@ -164,13 +165,19 @@ func (gr *Graphic) GetMaterial(vpos int) material.IMaterial {
 	return nil
 }
 
-// GetMaterial returns the material associated with the GraphicMaterial
+// GetMaterial returns the material associated with the GraphicMaterial.
 func (grmat *GraphicMaterial) GetMaterial() material.IMaterial {
 
 	return grmat.imat
 }
 
-// Render is called by the renderer to render this graphic material
+// GetGraphic returns the graphic associated with the GraphicMaterial.
+func (grmat *GraphicMaterial) GetGraphic() IGraphic {
+
+	return grmat.igraphic
+}
+
+// Render is called by the renderer to render this graphic material.
 func (grmat *GraphicMaterial) Render(gs *gls.GLS, rinfo *core.RenderInfo) {
 
 	// Setup the associated material (set states and transfer material uniforms and textures)

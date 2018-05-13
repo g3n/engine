@@ -18,28 +18,28 @@ import (
 // Renderer renders a 3D scene and/or a 2D GUI on the current window.
 type Renderer struct {
 	gs           *gls.GLS
-	shaman       Shaman                    // Internal shader manager
-	stats        Stats                     // Renderer statistics
-	prevStats    Stats                     // Renderer statistics for previous frame
-	scene        core.INode                // Node containing 3D scene to render
-	panelGui     gui.IPanel                // Panel containing GUI to render
-	panel3D     gui.IPanel                 // Panel which contains the 3D scene
-	ambLights   []*light.Ambient           // Array of ambient lights for last scene
-	dirLights   []*light.Directional       // Array of directional lights for last scene
-	pointLights []*light.Point             // Array of point
-	spotLights  []*light.Spot              // Array of spot lights for the scene
-	others      []core.INode               // Other nodes (audio, players, etc)
-	rgraphics   []graphic.IGraphic         // Array of rendered graphics for scene
-	cgraphics   []graphic.IGraphic         // Array of culled graphics for scene
-	grmats      []*graphic.GraphicMaterial // Array of rendered graphic materials for scene
-	rinfo       core.RenderInfo            // Preallocated Render info
-	specs       ShaderSpecs                // Preallocated Shader specs
-	sortObjects bool                       // Flag indicating whether objects should be sorted before rendering
-	redrawGui   bool                       // Flag indicating the gui must be redrawn completely
-	rendered    bool                       // Flag indicating if anything was rendered
-	panList      []gui.IPanel              // list of panels to render
-	frameBuffers int                       // Number of frame buffers
-	frameCount   int                       // Current number of frame buffers to write
+	shaman       Shaman                      // Internal shader manager
+	stats        Stats                       // Renderer statistics
+	prevStats    Stats                       // Renderer statistics for previous frame
+	scene        core.INode                  // Node containing 3D scene to render
+	panelGui     gui.IPanel                  // Panel containing GUI to render
+	panel3D      gui.IPanel                  // Panel which contains the 3D scene
+	ambLights    []*light.Ambient            // Array of ambient lights for last scene
+	dirLights    []*light.Directional        // Array of directional lights for last scene
+	pointLights  []*light.Point              // Array of point
+	spotLights   []*light.Spot               // Array of spot lights for the scene
+	others       []core.INode                // Other nodes (audio, players, etc)
+	grmatsOpaque []*graphic.GraphicMaterial  // Array of rendered opaque graphic materials for scene
+	grmatsTransp []*graphic.GraphicMaterial  // Array of rendered transparent graphic materials for scene
+	cgrmats      []*graphic.GraphicMaterial  // Array of culled graphic materials for scene
+	rinfo        core.RenderInfo             // Preallocated Render info
+	specs        ShaderSpecs                 // Preallocated Shader specs
+	sortObjects  bool                        // Flag indicating whether objects should be sorted before rendering
+	redrawGui    bool                        // Flag indicating the gui must be redrawn completely
+	rendered     bool                        // Flag indicating if anything was rendered
+	panList      []gui.IPanel                // list of panels to render
+	frameBuffers int                         // Number of frame buffers
+	frameCount   int                         // Current number of frame buffers to write
 }
 
 // Stats describes how many object types were rendered.
@@ -63,9 +63,9 @@ func NewRenderer(gs *gls.GLS) *Renderer {
 	r.pointLights = make([]*light.Point, 0)
 	r.spotLights = make([]*light.Spot, 0)
 	r.others = make([]core.INode, 0)
-	r.rgraphics = make([]graphic.IGraphic, 0)
-	r.cgraphics = make([]graphic.IGraphic, 0)
-	r.grmats = make([]*graphic.GraphicMaterial, 0)
+	r.grmatsOpaque = make([]*graphic.GraphicMaterial, 0)
+	r.grmatsTransp = make([]*graphic.GraphicMaterial, 0)
+	r.cgrmats = make([]*graphic.GraphicMaterial, 0)
 	r.panList = make([]gui.IPanel, 0)
 	r.frameBuffers = 2
 	r.sortObjects = true
@@ -189,9 +189,9 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 	r.pointLights = r.pointLights[0:0]
 	r.spotLights = r.spotLights[0:0]
 	r.others = r.others[0:0]
-	r.rgraphics = r.rgraphics[0:0]
-	r.cgraphics = r.cgraphics[0:0]
-	r.grmats = r.grmats[0:0]
+	r.grmatsOpaque = r.grmatsOpaque[0:0]
+	r.grmatsTransp = r.grmatsTransp[0:0]
+	r.cgrmats = r.cgrmats[0:0]
 
 	// Prepare for frustum culling
 	var proj math32.Matrix4
@@ -213,23 +213,41 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		if ok {
 			if igr.Renderable() {
 
+				gr := igr.GetGraphic()
+				materials := gr.Materials()
+
 				// Frustum culling
 				if igr.Cullable() {
-					gr := igr.GetGraphic()
 					mw := gr.MatrixWorld()
 					geom := igr.GetGeometry()
 					bb := geom.BoundingBox()
 					bb.ApplyMatrix4(&mw)
 					if frustum.IntersectsBox(&bb) {
-						// Append graphic to list of graphics to be rendered
-						r.rgraphics = append(r.rgraphics, igr)
+						// Append all graphic materials of this graphic to list of graphic materials to be rendered
+						for i := 0; i < len(materials); i++ {
+							mat := materials[i].GetMaterial().GetMaterial()
+							if mat.Transparent() {
+								r.grmatsTransp = append(r.grmatsTransp, &materials[i])
+							} else {
+								r.grmatsOpaque = append(r.grmatsOpaque, &materials[i])
+							}
+						}
 					} else {
-						// Append graphic to list of culled graphics
-						r.cgraphics = append(r.cgraphics, igr)
+						// Append all graphic materials of this graphic to list of culled graphic materials
+						for i := 0; i < len(materials); i++ {
+							r.cgrmats = append(r.cgrmats, &materials[i])
+						}
 					}
 				} else {
-					// Append graphic to list of graphics to be rendered
-					r.rgraphics = append(r.rgraphics, igr)
+					// Append all graphic materials of this graphic to list of graphic materials to be rendered
+					for i := 0; i < len(materials); i++ {
+						mat := materials[i].GetMaterial().GetMaterial()
+						if mat.Transparent() {
+							r.grmatsTransp = append(r.grmatsTransp, &materials[i])
+						} else {
+							r.grmatsOpaque = append(r.grmatsOpaque, &materials[i])
+						}
+					}
 				}
 			}
 			// Node is not a Graphic
@@ -272,39 +290,37 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 	r.specs.PointLightsMax = len(r.pointLights)
 	r.specs.SpotLightsMax = len(r.spotLights)
 
-	// Z-sort graphics
+	// Z-sort graphic materials
 	if r.sortObjects {
-		sort.Slice(r.rgraphics, func(i, j int) bool {
+		// Internal function to render a list of graphic materials
+		var zSortGraphicMaterials func(grmats []*graphic.GraphicMaterial, backToFront bool)
+		zSortGraphicMaterials = func(grmats []*graphic.GraphicMaterial, backToFront bool) {
+			sort.Slice(grmats, func(i, j int) bool {
+				gr1 := grmats[i].GetGraphic().GetGraphic()
+				gr2 := grmats[j].GetGraphic().GetGraphic()
+				mw1 := gr1.MatrixWorld()
+				mw2 := gr2.MatrixWorld()
 
-			gr1 := r.rgraphics[i].GetGraphic()
-			gr2 := r.rgraphics[j].GetGraphic()
+				// TODO OPTIMIZATION - this calculation is already generally performed in IGraphic.RenderSetup, should probably cache results in Graphic.
+				var mvm1, mvm2 math32.Matrix4
+				mvm1.MultiplyMatrices(&r.rinfo.ViewMatrix, &mw1)
+				mvm2.MultiplyMatrices(&r.rinfo.ViewMatrix, &mw2)
 
-			mw1 := gr1.MatrixWorld()
-			mw2 := gr2.MatrixWorld()
+				g1pos := gr1.Position()
+				g2pos := gr2.Position()
+				g1pos.ApplyMatrix4(&mvm1)
+				g2pos.ApplyMatrix4(&mvm2)
 
-			// TODO OPTIMIZATION - this calculation is already done in IGraphic.RenderSetup, should cache results in Graphic.
-			var mvm1, mvm2 math32.Matrix4
-			mvm1.MultiplyMatrices(&r.rinfo.ViewMatrix, &mw1)
-			mvm2.MultiplyMatrices(&r.rinfo.ViewMatrix, &mw2)
-
-			g1pos := gr1.Position()
-			g2pos := gr2.Position()
-
-			g1pos.ApplyMatrix4(&mvm1)
-			g2pos.ApplyMatrix4(&mvm2)
-
-			return g1pos.Z < g2pos.Z
-		})
-	}
-
-	// Compile list of all graphic materials to be rendered
-	for i := 0; i < len(r.rgraphics); i++ {
-		gr := r.rgraphics[i].GetGraphic()
-		materials := gr.Materials()
-		// Appends to list each graphic material for this graphic
-		for j := 0; j < len(materials); j++ {
-			r.grmats = append(r.grmats, &materials[j])
+				if backToFront {
+					return g1pos.Z < g2pos.Z
+				} else {
+					return g1pos.Z > g2pos.Z
+				}
+			})
 		}
+
+		zSortGraphicMaterials(r.grmatsOpaque, false) // Sort opaque graphics front to back
+		zSortGraphicMaterials(r.grmatsTransp, true) // Sort transparent graphics back to front
 	}
 
 	// Render other nodes (audio players, etc)
@@ -319,7 +335,7 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 
 	// If there is graphic material to render or there was in the previous frame
 	// it is necessary to clear the screen.
-	if len(r.grmats) > 0 || r.prevStats.Graphics > 0 {
+	if len(r.grmatsOpaque) > 0 || len(r.grmatsTransp) > 0 || r.prevStats.Graphics > 0 {
 		// If the 3D scene to draw is to be confined to user specified panel
 		// sets scissor to avoid erasing gui elements outside of this panel
 		if r.panel3D != nil {
@@ -337,43 +353,53 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		r.rendered = true
 	}
 
-	// For each *GraphicMaterial
-	for _, grmat := range r.grmats {
-		mat := grmat.GetMaterial().GetMaterial()
+	err := error(nil)
 
-		// Sets the shader specs for this material and sets shader program
-		r.specs.Name = mat.Shader()
-		r.specs.ShaderUnique = mat.ShaderUnique()
-		r.specs.UseLights = mat.UseLights()
-		r.specs.MatTexturesMax = mat.TextureCount()
-		_, err := r.shaman.SetProgram(&r.specs)
-		if err != nil {
-			return err
-		}
+	// Internal function to render a list of graphic materials
+	var renderGraphicMaterials func(grmats []*graphic.GraphicMaterial)
+	renderGraphicMaterials = func(grmats []*graphic.GraphicMaterial) {
+		// For each *GraphicMaterial
+		for _, grmat := range grmats {
+			mat := grmat.GetMaterial().GetMaterial()
 
-		// Setup lights (transfer lights uniforms)
-		for idx, l := range r.ambLights {
-			l.RenderSetup(r.gs, &r.rinfo, idx)
-			r.stats.Lights++
-		}
-		for idx, l := range r.dirLights {
-			l.RenderSetup(r.gs, &r.rinfo, idx)
-			r.stats.Lights++
-		}
-		for idx, l := range r.pointLights {
-			l.RenderSetup(r.gs, &r.rinfo, idx)
-			r.stats.Lights++
-		}
-		for idx, l := range r.spotLights {
-			l.RenderSetup(r.gs, &r.rinfo, idx)
-			r.stats.Lights++
-		}
+			// Sets the shader specs for this material and sets shader program
+			r.specs.Name = mat.Shader()
+			r.specs.ShaderUnique = mat.ShaderUnique()
+			r.specs.UseLights = mat.UseLights()
+			r.specs.MatTexturesMax = mat.TextureCount()
+			_, err = r.shaman.SetProgram(&r.specs)
+			if err != nil {
+				return
+			}
 
-		// Render this graphic material
-		grmat.Render(r.gs, &r.rinfo)
-		r.stats.Graphics++
+			// Setup lights (transfer lights uniforms)
+			for idx, l := range r.ambLights {
+				l.RenderSetup(r.gs, &r.rinfo, idx)
+				r.stats.Lights++
+			}
+			for idx, l := range r.dirLights {
+				l.RenderSetup(r.gs, &r.rinfo, idx)
+				r.stats.Lights++
+			}
+			for idx, l := range r.pointLights {
+				l.RenderSetup(r.gs, &r.rinfo, idx)
+				r.stats.Lights++
+			}
+			for idx, l := range r.spotLights {
+				l.RenderSetup(r.gs, &r.rinfo, idx)
+				r.stats.Lights++
+			}
+
+			// Render this graphic material
+			grmat.Render(r.gs, &r.rinfo)
+			r.stats.Graphics++
+		}
 	}
-	return nil
+
+	renderGraphicMaterials(r.grmatsOpaque) // Render opaque objects front to back
+	renderGraphicMaterials(r.grmatsTransp) // Render transparent objects back to front
+
+	return err
 }
 
 // renderGui renders the Gui
@@ -381,7 +407,7 @@ func (r *Renderer) renderGui() error {
 
 	// If no 3D scene was rendered sets Gui panels as renderable for background
 	// User must define the colors
-	if (len(r.grmats) == 0) && (len(r.cgraphics) == 0) {
+	if (len(r.grmatsOpaque) == 0) && (len(r.grmatsTransp) == 0) && (len(r.cgrmats) == 0) {
 		r.panelGui.SetRenderable(true)
 		if r.panel3D != nil {
 			r.panel3D.SetRenderable(true)
