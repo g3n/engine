@@ -341,7 +341,7 @@ func (n *Node) RemoveAll(recurs bool) {
 }
 
 // DisposeChildren removes and disposes of all children.
-// If 'recurs' is true, call DisposeChidren on each child recursively.
+// If 'recurs' is true, call DisposeChildren on each child recursively.
 func (n *Node) DisposeChildren(recurs bool) {
 
 	for pos, ichild := range n.children {
@@ -575,16 +575,16 @@ func (n *Node) Matrix() math32.Matrix4 {
 	return n.matrix
 }
 
-// WorldPosition updates this node world matrix and gets
-// the current world position vector.
+// WorldPosition updates the world matrix and sets
+// the specified vector to the current world position of this node.
 func (n *Node) WorldPosition(result *math32.Vector3) {
 
 	n.UpdateMatrixWorld()
 	result.SetFromMatrixPosition(&n.matrixWorld)
 }
 
-// WorldQuaternion sets the specified result quaternion with
-// this node current world quaternion
+// WorldQuaternion updates the world matrix and sets
+// the specified quaternion to the current world quaternion of this node.
 func (n *Node) WorldQuaternion(result *math32.Quaternion) {
 
 	var position math32.Vector3
@@ -593,8 +593,8 @@ func (n *Node) WorldQuaternion(result *math32.Quaternion) {
 	n.matrixWorld.Decompose(&position, result, &scale)
 }
 
-// WorldRotation sets the specified result vector with
-// current world rotation of this node in Euler angles.
+// WorldRotation updates the world matrix and sets
+// the specified vector to the current world rotation of this node in Euler angles.
 func (n *Node) WorldRotation(result *math32.Vector3) {
 
 	var quaternion math32.Quaternion
@@ -602,8 +602,8 @@ func (n *Node) WorldRotation(result *math32.Vector3) {
 	result.SetFromQuaternion(&quaternion)
 }
 
-// WorldScale sets the specified result vector with
-// the current world scale of this node
+// WorldScale updates the world matrix and sets
+// the specified vector to the current world scale of this node.
 func (n *Node) WorldScale(result *math32.Vector3) {
 
 	var position math32.Vector3
@@ -612,8 +612,8 @@ func (n *Node) WorldScale(result *math32.Vector3) {
 	n.matrixWorld.Decompose(&position, &quaternion, result)
 }
 
-// WorldDirection updates this object world matrix and sets
-// the current world direction.
+// WorldDirection updates the world matrix and sets
+// the specified vector to the current world direction of this node.
 func (n *Node) WorldDirection(result *math32.Vector3) {
 
 	var quaternion math32.Quaternion
@@ -622,31 +622,71 @@ func (n *Node) WorldDirection(result *math32.Vector3) {
 	result.ApplyQuaternion(&quaternion)
 }
 
-// MatrixWorld returns a copy of this node matrix world
+// MatrixWorld returns a copy of the matrix world of this node.
 func (n *Node) MatrixWorld() math32.Matrix4 {
 
 	return n.matrixWorld
 }
 
-// UpdateMatrix updates this node local matrix transform from its
-// current position, quaternion and scale.
-func (n *Node) UpdateMatrix() {
+// UpdateMatrix updates (if necessary) the local transform matrix
+// of this node based on its position, quaternion, and scale.
+func (n *Node) UpdateMatrix() bool {
 
+	if !n.changed {
+		return false
+	}
 	n.matrix.Compose(&n.position, &n.quaternion, &n.scale)
+	n.changed = false
+	return true
 }
 
-// UpdateMatrixWorld updates this node world transform matrix and of all its children
+// UpdateMatrixWorld updates the world transform matrix for this node and for all of its children.
 func (n *Node) UpdateMatrixWorld() {
 
-	n.UpdateMatrix()
 	if n.parent == nil {
-		n.matrixWorld = n.matrix
+		n.updateMatrixWorld(&n.matrix)
 	} else {
 		parent := n.parent.GetNode()
-		n.matrixWorld.MultiplyMatrices(&parent.matrixWorld, &n.matrix)
+		n.updateMatrixWorld(&parent.matrixWorld)
 	}
-	// Update this Node children matrices
+}
+
+// updateMatrixWorld is used internally by UpdateMatrixWorld.
+// If the local transform matrix has changed, this method updates it and also the world matrix of this node.
+// Children are updated recursively. If any node has changed, then we update the world matrix
+// of all of its descendants regardless if their local matrices have changed.
+func (n *Node) updateMatrixWorld(parentMatrixWorld *math32.Matrix4) {
+
+	// If the local transform matrix for this node has changed then we need to update the local
+	// matrix for this node and also the world matrix for this and all subsequent nodes.
+	if n.UpdateMatrix() {
+		n.matrixWorld.MultiplyMatrices(parentMatrixWorld, &n.matrix)
+
+		// Update matrices of children recursively, always updating the world matrix
+		for _, ichild := range n.children {
+			ichild.GetNode().updateMatrixWorldNoCheck(&n.matrixWorld)
+		}
+	} else {
+		// Update matrices of children recursively, continuing to check for changes
+		for _, ichild := range n.children {
+			ichild.GetNode().updateMatrixWorld(&n.matrixWorld)
+		}
+	}
+}
+
+// updateMatrixWorldNoCheck is used internally by updateMatrixWorld.
+// This method should be called when a node has changed since it always updates the matrix world.
+func (n *Node) updateMatrixWorldNoCheck(parentMatrixWorld *math32.Matrix4) {
+
+	// Update the local transform matrix (if necessary)
+	n.UpdateMatrix()
+
+	// Always update the matrix world since an ancestor of this node has changed
+	// (i.e. and ancestor had its local transform matrix modified)
+	n.matrixWorld.MultiplyMatrices(parentMatrixWorld, &n.matrix)
+
+	// Update matrices of children recursively
 	for _, ichild := range n.children {
-		ichild.UpdateMatrixWorld()
+		ichild.GetNode().updateMatrixWorldNoCheck(&n.matrixWorld)
 	}
 }

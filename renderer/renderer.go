@@ -29,9 +29,10 @@ type Renderer struct {
 	pointLights  []*light.Point              // Array of point
 	spotLights   []*light.Spot               // Array of spot lights for the scene
 	others       []core.INode                // Other nodes (audio, players, etc)
+	rgraphics    []*graphic.Graphic          // Array of rendered graphics
+	cgraphics    []*graphic.Graphic          // Array of rendered graphics
 	grmatsOpaque []*graphic.GraphicMaterial  // Array of rendered opaque graphic materials for scene
 	grmatsTransp []*graphic.GraphicMaterial  // Array of rendered transparent graphic materials for scene
-	cgrmats      []*graphic.GraphicMaterial  // Array of culled graphic materials for scene
 	rinfo        core.RenderInfo             // Preallocated Render info
 	specs        ShaderSpecs                 // Preallocated Shader specs
 	sortObjects  bool                        // Flag indicating whether objects should be sorted before rendering
@@ -63,9 +64,10 @@ func NewRenderer(gs *gls.GLS) *Renderer {
 	r.pointLights = make([]*light.Point, 0)
 	r.spotLights = make([]*light.Spot, 0)
 	r.others = make([]core.INode, 0)
+	r.rgraphics = make([]*graphic.Graphic, 0)
+	r.cgraphics = make([]*graphic.Graphic, 0)
 	r.grmatsOpaque = make([]*graphic.GraphicMaterial, 0)
 	r.grmatsTransp = make([]*graphic.GraphicMaterial, 0)
-	r.cgrmats = make([]*graphic.GraphicMaterial, 0)
 	r.panList = make([]gui.IPanel, 0)
 	r.frameBuffers = 2
 	r.sortObjects = true
@@ -189,9 +191,10 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 	r.pointLights = r.pointLights[0:0]
 	r.spotLights = r.spotLights[0:0]
 	r.others = r.others[0:0]
+	r.rgraphics = r.rgraphics[0:0]
+	r.cgraphics = r.cgraphics[0:0]
 	r.grmatsOpaque = r.grmatsOpaque[0:0]
 	r.grmatsTransp = r.grmatsTransp[0:0]
-	r.cgrmats = r.cgrmats[0:0]
 
 	// Prepare for frustum culling
 	var proj math32.Matrix4
@@ -214,7 +217,6 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 			if igr.Renderable() {
 
 				gr := igr.GetGraphic()
-				materials := gr.Materials()
 
 				// Frustum culling
 				if igr.Cullable() {
@@ -223,31 +225,15 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 					bb := geom.BoundingBox()
 					bb.ApplyMatrix4(&mw)
 					if frustum.IntersectsBox(&bb) {
-						// Append all graphic materials of this graphic to list of graphic materials to be rendered
-						for i := 0; i < len(materials); i++ {
-							mat := materials[i].GetMaterial().GetMaterial()
-							if mat.Transparent() {
-								r.grmatsTransp = append(r.grmatsTransp, &materials[i])
-							} else {
-								r.grmatsOpaque = append(r.grmatsOpaque, &materials[i])
-							}
-						}
+						// Append graphic to list of graphics to be rendered
+						r.rgraphics = append(r.rgraphics, gr)
 					} else {
-						// Append all graphic materials of this graphic to list of culled graphic materials
-						for i := 0; i < len(materials); i++ {
-							r.cgrmats = append(r.cgrmats, &materials[i])
-						}
+						// Append graphic to list of culled graphics
+						r.cgraphics = append(r.cgraphics, gr)
 					}
 				} else {
-					// Append all graphic materials of this graphic to list of graphic materials to be rendered
-					for i := 0; i < len(materials); i++ {
-						mat := materials[i].GetMaterial().GetMaterial()
-						if mat.Transparent() {
-							r.grmatsTransp = append(r.grmatsTransp, &materials[i])
-						} else {
-							r.grmatsOpaque = append(r.grmatsOpaque, &materials[i])
-						}
-					}
+					// Append graphic to list of graphics to be rendered
+					r.rgraphics = append(r.rgraphics, gr)
 				}
 			}
 			// Node is not a Graphic
@@ -290,7 +276,24 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 	r.specs.PointLightsMax = len(r.pointLights)
 	r.specs.SpotLightsMax = len(r.spotLights)
 
-	// Z-sort graphic materials
+	// Pre-calculate MV and MVP matrices and compile lists of opaque and transparent graphic materials
+	for _, gr := range r.rgraphics {
+		// Calculate MV and MVP matrices for all graphics to be rendered
+		gr.CalculateMatrices(r.gs, &r.rinfo)
+
+		// Append all graphic materials of this graphic to list of graphic materials to be rendered
+		materials := gr.Materials()
+		for i := 0; i < len(materials); i++ {
+			mat := materials[i].GetMaterial().GetMaterial()
+			if mat.Transparent() {
+				r.grmatsTransp = append(r.grmatsTransp, &materials[i])
+			} else {
+				r.grmatsOpaque = append(r.grmatsOpaque, &materials[i])
+			}
+		}
+	}
+
+	// Z-sort graphic materials (opaque front-to-back and transparent back-to-front)
 	if r.sortObjects {
 		// Internal function to render a list of graphic materials
 		var zSortGraphicMaterials func(grmats []*graphic.GraphicMaterial, backToFront bool)
@@ -298,18 +301,12 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 			sort.Slice(grmats, func(i, j int) bool {
 				gr1 := grmats[i].GetGraphic().GetGraphic()
 				gr2 := grmats[j].GetGraphic().GetGraphic()
-				mw1 := gr1.MatrixWorld()
-				mw2 := gr2.MatrixWorld()
-
-				// TODO OPTIMIZATION - this calculation is already generally performed in IGraphic.RenderSetup, should probably cache results in Graphic.
-				var mvm1, mvm2 math32.Matrix4
-				mvm1.MultiplyMatrices(&r.rinfo.ViewMatrix, &mw1)
-				mvm2.MultiplyMatrices(&r.rinfo.ViewMatrix, &mw2)
-
+				mvm1 := gr1.ModelViewMatrix()
+				mvm2 := gr2.ModelViewMatrix()
 				g1pos := gr1.Position()
 				g2pos := gr2.Position()
-				g1pos.ApplyMatrix4(&mvm1)
-				g2pos.ApplyMatrix4(&mvm2)
+				g1pos.ApplyMatrix4(mvm1)
+				g2pos.ApplyMatrix4(mvm2)
 
 				if backToFront {
 					return g1pos.Z < g2pos.Z
@@ -407,7 +404,7 @@ func (r *Renderer) renderGui() error {
 
 	// If no 3D scene was rendered sets Gui panels as renderable for background
 	// User must define the colors
-	if (len(r.grmatsOpaque) == 0) && (len(r.grmatsTransp) == 0) && (len(r.cgrmats) == 0) {
+	if (len(r.rgraphics) == 0) && (len(r.cgraphics) == 0) {
 		r.panelGui.SetRenderable(true)
 		if r.panel3D != nil {
 			r.panel3D.SetRenderable(true)
