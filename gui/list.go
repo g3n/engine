@@ -5,12 +5,12 @@
 package gui
 
 import (
-	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 )
 
+// List represents a list GUI element
 type List struct {
-	Scroller             // Embedded scroller
+	ItemScroller         // Embedded scroller
 	styles   *ListStyles // Pointer to styles
 	single   bool        // Single selection flag (default is true)
 	focus    bool        // has keyboard focus
@@ -19,8 +19,7 @@ type List struct {
 	keyPrev  window.Key  // Code of key to select previous item
 }
 
-// All items inserted into the list are
-// encapsulated inside a ListItem
+// ListItem encapsulates each item inserted into the list
 type ListItem struct {
 	Panel               // Container panel
 	item        IPanel  // Original item
@@ -30,11 +29,13 @@ type ListItem struct {
 	list        *List   // Pointer to list
 }
 
+// ListStyles
 type ListStyles struct {
-	Scroller *ScrollerStyles
+	Scroller *ItemScrollerStyles
 	Item     *ListItemStyles
 }
 
+// ListItemStyles
 type ListItemStyles struct {
 	Normal      ListItemStyle
 	Over        ListItemStyle
@@ -43,15 +44,10 @@ type ListItemStyles struct {
 	SelHigh     ListItemStyle
 }
 
-type ListItemStyle struct {
-	Border      BorderSizes
-	Paddings    BorderSizes
-	BorderColor math32.Color4
-	BgColor     math32.Color4
-	FgColor     math32.Color
-}
+// ListItemStyle
+type ListItemStyle BasicStyle
 
-// Event sent to list item child panel on resize
+// OnListItemResize is the identifier of the event dispatched when a ListItem's child panel is resized
 const OnListItemResize = "gui.OnListItemResize"
 
 // NewVList creates and returns a pointer to a new vertical list panel
@@ -82,12 +78,12 @@ func (li *List) initialize(vert bool, width, height float32) {
 	li.styles = &StyleDefault().List
 	li.single = true
 
-	li.Scroller.initialize(vert, width, height)
-	li.Scroller.SetStyles(li.styles.Scroller)
-	li.Scroller.adjustItem = true
-	li.Scroller.Subscribe(OnMouseDown, li.onMouseEvent)
-	li.Scroller.Subscribe(OnKeyDown, li.onKeyEvent)
-	li.Scroller.Subscribe(OnKeyRepeat, li.onKeyEvent)
+	li.ItemScroller.initialize(vert, width, height)
+	li.ItemScroller.SetStyles(li.styles.Scroller)
+	li.ItemScroller.adjustItem = true
+	li.ItemScroller.Subscribe(OnMouseDown, li.onMouseEvent)
+	li.ItemScroller.Subscribe(OnKeyDown, li.onKeyEvent)
+	li.ItemScroller.Subscribe(OnKeyRepeat, li.onKeyEvent)
 
 	if vert {
 		li.keyNext = window.KeyDown
@@ -116,7 +112,7 @@ func (li *List) Single() bool {
 func (li *List) SetStyles(s *ListStyles) {
 
 	li.styles = s
-	li.Scroller.SetStyles(li.styles.Scroller)
+	li.ItemScroller.SetStyles(li.styles.Scroller)
 	li.update()
 }
 
@@ -127,11 +123,11 @@ func (li *List) Add(item IPanel) {
 }
 
 // InsertAt inserts a list item at the specified position
-// Returs true if the item was successfuly inserted
+// Returs true if the item was successfully inserted
 func (li *List) InsertAt(pos int, item IPanel) {
 
 	litem := newListItem(li, item)
-	li.Scroller.InsertAt(pos, litem)
+	li.ItemScroller.InsertAt(pos, litem)
 	litem.Panel.Subscribe(OnMouseDown, litem.onMouse)
 	litem.Panel.Subscribe(OnCursorEnter, litem.onCursor)
 }
@@ -140,7 +136,7 @@ func (li *List) InsertAt(pos int, item IPanel) {
 func (li *List) RemoveAt(pos int) IPanel {
 
 	// Remove the list item from the internal scroller
-	pan := li.Scroller.RemoveAt(pos)
+	pan := li.ItemScroller.RemoveAt(pos)
 	litem := pan.(*ListItem)
 
 	// Remove item from the list item children and disposes of the list item panel
@@ -164,7 +160,7 @@ func (li *List) Remove(item IPanel) {
 // ItemAt returns the list item at the specified position
 func (li *List) ItemAt(pos int) IPanel {
 
-	item := li.Scroller.ItemAt(pos)
+	item := li.ItemScroller.ItemAt(pos)
 	if item == nil {
 		return nil
 	}
@@ -197,7 +193,7 @@ func (li *List) Selected() []IPanel {
 	return sel
 }
 
-// Select selects or unselects the specified item
+// SetSelected selects or unselects the specified item
 func (li *List) SetSelected(item IPanel, state bool) {
 
 	for _, curr := range li.items {
@@ -502,14 +498,14 @@ func (litem *ListItem) onCursor(evname string, ev interface{}) {
 	}
 }
 
-// setSelected sets this item selected state
+// SetSelected sets this item selected state
 func (litem *ListItem) SetSelected(state bool) {
 
 	litem.selected = state
 	//litem.item.SetSelected2(state)
 }
 
-// setHighlighted sets this item selected state
+// SetHighlighted sets this item selected state
 func (litem *ListItem) SetHighlighted(state bool) {
 
 	litem.highlighted = state
@@ -538,10 +534,7 @@ func (litem *ListItem) update() {
 // applyStyle applies the specified style to this ListItem
 func (litem *ListItem) applyStyle(s *ListItemStyle) {
 
-	litem.SetBordersFrom(&s.Border)
-	litem.SetBordersColor4(&s.BorderColor)
-	pads := s.Paddings
-	pads.Left += litem.padLeft
-	litem.SetPaddingsFrom(&pads)
-	litem.SetColor4(&s.BgColor)
+	styleCopy := s.PanelStyle
+	styleCopy.Padding.Left += litem.padLeft
+	litem.Panel.ApplyStyle(&styleCopy)
 }

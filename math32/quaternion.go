@@ -228,7 +228,7 @@ func (q *Quaternion) Dot(other *Quaternion) float32 {
 	return q.X*other.X + q.Y*other.Y + q.Z*other.Z + q.W*other.W
 }
 
-// LengthSq returns this quanternion's lenght squared
+// LengthSq returns this quanternion's length squared
 func (q *Quaternion) lengthSq() float32 {
 
 	return q.X*q.X + q.Y*q.Y + q.Z*q.Z + q.W*q.W

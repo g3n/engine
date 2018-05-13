@@ -10,6 +10,7 @@ import (
 	"math"
 )
 
+// Torus represents a torus geometry
 type Torus struct {
 	Geometry                // embedded geometry
 	Radius          float64 // Torus radius
@@ -19,6 +20,7 @@ type Torus struct {
 	Arc             float64 // Central angle
 }
 
+// NewTorus returns a pointer to a new torus geometry
 func NewTorus(radius, tube float64, radialSegments, tubularSegments int, arc float64) *Torus {
 
 	t := new(Torus)

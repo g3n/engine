@@ -8,6 +8,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// RenderInfo is passed into Render/RenderSetup calls
 type RenderInfo struct {
 	ViewMatrix math32.Matrix4 // Current camera view matrix
 	ProjMatrix math32.Matrix4 // Current camera projection matrix

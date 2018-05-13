@@ -7,7 +7,6 @@ package gui
 import (
 	"fmt"
 
-	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 )
 
@@ -26,18 +25,13 @@ type TabBar struct {
 }
 
 // TabBarStyle describes the style of the TabBar
-type TabBarStyle struct {
-	Border      BorderSizes   // Border sizes
-	Paddings    BorderSizes   // Padding sizes
-	BorderColor math32.Color4 // Border color
-	BgColor     math32.Color4 // Background color
-}
+type TabBarStyle BasicStyle
 
 // TabBarStyles describes all the TabBarStyles
 type TabBarStyles struct {
 	SepHeight          float32     // Separator width
 	ListButtonIcon     string      // Icon for list button
-	ListButtonPaddings BorderSizes // Paddings for list button
+	ListButtonPaddings RectBounds  // Paddings for list button
 	Normal             TabBarStyle // Style for normal exhibition
 	Over               TabBarStyle // Style when cursor is over the TabBar
 	Focus              TabBarStyle // Style when the TabBar has key focus
@@ -46,25 +40,18 @@ type TabBarStyles struct {
 }
 
 // TabStyle describes the style of the individual Tabs header
-type TabStyle struct {
-	Margins     BorderSizes   // Tab header margins
-	Border      BorderSizes   // Tab header borders
-	Paddings    BorderSizes   // Tab header paddings
-	BorderColor math32.Color4 // Tab header border color
-	BgColor     math32.Color4 // Tab header background color
-	FgColor     math32.Color  // Tab header color for icon and text
-}
+type TabStyle BasicStyle
 
 // TabStyles describes all Tab styles
 type TabStyles struct {
-	IconPaddings  BorderSizes // Paddings for optional icon
-	ImagePaddings BorderSizes // Paddings for optional image
-	IconClose     string      // Codepoint for close icon in Tab header
-	Normal        TabStyle    // Style for normal exhibition
-	Over          TabStyle    // Style when cursor is over the Tab
-	Focus         TabStyle    // Style when the Tab has key focus
-	Disabled      TabStyle    // Style when the Tab is disabled
-	Selected      TabStyle    // Style when the Tab is selected
+	IconPaddings  RectBounds // Paddings for optional icon
+	ImagePaddings RectBounds // Paddings for optional image
+	IconClose     string     // Codepoint for close icon in Tab header
+	Normal        TabStyle   // Style for normal exhibition
+	Over          TabStyle   // Style when cursor is over the Tab
+	Focus         TabStyle   // Style when the Tab has key focus
+	Disabled      TabStyle   // Style when the Tab is disabled
+	Selected      TabStyle   // Style when the Tab is selected
 }
 
 // NewTabBar creates and returns a pointer to a new TabBar widget
@@ -91,7 +78,7 @@ func NewTabBar(width, height float32) *TabBar {
 	tb.Add(tb.list)
 
 	// Creates list icon button
-	tb.listButton = NewLabel(tb.styles.ListButtonIcon, true)
+	tb.listButton = NewIcon(tb.styles.ListButtonIcon)
 	tb.listButton.SetPaddingsFrom(&tb.styles.ListButtonPaddings)
 	tb.listButton.Subscribe(OnMouseDown, tb.onListButton)
 	tb.Add(tb.listButton)
@@ -293,10 +280,7 @@ func (tb *TabBar) onListChange(evname string, ev interface{}) {
 // applyStyle applies the specified TabBar style
 func (tb *TabBar) applyStyle(s *TabBarStyle) {
 
-	tb.SetBordersFrom(&s.Border)
-	tb.SetBordersColor4(&s.BorderColor)
-	tb.SetPaddingsFrom(&s.Paddings)
-	tb.SetColor4(&s.BgColor)
+	tb.Panel.ApplyStyle(&s.PanelStyle)
 	tb.separator.SetColor4(&s.BorderColor)
 }
 
@@ -425,7 +409,7 @@ func newTab(text string, tb *TabBar, styles *TabStyles) *Tab {
 	// Setup the header panel
 	tab.header.Initialize(0, 0)
 	tab.label = NewLabel(text)
-	tab.iconClose = NewLabel(styles.IconClose, true)
+	tab.iconClose = NewIcon(styles.IconClose)
 	tab.header.Add(tab.label)
 	tab.header.Add(tab.iconClose)
 	// Creates the bottom panel
@@ -509,7 +493,7 @@ func (tab *Tab) SetIcon(icon string) *Tab {
 	}
 	// Creates or updates icon
 	if tab.icon == nil {
-		tab.icon = NewLabel(icon, true)
+		tab.icon = NewIcon(icon)
 		tab.icon.SetPaddingsFrom(&tab.styles.IconPaddings)
 		tab.header.Add(tab.icon)
 	} else {
@@ -626,11 +610,7 @@ func (tab *Tab) minWidth() float32 {
 // applyStyle applies the specified Tab style to the Tab header
 func (tab *Tab) applyStyle(s *TabStyle) {
 
-	tab.header.SetMarginsFrom(&s.Margins)
-	tab.header.SetBordersFrom(&s.Border)
-	tab.header.SetBordersColor4(&s.BorderColor)
-	tab.header.SetPaddingsFrom(&s.Paddings)
-	tab.header.SetColor4(&s.BgColor)
+	tab.header.GetPanel().ApplyStyle(&s.PanelStyle)
 }
 
 // update updates the Tab header visual style
@@ -657,7 +637,7 @@ func (tab *Tab) setBottomPanel() {
 
 	if tab.selected {
 		bwidth := tab.header.ContentWidth() + tab.header.Paddings().Left + tab.header.Paddings().Right
-		bx := tab.styles.Selected.Margins.Left + tab.styles.Selected.Border.Left
+		bx := tab.styles.Selected.Margin.Left + tab.styles.Selected.Border.Left
 		tab.bottom.SetSize(bwidth, tab.tb.styles.SepHeight)
 		tab.bottom.SetPosition(bx, tab.header.Height())
 	}

@@ -13,26 +13,29 @@ import (
 	"github.com/g3n/engine/texture"
 )
 
+// Skybox is the Graphic that represents a skybox.
+type Skybox struct {
+	Graphic             // embedded graphic object
+	uniMVm  gls.Uniform // model view matrix uniform location cache
+	uniMVPm gls.Uniform // model view projection matrix uniform cache
+	uniNm   gls.Uniform // normal matrix uniform cache
+}
+
+// SkyboxData contains the data necessary to locate the textures for a Skybox in a concise manner.
 type SkyboxData struct {
 	DirAndPrefix string
 	Extension    string
 	Suffixes     [6]string
 }
 
-type Skybox struct {
-	Graphic             // embedded graphic object
-	uniMVM  gls.Uniform // model view matrix uniform location cache
-	uniMVPM gls.Uniform // model view projection matrix uniform cache
-	uniNM   gls.Uniform // normal matrix uniform cache
-}
-
-// NewSkybox creates and returns a pointer to a skybox with the specified textures
+// NewSkybox creates and returns a pointer to a Skybox with the specified textures.
 func NewSkybox(data SkyboxData) (*Skybox, error) {
 
 	skybox := new(Skybox)
 
-	geom := geometry.NewBox(50, 50, 50, 1, 1, 1)
+	geom := geometry.NewCube(1)
 	skybox.Graphic.Init(geom, gls.TRIANGLES)
+	skybox.Graphic.SetCullable(false)
 
 	for i := 0; i < 6; i++ {
 		tex, err := texture.NewTexture2DFromImage(data.DirAndPrefix + data.Suffixes[i] + "." + data.Extension)
@@ -43,13 +46,19 @@ func NewSkybox(data SkyboxData) (*Skybox, error) {
 		matFace.AddTexture(tex)
 		matFace.SetSide(material.SideBack)
 		matFace.SetUseLights(material.UseLightAmbient)
+
+		// Disable writes to the depth buffer (call glDepthMask(GL_FALSE)).
+		// This will cause every other object to draw over the skybox, making it always appear behind everything else.
+		// It doesn't matter how small/big the skybox is as long as it's visible by the camera (within near/far planes).
+		matFace.SetDepthMask(false)
+
 		skybox.AddGroupMaterial(skybox, matFace, i)
 	}
 
 	// Creates uniforms
-	skybox.uniMVM.Init("ModelViewMatrix")
-	skybox.uniMVPM.Init("MVP")
-	skybox.uniNM.Init("NormalMatrix")
+	skybox.uniMVm.Init("ModelViewMatrix")
+	skybox.uniMVPm.Init("MVP")
+	skybox.uniNm.Init("NormalMatrix")
 
 	return skybox, nil
 }
@@ -58,11 +67,6 @@ func NewSkybox(data SkyboxData) (*Skybox, error) {
 // It is responsible to updating the current shader uniforms with
 // the model matrices.
 func (skybox *Skybox) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
-
-	// TODO
-	// Disable writes to the depth buffer (call glDepthMask(GL_FALSE)).
-	// This will cause every other object to draw over the skybox, making it always appear "behind" everything else.
-	// Since writes to the depth buffer are off, it doesn't matter how small the skybox is as long as it's larger than the camera's near clip plane.
 
 	var mvm math32.Matrix4
 	mvm.Copy(&rinfo.ViewMatrix)
@@ -74,18 +78,18 @@ func (skybox *Skybox) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 	// mvm.ExtractRotation(&rinfo.ViewMatrix) // TODO <- ExtractRotation does not work as expected?
 
 	// Transfer mvp uniform
-	location := skybox.uniMVM.Location(gs)
+	location := skybox.uniMVm.Location(gs)
 	gs.UniformMatrix4fv(location, 1, false, &mvm[0])
 
 	// Calculates model view projection matrix and updates uniform
 	var mvpm math32.Matrix4
 	mvpm.MultiplyMatrices(&rinfo.ProjMatrix, &mvm)
-	location = skybox.uniMVPM.Location(gs)
+	location = skybox.uniMVPm.Location(gs)
 	gs.UniformMatrix4fv(location, 1, false, &mvpm[0])
 
 	// Calculates normal matrix and updates uniform
 	var nm math32.Matrix3
 	nm.GetNormalMatrix(&mvm)
-	location = skybox.uniNM.Location(gs)
+	location = skybox.uniNm.Location(gs)
 	gs.UniformMatrix3fv(location, 1, false, &nm[0])
 }

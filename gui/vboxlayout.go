@@ -18,7 +18,7 @@ package gui
 // 	AlignCenter: Try to align the group of children in the center if the panel height is
 // 	greater the the sum of the children heights + spacing.
 //
-// 	AlignHeight - Try to align the individual children vertically with the same same space between each other.
+// 	AlignHeight: Try to align the individual children vertically with the same same space between each other.
 // 	Each individual child can be aligned horizontally by SetLayoutParameters()
 //
 // If the layout method SetAutoHeight(true) is called, the panel minimum content height will be the
@@ -134,7 +134,7 @@ func (bl *VBoxLayout) Recalc(ipan IPanel) {
 	// Calculates the total height, expanded height, fixed height and
 	// the sum of the expand factor for all items.
 	var theight float32
-	var eheight float32
+	//var eheight float32
 	var fheight float32
 	var texpand float32
 	ecount := 0
@@ -157,10 +157,10 @@ func (bl *VBoxLayout) Recalc(ipan IPanel) {
 		// Calculate height of expanded items
 		if params.Expand > 0 {
 			texpand += params.Expand
-			eheight += pan.Height()
-			if pos > 0 {
-				eheight += bl.spacing
-			}
+			//eheight += pan.Height()
+			//if pos > 0 {
+			//	eheight += bl.spacing
+			//}
 			ecount++
 			// Calculate width of fixed items
 		} else {

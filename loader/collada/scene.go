@@ -14,6 +14,7 @@ import (
 	"strings"
 )
 
+// NewScene returns a new collada empty scene
 func (d *Decoder) NewScene() (core.INode, error) {
 
 	sc := d.dom.Scene

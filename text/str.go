@@ -4,7 +4,7 @@
 
 package text
 
-// strCount returns the number of runes in the specified string
+// StrCount returns the number of runes in the specified string
 func StrCount(s string) int {
 
 	count := 0
@@ -19,7 +19,7 @@ func StrCount(s string) int {
 func StrFind(s string, pos int) (start, length int) {
 
 	count := 0
-	for index, _ := range s {
+	for index := range s {
 		if count == pos {
 			start = index
 			count++
@@ -56,7 +56,7 @@ func StrInsert(s, data string, col int) string {
 func StrPrefix(text string, pos int) string {
 
 	count := 0
-	for index, _ := range text {
+	for index := range text {
 		if count == pos {
 			return text[:index]
 		}

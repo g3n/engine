@@ -10,6 +10,7 @@ import (
 	"math"
 )
 
+// Sphere represents a sphere geometry
 type Sphere struct {
 	Geometry
 	Radius         float64
@@ -21,6 +22,7 @@ type Sphere struct {
 	ThetaLength    float64
 }
 
+// NewSphere returns a pointer to a new Sphere geometry object
 func NewSphere(radius float64, widthSegments, heightSegments int, phiStart, phiLength, thetaStart, thetaLength float64) *Sphere {
 
 	s := new(Sphere)
@@ -85,6 +87,11 @@ func NewSphere(radius float64, widthSegments, heightSegments int, phiStart, phiL
 	s.AddVBO(gls.NewVBO().AddAttrib("VertexNormal", 3).SetBuffer(normals))
 	s.AddVBO(gls.NewVBO().AddAttrib("VertexTexcoord", 2).SetBuffer(uvs))
 
-	//s.BoundingSphere = math32.NewSphere(math32.NewVector3(0, 0, 0), float32(radius))
+	r := float32(s.Radius)
+	s.boundingSphere = math32.Sphere{math32.Vector3{0, 0, 0}, r}
+	s.boundingSphereValid = true
+	s.boundingBox = math32.Box3{math32.Vector3{-r, -r, -r}, math32.Vector3{r, r, r}}
+	s.boundingBoxValid = true
+
 	return s
 }

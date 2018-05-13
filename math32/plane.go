@@ -6,114 +6,117 @@ package math32
 
 import ()
 
+// Plane represents a plane in 3D space by its normal vector and a constant.
+// When the the normal vector is the unit vector the constant is the distance from the origin.
 type Plane struct {
 	normal   Vector3
 	constant float32
 }
 
+// NewPlane creates and returns a new plane from a normal vector and a constant.
 func NewPlane(normal *Vector3, constant float32) *Plane {
 
-	this := new(Plane)
+	p := new(Plane)
 	if normal != nil {
-		this.normal = *normal
+		p.normal = *normal
 	}
-	this.constant = constant
-	return this
+	p.constant = constant
+	return p
 }
 
-func (this *Plane) Set(normal *Vector3, constant float32) *Plane {
+// Set sets this plane normal vector and constant.
+// Returns pointer to this updated plane.
+func (p *Plane) Set(normal *Vector3, constant float32) *Plane {
 
-	this.normal = *normal
-	this.constant = constant
-	return this
+	p.normal = *normal
+	p.constant = constant
+	return p
 }
 
-func (this *Plane) SetComponents(x, y, z, w float32) *Plane {
+// SetComponents sets this plane normal vector components and constant.
+// Returns pointer to this updated plane.
+func (p *Plane) SetComponents(x, y, z, w float32) *Plane {
 
-	this.normal.Set(x, y, z)
-	this.constant = w
-	return this
+	p.normal.Set(x, y, z)
+	p.constant = w
+	return p
 }
 
-func (this *Plane) SetFromNormalAndCoplanarPoint(normal *Vector3, point *Vector3) *Plane {
+// SetFromNormalAndCoplanarPoint sets this plane from a normal vector and a point on the plane.
+// Returns pointer to this updated plane.
+func (p *Plane) SetFromNormalAndCoplanarPoint(normal *Vector3, point *Vector3) *Plane {
 
-	this.normal.Copy(normal)
-	this.constant = -point.Dot(&this.normal)
-	return this
+	p.normal = *normal
+	p.constant = -point.Dot(&p.normal)
+	return p
 }
 
-func (this *Plane) SetFromCoplanarPoints(a, b, c *Vector3) *Plane {
+// SetFromCoplanarPoints sets this plane from three coplanar points.
+// Returns pointer to this updated plane.
+func (p *Plane) SetFromCoplanarPoints(a, b, c *Vector3) *Plane {
 
 	var v1 Vector3
 	var v2 Vector3
 
 	normal := v1.SubVectors(c, b).Cross(v2.SubVectors(a, b)).Normalize()
 	// Q: should an error be thrown if normal is zero (e.g. degenerate plane)?
-	this.SetFromNormalAndCoplanarPoint(normal, a)
-	return this
+	p.SetFromNormalAndCoplanarPoint(normal, a)
+	return p
 }
 
-func (this *Plane) Copy(plane *Plane) *Plane {
+// Copy sets this plane to a copy of other.
+// Returns pointer to this updated plane.
+func (p *Plane) Copy(other *Plane) *Plane {
 
-	this.normal.Copy(&plane.normal)
-	this.constant = plane.constant
-	return this
+	p.normal.Copy(&other.normal)
+	p.constant = other.constant
+	return p
 }
 
-func (this *Plane) Normalize() *Plane {
+// Normalize normalizes this plane normal vector and adjusts the constant.
+// Note: will lead to a divide by zero if the plane is invalid.
+// Returns pointer to this updated plane.
+func (p *Plane) Normalize() *Plane {
 
-	// Note: will lead to a divide by zero if the plane is invalid.
-	inverseNormalLength := 1.0 / this.normal.Length()
-	this.normal.MultiplyScalar(inverseNormalLength)
-	this.constant *= inverseNormalLength
-	return this
+	inverseNormalLength := 1.0 / p.normal.Length()
+	p.normal.MultiplyScalar(inverseNormalLength)
+	p.constant *= inverseNormalLength
+	return p
 }
 
-func (this *Plane) Negate() *Plane {
+// Negate negates this plane normal.
+// Returns pointer to this updated plane.
+func (p *Plane) Negate() *Plane {
 
-	this.constant *= -1
-	this.normal.Negate()
-	return this
+	p.constant *= -1
+	p.normal.Negate()
+	return p
 }
 
-func (this *Plane) DistanceToPoint(point *Vector3) float32 {
+// DistanceToPoint returns the distance of this plane from point.
+func (p *Plane) DistanceToPoint(point *Vector3) float32 {
 
-	return this.normal.Dot(point) + this.constant
+	return p.normal.Dot(point) + p.constant
 }
 
-func (this *Plane) DistanceToSphere(sphere *Sphere) float32 {
+// DistanceToSphere returns the distance of this place from the sphere.
+func (p *Plane) DistanceToSphere(sphere *Sphere) float32 {
 
-	return this.DistanceToPoint(&sphere.Center) - sphere.Radius
+	return p.DistanceToPoint(&sphere.Center) - sphere.Radius
 }
 
-func (this *Plane) ProjectPoint(point *Vector3, optionalTarget *Vector3) *Vector3 {
+// IsIntersectionLine returns the line intersects this plane.
+func (p *Plane) IsIntersectionLine(line *Line3) bool {
 
-	return this.OrthoPoint(point, optionalTarget).Sub(point).Negate()
-}
-
-func (this *Plane) OrthoPoint(point *Vector3, optionalTarget *Vector3) *Vector3 {
-
-	var result *Vector3
-	if optionalTarget == nil {
-		result = NewVector3(0, 0, 0)
-	} else {
-		result = optionalTarget
-	}
-	perpendicularMagnitude := this.DistanceToPoint(point)
-	return result.Copy(&this.normal).MultiplyScalar(perpendicularMagnitude)
-}
-
-func (this *Plane) IsIntersectionLine(line *Line3) bool {
-
-	// Note: this tests if a line intersects the plane, not whether it (or its end-points) are coplanar with it.
-	startSign := this.DistanceToPoint(&line.start)
-	endSign := this.DistanceToPoint(&line.end)
-
+	startSign := p.DistanceToPoint(&line.start)
+	endSign := p.DistanceToPoint(&line.end)
 	return (startSign < 0 && endSign > 0) || (endSign < 0 && startSign > 0)
-
 }
 
-func (this *Plane) IntersectLine(line *Line3, optionalTarget *Vector3) *Vector3 {
+// IntersectLine calculates the point in the plane which intersets the specified line.
+// Sets the optionalTarget, if not nil to this point, and also returns it.
+// Returns nil if the line does not intersects the plane.
+func (p *Plane) IntersectLine(line *Line3, optionalTarget *Vector3) *Vector3 {
 
 	var v1 Vector3
 	var result *Vector3
@@ -124,24 +127,26 @@ func (this *Plane) IntersectLine(line *Line3, optionalTarget *Vector3) *Vector3 
 	}
 
 	direction := line.Delta(&v1)
-	denominator := this.normal.Dot(direction)
+	denominator := p.normal.Dot(direction)
 	if denominator == 0 {
 		// line is coplanar, return origin
-		if this.DistanceToPoint(&line.start) == 0 {
+		if p.DistanceToPoint(&line.start) == 0 {
 			return result.Copy(&line.start)
 		}
 		// Unsure if this is the correct method to handle this case.
 		return nil
 	}
 
-	var t = -(line.start.Dot(&this.normal) + this.constant) / denominator
+	var t = -(line.start.Dot(&p.normal) + p.constant) / denominator
 	if t < 0 || t > 1 {
 		return nil
 	}
 	return result.Copy(direction).MultiplyScalar(t).Add(&line.start)
 }
 
-func (this *Plane) CoplanarPoint(optionalTarget *Vector3) *Vector3 {
+// CoplanarPoint sets the optionalTarget to a point in the plane and also returns it.
+// The point set and returned is the closest point from the origin.
+func (p *Plane) CoplanarPoint(optionalTarget *Vector3) *Vector3 {
 
 	var result *Vector3
 	if optionalTarget == nil {
@@ -149,49 +154,25 @@ func (this *Plane) CoplanarPoint(optionalTarget *Vector3) *Vector3 {
 	} else {
 		result = optionalTarget
 	}
-	return result.Copy(&this.normal).MultiplyScalar(-this.constant)
+	return result.Copy(&p.normal).MultiplyScalar(-p.constant)
 }
 
-func (this *Plane) ApplyMatrix4(matrix *Matrix4, optionalNormalMatrix *Matrix3) *Plane {
-	// compute new normal based on theory here:
-	// http://www.songho.ca/opengl/gl_normaltransform.html
+// Translate translates this plane in the direction of its normal by offset.
+// Returns pointer to this updated plane.
+func (p *Plane) Translate(offset *Vector3) *Plane {
 
-	var v1 Vector3
-	var v2 Vector3
-	m1 := NewMatrix3()
-
-	var normalMatrix *Matrix3
-	if optionalNormalMatrix != nil {
-		normalMatrix = optionalNormalMatrix
-	} else {
-		err := m1.GetNormalMatrix(matrix)
-		if err != nil {
-			return nil
-		}
-		normalMatrix = m1
-	}
-
-	newNormal := v1.Copy(&this.normal).ApplyMatrix3(normalMatrix)
-
-	newCoplanarPoint := this.CoplanarPoint(&v2)
-	newCoplanarPoint.ApplyMatrix4(matrix)
-
-	this.SetFromNormalAndCoplanarPoint(newNormal, newCoplanarPoint)
-	return this
+	p.constant = p.constant - offset.Dot(&p.normal)
+	return p
 }
 
-func (this *Plane) Translate(offset *Vector3) *Plane {
+// Equals returns if this plane is equal to other
+func (p *Plane) Equals(other *Plane) bool {
 
-	this.constant = this.constant - offset.Dot(&this.normal)
-	return this
+	return other.normal.Equals(&p.normal) && (other.constant == p.constant)
 }
 
-func (this *Plane) Equals(plane *Plane) bool {
-
-	return plane.normal.Equals(&this.normal) && (plane.constant == this.constant)
-}
-
-func (this *Plane) Clone(plane *Plane) *Plane {
+// Clone creates and returns a pointer to a copy of this plane.
+func (p *Plane) Clone(plane *Plane) *Plane {
 
 	return NewPlane(&plane.normal, plane.constant)
 }

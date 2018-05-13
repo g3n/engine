@@ -6,13 +6,13 @@ package gui
 
 var defaultStyle *Style
 
-// Sets the default style
+// init sets the default style
 func init() {
 
-	defaultStyle = NewLightStyle()
+	defaultStyle = NewDarkStyle()
 }
 
-// StyleDefault() returns a pointer to the current default style
+// StyleDefault returns a pointer to the current default style
 func StyleDefault() *Style {
 
 	return defaultStyle

@@ -10,6 +10,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// Ambient represents an ambient light
 type Ambient struct {
 	core.Node              // Embedded node
 	color     math32.Color // Light color

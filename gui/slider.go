@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 )
 
@@ -23,6 +22,7 @@ import (
 
 **/
 
+// Slider is the GUI element for sliders and progress bars
 type Slider struct {
 	Panel                     // Embedded panel
 	slider      Panel         // embedded slider panel
@@ -36,16 +36,10 @@ type Slider struct {
 	scaleFactor float32       // scale factor (default = 1.0)
 }
 
-// SliderStyle
-type SliderStyle struct {
-	Border      BorderSizes   // outer panel border sizes
-	BorderColor math32.Color4 // outer panel border colors
-	Paddings    BorderSizes   // outer panel padding sizes
-	BgColor     math32.Color4 // outer panel color
-	FgColor     math32.Color4 // slider panel color
-}
+// SliderStyle contains the styling of a Slider
+type SliderStyle BasicStyle
 
-// All Slider styles
+// SliderStyles contains a SliderStyle for each valid GUI state
 type SliderStyles struct {
 	Normal   SliderStyle
 	Over     SliderStyle
@@ -289,10 +283,7 @@ func (s *Slider) update() {
 // applyStyle applies the specified slider style
 func (s *Slider) applyStyle(ss *SliderStyle) {
 
-	s.SetBordersColor4(&ss.BorderColor)
-	s.SetBordersFrom(&ss.Border)
-	s.SetPaddingsFrom(&ss.Paddings)
-	s.Panel.SetColor4(&ss.BgColor)
+	s.Panel.ApplyStyle(&ss.PanelStyle)
 	s.slider.SetColor4(&ss.FgColor)
 }
 

@@ -12,19 +12,21 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
-// Lines is a Graphic which is rendered as a collection of independent lines
+// Lines is a Graphic which is rendered as a collection of independent lines.
 type Lines struct {
 	Graphic             // Embedded graphic object
-	uniMVP  gls.Uniform // Model view projection matrix uniform location cache
+	uniMVPm gls.Uniform // Model view projection matrix uniform location cache
 }
 
+// Init initializes the Lines object and adds the specified material.
 func (l *Lines) Init(igeom geometry.IGeometry, imat material.IMaterial) {
 
 	l.Graphic.Init(igeom, gls.LINES)
 	l.AddMaterial(l, imat, 0, 0)
-	l.uniMVP.Init("MVP")
+	l.uniMVPm.Init("MVP")
 }
 
+// NewLines returns a pointer to a new Lines object.
 func NewLines(igeom geometry.IGeometry, imat material.IMaterial) *Lines {
 
 	l := new(Lines)
@@ -32,28 +34,23 @@ func NewLines(igeom geometry.IGeometry, imat material.IMaterial) *Lines {
 	return l
 }
 
-// RenderSetup is called by the engine before drawing this geometry
+// RenderSetup is called by the engine before drawing this geometry.
 func (l *Lines) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 
-	// Calculates model view projection matrix and updates uniform
-	mw := l.MatrixWorld()
-	var mvpm math32.Matrix4
-	mvpm.MultiplyMatrices(&rinfo.ViewMatrix, &mw)
-	mvpm.MultiplyMatrices(&rinfo.ProjMatrix, &mvpm)
-
-	// Transfer mvpm uniform
-	location := l.uniMVP.Location(gs)
+	// Transfer model view projection matrix uniform
+	mvpm := l.ModelViewProjectionMatrix()
+	location := l.uniMVPm.Location(gs)
 	gs.UniformMatrix4fv(location, 1, false, &mvpm[0])
 }
 
 // Raycast satisfies the INode interface and checks the intersections
-// of this geometry with the specified raycaster
+// of this geometry with the specified raycaster.
 func (l *Lines) Raycast(rc *core.Raycaster, intersects *[]core.Intersect) {
 
 	lineRaycast(l, rc, intersects, 2)
 }
 
-// Internal function used by raycasting for Lines and LineStrip
+// Internal function used by raycasting for Lines and LineStrip.
 func lineRaycast(igr IGraphic, rc *core.Raycaster, intersects *[]core.Intersect, step int) {
 
 	// Get the bounding sphere

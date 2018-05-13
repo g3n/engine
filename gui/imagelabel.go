@@ -29,14 +29,8 @@ type ImageLabel struct {
 	icon  *Label // optional internal icon label
 }
 
-// ImageLabel style
-type ImageLabelStyle struct {
-	Border      BorderSizes
-	Paddings    BorderSizes
-	BorderColor math32.Color4
-	BgColor     math32.Color4
-	FgColor     math32.Color4
-}
+// ImageLabelStyle
+type ImageLabelStyle BasicStyle
 
 // NewImageLabel creates and returns a pointer to a new image label widget
 // with the specified text for the label and no image/icon
@@ -78,8 +72,8 @@ func (il *ImageLabel) SetIcon(icon string) {
 		il.image = nil
 	}
 	if il.icon == nil {
-		il.icon = NewLabel(icon, true)
-		il.icon.SetFontSize(il.label.FontSize() * 1.4)
+		il.icon = NewIcon(icon)
+		il.icon.SetFontSize(StyleDefault().Label.PointSize * 1.4)
 		il.Panel.Add(il.icon)
 	}
 	il.icon.SetText(icon)
@@ -194,10 +188,7 @@ func (il *ImageLabel) CopyFields(other *ImageLabel) {
 // applyStyle applies the specified image label style
 func (il *ImageLabel) applyStyle(s *ImageLabelStyle) {
 
-	il.SetBordersColor4(&s.BorderColor)
-	il.SetBordersFrom(&s.Border)
-	il.SetPaddingsFrom(&s.Paddings)
-	il.SetColor4(&s.BgColor)
+	il.Panel.ApplyStyle(&s.PanelStyle)
 	if il.icon != nil {
 		il.icon.SetColor4(&s.FgColor)
 	}
@@ -212,7 +203,7 @@ func (il *ImageLabel) recalc() {
 	height := il.Panel.ContentHeight()
 
 	// Image or icon width
-	var imgWidth float32 = 0
+	var imgWidth float32
 	var spacing float32
 	if il.image != nil {
 		imgWidth = il.image.Width()

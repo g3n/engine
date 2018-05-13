@@ -72,18 +72,37 @@ void main() {
 
     // Check if fragment is inside content area
     if (checkRect(Content)) {
+
         // If no texture, the color will be the material color.
         vec4 color = ContentColor;
+
 		if (TextureValid) {
             // Adjust texture coordinates to fit texture inside the content area
             vec2 offset = vec2(-Content[0], -Content[1]);
             vec2 factor = vec2(1/Content[2], 1/Content[3]);
             vec2 texcoord = (FragTexcoord + offset) * factor;
             vec4 texColor = texture(MatTexture, texcoord * MatTexRepeat + MatTexOffset);
-            // Mix content color with texture color ???
-            //color = mix(color, texColor, texColor.a);
-            color = texColor;
+
+            // Mix content color with texture color.
+            // Note that doing a simple linear interpolation (e.g. using mix()) is not correct!
+            // The right formula can be found here: https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending
+            // For a more in-depth discussion: http://apoorvaj.io/alpha-compositing-opengl-blending-and-premultiplied-alpha.html#toc4
+
+            // Pre-multiply the content color
+            vec4 contentPre = ContentColor;
+            contentPre.rgb *= contentPre.a;
+
+            // Pre-multiply the texture color
+            vec4 texPre = texColor;
+            texPre.rgb *= texPre.a;
+
+            // Combine colors the premultiplied final color
+            color = texPre + contentPre * (1 - texPre.a);
+
+            // Un-pre-multiply (pre-divide? :P)
+            color.rgb /= color.a;
 		}
+
         FragColor = color;
         return;
     }

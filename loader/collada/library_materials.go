@@ -11,7 +11,7 @@ import (
 )
 
 //
-// Library Materials
+// LibraryMaterials
 //
 type LibraryMaterials struct {
 	Id       string
@@ -20,6 +20,7 @@ type LibraryMaterials struct {
 	Material []*Material
 }
 
+// Dump prints out information about the LibraryMaterials
 func (lm *LibraryMaterials) Dump(out io.Writer, indent int) {
 
 	if lm == nil {
@@ -41,6 +42,7 @@ type Material struct {
 	InstanceEffect InstanceEffect
 }
 
+// Dump prints out information about the Material
 func (mat *Material) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sMaterial id:%s name:%s\n", sIndent(indent), mat.Id, mat.Name)
@@ -57,6 +59,7 @@ type InstanceEffect struct {
 	Url  string
 }
 
+// Dump prints out information about the InstanceEffect
 func (ie *InstanceEffect) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sInstanceEffect id:%s name:%s url:%s\n",
@@ -85,7 +88,6 @@ func (d *Decoder) decLibraryMaterials(start xml.StartElement, dom *Collada) erro
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decMaterial(start xml.StartElement, lm *LibraryMaterials) error {
@@ -108,7 +110,6 @@ func (d *Decoder) decMaterial(start xml.StartElement, lm *LibraryMaterials) erro
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decInstanceEffect(start xml.StartElement, ie *InstanceEffect) error {
@@ -131,5 +132,4 @@ func (d *Decoder) decInstanceEffect(start xml.StartElement, ie *InstanceEffect) 
 			continue
 		}
 	}
-	return nil
 }

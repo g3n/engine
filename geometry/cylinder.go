@@ -10,6 +10,7 @@ import (
 	"math"
 )
 
+// Cylinder represents a cylinder geometry
 type Cylinder struct {
 	Geometry
 	RadiusTop      float64

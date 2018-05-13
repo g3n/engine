@@ -46,7 +46,11 @@ type IPanel interface {
 	SetRoot(*Root)
 	LostKeyFocus()
 	TotalHeight() float32
+	TotalWidth() float32
 	SetLayout(ILayout)
+	SetPosition(x, y float32)
+	SetPositionX(x float32)
+	SetPositionY(y float32)
 }
 
 // Panel is 2D rectangular graphic which by default has a quad (2 triangles) geometry.
@@ -54,30 +58,30 @@ type IPanel interface {
 // and a content area. The content area can be associated with a texture
 // It is the building block of most GUI widgets.
 type Panel struct {
-	*graphic.Graphic                    // Embedded graphic
-	root             *Root              // pointer to root container
-	width            float32            // external width in pixels
-	height           float32            // external height in pixels
-	mat              *material.Material // panel material
-	marginSizes      BorderSizes        // external margin sizes in pixel coordinates
-	borderSizes      BorderSizes        // border sizes in pixel coordinates
-	paddingSizes     BorderSizes        // padding sizes in pixel coordinates
-	content          Rect               // current content rectangle in pixel coordinates
-	pospix           math32.Vector3     // absolute position in pixels
-	posclip          math32.Vector3     // position in clip (NDC) coordinates
-	wclip            float32            // width in clip coordinates
-	hclip            float32            // height in clip coordinates
-	xmin             float32            // minimum absolute x this panel can use
-	xmax             float32            // maximum absolute x this panel can use
-	ymin             float32            // minimum absolute y this panel can use
-	ymax             float32            // maximum absolute y this panel can use
-	bounded          bool               // panel is bounded by its parent
-	enabled          bool               // enable event processing
-	cursorEnter      bool               // mouse enter dispatched
-	layout           ILayout            // current layout for children
-	layoutParams     interface{}        // current layout parameters used by container panel
-	uniMatrix        gls.Uniform        // model matrix uniform location cache
-	uniPanel         gls.Uniform        // panel parameters uniform location cache
+	*graphic.Graphic                // Embedded graphic
+	root         *Root              // pointer to root container
+	width        float32            // external width in pixels
+	height       float32            // external height in pixels
+	mat          *material.Material // panel material
+	marginSizes  RectBounds         // external margin sizes in pixel coordinates
+	borderSizes  RectBounds         // border sizes in pixel coordinates
+	paddingSizes RectBounds         // padding sizes in pixel coordinates
+	content      Rect               // current content rectangle in pixel coordinates
+	pospix       math32.Vector3     // absolute position in pixels
+	posclip      math32.Vector3     // position in clip (NDC) coordinates
+	wclip        float32            // width in clip coordinates
+	hclip        float32            // height in clip coordinates
+	xmin         float32            // minimum absolute x this panel can use
+	xmax         float32            // maximum absolute x this panel can use
+	ymin             float32        // minimum absolute y this panel can use
+	ymax             float32        // maximum absolute y this panel can use
+	bounded          bool           // panel is bounded by its parent
+	enabled          bool           // enable event processing
+	cursorEnter      bool           // mouse enter dispatched
+	layout           ILayout        // current layout for children
+	layoutParams     interface{}    // current layout parameters used by container panel
+	uniMatrix        gls.Uniform    // model matrix uniform location cache
+	uniPanel         gls.Uniform    // panel parameters uniform location cache
 	udata            struct {           // Combined uniform data 8 * vec4
 		bounds        math32.Vector4 // panel bounds in texture coordinates
 		borders       math32.Vector4 // panel borders in texture coordinates
@@ -89,6 +93,22 @@ type Panel struct {
 		textureValid  float32        // texture valid flag (bool)
 		dummy         [3]float32     // complete 8 * vec4
 	}
+}
+
+// PanelStyle contains all the styling attributes of a Panel.
+type PanelStyle struct {
+	Margin      RectBounds
+	Border      RectBounds
+	Padding     RectBounds
+	BorderColor math32.Color4
+	BgColor     math32.Color4
+}
+
+// BasicStyle extends PanelStyle by adding a foreground color.
+// Many GUI components can be styled using BasicStyle or redeclared versions thereof (e.g. ButtonStyle)
+type BasicStyle struct {
+	PanelStyle
+	FgColor     math32.Color4
 }
 
 const (
@@ -180,9 +200,9 @@ func (p *Panel) InitializeGraphic(width, height float32, gr *graphic.Graphic) {
 
 // GetPanel satisfies the IPanel interface and
 // returns pointer to this panel
-func (pan *Panel) GetPanel() *Panel {
+func (p *Panel) GetPanel() *Panel {
 
-	return pan
+	return p
 }
 
 // SetRoot satisfies the IPanel interface
@@ -206,7 +226,14 @@ func (p *Panel) LostKeyFocus() {
 // height of this panel considering visible not bounded children
 func (p *Panel) TotalHeight() float32 {
 
-	return p.Height()
+	return p.height
+}
+
+// TotalWidth satisfies the IPanel interface and returns the total
+// width of this panel considering visible not bounded children
+func (p *Panel) TotalWidth() float32 {
+
+	return p.width
 }
 
 // Material returns a pointer for this panel core.Material
@@ -328,15 +355,15 @@ func (p *Panel) SetMargins(top, right, bottom, left float32) {
 }
 
 // SetMarginsFrom sets this panel margins sizes from the specified
-// BorderSizes pointer and recalculates the panel external size
-func (p *Panel) SetMarginsFrom(src *BorderSizes) {
+// RectBounds pointer and recalculates the panel external size
+func (p *Panel) SetMarginsFrom(src *RectBounds) {
 
 	p.marginSizes = *src
 	p.resize(p.calcWidth(), p.calcHeight(), true)
 }
 
 // Margins returns the current margin sizes in pixels
-func (p *Panel) Margins() BorderSizes {
+func (p *Panel) Margins() RectBounds {
 
 	return p.marginSizes
 }
@@ -350,15 +377,15 @@ func (p *Panel) SetBorders(top, right, bottom, left float32) {
 }
 
 // SetBordersFrom sets this panel border sizes from the specified
-// BorderSizes pointer and recalculates the panel size
-func (p *Panel) SetBordersFrom(src *BorderSizes) {
+// RectBounds pointer and recalculates the panel size
+func (p *Panel) SetBordersFrom(src *RectBounds) {
 
 	p.borderSizes = *src
 	p.resize(p.calcWidth(), p.calcHeight(), true)
 }
 
 // Borders returns this panel current border sizes
-func (p *Panel) Borders() BorderSizes {
+func (p *Panel) Borders() RectBounds {
 
 	return p.borderSizes
 }
@@ -371,15 +398,15 @@ func (p *Panel) SetPaddings(top, right, bottom, left float32) {
 }
 
 // SetPaddingsFrom sets this panel padding sizes from the specified
-// BorderSizes pointer and recalculates the panel size
-func (p *Panel) SetPaddingsFrom(src *BorderSizes) {
+// RectBounds pointer and recalculates the panel size
+func (p *Panel) SetPaddingsFrom(src *RectBounds) {
 
 	p.paddingSizes = *src
 	p.resize(p.calcWidth(), p.calcHeight(), true)
 }
 
 // Paddings returns this panel padding sizes in pixels
-func (p *Panel) Paddings() BorderSizes {
+func (p *Panel) Paddings() RectBounds {
 
 	return p.paddingSizes
 }
@@ -399,7 +426,7 @@ func (p *Panel) SetBordersColor4(color *math32.Color4) {
 	p.SetChanged(true)
 }
 
-// BorderColor4 returns current border color
+// BordersColor4 returns current border color
 func (p *Panel) BordersColor4() math32.Color4 {
 
 	return p.udata.bordersColor
@@ -436,6 +463,18 @@ func (p *Panel) Color4() math32.Color4 {
 	return p.udata.contentColor
 }
 
+// ApplyStyle applies the provided PanelStyle to the panel
+func (p *Panel) ApplyStyle(ps *PanelStyle) {
+
+	p.udata.bordersColor = ps.BorderColor
+	p.udata.paddingsColor = ps.BgColor
+	p.udata.contentColor = ps.BgColor
+	p.marginSizes = ps.Margin
+	p.borderSizes = ps.Border
+	p.paddingSizes = ps.Padding
+	p.resize(p.calcWidth(), p.calcHeight(), true)
+}
+
 // SetContentSize sets this panel content size to the specified dimensions.
 // The external size of the panel may increase or decrease to acomodate
 // the new content size.
@@ -445,14 +484,14 @@ func (p *Panel) SetContentSize(width, height float32) {
 }
 
 // SetContentWidth sets this panel content width to the specified dimension in pixels.
-// The external size of the panel may increase or decrease to acomodate the new width
+// The external size of the panel may increase or decrease to accommodate the new width
 func (p *Panel) SetContentWidth(width float32) {
 
 	p.SetContentSize(width, p.content.Height)
 }
 
 // SetContentHeight sets this panel content height to the specified dimension in pixels.
-// The external size of the panel may increase or decrease to acomodate the new width
+// The external size of the panel may increase or decrease to accommodate the new width
 func (p *Panel) SetContentHeight(height float32) {
 
 	p.SetContentSize(p.content.Width, height)
@@ -560,10 +599,8 @@ func (p *Panel) ContainsPosition(x, y float32) bool {
 // Unlike "ContainsPosition" is does not consider the panel margins.
 func (p *Panel) InsideBorders(x, y float32) bool {
 
-	if x < (p.pospix.X+p.marginSizes.Left) || x >= (p.pospix.X+p.width-p.marginSizes.Right) {
-		return false
-	}
-	if y < (p.pospix.Y+p.marginSizes.Top) || y >= (p.pospix.Y+p.height-p.marginSizes.Bottom) {
+	if 	x < (p.pospix.X + p.marginSizes.Left) || x >= (p.pospix.X + p.width - p.marginSizes.Right) ||
+		y < (p.pospix.Y + p.marginSizes.Top) ||	y >= (p.pospix.Y + p.height - p.marginSizes.Bottom) {
 		return false
 	}
 	return true
@@ -701,16 +738,16 @@ func (p *Panel) setZ(z, zunb float32) (float32, float32) {
 			z, zunb = ichild.(IPanel).GetPanel().setZ(z, zunb)
 		}
 		return z, zunb
-		// Unbounded panel
-	} else {
-		p.SetPositionZ(zunb)
-		zchild := zunb + deltaZ
-		zunb += deltaZunb
-		for _, ichild := range p.Children() {
-			_, zunb = ichild.(IPanel).GetPanel().setZ(zchild, zunb)
-		}
-		return z, zunb
 	}
+
+	// Unbounded panel
+	p.SetPositionZ(zunb)
+	zchild := zunb + deltaZ
+	zunb += deltaZunb
+	for _, ichild := range p.Children() {
+		_, zunb = ichild.(IPanel).GetPanel().setZ(zchild, zunb)
+	}
+	return z, zunb
 }
 
 // updateBounds is called by UpdateMatrixWorld() and calculates this panel

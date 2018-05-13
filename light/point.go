@@ -12,6 +12,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// Point is an omnidirectional light source
 type Point struct {
 	core.Node              // Embedded node
 	color     math32.Color // Light color

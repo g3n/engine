@@ -29,6 +29,7 @@ import (
 
 *********************************************/
 
+// Window represents a window GUI element
 type Window struct {
 	Panel      // Embedded Panel
 	styles     *WindowStyles
@@ -41,17 +42,18 @@ type Window struct {
 	mouseY     float32
 }
 
+// WindowStyle contains the styling of a Window
 type WindowStyle struct {
-	Border           BorderSizes
-	Paddings         BorderSizes
+	Border           RectBounds
+	Paddings         RectBounds
 	BorderColor      math32.Color4
-	TitleBorders     BorderSizes
+	TitleBorders     RectBounds
 	TitleBorderColor math32.Color4
 	TitleBgColor     math32.Color4
 	TitleFgColor     math32.Color4
 }
 
-// All Window styles
+// WindowStyles contains a WindowStyle for each valid GUI state
 type WindowStyles struct {
 	Normal   WindowStyle
 	Over     WindowStyle
@@ -59,6 +61,7 @@ type WindowStyles struct {
 	Disabled WindowStyle
 }
 
+// ResizeBorders specifies which window borders can be resized
 type ResizeBorders int
 
 const (
@@ -263,6 +266,7 @@ func (w *Window) recalc() {
 	w.client.SetSize(width, height)
 }
 
+// WindowTitle represents the title bar of a Window
 type WindowTitle struct {
 	Panel   // Embedded panel
 	win     *Window
@@ -316,7 +320,7 @@ func (wt *WindowTitle) onMouse(evname string, ev interface{}) {
 func (wt *WindowTitle) onCursor(evname string, ev interface{}) {
 
 	if evname == OnCursorEnter {
-		wt.win.root.SetCursorDrag()
+		wt.win.root.SetCursorHand()
 	} else if evname == OnCursorLeave {
 		wt.win.root.SetCursorNormal()
 	} else if evname == OnCursor {
