@@ -9,6 +9,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// Plane represents a plane geometry
 type Plane struct {
 	Geometry
 	Width          float32
@@ -31,14 +32,14 @@ func NewPlane(width, height float32, widthSegments, heightSegments int) *Plane {
 	plane.WidthSegments = widthSegments
 	plane.HeightSegments = heightSegments
 
-	width_half := width / 2
-	height_half := height / 2
+	widthHalf := width / 2
+	heightHalf := height / 2
 	gridX := widthSegments
 	gridY := heightSegments
 	gridX1 := gridX + 1
 	gridY1 := gridY + 1
-	segment_width := width / float32(gridX)
-	segment_height := height / float32(gridY)
+	segmentWidth := width / float32(gridX)
+	segmentHeight := height / float32(gridY)
 
 	// Create buffers
 	positions := math32.NewArrayF32(0, 16)
@@ -48,9 +49,9 @@ func NewPlane(width, height float32, widthSegments, heightSegments int) *Plane {
 
 	// Generate plane vertices, vertices normals and vertices texture mappings.
 	for iy := 0; iy < gridY1; iy++ {
-		y := float32(iy)*segment_height - height_half
+		y := float32(iy)*segmentHeight - heightHalf
 		for ix := 0; ix < gridX1; ix++ {
-			x := float32(ix)*segment_width - width_half
+			x := float32(ix)*segmentWidth - widthHalf
 			positions.Append(float32(x), float32(-y), 0)
 			normals.Append(0, 0, 1)
 			uvs.Append(float32(float64(ix)/float64(gridX)), float32(float64(1)-(float64(iy)/float64(gridY))))

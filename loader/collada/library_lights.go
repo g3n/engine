@@ -12,7 +12,7 @@ import (
 )
 
 //
-// Library Lights
+// LibraryLights
 //
 type LibraryLights struct {
 	Id    string
@@ -21,6 +21,7 @@ type LibraryLights struct {
 	Light []*Light
 }
 
+// Dump prints out information about the LibraryLights
 func (ll *LibraryLights) Dump(out io.Writer, indent int) {
 
 	if ll == nil {
@@ -43,6 +44,7 @@ type Light struct {
 	}
 }
 
+// Dump prints out information about the Light
 func (li *Light) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sLights id:%s name:%s\n", sIndent(indent), li.Id, li.Name)
@@ -68,6 +70,7 @@ type Ambient struct {
 	Color LightColor
 }
 
+// Dump prints out information about the Ambient
 func (amb *Ambient) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sAmbient\n", sIndent(indent))
@@ -82,6 +85,7 @@ type Directional struct {
 	Color LightColor
 }
 
+// Dump prints out information about the Directional
 func (dir *Directional) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sDirectional\n", sIndent(indent))
@@ -99,6 +103,7 @@ type Point struct {
 	QuadraticAttenuation *FloatValue
 }
 
+// Dump prints out information about the Point
 func (pl *Point) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sPoint\n", sIndent(indent))
@@ -121,6 +126,7 @@ type Spot struct {
 	FalloffExponent      *FloatValue
 }
 
+// Dump prints out information about the Spot
 func (sl *Spot) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sSpot\n", sIndent(indent))
@@ -141,6 +147,7 @@ type FloatValue struct {
 	Value float32
 }
 
+// Dump prints out information about the FloatValue
 func (fv *FloatValue) Dump(name string, out io.Writer, indent int) {
 
 	if fv == nil {
@@ -157,6 +164,7 @@ type LightColor struct {
 	Data [3]float32
 }
 
+// Dump prints out information about the LightColor
 func (lc *LightColor) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sColor sid:%s data:%v\n", sIndent(indent), lc.Sid, lc.Data)
@@ -182,7 +190,6 @@ func (d *Decoder) decLibraryLights(start xml.StartElement, dom *Collada) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decLight(start xml.StartElement, ll *LibraryLights) error {
@@ -205,7 +212,6 @@ func (d *Decoder) decLight(start xml.StartElement, ll *LibraryLights) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decLightTechniqueCommon(start xml.StartElement, li *Light) error {
@@ -319,7 +325,6 @@ func (d *Decoder) decPoint(start xml.StartElement, li *Light) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decSpot(start xml.StartElement, li *Light) error {
@@ -380,7 +385,6 @@ func (d *Decoder) decSpot(start xml.StartElement, li *Light) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decFloatValue(start xml.StartElement, cdata []byte) (*FloatValue, error) {

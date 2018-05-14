@@ -1,15 +1,18 @@
-# G3N - Go 3D Game Engine
 
-[![GoDoc](https://godoc.org/github.com/g3n/engine?status.svg)](https://godoc.org/github.com/g3n/engine)
+<p align="center"><img width="150" src="https://github.com/g3n/g3nd/blob/master/data/images/g3n_logo.png" alt="G3N Banner"/></p>
+<p align="center">
+  <a href="https://godoc.org/github.com/g3n/engine"><img src="https://godoc.org/github.com/g3n/engine?status.svg" alt="Godoc"></img></a>
+  <a href="https://goreportcard.com/report/github.com/g3n/engine"><img src="https://goreportcard.com/badge/github.com/g3n/engine"  alt="Go Report Card"/></a>
+</p>
+<p><h1 align="center">G3N - Go 3D Game Engine</h1></p>
 
+G3N (pronounced "gen") is an OpenGL 3D game engine written in Go.
+G3N was heavily inspired by [three.js](https://threejs.org/).
 
-G3N is a basic (for now!) OpenGL 3D game engine written in Go.
-G3N was heavily inspired and based on the [three.js](https://threejs.org/) Javascript 3D library.
-
-### **To see G3N in action try the [G3N demo](https://github.com/g3n/g3nd).**
+### **To see G3N in action try the [G3N demo](https://github.com/g3n/g3nd) or the [Gokoban](https://github.com/danaugrs/gokoban) award winning game.**
 
 <p align="center">
-  <img style="float: right;" src="https://github.com/g3n/g3n.github.io/blob/master/g3n_banner_small.png" alt="G3N Banner"/>
+  <img style="float: right;" src="https://raw.githubusercontent.com/g3n/g3nd/master/data/images/g3nd_screenshots.png" alt="G3ND In Action"/>
 </p>
 
 ## Highlighted Projects
@@ -18,29 +21,34 @@ G3N was heavily inspired and based on the [three.js](https://threejs.org/) Javas
 
 ## Dependencies
 
-The engine needs an OpenGL driver installed in the system and
-on Unix like systems depends on some C libraries that can be installed using the distribution package manager.
+The engine needs an OpenGL driver installed in the system and on Unix like systems
+depends on some C libraries that can be installed using the distribution package manager.
 In all cases it is necessary to have a gcc compatible C compiler installed.
 
-* For Ubuntu/Debian-like Linux distributions, install `libgl1-mesa-dev` and `xorg-dev` packages.
-* For CentOS/Fedora-like Linux distributions, install `libX11-devel libXcursor-devel libXrandr-devel libXinerama-devel mesa-libGL-devel libXi-devel` packages.
-* Currently it was not tested on OS X.
-* For Windows we tested the build using the [mingw-w64](https://mingw-w64.org) toolchain.
+* For Ubuntu/Debian-like Linux distributions, install the following packages:
+  * `xorg-dev`
+  * `libgl1-mesa-dev`
+  * `libopenal1`
+  * `libopenal-dev`
+  * `libvorbis0a`
+  * `libvorbis-dev`
+  * `libvorbisfile3`
+* For CentOS/Fedora-like Linux distributions, install the following packages:
+  * `xorg-x11-devel.x86_64`
+  * `mesa-libGL.x86_64`
+  * `mesa-libGL-devel.x86_64`
+  * `openal-soft.x86_64`
+  * `openal-soft-devel.x86_64`
+  * `libvorbis.x86_64`
+  * `libvorbis-devel.x86_64`
+* For Windows the necessary audio libraries sources and `dlls` are supplied but they need to be installed
+  manually. Please see [Audio libraries for Windows](audio/windows) for details.
+  We tested the Windows build using the [mingw-w64](https://mingw-w64.org) toolchain.
+* (Not fully-tested on OSX) On OSX, you should install the development files of OpenAL and Vorbis. If
+  your are using [Homebrew](https://brew.sh/) as your package manager, run:
+  `brew install libvorbis openal-soft`
 
-G3N supports spatial audio using external libraries but loads these libraries
-dynamically on demand, so you can install G3N and build a 3D application
-(not using audio) without installing these libraries.
-
-The following libraries are necessary for the optional audio support:
-
-* For Ubuntu/Debian-like Linux distributions, install `libopenal1` and `libvorbisfile3`
-* For CentOS/Fedora-like Linux distributions, install `libopenal1` and `libvorbisfile3 (to be verified)`
-* Currently it was not tested on OS X.
-* For Windows its is necessary to install the following dlls:
-  `OpenAL32.dll, libogg.dll, libvorbis.dll` and `libvorbisfile.dll`.
-  See [windows_audio_dlls](https://github.com/g3n/windows_audio_dlls) for how to get them.
-
-G3N was only tested with Go1.7.4+
+G3N requires Go 1.8+
 
 ## Installation
 
@@ -65,6 +73,10 @@ install the packages. Make sure your GOPATH is set correctly.
   (horizontal box, vertical box, grid, dock)
 * Spatial audio support allowing playing sound from wave or Ogg Vorbis files.
 * Users' applications can use their own vertex and fragment shaders.
+
+<p align="center">
+  <img style="float: right;" src="https://github.com/g3n/g3n.github.io/blob/master/g3n_banner_small.png" alt="G3N Banner"/>
+</p>
 
 ## Basic application
 
@@ -96,13 +108,17 @@ import (
 func main() {
 
 	// Creates window and OpenGL context
-	win, err := window.New("glfw", 800, 600, "Hello G3N", false)
+	wmgr, err := window.Manager("glfw")
+	if err != nil {
+		panic(err)
+	}
+	win, err := wmgr.CreateWindow(800, 600, "Hello G3N", false)
 	if err != nil {
 		panic(err)
 	}
 
 	// OpenGL functions must be executed in the same thread where
-	// the context was created (by window.New())
+	// the context was created (by CreateWindow())
 	runtime.LockOSThread()
 
 	// Create OpenGL state
@@ -113,7 +129,7 @@ func main() {
 
 	// Sets the OpenGL viewport size the same as the window size
 	// This normally should be updated if the window is resized.
-	width, height := win.GetSize()
+	width, height := win.Size()
 	gs.Viewport(0, 0, int32(width), int32(height))
 
 	// Creates scene for 3D objects
@@ -135,7 +151,7 @@ func main() {
 
 	// Creates a wireframe sphere positioned at the center of the scene
 	geom := geometry.NewSphere(2, 16, 16, 0, math.Pi*2, 0, math.Pi)
-	mat := material.NewStandard(math32.NewColor(1, 1, 1))
+	mat := material.NewStandard(math32.NewColor("White"))
 	mat.SetSide(material.SideDouble)
 	mat.SetWireframe(true)
 	sphere := graphic.NewMesh(geom, mat)
@@ -147,6 +163,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	rend.SetScene(scene)
 
 	// Sets window background color
 	gs.ClearColor(0, 0, 0, 1.0)
@@ -154,20 +171,18 @@ func main() {
 	// Render loop
 	for !win.ShouldClose() {
 
-		// Clear buffers
-		gs.Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
-
 		// Rotates the sphere a bit around the Z axis (up)
 		sphere.AddRotationY(0.005)
 
 		// Render the scene using the specified camera
-		rend.Render(scene, camera)
+		rend.Render(camera)
 
 		// Update window and checks for I/O events
 		win.SwapBuffers()
-		win.PollEvents()
+		wmgr.PollEvents()
 	}
 }
+
 ```
 
 <p align="center">
@@ -196,4 +211,3 @@ send pull requests.
 ## Community
 
 Join our [channel](https://gophers.slack.com/messages/g3n) on Gophers Slack.
-

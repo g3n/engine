@@ -9,6 +9,7 @@ import (
 	"image"
 )
 
+// Image is a Panel which contains a single Image
 type Image struct {
 	Panel                    // Embedded panel
 	tex   *texture.Texture2D // pointer to image texture
@@ -57,7 +58,13 @@ func (i *Image) SetTexture(tex *texture.Texture2D) *texture.Texture2D {
 	return prevtex
 }
 
-//func (i *Image) Clone() *Image {
-//
-//	return NewImageFromTex(i.tex.Clone())
-//}
+// SetImage sets the image from the specified image file
+func (i *Image) SetImage(imgfile string) error {
+
+	tex, err := texture.NewTexture2DFromImage(imgfile)
+	if err != nil {
+		return err
+	}
+	i.SetTexture(tex)
+	return nil
+}

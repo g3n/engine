@@ -20,6 +20,7 @@ type LibraryAnimations struct {
 	Animation []*Animation
 }
 
+// Dump prints out information about the LibraryAnimations
 func (la *LibraryAnimations) Dump(out io.Writer, indent int) {
 
 	if la == nil {
@@ -43,6 +44,7 @@ type Animation struct {
 	Channel   []*Channel
 }
 
+// Dump prints out information about the Animation
 func (an *Animation) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sAnimation id:%s name:%s\n", sIndent(indent), an.Id, an.Name)
@@ -70,6 +72,7 @@ type Sampler struct {
 
 }
 
+// Dump prints out information about the Sampler
 func (sp *Sampler) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sSampler id:%s\n", sIndent(indent), sp.Id)
@@ -87,6 +90,7 @@ type Channel struct {
 	Target string
 }
 
+// Dump prints out information about the Channel
 func (ch *Channel) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sChannel source:%s target:%s\n", sIndent(indent), ch.Source, ch.Target)
@@ -112,7 +116,6 @@ func (d *Decoder) decLibraryAnimations(start xml.StartElement, dom *Collada) err
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decAnimation(start xml.StartElement, la *LibraryAnimations) error {
@@ -150,7 +153,6 @@ func (d *Decoder) decAnimation(start xml.StartElement, la *LibraryAnimations) er
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decSampler(start xml.StartElement, anim *Animation) error {
@@ -173,7 +175,6 @@ func (d *Decoder) decSampler(start xml.StartElement, anim *Animation) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decChannel(start xml.StartElement, anim *Animation) error {

@@ -5,25 +5,27 @@
 package light
 
 import (
+	"unsafe"
+
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/math32"
 )
 
+// Point is an omnidirectional light source
 type Point struct {
-	core.Node                 // Embedded node
-	color     math32.Color    // Light color
-	intensity float32         // Light intensity
-	uni       *gls.Uniform3fv // Uniform with light properties
+	core.Node              // Embedded node
+	color     math32.Color // Light color
+	intensity float32      // Light intensity
+	uni       gls.Uniform  // Uniform location cache
+	udata     struct {     // Combined uniform data in 3 vec3:
+		color          math32.Color   // Light color
+		position       math32.Vector3 // Light position
+		linearDecay    float32        // Distance linear decay factor
+		quadraticDecay float32        // Distance quadratic decay factor
+		dummy          float32        // Completes 3*vec3
+	}
 }
-
-const (
-	pColor          = 0                // index of color vector in uniform (0,1,2)
-	pPosition       = 1                // index of position vector in uniform (3,4,5)
-	pLinearDecay    = 6                // position of scalar linear decay in uniform array
-	pQuadraticDecay = pLinearDecay + 1 // position of scalar linear decay in uniform array
-	pointUniSize    = 3                // uniform count of 3 float32
-)
 
 // NewPoint creates and returns a point light with the specified color and intensity
 func NewPoint(color *math32.Color, intensity float32) *Point {
@@ -34,12 +36,11 @@ func NewPoint(color *math32.Color, intensity float32) *Point {
 	lp.intensity = intensity
 
 	// Creates uniform and sets initial values
-	lp.uni = gls.NewUniform3fv("PointLight", pointUniSize)
+	lp.uni.Init("PointLight")
 	lp.SetColor(color)
 	lp.SetIntensity(intensity)
 	lp.SetLinearDecay(1.0)
 	lp.SetQuadraticDecay(1.0)
-
 	return lp
 }
 
@@ -47,9 +48,8 @@ func NewPoint(color *math32.Color, intensity float32) *Point {
 func (lp *Point) SetColor(color *math32.Color) {
 
 	lp.color = *color
-	tmpColor := lp.color
-	tmpColor.MultiplyScalar(lp.intensity)
-	lp.uni.SetColor(pColor, &tmpColor)
+	lp.udata.color = lp.color
+	lp.udata.color.MultiplyScalar(lp.intensity)
 }
 
 // Color returns the current color of this light
@@ -62,9 +62,8 @@ func (lp *Point) Color() math32.Color {
 func (lp *Point) SetIntensity(intensity float32) {
 
 	lp.intensity = intensity
-	tmpColor := lp.color
-	tmpColor.MultiplyScalar(lp.intensity)
-	lp.uni.SetColor(pColor, &tmpColor)
+	lp.udata.color = lp.color
+	lp.udata.color.MultiplyScalar(lp.intensity)
 }
 
 // Intensity returns the current intensity of this light
@@ -76,37 +75,41 @@ func (lp *Point) Intensity() float32 {
 // SetLinearDecay sets the linear decay factor as a function of the distance
 func (lp *Point) SetLinearDecay(decay float32) {
 
-	lp.uni.SetPos(pLinearDecay, decay)
+	lp.udata.linearDecay = decay
 }
 
 // LinearDecay returns the current linear decay factor
 func (lp *Point) LinearDecay() float32 {
 
-	return lp.uni.GetPos(pLinearDecay)
+	return lp.udata.linearDecay
 }
 
 // SetQuadraticDecay sets the quadratic decay factor as a function of the distance
 func (lp *Point) SetQuadraticDecay(decay float32) {
 
-	lp.uni.SetPos(pQuadraticDecay, decay)
+	lp.udata.quadraticDecay = decay
 }
 
 // QuadraticDecay returns the current quadratic decay factor
 func (lp *Point) QuadraticDecay() float32 {
 
-	return lp.uni.GetPos(pQuadraticDecay)
+	return lp.udata.quadraticDecay
 }
 
 // RenderSetup is called by the engine before rendering the scene
 func (lp *Point) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo, idx int) {
 
-	// Calculates and updates light position uniform in camera coordinates
+	// Calculates light position in camera coordinates and updates uniform
 	var pos math32.Vector3
 	lp.WorldPosition(&pos)
 	pos4 := math32.Vector4{pos.X, pos.Y, pos.Z, 1.0}
 	pos4.ApplyMatrix4(&rinfo.ViewMatrix)
-	lp.uni.SetVector3(pPosition, &math32.Vector3{pos4.X, pos4.Y, pos4.Z})
+	lp.udata.position.X = pos4.X
+	lp.udata.position.Y = pos4.Y
+	lp.udata.position.Z = pos4.Z
 
-	// Transfer uniform
-	lp.uni.TransferIdx(gs, idx*pointUniSize)
+	// Transfer uniform data
+	const vec3count = 3
+	location := lp.uni.LocationIdx(gs, vec3count*int32(idx))
+	gs.Uniform3fvUP(location, vec3count, unsafe.Pointer(&lp.udata))
 }

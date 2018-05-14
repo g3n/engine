@@ -5,39 +5,36 @@
 package gui
 
 import (
-	"github.com/g3n/engine/gui/assets"
-	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/gui/assets/icon"
 	"github.com/g3n/engine/window"
 )
 
 const (
-	checkON  = string(assets.CheckBox)
-	checkOFF = string(assets.CheckBoxOutlineBlank)
-	radioON  = string(assets.RadioButtonChecked)
-	radioOFF = string(assets.RadioButtonUnchecked)
+	checkON  = string(icon.CheckBox)
+	checkOFF = string(icon.CheckBoxOutlineBlank)
+	radioON  = string(icon.RadioButtonChecked)
+	radioOFF = string(icon.RadioButtonUnchecked)
 )
 
+// CheckRadio is a GUI element that can be either a checkbox or a radio button
 type CheckRadio struct {
 	Panel             // Embedded panel
 	Label      *Label // Text label
 	icon       *Label
 	styles     *CheckRadioStyles
 	check      bool
-	group      string
+	group      string // current group name
 	cursorOver bool
 	state      bool
 	codeON     string
 	codeOFF    string
+	subroot    bool // indicates root subcription
 }
 
-type CheckRadioStyle struct {
-	Border      BorderSizes
-	Paddings    BorderSizes
-	BorderColor math32.Color4
-	BgColor     math32.Color4
-	FgColor     math32.Color
-}
+// CheckRadioStyle contains the styling of a CheckRadio
+type CheckRadioStyle BasicStyle
 
+// CheckRadioStyles contains an CheckRadioStyle for each valid GUI state
 type CheckRadioStyles struct {
 	Normal   CheckRadioStyle
 	Over     CheckRadioStyle
@@ -64,7 +61,7 @@ func NewRadioButton(text string) *CheckRadio {
 func newCheckRadio(check bool, text string) *CheckRadio {
 
 	cb := new(CheckRadio)
-	cb.styles = &StyleDefault.CheckRadio
+	cb.styles = &StyleDefault().CheckRadio
 
 	// Adapts to specified type: CheckBox or RadioButton
 	cb.check = check
@@ -93,25 +90,12 @@ func newCheckRadio(check bool, text string) *CheckRadio {
 	cb.Panel.Add(cb.Label)
 
 	// Creates icon label
-	cb.icon = NewIconLabel(" ")
+	cb.icon = NewIcon(" ")
 	cb.Panel.Add(cb.icon)
 
 	cb.recalc()
 	cb.update()
 	return cb
-}
-
-// SetRoot overrides the IPanel.SetRoot method
-func (cb *CheckRadio) SetRoot(root *Root) {
-
-	if cb.root == root || root == nil {
-		return
-	}
-	cb.root = root
-	// Subscribes once to this root panel OnRadioGroup events
-	root.Subscribe(OnRadioGroup, func(name string, ev interface{}) {
-		cb.onRadioGroup(ev.(*CheckRadio))
-	})
 }
 
 // Value returns the current state of the checkbox
@@ -153,6 +137,15 @@ func (cb *CheckRadio) SetStyles(bs *CheckRadioStyles) {
 
 // toggleState toggles the current state of the checkbox/radiobutton
 func (cb *CheckRadio) toggleState() {
+
+	// Subscribes once to the root panel for OnRadioGroup events
+	// The root panel is used to dispatch events to all checkradios
+	if !cb.subroot {
+		cb.root.Subscribe(OnRadioGroup, func(name string, ev interface{}) {
+			cb.onRadioGroup(ev.(*CheckRadio))
+		})
+		cb.subroot = true
+	}
 
 	if cb.check {
 		cb.state = !cb.state
@@ -215,7 +208,7 @@ func (cb *CheckRadio) onKey(evname string, ev interface{}) {
 	return
 }
 
-// onRadioGroup receives subscriber OnRadioGroup events
+// onRadioGroup receives subscribed OnRadioGroup events
 func (cb *CheckRadio) onRadioGroup(other *CheckRadio) {
 
 	// If event is for this button, ignore
@@ -253,13 +246,9 @@ func (cb *CheckRadio) update() {
 // setStyle sets the specified checkradio style
 func (cb *CheckRadio) applyStyle(s *CheckRadioStyle) {
 
-	cb.Panel.SetBordersColor4(&s.BorderColor)
-	cb.Panel.SetBordersFrom(&s.Border)
-	cb.Panel.SetPaddingsFrom(&s.Paddings)
-	cb.Panel.SetColor4(&s.BgColor)
-
-	cb.icon.SetColor(&s.FgColor)
-	cb.Label.SetColor(&s.FgColor)
+	cb.Panel.ApplyStyle(&s.PanelStyle)
+	cb.icon.SetColor4(&s.FgColor)
+	cb.Label.SetColor4(&s.FgColor)
 }
 
 // recalc recalculates dimensions and position from inside out

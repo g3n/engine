@@ -102,28 +102,28 @@ func New(name string, parent *Logger) *Logger {
 	return self
 }
 
-// SetLevel set the current level of this logger
+// SetLevel sets the current level of this logger.
 // Only log messages with levels with the same or higher
 // priorities than the current level will be emitted.
-func (self *Logger) SetLevel(level int) {
+func (l *Logger) SetLevel(level int) {
 
 	if level < DEBUG || level > FATAL {
 		return
 	}
-	self.level = level
+	l.level = level
 }
 
 // SetLevelByName sets the current level of this logger by level name:
 // debug|info|warn|error|fatal (case ignored.)
 // Only log messages with levels with the same or higher
 // priorities than the current level will be emitted.
-func (self *Logger) SetLevelByName(lname string) error {
+func (l *Logger) SetLevelByName(lname string) error {
 	var level int
 
 	lname = strings.ToUpper(lname)
 	for level = 0; level < len(levelNames); level++ {
 		if lname == levelNames[level] {
-			self.level = level
+			l.level = level
 			return nil
 		}
 	}
@@ -131,33 +131,33 @@ func (self *Logger) SetLevelByName(lname string) error {
 }
 
 // SetFormat sets the logger date/time message format
-func (self *Logger) SetFormat(format int) {
+func (l *Logger) SetFormat(format int) {
 
-	self.format = format
+	l.format = format
 }
 
 // AddWriter adds a writer to the current outputs of this logger.
-func (self *Logger) AddWriter(writer LoggerWriter) {
+func (l *Logger) AddWriter(writer LoggerWriter) {
 
-	self.outputs = append(self.outputs, writer)
+	l.outputs = append(l.outputs, writer)
 }
 
 // RemoveWriter removes the specified writer from  the current outputs of this logger.
-func (self *Logger) RemoveWriter(writer LoggerWriter) {
+func (l *Logger) RemoveWriter(writer LoggerWriter) {
 
-	for pos, w := range self.outputs {
+	for pos, w := range l.outputs {
 		if w != writer {
 			continue
 		}
-		self.outputs = append(self.outputs[:pos], self.outputs[pos+1:]...)
+		l.outputs = append(l.outputs[:pos], l.outputs[pos+1:]...)
 	}
 }
 
 // EnableChild enables or disables this logger child logger with
 // the specified name.
-func (self *Logger) EnableChild(name string, state bool) {
+func (l *Logger) EnableChild(name string, state bool) {
 
-	for _, c := range self.children {
+	for _, c := range l.children {
 		if c.name == name {
 			c.enabled = state
 		}
@@ -165,15 +165,15 @@ func (self *Logger) EnableChild(name string, state bool) {
 }
 
 // Debug emits a DEBUG level log message
-func (self *Logger) Debug(format string, v ...interface{}) {
+func (l *Logger) Debug(format string, v ...interface{}) {
 
-	self.Log(DEBUG, format, v...)
+	l.Log(DEBUG, format, v...)
 }
 
 // Info emits an INFO level log message
-func (self *Logger) Info(format string, v ...interface{}) {
+func (l *Logger) Info(format string, v ...interface{}) {
 
-	self.Log(INFO, format, v...)
+	l.Log(INFO, format, v...)
 }
 
 // Warn emits a WARN level log message
@@ -194,11 +194,11 @@ func (self *Logger) Fatal(format string, v ...interface{}) {
 	self.Log(FATAL, format, v...)
 }
 
-// Logs emits a log message with the specified level
-func (self *Logger) Log(level int, format string, v ...interface{}) {
+// Log emits a log message with the specified level
+func (l *Logger) Log(level int, format string, v ...interface{}) {
 
 	// Ignores message if logger not enabled or with level bellow the current one.
-	if !self.enabled || level < self.level {
+	if !l.enabled || level < l.level {
 		return
 	}
 
@@ -208,20 +208,20 @@ func (self *Logger) Log(level int, format string, v ...interface{}) {
 	hour, min, sec := now.Clock()
 	fdate := []string{}
 
-	if self.format&FDATE != 0 {
+	if l.format&FDATE != 0 {
 		fdate = append(fdate, fmt.Sprintf("%04d/%02d/%02d", year, month, day))
 	}
-	if self.format&FTIME != 0 {
+	if l.format&FTIME != 0 {
 		if len(fdate) > 0 {
 			fdate = append(fdate, "-")
 		}
 		fdate = append(fdate, fmt.Sprintf("%02d:%02d:%02d", hour, min, sec))
 		var sdecs string
-		if self.format&FMILIS != 0 {
+		if l.format&FMILIS != 0 {
 			sdecs = fmt.Sprintf(".%.03d", now.Nanosecond()/1000000)
-		} else if self.format&FMICROS != 0 {
+		} else if l.format&FMICROS != 0 {
 			sdecs = fmt.Sprintf(".%.06d", now.Nanosecond()/1000)
-		} else if self.format&FNANOS != 0 {
+		} else if l.format&FNANOS != 0 {
 			sdecs = fmt.Sprintf(".%.09d", now.Nanosecond())
 		}
 		fdate = append(fdate, sdecs)
@@ -229,7 +229,7 @@ func (self *Logger) Log(level int, format string, v ...interface{}) {
 
 	// Formats message
 	usermsg := fmt.Sprintf(format, v...)
-	prefix := self.prefix
+	prefix := l.prefix
 	msg := fmt.Sprintf("%s:%s:%s:%s\n", strings.Join(fdate, ""), levelNames[level][:1], prefix, usermsg)
 
 	// Log event
@@ -243,11 +243,11 @@ func (self *Logger) Log(level int, format string, v ...interface{}) {
 	// Writes message to this logger and its ancestors.
 	mutex.Lock()
 	defer mutex.Unlock()
-	self.writeAll(&event)
+	l.writeAll(&event)
 
 	// Close all logger writers
 	if level == FATAL {
-		for _, w := range self.outputs {
+		for _, w := range l.outputs {
 			w.Close()
 		}
 		panic("LOG FATAL")
@@ -255,14 +255,14 @@ func (self *Logger) Log(level int, format string, v ...interface{}) {
 }
 
 // write message to this logger output and of all of its ancestors.
-func (self *Logger) writeAll(event *Event) {
+func (l *Logger) writeAll(event *Event) {
 
-	for _, w := range self.outputs {
+	for _, w := range l.outputs {
 		w.Write(event)
 		w.Sync()
 	}
-	if self.parent != nil {
-		self.parent.writeAll(event)
+	if l.parent != nil {
+		l.parent.writeAll(event)
 	}
 }
 
@@ -270,51 +270,66 @@ func (self *Logger) writeAll(event *Event) {
 // Functions for the Default Logger
 //
 
+// Log emits a log message with the specified level
 func Log(level int, format string, v ...interface{}) {
 
 	Default.Log(level, format, v...)
 }
 
+// SetLevel sets the current level of the default logger.
+// Only log messages with levels with the same or higher
+// priorities than the current level will be emitted.
 func SetLevel(level int) {
 
 	Default.SetLevel(level)
 }
 
+// SetLevelByName sets the current level of the default logger by level name:
+// debug|info|warn|error|fatal (case ignored.)
+// Only log messages with levels with the same or higher
+// priorities than the current level will be emitted.
 func SetLevelByName(lname string) {
 
 	Default.SetLevelByName(lname)
 }
 
+// SetFormat sets the date/time message format of the default logger.
 func SetFormat(format int) {
 
 	Default.SetFormat(format)
 }
 
+// AddWriter adds a writer to the current outputs of the default logger.
 func AddWriter(writer LoggerWriter) {
 
 	Default.AddWriter(writer)
 }
 
+// Debug emits a DEBUG level log message
 func Debug(format string, v ...interface{}) {
 
 	Default.Debug(format, v...)
 }
 
+// Info emits an INFO level log message
 func Info(format string, v ...interface{}) {
 
 	Default.Info(format, v...)
 }
 
+// Warn emits a WARN level log message
 func Warn(format string, v ...interface{}) {
 
 	Default.Warn(format, v...)
 }
 
+// Error emits an ERROR level log message
 func Error(format string, v ...interface{}) {
 
 	Default.Error(format, v...)
 }
 
+// Fatal emits a FATAL level log message
 func Fatal(format string, v ...interface{}) {
 
 	Default.Fatal(format, v...)

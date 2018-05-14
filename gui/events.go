@@ -10,7 +10,7 @@ import (
 
 // Consolidate window events plus GUI events
 const (
-	OnClick       = "gui.OnClick"       // Widget clicked by mouse or key
+	OnClick       = "gui.OnClick"       // Widget clicked by mouse left button or key
 	OnCursor      = window.OnCursor     // cursor (mouse) position events
 	OnCursorEnter = "gui.OnCursorEnter" // cursor enters the panel area
 	OnCursorLeave = "gui.OnCursorLeave" // cursor leaves the panel area
@@ -27,4 +27,5 @@ const (
 	OnScroll      = window.OnScroll     // scroll event
 	OnChild       = "gui.OnChild"       // child added to or removed from panel
 	OnRadioGroup  = "gui.OnRadioGroup"  // radio button from a group changed state
+	OnRightClick  = "gui.OnRightClick"  // Widget clicked by mouse right button
 )

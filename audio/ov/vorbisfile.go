@@ -2,18 +2,18 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-/*
-Package ov implements the Go bindings of a subset of the functions of the Ogg Vorbis File C library.
-
-It also implements a loader so the library can be dynamically loaded.
-The libvorbisfile C API reference is at: https://xiph.org/vorbis/doc/vorbisfile/reference.html
-
-*/
+// Package ov implements the Go bindings of a subset of the functions of the Ogg Vorbis File C library.
+// The libvorbisfile C API reference is at: https://xiph.org/vorbis/doc/vorbisfile/reference.html
 package ov
 
+// #cgo darwin   CFLAGS:  -DGO_DARWIN  -I/usr/include/vorbis -I/usr/local/include/vorbis
+// #cgo linux    CFLAGS:  -DGO_LINUX   -I/usr/include/vorbis
+// #cgo windows  CFLAGS:  -DGO_WINDOWS -I${SRCDIR}/../windows/libvorbis-1.3.5/include/vorbis -I${SRCDIR}/../windows/libogg-1.3.3/include
+// #cgo darwin   LDFLAGS: -L/usr/lib -L/usr/local/lib -lvorbisfile
+// #cgo linux    LDFLAGS: -lvorbisfile
+// #cgo windows  LDFLAGS: -L${SRCDIR}/../windows/bin -llibvorbisfile
 // #include <stdlib.h>
-// #include "vorbis/vorbisfile.h"
-// #include "loader.h"
+// #include "vorbisfile.h"
 import "C"
 
 import (
@@ -64,39 +64,10 @@ var errCodes = map[C.int]string{
 	C.OV_ENOSEEK:    "EnoSeek",
 }
 
-// Flag indicating if library has been loaded
-var loaded = false
-
-// Load tries to load dinamically the libvorbisfile shared library/dll.
-// Most of the functions of this package can only be called only
-// after the library was successfully loaded.
-func Load() error {
-
-	// Checks if already loaded
-	if loaded {
-		return nil
-	}
-
-	// Loads libvorbisfile
-	cres := C.vorbisfile_load()
-	if cres == 0 {
-		loaded = true
-		return nil
-	}
-	return fmt.Errorf("Error loading libvorbisfile shared library/dll")
-}
-
-// IsLoaded returns if library has been loaded succesfully
-func IsLoaded() bool {
-
-	return loaded
-}
-
 // Fopen opens an ogg vorbis file for decoding
 // Returns an opaque pointer to the internal decode structure and an error
 func Fopen(path string) (*File, error) {
 
-	checkLoaded()
 	// Allocates pointer to vorbisfile structure using C memory
 	var f File
 	f.vf = (*C.OggVorbis_File)(C.malloc(C.size_t(unsafe.Sizeof(C.OggVorbis_File{}))))
@@ -113,7 +84,6 @@ func Fopen(path string) (*File, error) {
 // Clear clears the decoded buffers and closes the file
 func Clear(f *File) error {
 
-	checkLoaded()
 	cerr := C.ov_clear(f.vf)
 	if cerr == 0 {
 		C.free(unsafe.Pointer(f.vf))
@@ -127,7 +97,6 @@ func Clear(f *File) error {
 // returns the number of bytes read, the number of current logical bitstream and an error
 func Read(f *File, buffer unsafe.Pointer, length int, bigendianp bool, word int, sgned bool) (int, int, error) {
 
-	checkLoaded()
 	var cbigendianp C.int = 0
 	var csgned C.int = 0
 	var bitstream C.int
@@ -149,7 +118,6 @@ func Read(f *File, buffer unsafe.Pointer, length int, bigendianp bool, word int,
 // information about the audio in a vorbis stream
 func Info(f *File, link int, info *VorbisInfo) error {
 
-	checkLoaded()
 	vi := C.ov_info(f.vf, C.int(link))
 	if vi == nil {
 		return fmt.Errorf("Error returned from 'ov_info'")
@@ -167,7 +135,6 @@ func Info(f *File, link int, info *VorbisInfo) error {
 // Seekable returns indication whether or not the bitstream is seekable
 func Seekable(f *File) bool {
 
-	checkLoaded()
 	cres := C.ov_seekable(f.vf)
 	if cres == 0 {
 		return false
@@ -181,7 +148,6 @@ func Seekable(f *File) bool {
 // and get data from the newly seeked to position.
 func PcmSeek(f *File, pos int64) error {
 
-	checkLoaded()
 	cres := C.ov_pcm_seek(f.vf, C.ogg_int64_t(pos))
 	if cres == 0 {
 		return nil
@@ -193,7 +159,6 @@ func PcmSeek(f *File, pos int64) error {
 // To retrieve the total pcm samples for the entire physical bitstream, the 'link' parameter should be set to -1
 func PcmTotal(f *File, i int) (int64, error) {
 
-	checkLoaded()
 	cres := C.ov_pcm_total(f.vf, C.int(i))
 	if cres < 0 {
 		return 0, fmt.Errorf("Error:%s from 'ov_pcm_total()'", errCodes[C.int(cres)])
@@ -205,7 +170,6 @@ func PcmTotal(f *File, i int) (int64, error) {
 // To retrieve the time total for the entire physical bitstream, 'i' should be set to -1.
 func TimeTotal(f *File, i int) (float64, error) {
 
-	checkLoaded()
 	cres := C.ov_time_total(f.vf, C.int(i))
 	if cres < 0 {
 		return 0, fmt.Errorf("Error:%s from 'ov_time_total()'", errCodes[C.int(cres)])
@@ -216,16 +180,9 @@ func TimeTotal(f *File, i int) (float64, error) {
 // TimeTell returns the current decoding offset in seconds.
 func TimeTell(f *File) (float64, error) {
 
-	checkLoaded()
 	cres := C.ov_time_tell(f.vf)
 	if cres < 0 {
 		return 0, fmt.Errorf("Error:%s from 'ov_time_total()'", errCodes[C.int(cres)])
 	}
 	return float64(cres), nil
-}
-
-func checkLoaded() {
-	if !loaded {
-		panic("libvorbisfile shared library/dll was not loaded")
-	}
 }

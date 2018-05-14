@@ -11,7 +11,7 @@ import (
 )
 
 //
-// Library Images
+// LibraryImages
 //
 type LibraryImages struct {
 	Id    string
@@ -20,6 +20,7 @@ type LibraryImages struct {
 	Image []*Image
 }
 
+// Dump prints out information about the LibraryImages
 func (li *LibraryImages) Dump(out io.Writer, indent int) {
 
 	if li == nil {
@@ -44,6 +45,7 @@ type Image struct {
 	ImageSource interface{}
 }
 
+// Dump prints out information about the Image
 func (img *Image) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sImage id:%s name:%s\n", sIndent(indent), img.Id, img.Name)
@@ -55,12 +57,13 @@ func (img *Image) Dump(out io.Writer, indent int) {
 }
 
 //
-//
+// InitFrom
 //
 type InitFrom struct {
 	Uri string
 }
 
+// Dump prints out information about the InitFrom
 func (initf *InitFrom) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sInitFrom:%s\n", sIndent(indent), initf.Uri)
@@ -86,7 +89,6 @@ func (d *Decoder) decLibraryImages(start xml.StartElement, dom *Collada) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decImage(start xml.StartElement, li *LibraryImages) error {
@@ -109,7 +111,6 @@ func (d *Decoder) decImage(start xml.StartElement, li *LibraryImages) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decImageSource(start xml.StartElement, cdata []byte, img *Image) error {

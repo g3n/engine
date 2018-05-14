@@ -9,6 +9,7 @@ import (
 	"github.com/g3n/engine/geometry"
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/material"
+	"github.com/g3n/engine/math32"
 )
 
 // Graphic is a Node which has a visible representation in the scene.
@@ -21,11 +22,15 @@ type Graphic struct {
 	materials  []GraphicMaterial  // Materials
 	mode       uint32             // OpenGL primitive
 	renderable bool               // Renderable flag
+	cullable   bool               // Cullable flag
+
+	mvm        math32.Matrix4     // Cached ModelView matrix
+	mvpm       math32.Matrix4     // Cached ModelViewProjection matrix
 }
 
 // GraphicMaterial specifies the material to be used for
 // a subset of vertices from the Graphic geometry
-// A Graphic object has at least one GraphicMaterial
+// A Graphic object has at least one GraphicMaterial.
 type GraphicMaterial struct {
 	imat     material.IMaterial // Associated material
 	start    int                // Index of first element in the geometry
@@ -33,13 +38,15 @@ type GraphicMaterial struct {
 	igraphic IGraphic           // Graphic which contains this GraphicMaterial
 }
 
-// Interface for all Graphics
+// IGraphic is the interface for all Graphic objects.
 type IGraphic interface {
 	core.INode
 	GetGraphic() *Graphic
 	GetGeometry() *geometry.Geometry
 	Renderable() bool
 	SetRenderable(bool)
+	Cullable() bool
+	SetCullable(bool)
 	RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo)
 }
 
@@ -61,24 +68,25 @@ func (gr *Graphic) Init(igeom geometry.IGeometry, mode uint32) *Graphic {
 	gr.mode = mode
 	gr.materials = make([]GraphicMaterial, 0)
 	gr.renderable = true
+	gr.cullable = true
 	return gr
 }
 
 // GetGraphic satisfies the IGraphic interface and
-// returns pointer to the base Graphic
+// returns pointer to the base Graphic.
 func (gr *Graphic) GetGraphic() *Graphic {
 
 	return gr
 }
 
 // GetGeometry satisfies the IGraphic interface and returns
-// a pointer to the geometry associated with this graphic
+// a pointer to the geometry associated with this graphic.
 func (gr *Graphic) GetGeometry() *geometry.Geometry {
 
 	return gr.igeom.GetGeometry()
 }
 
-// Dispose overrides the embedded Node Dispose method
+// Dispose overrides the embedded Node Dispose method.
 func (gr *Graphic) Dispose() {
 
 	gr.igeom.Dispose()
@@ -88,20 +96,34 @@ func (gr *Graphic) Dispose() {
 }
 
 // SetRenderable satisfies the IGraphic interface and
-// sets the renderable state of this Graphic (default = true)
+// sets the renderable state of this Graphic (default = true).
 func (gr *Graphic) SetRenderable(state bool) {
 
 	gr.renderable = state
 }
 
 // Renderable satisfies the IGraphic interface and
-// returns the renderable state of this graphic
+// returns the renderable state of this graphic.
 func (gr *Graphic) Renderable() bool {
 
 	return gr.renderable
 }
 
-// Add material for the specified subset of vertices.
+// SetCullable satisfies the IGraphic interface and
+// sets the cullable state of this Graphic (default = true).
+func (gr *Graphic) SetCullable(state bool) {
+
+	gr.cullable = state
+}
+
+// Cullable satisfies the IGraphic interface and
+// returns the cullable state of this graphic.
+func (gr *Graphic) Cullable() bool {
+
+	return gr.cullable
+}
+
+// AddMaterial adds a material for the specified subset of vertices.
 // If the material applies to all vertices, start and count must be 0.
 func (gr *Graphic) AddMaterial(igr IGraphic, imat material.IMaterial, start, count int) {
 
@@ -114,7 +136,7 @@ func (gr *Graphic) AddMaterial(igr IGraphic, imat material.IMaterial, start, cou
 	gr.materials = append(gr.materials, gmat)
 }
 
-// Add group material
+// AddGroupMaterial adds a material for the specified geometry group.
 func (gr *Graphic) AddGroupMaterial(igr IGraphic, imat material.IMaterial, gindex int) {
 
 	geom := gr.igeom.GetGeometry()
@@ -125,13 +147,13 @@ func (gr *Graphic) AddGroupMaterial(igr IGraphic, imat material.IMaterial, ginde
 	gr.AddMaterial(igr, imat, group.Start, group.Count)
 }
 
-// Materials returns slice with this graphic materials
+// Materials returns slice with this graphic materials.
 func (gr *Graphic) Materials() []GraphicMaterial {
 
 	return gr.materials
 }
 
-// GetMaterial returns the  material associated with the specified vertex position
+// GetMaterial returns the material associated with the specified vertex position.
 func (gr *Graphic) GetMaterial(vpos int) material.IMaterial {
 
 	for _, gmat := range gr.materials {
@@ -146,12 +168,40 @@ func (gr *Graphic) GetMaterial(vpos int) material.IMaterial {
 	return nil
 }
 
+// CalculateMatrices calculates the model view and model view projection matrices.
+func (g *Graphic) CalculateMatrices(gs *gls.GLS, rinfo *core.RenderInfo) {
+
+	// Calculate model view and model view projection matrices
+	mw := g.MatrixWorld()
+	g.mvm.MultiplyMatrices(&rinfo.ViewMatrix, &mw)
+	g.mvpm.MultiplyMatrices(&rinfo.ProjMatrix, &g.mvm)
+}
+
+// ModelViewMatrix returns the last cached model view matrix for this graphic.
+func (g *Graphic) ModelViewMatrix() *math32.Matrix4 {
+
+	return &g.mvm
+}
+
+// ModelViewProjectionMatrix returns the last cached model view projection matrix for this graphic.
+func (g *Graphic) ModelViewProjectionMatrix() *math32.Matrix4 {
+
+	return &g.mvpm
+}
+
+// GetMaterial returns the material associated with the GraphicMaterial.
 func (grmat *GraphicMaterial) GetMaterial() material.IMaterial {
 
 	return grmat.imat
 }
 
-// Render is called by the renderer to render this graphic material
+// GetGraphic returns the graphic associated with the GraphicMaterial.
+func (grmat *GraphicMaterial) GetGraphic() IGraphic {
+
+	return grmat.igraphic
+}
+
+// Render is called by the renderer to render this graphic material.
 func (grmat *GraphicMaterial) Render(gs *gls.GLS, rinfo *core.RenderInfo) {
 
 	// Setup the associated material (set states and transfer material uniforms and textures)

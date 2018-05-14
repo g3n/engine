@@ -68,7 +68,6 @@ func (d *Decoder) NewMaterial(id string) (material.IMaterial, error) {
 	default:
 		return nil, fmt.Errorf("Invalid shader element")
 	}
-	return nil, nil
 }
 
 // GetTexture2D returns a pointer to an instance of the Texture2D
@@ -210,9 +209,6 @@ func getColor(ci interface{}) math32.Color {
 	switch c := ci.(type) {
 	case *Color:
 		return math32.Color{c.Data[0], c.Data[1], c.Data[2]}
-		break
-	default:
-		return math32.Color{}
 	}
 	return math32.Color{}
 }
@@ -222,9 +218,6 @@ func getColor4(ci interface{}) math32.Color4 {
 	switch c := ci.(type) {
 	case Color:
 		return math32.Color4{c.Data[0], c.Data[1], c.Data[2], c.Data[3]}
-		break
-	default:
-		return math32.Color4{}
 	}
 	return math32.Color4{}
 }
@@ -234,9 +227,6 @@ func getFloatOrParam(vi interface{}) float32 {
 	switch v := vi.(type) {
 	case *Float:
 		return v.Data
-		break
-	default:
-		return 0
 	}
 	return 0
 }

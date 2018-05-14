@@ -19,6 +19,6 @@ type Phong struct {
 func NewPhong(color *math32.Color) *Phong {
 
 	pm := new(Phong)
-	pm.Standard.Init("shaderPhong", color)
+	pm.Standard.Init("phong", color)
 	return pm
 }

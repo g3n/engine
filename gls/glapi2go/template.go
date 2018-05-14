@@ -7,16 +7,19 @@ import (
 	"text/template"
 )
 
+// GLHeader is the definition of an OpenGL header file, with functions and constant definitions.
 type GLHeader struct {
 	Defines []GLDefine
 	Funcs   []GLFunc
 }
 
+// GLDefine is the definition of an OpenGL constant.
 type GLDefine struct {
 	Name  string
 	Value string
 }
 
+// GLFunc is the definition of an OpenGL function.
 type GLFunc struct {
 	Ptype    string    // type of function pointer (ex: PFNCULLFACEPROC)
 	Spacer   string    // spacer string for formatting
@@ -30,6 +33,7 @@ type GLFunc struct {
 	Params   []GLParam // array of function parameters
 }
 
+// GLParam is the definition of an argument to an OpenGL function (GLFunc).
 type GLParam struct {
 	Qualif string // optional parameter qualifier (ex: const)
 	CType  string // parameter C type
@@ -37,7 +41,7 @@ type GLParam struct {
 	Name   string // parameter name with possible pointer operator
 }
 
-// genFile generates file from the specified template
+// genFile generates file from the specified template.
 func genFile(templText string, td *GLHeader, fout string, gosrc bool) error {
 
 	// Parses the template
@@ -236,8 +240,38 @@ void glapiCheckError(int check) {
 // Internal function to abort process when error
 static void panic(GLenum err, const char* fname) {
 
-	printf("\nGLAPI Error: %d calling: %s\n", err, fname);
-	exit(1);
+		const char *msg;
+		switch(err) {
+    	case GL_NO_ERROR:
+    		msg = "No error";
+    		break;
+    	case GL_INVALID_ENUM:
+    		msg = "An unacceptable value is specified for an enumerated argument";
+    		break;
+    	case GL_INVALID_VALUE:
+    		msg = "A numeric argument is out of range";
+    		break;
+    	case GL_INVALID_OPERATION:
+    		msg = "The specified operation is not allowed in the current state";
+    		break;
+    	case GL_INVALID_FRAMEBUFFER_OPERATION:
+    		msg = "The framebuffer object is not complete";
+    		break;
+    	case GL_OUT_OF_MEMORY:
+    		msg = "There is not enough memory left to execute the command";
+    		break;
+    	case GL_STACK_UNDERFLOW:
+    		msg = "An attempt has been made to perform an operation that would cause an internal stack to underflow";
+    		break;
+    	case GL_STACK_OVERFLOW:
+    		msg = "An attempt has been made to perform an operation that would cause an internal stack to overflow";
+    		break;
+    	default:
+    		msg = "Unexpected error";
+    		break;
+    }
+    printf("\nGLAPI Error: %s (%d) calling: %s\n", msg, err, fname);
+    exit(1);
 }
 
 
@@ -336,6 +370,7 @@ const templCONSTS = `
 // This file was generated automatically by "glapi2go" and contains all
 // OpenGL constants specified by "#define GL_*" directives contained in
 // "glcorearb.h" for an specific OpenGL version converted to Go constants.
+
 package gls
 
 const (

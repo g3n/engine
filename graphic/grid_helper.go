@@ -11,6 +11,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// GridHelper is the visual representation of a grid
 type GridHelper struct {
 	Lines
 }
@@ -21,14 +22,14 @@ func NewGridHelper(size, step float32, color *math32.Color) *GridHelper {
 
 	grid := new(GridHelper)
 
-	half_size := size / 2
+	half := size / 2
 	positions := math32.NewArrayF32(0, 0)
-	for i := -half_size; i <= half_size; i += step {
+	for i := -half; i <= half; i += step {
 		positions.Append(
-			-half_size, 0, i, color.R, color.G, color.B,
-			half_size, 0, i, color.R, color.G, color.B,
-			i, 0, -half_size, color.R, color.G, color.B,
-			i, 0, half_size, color.R, color.G, color.B,
+			-half, 0, i, color.R, color.G, color.B,
+			half, 0, i, color.R, color.G, color.B,
+			i, 0, -half, color.R, color.G, color.B,
+			i, 0, half, color.R, color.G, color.B,
 		)
 	}
 
@@ -36,14 +37,13 @@ func NewGridHelper(size, step float32, color *math32.Color) *GridHelper {
 	geom := geometry.NewGeometry()
 	geom.AddVBO(
 		gls.NewVBO().
-			AddAttribEx("VertexPosition", 3, 6*gls.FloatSize, 0).
-			AddAttribEx("VertexColor", 3, 6*gls.FloatSize, uint32(3*gls.FloatSize)).
+			AddAttrib("VertexPosition", 3).
+			AddAttrib("VertexColor", 3).
 			SetBuffer(positions),
 	)
 
 	// Creates material
 	mat := material.NewBasic()
-	mat.SetLineWidth(1.0)
 
 	// Initialize lines with the specified geometry and material
 	grid.Lines.Init(geom, mat)

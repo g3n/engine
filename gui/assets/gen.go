@@ -5,4 +5,4 @@ package assets
 // >go get -u github.com/jteeuwen/go-bindata/...
 
 //go:generate go-bindata -o data.go -pkg assets fonts
-//go:generate genicodes  genicodes/codepoints icodes.go
+//go:generate g3nicodes -pkg icon icon/codepoints icon/icodes.go

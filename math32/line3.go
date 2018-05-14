@@ -4,37 +4,45 @@
 
 package math32
 
+// Line3 represents a 3D line segment defined by a start and an end point.
 type Line3 struct {
 	start Vector3
 	end   Vector3
 }
 
+// NewLine3 creates and returns a pointer to a new Line3 with the
+// specified start and end points.
 func NewLine3(start, end *Vector3) *Line3 {
 
-	this := new(Line3)
-	this.Set(start, end)
-	return this
+	l := new(Line3)
+	l.Set(start, end)
+	return l
 }
 
-func (this *Line3) Set(start, end *Vector3) *Line3 {
+// Set sets this line segment start and end points.
+// Returns pointer to this updated line segment.
+func (l *Line3) Set(start, end *Vector3) *Line3 {
 
 	if start != nil {
-		this.start = *start
+		l.start = *start
 	}
 	if end != nil {
-		this.end = *end
+		l.end = *end
 	}
-	return this
+	return l
 }
 
-func (this *Line3) Copy(line *Line3) *Line3 {
+// Copy copy other line segment to this one.
+// Returns pointer to this updated line segment.
+func (l *Line3) Copy(other *Line3) *Line3 {
 
-	this.start = line.start
-	this.end = line.end
-	return this
+	*l = *other
+	return l
 }
 
-func (this *Line3) Center(optionalTarget *Vector3) *Vector3 {
+// Center calculates this line segment center point.
+// Store its pointer into optionalTarget, if not nil, and also returns it.
+func (l *Line3) Center(optionalTarget *Vector3) *Vector3 {
 
 	var result *Vector3
 	if optionalTarget == nil {
@@ -42,10 +50,12 @@ func (this *Line3) Center(optionalTarget *Vector3) *Vector3 {
 	} else {
 		result = optionalTarget
 	}
-	return result.AddVectors(&this.start, &this.end).MultiplyScalar(0.5)
+	return result.AddVectors(&l.start, &l.end).MultiplyScalar(0.5)
 }
 
-func (this *Line3) Delta(optionalTarget *Vector3) *Vector3 {
+// Delta calculates the vector from the start to end point of this line segment.
+// Store its pointer in optionalTarget, if not nil, and also returns it.
+func (l *Line3) Delta(optionalTarget *Vector3) *Vector3 {
 
 	var result *Vector3
 	if optionalTarget == nil {
@@ -53,76 +63,38 @@ func (this *Line3) Delta(optionalTarget *Vector3) *Vector3 {
 	} else {
 		result = optionalTarget
 	}
-	return result.SubVectors(&this.end, &this.start).MultiplyScalar(0.5)
+	return result.SubVectors(&l.end, &l.start)
 }
 
-func (this *Line3) DistanceSq() float32 {
+// DistanceSq returns the square of the distance from the start point to the end point.
+func (l *Line3) DistanceSq() float32 {
 
-	return this.start.DistanceToSquared(&this.end)
+	return l.start.DistanceToSquared(&l.end)
 }
 
-func (this *Line3) Distance() float32 {
+// Distance returns the distance from the start point to the end point.
+func (l *Line3) Distance() float32 {
 
-	return this.start.DistanceTo(&this.end)
+	return l.start.DistanceTo(&l.end)
 }
 
-func (this *Line3) At(t float32, optionalTarget *Vector3) *Vector3 {
+// ApplyMatrix4 applies the specified matrix to this line segment start and end points.
+// Returns pointer to this updated line segment.
+func (l *Line3) ApplyMatrix4(matrix *Matrix4) *Line3 {
 
-	var result *Vector3
-	if optionalTarget == nil {
-		result = NewVector3(0, 0, 0)
-	} else {
-		result = optionalTarget
-	}
-	return this.Delta(result).MultiplyScalar(t).Add(&this.start)
+	l.start.ApplyMatrix4(matrix)
+	l.end.ApplyMatrix4(matrix)
+	return l
 }
 
-func (this *Line3) ClosestPointToPointParameter() func(*Vector3, bool) float32 {
+// Equals returns if this line segement is equal to other.
+func (l *Line3) Equals(other *Line3) bool {
 
-	startP := NewVector3(0, 0, 0)
-	startEnd := NewVector3(0, 0, 0)
-
-	return func(point *Vector3, clampToLine bool) float32 {
-		startP.SubVectors(point, &this.start)
-		startEnd.SubVectors(&this.end, &this.start)
-
-		startEnd2 := startEnd.Dot(startEnd)
-		startEnd_startP := startEnd.Dot(startP)
-
-		t := startEnd_startP / startEnd2
-		if clampToLine {
-			t = Clamp(t, 0, 1)
-		}
-		return t
-	}
+	return other.start.Equals(&l.start) && other.end.Equals(&l.end)
 }
 
-func (this *Line3) ClosestPointToPoint(point *Vector3, clampToLine bool, optionalTarget *Vector3) *Vector3 {
+// Clone creates and returns a pointer to a copy of this line segment.
+func (l *Line3) Clone() *Line3 {
 
-	t := this.ClosestPointToPointParameter()(point, clampToLine)
-	var result *Vector3
-	if optionalTarget == nil {
-		result = NewVector3(0, 0, 0)
-	} else {
-		result = optionalTarget
-	}
-	return this.Delta(result).MultiplyScalar(t).Add(&this.start)
-}
-
-func (this *Line3) ApplyMatrix4(matrix *Matrix4) *Line3 {
-
-	this.start.ApplyMatrix4(matrix)
-	this.end.ApplyMatrix4(matrix)
-
-	return this
-}
-
-func (this *Line3) Equals(line *Line3) bool {
-
-	return line.start.Equals(&this.start) && line.end.Equals(&this.end)
-}
-
-func (this *Line3) Clone() *Line3 {
-
-	return NewLine3(&this.start, &this.end)
+	return NewLine3(&l.start, &l.end)
 }
