@@ -66,7 +66,7 @@ type Material struct {
 	wireframe        bool                 // show as wirefrme
 	depthMask        bool                 // Enable writing into the depth buffer
 	depthTest        bool                 // Enable depth buffer test
-	depthFunc        uint32               // Actvie depth test function
+	depthFunc        uint32               // Active depth test function
 	blending         Blending             // blending mode
 	blendRGB         uint32               // separate blend equation for RGB
 	blendAlpha       uint32               // separate blend equation for Alpha
