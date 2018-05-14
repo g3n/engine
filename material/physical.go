@@ -39,12 +39,12 @@ func NewPhysical() *Physical {
 	m.Material.Init()
 	m.SetShader("physical")
 
-	// Creates uniform and set defaulf values
+	// Creates uniform and set default values
 	m.uni.Init("Material")
 	m.udata.baseColorFactor = math32.Color4{1, 1, 1, 1}
 	m.udata.emissiveFactor = math32.Color4{0, 0, 0, 0}
-	m.udata.metallicFactor = 1.0
-	m.udata.roughnessFactor = 1.0
+	m.udata.metallicFactor = 0.5
+	m.udata.roughnessFactor = 0.5
 	return m
 }
 
@@ -57,17 +57,21 @@ func (m *Physical) SetBaseColorFactor(c *math32.Color4) *Physical {
 	return m
 }
 
-// SetBaseColorTexture sets this material optional texture base color.
+// SetMetallicFactor sets this material metallic factor.
+// Its default value is 1.0
 // Returns pointer to this updated material.
-func (m *Physical) SetBaseColorTexture(tex *texture.Texture2D) *Physical {
+func (m *Physical) SetMetallicFactor(v float32) *Physical {
 
-	m.baseColorTex = tex
-	if m.baseColorTex != nil {
-		m.baseColorTex.SetUniformNames("uBaseColorSampler", "uBaseColorTexParams")
-		m.SetShaderDefine("HAS_BASECOLORMAP", "")
-	} else {
-		m.UnsetShaderDefine("HAS_BASECOLORMAP")
-	}
+	m.udata.metallicFactor = v
+	return m
+}
+
+// SetRoughnessFactor sets this material roughness factor.
+// Its default value is 1.0
+// Returns pointer to this updated material.
+func (m *Physical) SetRoughnessFactor(v float32) *Physical {
+
+	m.udata.roughnessFactor = v
 	return m
 }
 
@@ -82,18 +86,23 @@ func (m *Physical) SetEmissiveFactor(c *math32.Color) *Physical {
 	return m
 }
 
-// SetMetallicFactor sets this material metallic factor.
-// Its default value is 1.0
+// SetBaseColorMap sets this material optional texture base color.
 // Returns pointer to this updated material.
-func (m *Physical) SetMetallicFactor(v float32) *Physical {
+func (m *Physical) SetBaseColorMap(tex *texture.Texture2D) *Physical {
 
-	m.udata.metallicFactor = v
+	m.baseColorTex = tex
+	if m.baseColorTex != nil {
+		m.baseColorTex.SetUniformNames("uBaseColorSampler", "uBaseColorTexParams")
+		m.SetShaderDefine("HAS_BASECOLORMAP", "")
+	} else {
+		m.UnsetShaderDefine("HAS_BASECOLORMAP")
+	}
 	return m
 }
 
-// SetMetallicRoughnessTexture sets this material optional metallic-roughness texture.
+// SetMetallicRoughnessMap sets this material optional metallic-roughness texture.
 // Returns pointer to this updated material.
-func (m *Physical) SetMetallicRoughnessTexture(tex *texture.Texture2D) *Physical {
+func (m *Physical) SetMetallicRoughnessMap(tex *texture.Texture2D) *Physical {
 
 	m.metallicRoughnessTex = tex
 	if m.metallicRoughnessTex != nil {
@@ -105,9 +114,10 @@ func (m *Physical) SetMetallicRoughnessTexture(tex *texture.Texture2D) *Physical
 	return m
 }
 
-// SetNormalTexture sets this material optional normal texture.
+// TODO add SetNormalMap (and SetSpecularMap) to StandardMaterial.
+// SetNormalMap sets this material optional normal texture.
 // Returns pointer to this updated material.
-func (m *Physical) SetNormalTexture(tex *texture.Texture2D) *Physical {
+func (m *Physical) SetNormalMap(tex *texture.Texture2D) *Physical {
 
 	m.normalTex = tex
 	if m.normalTex != nil {
@@ -119,9 +129,9 @@ func (m *Physical) SetNormalTexture(tex *texture.Texture2D) *Physical {
 	return m
 }
 
-// SetOcclusionTexture sets this material optional occlusion texture.
+// SetOcclusionMap sets this material optional occlusion texture.
 // Returns pointer to this updated material.
-func (m *Physical) SetOcclusionTexture(tex *texture.Texture2D) *Physical {
+func (m *Physical) SetOcclusionMap(tex *texture.Texture2D) *Physical {
 
 	m.occlusionTex = tex
 	if m.occlusionTex != nil {
@@ -133,9 +143,9 @@ func (m *Physical) SetOcclusionTexture(tex *texture.Texture2D) *Physical {
 	return m
 }
 
-// SetEmissiveTexture sets this material optional emissive texture.
+// SetEmissiveMap sets this material optional emissive texture.
 // Returns pointer to this updated material.
-func (m *Physical) SetEmissiveTexture(tex *texture.Texture2D) *Physical {
+func (m *Physical) SetEmissiveMap(tex *texture.Texture2D) *Physical {
 
 	m.emissiveTex = tex
 	if m.emissiveTex != nil {
@@ -144,15 +154,6 @@ func (m *Physical) SetEmissiveTexture(tex *texture.Texture2D) *Physical {
 	} else {
 		m.UnsetShaderDefine("HAS_EMISSIVEMAP")
 	}
-	return m
-}
-
-// SetRoughnessFactor sets this material roughness factor.
-// Its default value is 1.0
-// Returns pointer to this updated material.
-func (m *Physical) SetRoughnessFactor(v float32) *Physical {
-
-	m.udata.roughnessFactor = v
 	return m
 }
 
