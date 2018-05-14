@@ -14,6 +14,7 @@ import (
 	"unicode/utf8"
 )
 
+// CharInfo contains the information to locate a character in an Atlas
 type CharInfo struct {
 	X      int // Position X in pixels in the sheet image from left to right
 	Y      int // Position Y in pixels in the sheet image from top to bottom
@@ -26,6 +27,7 @@ type CharInfo struct {
 	RepeatY float32
 }
 
+// Atlas represents an image containing characters and the information about their location in the image
 type Atlas struct {
 	Chars   []CharInfo
 	Image   *image.RGBA
@@ -34,6 +36,7 @@ type Atlas struct {
 	Descent int // Distance from the bottom of a line to its baseline
 }
 
+// NewAtlas returns a pointer to a new Atlas object
 func NewAtlas(font *Font, first, last rune) *Atlas {
 
 	a := new(Atlas)

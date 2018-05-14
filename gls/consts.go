@@ -1,6 +1,7 @@
 // This file was generated automatically by "glapi2go" and contains all
 // OpenGL constants specified by "#define GL_*" directives contained in
 // "glcorearb.h" for an specific OpenGL version converted to Go constants.
+
 package gls
 
 const (

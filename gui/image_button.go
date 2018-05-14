@@ -5,20 +5,20 @@
 package gui
 
 import (
-	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/texture"
 	"github.com/g3n/engine/window"
 )
 
+// ImageButton represents an image button GUI element
 type ImageButton struct {
-	*Panel                            // Embedded Panel
-	label       *Label                // Label panel
-	iconLabel   bool                  // True if icon
-	image       *Image                // pointer to button image (may be nil)
-	styles      *ImageButtonStyles    // pointer to current button styles
-	mouseOver   bool                  // true if mouse is over button
-	pressed     bool                  // true if button is pressed
-	stateImages [ButtonDisabled+1]*texture.Texture2D // array of images for each button state
+	*Panel                                             // Embedded Panel
+	label       *Label                                 // Label panel
+	iconLabel   bool                                   // True if icon
+	image       *Image                                 // pointer to button image (may be nil)
+	styles      *ImageButtonStyles                     // pointer to current button styles
+	mouseOver   bool                                   // true if mouse is over button
+	pressed     bool                                   // true if button is pressed
+	stateImages [ButtonDisabled + 1]*texture.Texture2D // array of images for each button state
 }
 
 type ButtonState int
@@ -32,13 +32,7 @@ const (
 )
 
 // ImageButton style
-type ImageButtonStyle struct {
-	Border      BorderSizes
-	Paddings    BorderSizes
-	BorderColor math32.Color4
-	BgColor     math32.Color4
-	FgColor     math32.Color
-}
+type ImageButtonStyle BasicStyle
 
 // All ImageButton styles
 type ImageButtonStyles struct {
@@ -54,7 +48,7 @@ type ImageButtonStyles struct {
 func NewImageButton(normalImgPath string) (*ImageButton, error) {
 
 	b := new(ImageButton)
-	b.styles = &StyleDefault.ImageButton
+	b.styles = &StyleDefault().ImageButton
 
 	tex, err := texture.NewTexture2DFromImage(normalImgPath)
 	if err != nil {
@@ -106,7 +100,7 @@ func (b *ImageButton) SetText(text string) {
 }
 
 // SetIcon sets the icon
-func (b *ImageButton) SetIcon(icode int) {
+func (b *ImageButton) SetIcon(icode string) {
 
 	if b.iconLabel == false && b.label != nil {
 		b.Panel.Remove(b.label)
@@ -117,10 +111,10 @@ func (b *ImageButton) SetIcon(icode int) {
 	b.iconLabel = true
 	if b.label == nil {
 		// Create icon
-		b.label = NewIconLabel(string(icode))
+		b.label = NewIcon(icode)
 		b.Panel.Add(b.label)
 	} else {
-		b.label.SetText(string(icode))
+		b.label.SetText(icode)
 	}
 	b.recalc()
 }
@@ -253,12 +247,9 @@ func (b *ImageButton) update() {
 // applyStyle applies the specified button style
 func (b *ImageButton) applyStyle(bs *ImageButtonStyle) {
 
-	b.SetBordersColor4(&bs.BorderColor)
-	b.SetBordersFrom(&bs.Border)
-	b.SetPaddingsFrom(&bs.Paddings)
-	b.SetColor4(&bs.BgColor)
+	b.Panel.ApplyStyle(&bs.PanelStyle)
 	if b.label != nil {
-		b.label.SetColor(&bs.FgColor)
+		b.label.SetColor4(&bs.FgColor)
 	}
 }
 

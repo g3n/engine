@@ -266,8 +266,7 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 
 	// Create buffers and VBO
 	indices := math32.NewArrayU32(0, 0)
-	vbuf := math32.NewArrayF32(0, 0)
-	vbo := gls.NewVBO()
+	//vbuf := math32.NewArrayF32(0, 0)
 
 	// Array of primitive materials
 	type matGroup struct {
@@ -281,6 +280,8 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 	var mode int = -1
 	var err error
 	m := g.Meshes[mi]
+
+	geom := geometry.NewGeometry()
 
 	for i := 0; i < len(m.Primitives); i++ {
 		p := m.Primitives[i]
@@ -333,8 +334,10 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 				if err != nil {
 					return nil, err
 				}
-				vbo.AddAttribEx("VertexPosition", 3, 0, uint32(len(vbuf)*int(gls.FloatSize)))
-				vbuf = append(vbuf, ppos...)
+				vbo := gls.NewVBO()
+				vbo.AddAttrib("VertexPosition", 3)
+				vbo.SetBuffer(ppos)
+				geom.AddVBO(vbo)
 				continue
 			}
 			if name == "NORMAL" {
@@ -342,8 +345,10 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 				if err != nil {
 					return nil, err
 				}
-				vbo.AddAttribEx("VertexNormal", 3, 0, uint32(len(vbuf)*int(gls.FloatSize)))
-				vbuf = append(vbuf, pnorms...)
+				vbo := gls.NewVBO()
+				vbo.AddAttrib("VertexNormal", 3)
+				vbo.SetBuffer(pnorms)
+				geom.AddVBO(vbo)
 				continue
 			}
 			if name == "TEXCOORD_0" {
@@ -351,28 +356,25 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 				if err != nil {
 					return nil, err
 				}
-				vbo.AddAttribEx("VertexTexcoord", 2, 0, uint32(len(vbuf)*int(gls.FloatSize)))
-				vbuf = append(vbuf, puvs...)
+				vbo := gls.NewVBO()
+				vbo.AddAttrib("VertexTexcoord", 2)
+				vbo.SetBuffer(puvs)
+				geom.AddVBO(vbo)
 				continue
 			}
 		}
 	}
 
 	// Creates Geometry and add attribute VBO
-	geom := geometry.NewGeometry()
 	if len(indices) > 0 {
 		geom.SetIndices(indices)
-	}
-	if len(vbuf) > 0 {
-		vbo.SetBuffer(vbuf)
-		geom.AddVBO(vbo)
 	}
 
 	//log.Error("positions:%v", positions)
 	//log.Error("indices..:%v", indices)
 	//log.Error("normals..:%v", normals)
 	//log.Error("uvs0.....:%v", uvs0)
-	log.Error("VBUF size in number of floats:%v", len(vbuf))
+	//log.Error("VBUF size in number of floats:%v", len(vbuf))
 
 	// Create Mesh
 	if mode == TRIANGLES {

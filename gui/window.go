@@ -29,29 +29,31 @@ import (
 
 *********************************************/
 
+// Window represents a window GUI element
 type Window struct {
 	Panel      // Embedded Panel
 	styles     *WindowStyles
 	title      *WindowTitle // internal optional title panel
 	client     Panel        // internal client panel
-	resizable  Resizable
+	resizable  ResizeBorders
 	overBorder string
 	drag       bool
 	mouseX     float32
 	mouseY     float32
 }
 
+// WindowStyle contains the styling of a Window
 type WindowStyle struct {
-	Border           BorderSizes
-	Paddings         BorderSizes
+	Border           RectBounds
+	Paddings         RectBounds
 	BorderColor      math32.Color4
-	TitleBorders     BorderSizes
+	TitleBorders     RectBounds
 	TitleBorderColor math32.Color4
 	TitleBgColor     math32.Color4
 	TitleFgColor     math32.Color4
 }
 
-// All Window styles
+// WindowStyles contains a WindowStyle for each valid GUI state
 type WindowStyles struct {
 	Normal   WindowStyle
 	Over     WindowStyle
@@ -59,10 +61,11 @@ type WindowStyles struct {
 	Disabled WindowStyle
 }
 
-type Resizable int
+// ResizeBorders specifies which window borders can be resized
+type ResizeBorders int
 
 const (
-	ResizeTop = Resizable(1 << (iota + 1))
+	ResizeTop = ResizeBorders(1 << (iota + 1))
 	ResizeRight
 	ResizeBottom
 	ResizeLeft
@@ -74,7 +77,7 @@ const (
 func NewWindow(width, height float32) *Window {
 
 	w := new(Window)
-	w.styles = &StyleDefault.Window
+	w.styles = &StyleDefault().Window
 
 	w.Panel.Initialize(width, height)
 	w.Panel.Subscribe(OnMouseDown, w.onMouse)
@@ -93,7 +96,7 @@ func NewWindow(width, height float32) *Window {
 }
 
 // SetResizable set the borders which are resizable
-func (w *Window) SetResizable(res Resizable) {
+func (w *Window) SetResizable(res ResizeBorders) {
 
 	w.resizable = res
 }
@@ -119,10 +122,9 @@ func (w *Window) Add(ichild IPanel) *Window {
 }
 
 // SetLayout set the layout of this window content area
-func (w *Window) SetLayout(layout ILayout) *Window {
+func (w *Window) SetLayout(layout ILayout) {
 
 	w.client.SetLayout(layout)
-	return w
 }
 
 // onMouse process subscribed mouse events over the window
@@ -264,6 +266,7 @@ func (w *Window) recalc() {
 	w.client.SetSize(width, height)
 }
 
+// WindowTitle represents the title bar of a Window
 type WindowTitle struct {
 	Panel   // Embedded panel
 	win     *Window
@@ -281,7 +284,7 @@ func newWindowTitle(win *Window, text string) *WindowTitle {
 	wt.win = win
 
 	wt.Panel.Initialize(0, 0)
-	wt.label.initialize(text, StyleDefault.Font)
+	wt.label.initialize(text, StyleDefault().Font)
 	wt.Panel.Add(&wt.label)
 
 	wt.Subscribe(OnMouseDown, wt.onMouse)
@@ -317,7 +320,7 @@ func (wt *WindowTitle) onMouse(evname string, ev interface{}) {
 func (wt *WindowTitle) onCursor(evname string, ev interface{}) {
 
 	if evname == OnCursorEnter {
-		wt.win.root.SetCursorDrag()
+		wt.win.root.SetCursorHand()
 	} else if evname == OnCursorLeave {
 		wt.win.root.SetCursorNormal()
 	} else if evname == OnCursor {

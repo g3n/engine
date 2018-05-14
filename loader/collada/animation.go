@@ -56,6 +56,7 @@ func (at *AnimationTarget) SetLoop(loop bool) {
 	at.loop = loop
 }
 
+// SetStart sets the initial offset value
 func (at *AnimationTarget) SetStart(v float32) {
 
 	at.start = v
@@ -100,6 +101,10 @@ func (at *AnimationTarget) Update(delta float32) bool {
 // contained in the decoded Collada document and for the previously decoded scene.
 // The map is indexed by the node loaderID.
 func (d *Decoder) NewAnimationTargets(scene core.INode) (map[string]*AnimationTarget, error) {
+
+	if d.dom.LibraryAnimations == nil {
+		return nil, fmt.Errorf("No animations found")
+	}
 
 	// Maps target node to its animation target instance
 	targetsMap := make(map[string]*AnimationTarget)
@@ -236,7 +241,7 @@ func actionScaleZ(at *AnimationTarget, v float32) {
 	at.target.GetNode().SetScaleZ(v)
 }
 
-// NewSampler creates and returns a pointer to a new SamplerInstance built
+// NewSamplerInstance creates and returns a pointer to a new SamplerInstance built
 // with data from the specified Collada animation and URI
 func NewSamplerInstance(ca *Animation, uri string) (*SamplerInstance, error) {
 
@@ -339,8 +344,6 @@ func (si *SamplerInstance) Interpolate(inp float32) (float32, bool) {
 		return si.linearInterp(inp, idx), true
 	case "BSPLINE":
 		return si.linearInterp(inp, idx), true
-	default:
-		return 0, false
 	}
 
 	return 0, false

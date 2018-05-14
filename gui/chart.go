@@ -12,14 +12,14 @@ import (
 	"github.com/g3n/engine/graphic"
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
-	"github.com/g3n/engine/renderer/shader"
+	"github.com/g3n/engine/renderer/shaders"
 	"math"
 )
 
 func init() {
-	shader.AddShader("shaderChartVertex", shaderChartVertex)
-	shader.AddShader("shaderChartFrag", shaderChartFrag)
-	shader.AddProgram("shaderChart", "shaderChartVertex", "shaderChartFrag")
+	shaders.AddShader("shaderChartVertex", shaderChartVertex)
+	shaders.AddShader("shaderChartFrag", shaderChartFrag)
+	shaders.AddProgram("shaderChart", "shaderChartVertex", "shaderChartFrag")
 }
 
 //
@@ -58,6 +58,14 @@ const (
 func NewChart(width, height float32) *Chart {
 
 	ch := new(Chart)
+	ch.Init(width, height)
+	return ch
+}
+
+// Init initializes a new chart with the specified width and height
+// It is normally used to initialize a Chart embedded in a struct
+func (ch *Chart) Init(width float32, height float32) {
+
 	ch.Panel.Initialize(width, height)
 	ch.left = 40
 	ch.bottom = 20
@@ -73,7 +81,6 @@ func NewChart(width, height float32) *Chart {
 	ch.fontSizeX = 14
 	ch.fontSizeY = 14
 	ch.Subscribe(OnResize, ch.onResize)
-	return ch
 }
 
 // SetTitle sets the chart title text and font size.
@@ -94,6 +101,7 @@ func (ch *Chart) SetTitle(title string, size float64) {
 	// Sets title
 	if ch.title == nil {
 		ch.title = NewLabel(title)
+		ch.title.SetColor4(math32.NewColor4("black"))
 		ch.Add(ch.title)
 	}
 	ch.title.SetText(title)
@@ -163,6 +171,7 @@ func (ch *Chart) SetScaleX(lines int, color *math32.Color) {
 	value := ch.firstX
 	for i := 0; i < lines; i++ {
 		l := NewLabel(fmt.Sprintf(ch.formatX, value))
+		l.SetColor4(math32.NewColor4("black"))
 		l.SetFontSize(ch.fontSizeX)
 		ch.Add(l)
 		ch.labelsX = append(ch.labelsX, l)
@@ -213,6 +222,7 @@ func (ch *Chart) SetScaleY(lines int, color *math32.Color) {
 	step := (ch.maxY - ch.minY) / float32(lines-1)
 	for i := 0; i < lines; i++ {
 		l := NewLabel(fmt.Sprintf(ch.formatY, value))
+		l.SetColor4(math32.NewColor4("black"))
 		l.SetFontSize(ch.fontSizeY)
 		ch.Add(l)
 		ch.labelsY = append(ch.labelsY, l)
@@ -275,7 +285,7 @@ func (ch *Chart) SetRangeYauto(auto bool) {
 	ch.updateGraphs()
 }
 
-// Returns the current y range
+// RangeY returns the current y range
 func (ch *Chart) RangeY() (minY, maxY float32) {
 
 	return ch.minY, ch.maxY
@@ -434,11 +444,11 @@ func (ch *Chart) recalc() {
 // vertical lines and line labels.
 //
 type chartScaleX struct {
-	Panel                // Embedded panel
-	chart  *Chart        // Container chart
-	lines  int           // Number of vertical lines
-	bounds gls.Uniform4f // Bound uniform in OpenGL window coordinates
-	mat    chartMaterial // Chart material
+	Panel                   // Embedded panel
+	chart     *Chart        // Container chart
+	lines     int           // Number of vertical lines
+	mat       chartMaterial // Chart material
+	uniBounds gls.Uniform   // Bounds uniform location cache
 }
 
 // newChartScaleX creates and returns a pointer to a new chartScaleX for the specified
@@ -448,7 +458,7 @@ func newChartScaleX(chart *Chart, lines int, color *math32.Color) *chartScaleX {
 	sx := new(chartScaleX)
 	sx.chart = chart
 	sx.lines = lines
-	sx.bounds.Init("Bounds")
+	sx.uniBounds.Init("Bounds")
 
 	// Appends bottom horizontal line
 	positions := math32.NewArrayF32(0, 0)
@@ -494,16 +504,18 @@ func (sx *chartScaleX) recalc() {
 // Calculates the model matrix and transfer to OpenGL.
 func (sx *chartScaleX) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 
-	// Sets model matrix and transfer to shader
+	// Sets model matrix
 	var mm math32.Matrix4
 	sx.SetModelMatrix(gs, &mm)
-	sx.modelMatrixUni.SetMatrix4(&mm)
-	sx.modelMatrixUni.Transfer(gs)
+
+	// Transfer model matrix uniform
+	location := sx.uniMatrix.Location(gs)
+	gs.UniformMatrix4fv(location, 1, false, &mm[0])
 
 	// Sets bounds in OpenGL window coordinates and transfer to shader
 	_, _, _, height := gs.GetViewport()
-	sx.bounds.Set(sx.pospix.X, float32(height)-sx.pospix.Y, sx.width, sx.height)
-	sx.bounds.Transfer(gs)
+	location = sx.uniBounds.Location(gs)
+	gs.Uniform4f(location, sx.pospix.X, float32(height)-sx.pospix.Y, sx.width, sx.height)
 }
 
 //
@@ -511,11 +523,11 @@ func (sx *chartScaleX) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 // horizontal and labels.
 //
 type chartScaleY struct {
-	Panel                // Embedded panel
-	chart  *Chart        // Container chart
-	lines  int           // Number of horizontal lines
-	bounds gls.Uniform4f // Bound uniform in OpenGL window coordinates
-	mat    chartMaterial // Chart material
+	Panel                   // Embedded panel
+	chart     *Chart        // Container chart
+	lines     int           // Number of horizontal lines
+	mat       chartMaterial // Chart material
+	uniBounds gls.Uniform   // Bounds uniform location cache
 }
 
 // newChartScaleY creates and returns a pointer to a new chartScaleY for the specified
@@ -528,7 +540,7 @@ func newChartScaleY(chart *Chart, lines int, color *math32.Color) *chartScaleY {
 	sy := new(chartScaleY)
 	sy.chart = chart
 	sy.lines = lines
-	sy.bounds.Init("Bounds")
+	sy.uniBounds.Init("Bounds")
 
 	// Appends left vertical line
 	positions := math32.NewArrayF32(0, 0)
@@ -577,37 +589,40 @@ func (sy *chartScaleY) recalc() {
 // Calculates the model matrix and transfer to OpenGL.
 func (sy *chartScaleY) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 
-	// Sets model matrix and transfer to shader
+	// Sets model matrix
 	var mm math32.Matrix4
 	sy.SetModelMatrix(gs, &mm)
-	sy.modelMatrixUni.SetMatrix4(&mm)
-	sy.modelMatrixUni.Transfer(gs)
+
+	// Transfer model matrix uniform
+	location := sy.uniMatrix.Location(gs)
+	gs.UniformMatrix4fv(location, 1, false, &mm[0])
 
 	// Sets bounds in OpenGL window coordinates and transfer to shader
 	_, _, _, height := gs.GetViewport()
-	sy.bounds.Set(sy.pospix.X, float32(height)-sy.pospix.Y, sy.width, sy.height)
-	sy.bounds.Transfer(gs)
+	location = sy.uniBounds.Location(gs)
+	gs.Uniform4f(location, sy.pospix.X, float32(height)-sy.pospix.Y, sy.width, sy.height)
 }
 
 //
-// Graph
+// Graph is the GUI element that represents a single plotted function.
+// A Chart has an array of Graph objects.
 //
 type Graph struct {
 	Panel                   // Embedded panel
 	chart     *Chart        // Container chart
 	color     math32.Color  // Line color
 	data      []float32     // Data y
-	bounds    gls.Uniform4f // Bound uniform in OpenGL window coordinates
 	mat       chartMaterial // Chart material
 	vbo       *gls.VBO
 	positions math32.ArrayF32
+	uniBounds gls.Uniform // Bounds uniform location cache
 }
 
 // newGraph creates and returns a pointer to a new graph for the specified chart
 func newGraph(chart *Chart, color *math32.Color, data []float32) *Graph {
 
 	lg := new(Graph)
-	lg.bounds.Init("Bounds")
+	lg.uniBounds.Init("Bounds")
 	lg.chart = chart
 	lg.color = *color
 	lg.data = data
@@ -632,7 +647,7 @@ func newGraph(chart *Chart, color *math32.Color, data []float32) *Graph {
 // SetColor sets the color of the graph
 func (lg *Graph) SetColor(color *math32.Color) {
 
-	lg.mat.color.SetColor(color)
+	lg.color = *color
 }
 
 // SetData sets the graph data
@@ -666,6 +681,7 @@ func (lg *Graph) updateData() {
 		positions.Append(px, py, 0)
 	}
 	lg.vbo.SetBuffer(positions)
+	lg.SetChanged(true)
 }
 
 // recalc recalculates the position and width of the this panel
@@ -687,24 +703,27 @@ func (lg *Graph) recalc() {
 // Calculates the model matrix and transfer to OpenGL.
 func (lg *Graph) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 
-	// Sets model matrix and transfer to shader
+	// Sets model matrix
 	var mm math32.Matrix4
 	lg.SetModelMatrix(gs, &mm)
-	lg.modelMatrixUni.SetMatrix4(&mm)
-	lg.modelMatrixUni.Transfer(gs)
+
+	// Transfer model matrix uniform
+	location := lg.uniMatrix.Location(gs)
+	gs.UniformMatrix4fv(location, 1, false, &mm[0])
 
 	// Sets bounds in OpenGL window coordinates and transfer to shader
 	_, _, _, height := gs.GetViewport()
-	lg.bounds.Set(lg.pospix.X, float32(height)-lg.pospix.Y, lg.width, lg.height)
-	lg.bounds.Transfer(gs)
+	location = lg.uniBounds.Location(gs)
+	gs.Uniform4f(location, lg.pospix.X, float32(height)-lg.pospix.Y, lg.width, lg.height)
 }
 
 //
 // Chart material
 //
 type chartMaterial struct {
-	material.Material                // Embedded material
-	color             *gls.Uniform3f // Emissive color uniform
+	material.Material              // Embedded material
+	color             math32.Color // emissive color
+	uniColor          gls.Uniform  // color uniform location cache
 }
 
 func (cm *chartMaterial) Init(color *math32.Color) {
@@ -712,28 +731,22 @@ func (cm *chartMaterial) Init(color *math32.Color) {
 	cm.Material.Init()
 	cm.SetShader("shaderChart")
 	cm.SetShaderUnique(true)
-
-	// Creates uniforms and adds to material
-	cm.color = gls.NewUniform3f("MatColor")
-
-	// Set initial values
-	cm.color.SetColor(color)
+	cm.uniColor.Init("MatColor")
+	cm.color = *color
 }
 
 func (cm *chartMaterial) RenderSetup(gs *gls.GLS) {
 
 	cm.Material.RenderSetup(gs)
-	cm.color.Transfer(gs)
+	gs.Uniform3f(cm.uniColor.Location(gs), cm.color.R, cm.color.G, cm.color.B)
 }
 
 //
 // Vertex Shader template
 //
 const shaderChartVertex = `
-#version {{.Version}}
-
 // Vertex attributes
-{{template "attributes" .}}
+#include <attributes>
 
 // Input uniforms
 uniform mat4 ModelMatrix;
@@ -757,8 +770,6 @@ void main() {
 // Fragment Shader template
 //
 const shaderChartFrag = `
-#version {{.Version}}
-
 // Input uniforms from vertex shader
 in vec3 Color;
 

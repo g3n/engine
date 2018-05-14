@@ -4,9 +4,11 @@
 
 package gui
 
+// DockLayout is the layout for docking panels to the internal edges of their parent.
 type DockLayout struct {
 }
 
+// DockLayoutParams specifies the edge to dock to.
 type DockLayoutParams struct {
 	Edge int
 }
@@ -19,11 +21,13 @@ const (
 	DockCenter
 )
 
+// NewDockLayout returns a pointer to a new DockLayout.
 func NewDockLayout() *DockLayout {
 
 	return new(DockLayout)
 }
 
+// Recalc (which satisfies the ILayout interface) recalculates the positions and sizes of the children panels.
 func (dl *DockLayout) Recalc(ipan IPanel) {
 
 	pan := ipan.GetPanel()

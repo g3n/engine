@@ -11,6 +11,7 @@ import (
 	"sort"
 )
 
+// Root is the container and dispatcher of panel events
 type Root struct {
 	Panel                            // embedded panel
 	core.TimerManager                // embedded TimerManager
@@ -20,7 +21,8 @@ type Root struct {
 	keyFocus          IPanel         // current child panel with key focus
 	mouseFocus        IPanel         // current child panel with mouse focus
 	scrollFocus       IPanel         // current child panel with scroll focus
-	targets           listPanelZ     // preallocated list of target panels
+	modalPanel        IPanel         // current modal panel
+	targets           []IPanel       // preallocated list of target panels
 }
 
 const (
@@ -72,6 +74,14 @@ func (r *Root) Add(ipan IPanel) {
 	// This will also set the root panel for all the child children
 	// and the z coordinates of all the panel tree graph.
 	r.Panel.Add(ipan)
+}
+
+// SetModal sets the modal panel.
+// If there is a modal panel, only events for this panel are dispatched
+// To remove the modal panel call this function with a nil panel.
+func (r *Root) SetModal(ipan IPanel) {
+
+	r.modalPanel = ipan
 }
 
 // SetKeyFocus sets the panel which will receive all keyboard events
@@ -142,39 +152,53 @@ func (r *Root) StopPropagation(events int) {
 	r.stopPropagation |= events
 }
 
-// SetCursorNormal sets the cursor of the associated window to
-// standard type
+// SetCursorNormal sets the cursor over the associated window to the standard type.
 func (r *Root) SetCursorNormal() {
 
 	r.win.SetStandardCursor(window.ArrowCursor)
 }
 
-// SetCursorDrag sets the cursor of the associated window to
-// drag type
-func (r *Root) SetCursorDrag() {
+// SetCursorText sets the cursor over the associated window to the I-Beam type.
+func (r *Root) SetCursorText() {
+
+	r.win.SetStandardCursor(window.IBeamCursor)
+}
+
+// SetCursorText sets the cursor over the associated window to the crosshair type.
+func (r *Root) SetCursorCrosshair() {
+
+	r.win.SetStandardCursor(window.CrosshairCursor)
+}
+
+// SetCursorHand sets the cursor over the associated window to the hand type.
+func (r *Root) SetCursorHand() {
 
 	r.win.SetStandardCursor(window.HandCursor)
 }
 
-// SetCursorHResize sets the cursor of the associated window to
-// horizontal resize type
+// SetCursorHResize sets the cursor over the associated window to the horizontal resize type.
 func (r *Root) SetCursorHResize() {
 
 	r.win.SetStandardCursor(window.HResizeCursor)
 }
 
-// SetCursorVResize sets the cursor of the associated window to
-// vertical resize type
+// SetCursorVResize sets the cursor over the associated window to the vertical resize type.
 func (r *Root) SetCursorVResize() {
 
 	r.win.SetStandardCursor(window.VResizeCursor)
 }
+
+// TODO allow setting a custom cursor
 
 // onKey is called when key events are received
 func (r *Root) onKey(evname string, ev interface{}) {
 
 	// If no panel has the key focus, nothing to do
 	if r.keyFocus == nil {
+		return
+	}
+	// Checks modal panel
+	if !r.canDispatch(r.keyFocus) {
 		return
 	}
 	// Dispatch window.KeyEvent to focused panel subscribers
@@ -191,6 +215,10 @@ func (r *Root) onChar(evname string, ev interface{}) {
 
 	// If no panel has the key focus, nothing to do
 	if r.keyFocus == nil {
+		return
+	}
+	// Checks modal panel
+	if !r.canDispatch(r.keyFocus) {
 		return
 	}
 	// Dispatch window.CharEvent to focused panel subscribers
@@ -216,12 +244,16 @@ func (r *Root) onCursor(evname string, ev interface{}) {
 	r.sendPanels(cev.Xpos, cev.Ypos, evname, ev)
 }
 
-// sendPanel sends mouse or cursor event to focused panel or panels
-// which contains the specified screen position
+// sendPanel sends a mouse or cursor event to focused panel or panels
+// which contain the specified screen position
 func (r *Root) sendPanels(x, y float32, evname string, ev interface{}) {
 
 	// If there is panel with MouseFocus send only to this panel
 	if r.mouseFocus != nil {
+		// Checks modal panel
+		if !r.canDispatch(r.mouseFocus) {
+			return
+		}
 		r.mouseFocus.GetPanel().Dispatch(evname, ev)
 		if (r.stopPropagation & Stop3D) != 0 {
 			r.win.CancelDispatch()
@@ -233,7 +265,7 @@ func (r *Root) sendPanels(x, y float32, evname string, ev interface{}) {
 	r.targets = r.targets[0:0]
 
 	// checkPanel checks recursively if the specified panel and
-	// any of its child contains the mouse position
+	// any of its children contain the mouse position
 	var checkPanel func(ipan IPanel)
 	checkPanel = func(ipan IPanel) {
 		pan := ipan.GetPanel()
@@ -285,11 +317,20 @@ func (r *Root) sendPanels(x, y float32, evname string, ev interface{}) {
 
 	// Sorts panels by absolute Z with the most foreground panels first
 	// and sends event to all panels or until a stop is requested
-	sort.Sort(r.targets)
+	sort.Slice(r.targets, func(i, j int) bool {
+		iz := r.targets[i].GetPanel().Position().Z
+		jz := r.targets[j].GetPanel().Position().Z
+		return iz < jz
+	})
+
 	r.stopPropagation = 0
 
 	// Send events to panels
 	for _, ipan := range r.targets {
+		// Checks modal panel
+		if !r.canDispatch(ipan) {
+			continue
+		}
 		pan := ipan.GetPanel()
 		// Cursor position event
 		if evname == OnCursor {
@@ -345,14 +386,37 @@ func (r *Root) onFrame(evname string, ev interface{}) {
 	r.TimerManager.ProcessTimers()
 }
 
-// For sorting panels by Z coordinate
-type listPanelZ []IPanel
+// canDispatch returns if event can be dispatched to the specified panel
+// An event cannot be dispatched if there is a modal panel and the specified
+// panel is not the modal panel or any of its children.
+func (r *Root) canDispatch(ipan IPanel) bool {
 
-func (p listPanelZ) Len() int      { return len(p) }
-func (p listPanelZ) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
-func (p listPanelZ) Less(i, j int) bool {
+	if r.modalPanel == nil {
+		return true
+	}
+	if r.modalPanel == ipan {
+		return true
+	}
 
-	iz := p[i].GetPanel().Position().Z
-	jz := p[j].GetPanel().Position().Z
-	return iz < jz
+	// Internal function to check panel children recursively
+	var checkChildren func(iparent IPanel) bool
+	checkChildren = func(iparent IPanel) bool {
+		parent := iparent.GetPanel()
+		for _, child := range parent.Children() {
+			if child == ipan {
+				return true
+			}
+			res := checkChildren(child.(IPanel))
+			if res {
+				return res
+			}
+		}
+		return false
+	}
+	return checkChildren(r.modalPanel)
 }
+
+//func (r *Root) applyStyleRecursively(s *Style) {
+//	// TODO
+//	// This should probably be in Panel ?
+//}

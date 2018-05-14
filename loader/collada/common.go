@@ -25,6 +25,7 @@ type Source struct {
 	}
 }
 
+// Dump prints out information about the Source
 func (s *Source) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sSource id:%s name:%s\n", sIndent(indent), s.Id, s.Name)
@@ -49,6 +50,7 @@ type NameArray struct {
 	Data  []string
 }
 
+// Dump prints out information about the NameArray
 func (na *NameArray) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sNameArray id:%s count:%d\n", sIndent(indent), na.Id, na.Count)
@@ -65,6 +67,7 @@ type FloatArray struct {
 	Data  []float32
 }
 
+// Dump prints out information about the FloatArray
 func (fa *FloatArray) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sFloatArray id:%s count:%d\n", sIndent(indent), fa.Id, fa.Count)
@@ -82,6 +85,7 @@ type Accessor struct {
 	Params []Param
 }
 
+// Dump prints out information about the Accessor
 func (ac *Accessor) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sAccessor source:%s count:%d stride:%d\n",
@@ -100,6 +104,7 @@ type Param struct {
 	Type string
 }
 
+// Dump prints out information about the Param
 func (p *Param) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sParam name:%s type:%s\n", sIndent(indent), p.Name, p.Type)
@@ -143,7 +148,6 @@ func (d *Decoder) decSource(start xml.StartElement) (*Source, error) {
 			continue
 		}
 	}
-	return source, nil
 }
 
 // decSource decodes the float array from the specified source
@@ -227,7 +231,6 @@ func (d *Decoder) decAcessor(start xml.StartElement, source *Source) error {
 			}
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decParam(start xml.StartElement, accessor *Accessor) error {

@@ -4,69 +4,64 @@
 
 package math32
 
+// Frustum represents a frustum
 type Frustum struct {
 	planes []Plane
 }
 
+func NewFrustumFromMatrix(m *Matrix4) *Frustum {
+	f := new(Frustum)
+	f.planes = make([]Plane, 6)
+	f.SetFromMatrix(m)
+	return f
+}
+
+// NewFrustum returns a pointer to a new Frustum object
 func NewFrustum(p0, p1, p2, p3, p4, p5 *Plane) *Frustum {
 
-	this := new(Frustum)
-	this.planes = make([]Plane, 6)
-	if p0 != nil {
-		this.planes[0] = *p0
-	}
-	if p1 != nil {
-		this.planes[1] = *p1
-	}
-	if p2 != nil {
-		this.planes[2] = *p2
-	}
-	if p3 != nil {
-		this.planes[3] = *p3
-	}
-	if p4 != nil {
-		this.planes[4] = *p4
-	}
-	if p5 != nil {
-		this.planes[5] = *p5
-	}
-	return this
+	f := new(Frustum)
+	f.planes = make([]Plane, 6)
+	f.Set(p0, p1, p2, p3, p4, p5)
+	return f
 }
 
-func (this *Frustum) Set(p0, p1, p2, p3, p4, p5 *Plane) *Frustum {
+// Set sets the frustum's planes
+func (f *Frustum) Set(p0, p1, p2, p3, p4, p5 *Plane) *Frustum {
 
 	if p0 != nil {
-		this.planes[0] = *p0
+		f.planes[0] = *p0
 	}
 	if p1 != nil {
-		this.planes[1] = *p1
+		f.planes[1] = *p1
 	}
 	if p2 != nil {
-		this.planes[2] = *p2
+		f.planes[2] = *p2
 	}
 	if p3 != nil {
-		this.planes[3] = *p3
+		f.planes[3] = *p3
 	}
 	if p4 != nil {
-		this.planes[4] = *p4
+		f.planes[4] = *p4
 	}
 	if p5 != nil {
-		this.planes[5] = *p5
+		f.planes[5] = *p5
 	}
-	return this
+	return f
 }
 
-func (this *Frustum) Copy(frustum *Frustum) *Frustum {
+// Copy modifies the receiver frustum to match the provided frustum
+func (f *Frustum) Copy(frustum *Frustum) *Frustum {
 
 	for i := 0; i < 6; i++ {
-		this.planes[i] = frustum.planes[i]
+		f.planes[i] = frustum.planes[i]
 	}
-	return this
+	return f
 }
 
-func (this *Frustum) SetFromMatrix(m *Matrix4) *Frustum {
+// SetFromMatrix sets the frustum's planes based on the specified Matrix4
+func (f *Frustum) SetFromMatrix(m *Matrix4) *Frustum {
 
-	planes := this.planes
+	planes := f.planes
 	me0 := m[0]
 	me1 := m[1]
 	me2 := m[2]
@@ -91,7 +86,7 @@ func (this *Frustum) SetFromMatrix(m *Matrix4) *Frustum {
 	planes[4].SetComponents(me3-me2, me7-me6, me11-me10, me15-me14).Normalize()
 	planes[5].SetComponents(me3+me2, me7+me6, me11+me10, me15+me14).Normalize()
 
-	return this
+	return f
 }
 
 /**
@@ -103,9 +98,10 @@ func (this *Frustum) IntersectsObject(geometry *core.Geometry) bool {
 }
 */
 
-func (this *Frustum) IntersectsSphere(sphere *Sphere) bool {
+// IntersectsSphere determines whether the specified sphere is intersecting the frustum
+func (f *Frustum) IntersectsSphere(sphere *Sphere) bool {
 
-	planes := this.planes
+	planes := f.planes
 	negRadius := -sphere.Radius
 
 	for i := 0; i < 6; i++ {
@@ -118,13 +114,14 @@ func (this *Frustum) IntersectsSphere(sphere *Sphere) bool {
 	return true
 }
 
-func (this *Frustum) IntersectsBox(box *Box3) bool {
+// IntersectsBox determines whether the specified box is intersecting the frustum
+func (f *Frustum) IntersectsBox(box *Box3) bool {
 
 	var p1 Vector3
 	var p2 Vector3
 
 	for i := 0; i < 6; i++ {
-		plane := &this.planes[i]
+		plane := &f.planes[i]
 		if plane.normal.X > 0 {
 			p1.X = box.Min.X
 		} else {
@@ -136,9 +133,9 @@ func (this *Frustum) IntersectsBox(box *Box3) bool {
 			p2.X = box.Min.X
 		}
 		if plane.normal.Y > 0 {
-			p2.Y = box.Min.Y
+			p1.Y = box.Min.Y
 		} else {
-			p2.Y = box.Max.Y
+			p1.Y = box.Max.Y
 		}
 		if plane.normal.Y > 0 {
 			p2.Y = box.Max.Y
@@ -151,7 +148,7 @@ func (this *Frustum) IntersectsBox(box *Box3) bool {
 			p1.Z = box.Max.Z
 		}
 		if plane.normal.Z > 0 {
-			p1.Z = box.Max.Z
+			p2.Z = box.Max.Z
 		} else {
 			p2.Z = box.Min.Z
 		}
@@ -169,17 +166,19 @@ func (this *Frustum) IntersectsBox(box *Box3) bool {
 	return true
 }
 
-func (this *Frustum) ContainsPoint(point *Vector3) bool {
+// ContainsPoint determines whether the frustum contains the specified point
+func (f *Frustum) ContainsPoint(point *Vector3) bool {
 
 	for i := 0; i < 6; i++ {
-		if this.planes[i].DistanceToPoint(point) < 0 {
+		if f.planes[i].DistanceToPoint(point) < 0 {
 			return false
 		}
 	}
 	return true
 }
 
-func (this *Frustum) Clone() *Frustum {
+// Clone returns a pointer to a new Frustum object with the same planes as the original
+func (f *Frustum) Clone() *Frustum {
 
-	return NewFrustum(nil, nil, nil, nil, nil, nil).Copy(this)
+	return NewFrustum(nil, nil, nil, nil, nil, nil).Copy(f)
 }

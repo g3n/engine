@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package textures contains several types of texture which
+// Package texture contains several types of textures which
 // can be added to materials.
 package texture
 

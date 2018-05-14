@@ -12,13 +12,14 @@ import (
 )
 
 //
-// Library Geometries
+// LibraryGeometries
 //
 type LibraryGeometries struct {
 	Asset    *Asset
 	Geometry []*Geometry
 }
 
+// Dump prints out information about the LibraryGeometries
 func (lg *LibraryGeometries) Dump(out io.Writer, indent int) {
 
 	if lg == nil {
@@ -43,6 +44,7 @@ type Geometry struct {
 	GeometricElement interface{} // Geometry type object (Mesh|others)
 }
 
+// Dump prints out information about the Geometry
 func (g *Geometry) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sGeometry id:%s name:%s\n", sIndent(indent), g.Id, g.Name)
@@ -64,6 +66,7 @@ type Mesh struct {
 	PrimitiveElements []interface{} // Geometry primitives (polylist|others)
 }
 
+// Dump prints out information about the Mesh
 func (m *Mesh) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sMesh:\n", sIndent(indent))
@@ -91,6 +94,7 @@ type Vertices struct {
 	Input []Input
 }
 
+// Dump prints out information about the Vertices
 func (v *Vertices) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sVertices id:%s name:%s\n", sIndent(indent), v.Id, v.Name)
@@ -107,6 +111,7 @@ type Input struct {
 	Source   string // source URL
 }
 
+// Dump prints out information about the Input
 func (i *Input) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sInput semantic:%s source:%s\n", sIndent(indent), i.Semantic, i.Source)
@@ -124,6 +129,7 @@ type Polylist struct {
 	P        []int
 }
 
+// Dump prints out information about the Polylist
 func (pl *Polylist) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sPolylist name:%s count:%d material:%s\n", sIndent(indent), pl.Name, pl.Count, pl.Material)
@@ -167,6 +173,7 @@ type Lines struct {
 	P        []int
 }
 
+// Dump prints out information about the Lines
 func (ln *Lines) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sLines name:%s count:%d material:%s\n", sIndent(indent), ln.Name, ln.Count, ln.Material)
@@ -210,6 +217,7 @@ type Tristrips struct {
 	P        []int
 }
 
+// Dump prints out information about the Tristrips
 func (is *InputShared) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sInputShared offset:%d semantic:%s source:%s set:%d\n",
@@ -247,7 +255,6 @@ func (d *Decoder) decLibraryGeometries(start xml.StartElement, dom *Collada) err
 			continue
 		}
 	}
-	return nil
 }
 
 // decGeometry receives the start element of a geometry and
@@ -277,7 +284,6 @@ func (d *Decoder) decGeometry(start xml.StartElement, lg *LibraryGeometries) err
 			continue
 		}
 	}
-	return nil
 }
 
 // decMesh decodes the mesh from the specified geometry
@@ -329,7 +335,6 @@ func (d *Decoder) decMesh(start xml.StartElement, geom *Geometry) error {
 			continue
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decVertices(start xml.StartElement, mesh *Mesh) error {
@@ -352,7 +357,6 @@ func (d *Decoder) decVertices(start xml.StartElement, mesh *Mesh) error {
 			mesh.Vertices.Input = append(mesh.Vertices.Input, inp)
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decInput(start xml.StartElement) (Input, error) {
@@ -395,7 +399,6 @@ func (d *Decoder) decLines(start xml.StartElement, mesh *Mesh) error {
 			ln.P = p
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decPolylist(start xml.StartElement, mesh *Mesh) error {
@@ -439,7 +442,6 @@ func (d *Decoder) decPolylist(start xml.StartElement, mesh *Mesh) error {
 			pl.P = p
 		}
 	}
-	return nil
 }
 
 func (d *Decoder) decInputShared(start xml.StartElement) (InputShared, error) {

@@ -4,13 +4,13 @@
 
 package core
 
-import ()
-
+// Dispatcher implements an event dispatcher
 type Dispatcher struct {
 	evmap  map[string][]subscription // maps event name to subcriptions list
 	cancel bool                      // flag informing cancelled dispatch
 }
 
+// IDispatcher is the interface for dispatchers
 type IDispatcher interface {
 	Subscribe(evname string, cb Callback)
 	SubscribeID(evname string, id interface{}, cb Callback)
@@ -20,6 +20,7 @@ type IDispatcher interface {
 	CancelDispatch()
 }
 
+// Callback is the type for the Dispatcher callbacks functions
 type Callback func(string, interface{})
 
 type subscription struct {
@@ -27,44 +28,42 @@ type subscription struct {
 	cb func(string, interface{})
 }
 
-// NewEventDispatcher creates and returns a pointer to an Event Dispatcher
+// NewDispatcher creates and returns a new Event Dispatcher
 func NewDispatcher() *Dispatcher {
 
-	ed := new(Dispatcher)
-	ed.Initialize()
-	return ed
+	d := new(Dispatcher)
+	d.Initialize()
+	return d
 }
 
 // Initialize initializes this event dispatcher.
 // It is normally used by other types which embed an event dispatcher
-func (ed *Dispatcher) Initialize() {
+func (d *Dispatcher) Initialize() {
 
-	ed.evmap = make(map[string][]subscription)
+	d.evmap = make(map[string][]subscription)
 }
 
 // Subscribe subscribes to receive events with the given name.
-// If it is necessary to unsubscribe the event, the function SubscribeID
-// should be used.
-func (ed *Dispatcher) Subscribe(evname string, cb Callback) {
+// If it is necessary to unsubscribe the event, the function SubscribeID should be used.
+func (d *Dispatcher) Subscribe(evname string, cb Callback) {
 
-	ed.SubscribeID(evname, nil, cb)
+	d.SubscribeID(evname, nil, cb)
 }
 
-// Subscribe subscribes to receive events with the given name.
+// SubscribeID subscribes to receive events with the given name.
 // The function accepts a unique id to be use to unsubscribe this event
-func (ed *Dispatcher) SubscribeID(evname string, id interface{}, cb Callback) {
+func (d *Dispatcher) SubscribeID(evname string, id interface{}, cb Callback) {
 
-	//log.Debug("Dispatcher(%p).SubscribeID:%s (%v)", ed, evname, id)
-	ed.evmap[evname] = append(ed.evmap[evname], subscription{id, cb})
+	d.evmap[evname] = append(d.evmap[evname], subscription{id, cb})
 }
 
-// Unsubscribe unsubscribes from the specified event and subscription id
+// UnsubscribeID unsubscribes from the specified event and subscription id
 // Returns the number of subscriptions found.
-func (ed *Dispatcher) UnsubscribeID(evname string, id interface{}) int {
+func (d *Dispatcher) UnsubscribeID(evname string, id interface{}) int {
 
 	// Get list of subscribers for this event
 	// If not found, nothing to do
-	subs, ok := ed.evmap[evname]
+	subs, ok := d.evmap[evname]
 	if !ok {
 		return 0
 	}
@@ -82,56 +81,52 @@ func (ed *Dispatcher) UnsubscribeID(evname string, id interface{}) int {
 			pos++
 		}
 	}
-	//log.Debug("Dispatcher(%p).UnsubscribeID:%s (%p): %v",ed, evname, id, found)
-	ed.evmap[evname] = subs
+	d.evmap[evname] = subs
 	return found
+}
+
+// UnsubscribeAllID unsubscribes from all events with the specified subscription id.
+// Returns the number of subscriptions found.
+func (d *Dispatcher) UnsubscribeAllID(id interface{}) int {
+
+	total := 0
+	for evname := range d.evmap {
+		found := d.UnsubscribeID(evname, id)
+		total += found
+	}
+	return total
 }
 
 // Dispatch dispatch the specified event and data to all registered subscribers.
 // The function returns true if the propagation was cancelled by a subscriber.
-func (ed *Dispatcher) Dispatch(evname string, ev interface{}) bool {
+func (d *Dispatcher) Dispatch(evname string, ev interface{}) bool {
 
 	// Get list of subscribers for this event
-	subs := ed.evmap[evname]
+	subs := d.evmap[evname]
 	if subs == nil {
 		return false
 	}
 
 	// Dispatch to all subscribers
-	//log.Debug("Dispatcher(%p).Dispatch:%s", ed, evname)
-	ed.cancel = false
+	d.cancel = false
 	for i := 0; i < len(subs); i++ {
 		subs[i].cb(evname, ev)
-		if ed.cancel {
+		if d.cancel {
 			break
 		}
 	}
-	return ed.cancel
+	return d.cancel
 }
 
 // ClearSubscriptions clear all subscriptions from this dispatcher
-func (ed *Dispatcher) ClearSubscriptions() {
+func (d *Dispatcher) ClearSubscriptions() {
 
-	ed.evmap = make(map[string][]subscription)
-	//log.Debug("Dispatcher(%p).ClearSubscriptions: %d", ed, len(ed.evmap))
+	d.evmap = make(map[string][]subscription)
 }
 
 // CancelDispatch cancels the propagation of the current event.
 // No more subscribers will be called for this event dispatch.
-func (ed *Dispatcher) CancelDispatch() {
+func (d *Dispatcher) CancelDispatch() {
 
-	ed.cancel = true
+	d.cancel = true
 }
-
-//// LogSubscriptions is used for debugging to log the current
-//// subscriptions of this dispatcher
-//func (ed *Dispatcher) LogSubscriptions() {
-//
-//    for evname, subs := range ed.evmap {
-//        log.Debug("event:%s", evname)
-//        for _, sub := range subs {
-//            log.Debug("   subscription:%v", sub)
-//        }
-//    }
-//    log.Debug("")
-//}

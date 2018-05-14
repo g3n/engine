@@ -4,8 +4,11 @@
 
 package math32
 
-import ()
+import (
+	"strings"
+)
 
+// Color4 describes an RGBA color
 type Color4 struct {
 	R float32
 	G float32
@@ -13,19 +16,37 @@ type Color4 struct {
 	A float32
 }
 
-var Black4 = Color4{0, 0, 0, 1}
-var White4 = Color4{1, 1, 1, 1}
-var Red4 = Color4{1, 0, 0, 1}
-var Green4 = Color4{0, 1, 0, 1}
-var Blue4 = Color4{0, 0, 1, 1}
-var Gray4 = Color4{0.5, 0.5, 0.5, 1}
+// NewColor4 creates and returns a pointer to a new Color4
+// with the specified standard web color name (case insensitive)
+// and an optional alpha channel value.
+// Returns nil if the specified color name not found
+func NewColor4(name string, alpha ...float32) *Color4 {
 
-func NewColor4(r, g, b, a float32) *Color4 {
+	c, ok := mapColorNames[strings.ToLower(name)]
+	if !ok {
+		return nil
+	}
+	a := float32(1)
+	if len(alpha) > 0 {
+		a = alpha[0]
+	}
+	return &Color4{c.R, c.G, c.B, a}
+}
 
-	return &Color4{R: r, G: g, B: b, A: a}
+// Color4Name returns a Color4 with the specified standard web color name
+// and an optional alpha channel value.
+func Color4Name(name string, alpha ...float32) Color4 {
+
+	c := mapColorNames[strings.ToLower(name)]
+	a := float32(1)
+	if len(alpha) > 0 {
+		a = alpha[0]
+	}
+	return Color4{c.R, c.G, c.B, a}
 }
 
 // Set sets this color individual R,G,B,A components
+// Returns pointer to this updated color
 func (c *Color4) Set(r, g, b, a float32) *Color4 {
 
 	c.R = r
@@ -38,6 +59,7 @@ func (c *Color4) Set(r, g, b, a float32) *Color4 {
 // SetHex sets the color RGB components from the
 // specified integer interpreted as a color hex number
 // Alpha component is not modified
+// Returns pointer to this updated color
 func (c *Color4) SetHex(value uint) *Color4 {
 
 	c.R = float32((value >> 16 & 255)) / 255
@@ -47,18 +69,33 @@ func (c *Color4) SetHex(value uint) *Color4 {
 }
 
 // SetName sets the color RGB components from the
-// specified HTML color name
-// Alpha component is not modified
+// specified standard web color name
+// Returns pointer to this updated color
 func (c *Color4) SetName(name string) *Color4 {
 
-	return c.SetHex(colorKeywords[name])
+	*c = Color4Name(name, 1)
+	return c
 }
 
+// Add adds to each RGBA component of this color the correspondent component of other color
+// Returns pointer to this updated color
+func (c *Color4) Add(other *Color4) *Color4 {
+
+	c.R += other.R
+	c.G += other.G
+	c.B += other.B
+	c.A += other.A
+	return c
+}
+
+// MultiplyScalar multiplies each RGBA component of this color by the specified scalar.
+// Returns pointer to this updated color
 func (c *Color4) MultiplyScalar(v float32) *Color4 {
 
 	c.R *= v
 	c.G *= v
 	c.B *= v
+	c.A *= v
 	return c
 }
 

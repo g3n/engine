@@ -9,6 +9,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// Perspective represents a perspective camera
 type Perspective struct {
 	Camera                     // Embedded camera
 	fov         float32        // field of view in degrees
@@ -79,29 +80,39 @@ func (cam *Perspective) ProjMatrix(m *math32.Matrix4) {
 }
 
 // Project transforms the specified position from world coordinates to this camera projected coordinates.
-func (cam *Perspective) Project(v *math32.Vector3) *math32.Vector3 {
+func (cam *Perspective) Project(v *math32.Vector3) (*math32.Vector3, error) {
 
 	cam.updateProjMatrix()
 	var matrix math32.Matrix4
 	matrixWorld := cam.MatrixWorld()
-	matrix.MultiplyMatrices(&cam.projMatrix, matrix.GetInverse(&matrixWorld, true))
+	err := matrix.GetInverse(&matrixWorld)
+	if err != nil {
+		return nil, err
+	}
+	matrix.MultiplyMatrices(&cam.projMatrix, &matrix)
 	v.ApplyProjection(&matrix)
-	return v
+	return v, nil
 }
 
 // Unproject transforms the specified position from camera projected coordinates to world coordinates.
-func (cam *Perspective) Unproject(v *math32.Vector3) *math32.Vector3 {
+func (cam *Perspective) Unproject(v *math32.Vector3) (*math32.Vector3, error) {
 
 	// Get inverted camera view matrix
 	var viewMatrix math32.Matrix4
 	cam.ViewMatrix(&viewMatrix)
 	var invertedViewMatrix math32.Matrix4
-	invertedViewMatrix.GetInverse(&viewMatrix, true)
+	err := invertedViewMatrix.GetInverse(&viewMatrix)
+	if err != nil {
+		return nil, err
+	}
 
 	// Get inverted camera projection matrix
 	cam.updateProjMatrix()
 	var invertedProjMatrix math32.Matrix4
-	invertedProjMatrix.GetInverse(&cam.projMatrix, true)
+	err = invertedProjMatrix.GetInverse(&cam.projMatrix)
+	if err != nil {
+		return nil, err
+	}
 
 	// Multiply invertedViewMatrix by invertedProjMatrix
 	// to get transformation from camera projected coordinates to world coordinates
@@ -109,21 +120,26 @@ func (cam *Perspective) Unproject(v *math32.Vector3) *math32.Vector3 {
 	var matrix math32.Matrix4
 	matrix.MultiplyMatrices(&invertedViewMatrix, &invertedProjMatrix)
 	v.ApplyProjection(&matrix)
-	return v
+	return v, nil
 }
 
 // SetRaycaster sets the specified raycaster with this camera position in world coordinates
 // pointing to the direction defined by the specified coordinates unprojected using this camera.
-func (cam *Perspective) SetRaycaster(rc *core.Raycaster, sx, sy float32) {
+func (cam *Perspective) SetRaycaster(rc *core.Raycaster, sx, sy float32) error {
 
 	var origin, direction math32.Vector3
 	matrixWorld := cam.MatrixWorld()
 	origin.SetFromMatrixPosition(&matrixWorld)
 	direction.Set(sx, sy, 0.5)
-	cam.Unproject(&direction).Sub(&origin).Normalize()
+	unproj, err := cam.Unproject(&direction)
+	if err != nil {
+		return err
+	}
+	unproj.Sub(&origin).Normalize()
 	rc.Set(&origin, &direction)
 	// Updates the view matrix of the raycaster
 	cam.ViewMatrix(&rc.ViewMatrix)
+	return nil
 }
 
 // updateProjMatrix updates this camera projection matrix if necessary

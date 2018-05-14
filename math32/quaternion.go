@@ -4,120 +4,98 @@
 
 package math32
 
+// Quaternion is quaternion with X,Y,Z and W components.
 type Quaternion struct {
-	x float32
-	y float32
-	z float32
-	w float32
+	X float32
+	Y float32
+	Z float32
+	W float32
 }
 
+// NewQuaternion creates and returns a pointer to a new quaternion
+// from the specified components.
 func NewQuaternion(x, y, z, w float32) *Quaternion {
 
 	return &Quaternion{
-		x: x, y: y, z: z, w: w,
+		X: x, Y: y, Z: z, W: w,
 	}
 }
 
-func (this *Quaternion) X() float32 {
+// SetX sets this quaternion's X component.
+// Returns pointer to this updated quaternion.
+func (q *Quaternion) SetX(val float32) *Quaternion {
 
-	return this.x
+	q.X = val
+	return q
 }
 
-func (this *Quaternion) SetX(val float32) *Quaternion {
+// SetY sets this quaternion's Y component.
+// Returns pointer to this updated quaternion.
+func (q *Quaternion) SetY(val float32) *Quaternion {
 
-	this.x = val
-	return this
+	q.Y = val
+	return q
 }
 
-func (this *Quaternion) Y() float32 {
+// SetZ sets this quaternion's Z component.
+// Returns pointer to this updated quaternion.
+func (q *Quaternion) SetZ(val float32) *Quaternion {
 
-	return this.y
+	q.Z = val
+	return q
 }
 
-func (this *Quaternion) SetY(val float32) *Quaternion {
+// SetW sets this quaternion's W component.
+// Returns pointer to this updated quaternion.
+func (q *Quaternion) SetW(val float32) *Quaternion {
 
-	this.y = val
-	return this
+	q.W = val
+	return q
 }
 
-func (this *Quaternion) Z() float32 {
+// Set sets this quaternion's components.
+// Returns pointer to this updated quaternion.
+func (q *Quaternion) Set(x, y, z, w float32) *Quaternion {
 
-	return this.z
+	q.X = x
+	q.Y = y
+	q.Z = z
+	q.W = w
+	return q
 }
 
-func (this *Quaternion) SetZ(val float32) *Quaternion {
+// SetIdentity sets this quanternion to the identity quaternion.
+// Returns pointer to this updated quaternion.
+func (q *Quaternion) SetIdentity() *Quaternion {
 
-	this.z = val
-	return this
+	q.X = 0
+	q.Y = 0
+	q.Z = 0
+	q.W = 1
+	return q
 }
 
-func (this *Quaternion) W() float32 {
-
-	return this.w
-}
-
-func (this *Quaternion) SetW(val float32) *Quaternion {
-
-	this.w = val
-	return this
-}
-
-func (this *Quaternion) Set(x, y, z, w float32) *Quaternion {
-
-	this.x = x
-	this.y = y
-	this.z = z
-	this.w = w
-	return this
-}
-
-func (this *Quaternion) SetIdentity() *Quaternion {
-
-	this.x = 0
-	this.y = 0
-	this.z = 0
-	this.w = 1
-	return this
-}
-
+// IsIdentity returns it this is an identity quaternion.
 func (q *Quaternion) IsIdentity() bool {
 
-	if q.x == 0 && q.y == 0 && q.z == 0 && q.w == 1 {
+	if q.X == 0 && q.Y == 0 && q.Z == 0 && q.W == 1 {
 		return true
 	}
 	return false
 }
 
-// Copy copies the specified quaternion into this one.
-func (this *Quaternion) Copy(quaternion *Quaternion) *Quaternion {
+// Copy copies the other quaternion into this one.
+// Returns pointer to this updated quaternion.
+func (q *Quaternion) Copy(other *Quaternion) *Quaternion {
 
-	*this = *quaternion
-	return this
+	*q = *other
+	return q
 }
-
-//func (this *Quaternion) SetFromEuler2(euler *Euler) *Quaternion {
-//
-//	c1 := Cos(euler.X / 2)
-//	c2 := Cos(euler.Y / 2)
-//	c3 := Cos(euler.Z / 2)
-//	s1 := Sin(euler.X / 2)
-//	s2 := Sin(euler.Y / 2)
-//	s3 := Sin(euler.Z / 2)
-//
-//	if euler.Order == XYZ {
-//		this.x = s1*c2*c3 + c1*s2*s3
-//		this.y = c1*s2*c3 - s1*c2*s3
-//		this.z = c1*c2*s3 + s1*s2*c3
-//		this.w = c1*c2*c3 - s1*s2*s3
-//	} else {
-//		panic("Unsupported Euler Order")
-//	}
-//	return this
-//}
 
 // SetFromEuler sets this quaternion from the specified vector with
 // euler angles for each axis. It is assumed that the Euler angles
 // are in XYZ order.
+// Returns pointer to this updated quaternion.
 func (q *Quaternion) SetFromEuler(euler *Vector3) *Quaternion {
 
 	c1 := Cos(euler.X / 2)
@@ -127,28 +105,31 @@ func (q *Quaternion) SetFromEuler(euler *Vector3) *Quaternion {
 	s2 := Sin(euler.Y / 2)
 	s3 := Sin(euler.Z / 2)
 
-	q.x = s1*c2*c3 - c1*s2*s3
-	q.y = c1*s2*c3 + s1*c2*s3
-	q.z = c1*c2*s3 - s1*s2*c3
-	q.w = c1*c2*c3 + s1*s2*s3
+	q.X = s1*c2*c3 - c1*s2*s3
+	q.Y = c1*s2*c3 + s1*c2*s3
+	q.Z = c1*c2*s3 - s1*s2*c3
+	q.W = c1*c2*c3 + s1*s2*s3
 
 	return q
 }
 
 // SetFromAxisAngle sets this quaternion with the rotation
 // specified by the given axis and angle.
+// Returns pointer to this updated quaternion.
 func (q *Quaternion) SetFromAxisAngle(axis *Vector3, angle float32) *Quaternion {
 
 	halfAngle := angle / 2
 	s := Sin(halfAngle)
-	q.x = axis.X * s
-	q.y = axis.Y * s
-	q.z = axis.Z * s
-	q.w = Cos(halfAngle)
+	q.X = axis.X * s
+	q.Y = axis.Y * s
+	q.Z = axis.Z * s
+	q.W = Cos(halfAngle)
 	return q
 }
 
-func (this *Quaternion) SetFromRotationMatrix(m *Matrix4) *Quaternion {
+// SetFromRotationMatrix sets this quaternion from the specified rotation matrix.
+// Returns pointer to this updated quaternion.
+func (q *Quaternion) SetFromRotationMatrix(m *Matrix4) *Quaternion {
 
 	m11 := m[0]
 	m12 := m[4]
@@ -164,33 +145,36 @@ func (this *Quaternion) SetFromRotationMatrix(m *Matrix4) *Quaternion {
 	var s float32
 	if trace > 0 {
 		s = 0.5 / Sqrt(trace+1.0)
-		this.w = 0.25 / s
-		this.x = (m32 - m23) * s
-		this.y = (m13 - m31) * s
-		this.z = (m21 - m12) * s
+		q.W = 0.25 / s
+		q.X = (m32 - m23) * s
+		q.Y = (m13 - m31) * s
+		q.Z = (m21 - m12) * s
 	} else if m11 > m22 && m11 > m33 {
 		s = 2.0 * Sqrt(1.0+m11-m22-m33)
-		this.w = (m32 - m23) / s
-		this.x = 0.25 * s
-		this.y = (m12 + m21) / s
-		this.z = (m13 + m31) / s
+		q.W = (m32 - m23) / s
+		q.X = 0.25 * s
+		q.Y = (m12 + m21) / s
+		q.Z = (m13 + m31) / s
 	} else if m22 > m33 {
 		s = 2.0 * Sqrt(1.0+m22-m11-m33)
-		this.w = (m13 - m31) / s
-		this.x = (m12 + m21) / s
-		this.y = 0.25 * s
-		this.z = (m23 + m32) / s
+		q.W = (m13 - m31) / s
+		q.X = (m12 + m21) / s
+		q.Y = 0.25 * s
+		q.Z = (m23 + m32) / s
 	} else {
 		s = 2.0 * Sqrt(1.0+m33-m11-m22)
-		this.w = (m21 - m12) / s
-		this.x = (m13 + m31) / s
-		this.y = (m23 + m32) / s
-		this.z = 0.25 * s
+		q.W = (m21 - m12) / s
+		q.X = (m13 + m31) / s
+		q.Y = (m23 + m32) / s
+		q.Z = 0.25 * s
 	}
-	return this
+	return q
 }
 
-func (this *Quaternion) SetFromUnitVectors(vFrom, vTo *Vector3) *Quaternion {
+// SetFromUnitVectors sets this quaternion to the rotation from vector vFrom to vTo.
+// The vectors must be normalized.
+// Returns pointer to this updated quaternion.
+func (q *Quaternion) SetFromUnitVectors(vFrom, vTo *Vector3) *Quaternion {
 
 	var v1 Vector3
 	var EPS float32 = 0.000001
@@ -210,132 +194,148 @@ func (this *Quaternion) SetFromUnitVectors(vFrom, vTo *Vector3) *Quaternion {
 		v1.CrossVectors(vFrom, vTo)
 
 	}
-	this.x = v1.X
-	this.y = v1.Y
-	this.z = v1.Z
-	this.w = r
+	q.X = v1.X
+	q.Y = v1.Y
+	q.Z = v1.Z
+	q.W = r
 
-	this.Normalize()
+	q.Normalize()
 
-	return this
+	return q
 }
 
+// Inverse sets this quaternion to its inverse.
+// Returns pointer to this updated quaternion.
 func (q *Quaternion) Inverse() *Quaternion {
 
 	q.Conjugate().Normalize()
 	return q
 }
 
-func (this *Quaternion) Conjugate() *Quaternion {
+// Conjugate sets this quaternion to its conjugate.
+// Returns pointer to this updated quaternion.
+func (q *Quaternion) Conjugate() *Quaternion {
 
-	this.x *= -1
-	this.y *= -1
-	this.z *= -1
-	return this
+	q.X *= -1
+	q.Y *= -1
+	q.Z *= -1
+	return q
 }
 
-func (this *Quaternion) Dot(v *Quaternion) float32 {
+// Dot returns the dot products of this quaternion with other.
+func (q *Quaternion) Dot(other *Quaternion) float32 {
 
-	return this.x*v.x + this.y*v.y + this.z*v.z + this.w*v.w
+	return q.X*other.X + q.Y*other.Y + q.Z*other.Z + q.W*other.W
 }
 
-func (this *Quaternion) lengthSq() float32 {
+// LengthSq returns this quanternion's length squared
+func (q *Quaternion) lengthSq() float32 {
 
-	return this.x*this.x + this.y*this.y + this.z*this.z + this.w*this.w
+	return q.X*q.X + q.Y*q.Y + q.Z*q.Z + q.W*q.W
 }
 
-func (this *Quaternion) Length() float32 {
+// Length returns the length of this quaternion
+func (q *Quaternion) Length() float32 {
 
-	return Sqrt(this.x*this.x + this.y*this.y + this.z*this.z + this.w*this.w)
+	return Sqrt(q.X*q.X + q.Y*q.Y + q.Z*q.Z + q.W*q.W)
 }
 
-func (this *Quaternion) Normalize() *Quaternion {
+// Normalize normalizes this quaternion.
+// Returns pointer to this updated quaternion.
+func (q *Quaternion) Normalize() *Quaternion {
 
-	l := this.Length()
+	l := q.Length()
 
 	if l == 0 {
 
-		this.x = 0
-		this.y = 0
-		this.z = 0
-		this.w = 1
+		q.X = 0
+		q.Y = 0
+		q.Z = 0
+		q.W = 1
 
 	} else {
 
 		l = 1 / l
 
-		this.x = this.x * l
-		this.y = this.y * l
-		this.z = this.z * l
-		this.w = this.w * l
+		q.X = q.X * l
+		q.Y = q.Y * l
+		q.Z = q.Z * l
+		q.W = q.W * l
 
 	}
-	return this
+	return q
 }
 
-func (this *Quaternion) Multiply(q *Quaternion) *Quaternion {
+// Multiply sets this quaternion to the multiplication of itself by other.
+// Returns pointer to this updated quaternion.
+func (q *Quaternion) Multiply(other *Quaternion) *Quaternion {
 
-	return this.MultiplyQuaternions(this, q)
+	return q.MultiplyQuaternions(q, other)
 }
 
-func (this *Quaternion) MultiplyQuaternions(a, b *Quaternion) *Quaternion {
+// MultiplyQuaternions set this quaternion to the multiplication of a by b.
+// Returns pointer to this updated quaternion.
+func (q *Quaternion) MultiplyQuaternions(a, b *Quaternion) *Quaternion {
 
 	// from http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/code/index.htm
 
-	qax := a.x
-	qay := a.y
-	qaz := a.z
-	qaw := a.w
-	qbx := b.x
-	qby := b.y
-	qbz := b.z
-	qbw := b.w
+	qax := a.X
+	qay := a.Y
+	qaz := a.Z
+	qaw := a.W
+	qbx := b.X
+	qby := b.Y
+	qbz := b.Z
+	qbw := b.W
 
-	this.x = qax*qbw + qaw*qbx + qay*qbz - qaz*qby
-	this.y = qay*qbw + qaw*qby + qaz*qbx - qax*qbz
-	this.z = qaz*qbw + qaw*qbz + qax*qby - qay*qbx
-	this.w = qaw*qbw - qax*qbx - qay*qby - qaz*qbz
-	return this
+	q.X = qax*qbw + qaw*qbx + qay*qbz - qaz*qby
+	q.Y = qay*qbw + qaw*qby + qaz*qbx - qax*qbz
+	q.Z = qaz*qbw + qaw*qbz + qax*qby - qay*qbx
+	q.W = qaw*qbw - qax*qbx - qay*qby - qaz*qbz
+	return q
 }
 
-func (this *Quaternion) Slerp(qb *Quaternion, t float32) *Quaternion {
+// Slerp sets this quaternion to another quaternion which is the spherically linear interpolation
+// from this quaternion to other using t.
+// Returns pointer to this updated quaternion.
+func (q *Quaternion) Slerp(other *Quaternion, t float32) *Quaternion {
 
 	if t == 0 {
-		return this
+		return q
 	}
 	if t == 1 {
-		return this.Copy(qb)
+		return q.Copy(other)
 	}
 
-	x := this.x
-	y := this.y
-	z := this.z
-	w := this.w
+	x := q.X
+	y := q.Y
+	z := q.Z
+	w := q.W
 
-	cosHalfTheta := w*qb.w + x*qb.x + y*qb.y + z*qb.z
+	cosHalfTheta := w*other.W + x*other.X + y*other.Y + z*other.Z
 
 	if cosHalfTheta < 0 {
 
-		this.w = -qb.w
-		this.x = -qb.x
-		this.y = -qb.y
-		this.z = -qb.z
+		q.W = -other.W
+		q.X = -other.X
+		q.Y = -other.Y
+		q.Z = -other.Z
 
 		cosHalfTheta = -cosHalfTheta
 
 	} else {
 
-		this.Copy(qb)
+		q.Copy(other)
 	}
 
 	if cosHalfTheta >= 1.0 {
 
-		this.w = w
-		this.x = x
-		this.y = y
-		this.z = z
+		q.W = w
+		q.X = x
+		q.Y = y
+		q.Z = z
 
-		return this
+		return q
 
 	}
 
@@ -344,48 +344,50 @@ func (this *Quaternion) Slerp(qb *Quaternion, t float32) *Quaternion {
 
 	if Abs(sinHalfTheta) < 0.001 {
 
-		this.w = 0.5 * (w + this.w)
-		this.x = 0.5 * (x + this.x)
-		this.y = 0.5 * (y + this.y)
-		this.z = 0.5 * (z + this.z)
+		q.W = 0.5 * (w + q.W)
+		q.X = 0.5 * (x + q.X)
+		q.Y = 0.5 * (y + q.Y)
+		q.Z = 0.5 * (z + q.Z)
 
-		return this
+		return q
 	}
 
 	ratioA := Sin((1-t)*halfTheta) / sinHalfTheta
 	ratioB := Sin(t*halfTheta) / sinHalfTheta
 
-	this.w = (w*ratioA + this.w*ratioB)
-	this.x = (x*ratioA + this.x*ratioB)
-	this.y = (y*ratioA + this.y*ratioB)
-	this.z = (z*ratioA + this.z*ratioB)
+	q.W = (w*ratioA + q.W*ratioB)
+	q.X = (x*ratioA + q.X*ratioB)
+	q.Y = (y*ratioA + q.Y*ratioB)
+	q.Z = (z*ratioA + q.Z*ratioB)
 
-	return this
+	return q
 }
 
-func (this *Quaternion) Equals(quaternion *Quaternion) bool {
+// Equals returns if this quaternion is equal to other.
+func (q *Quaternion) Equals(other *Quaternion) bool {
 
-	return (quaternion.x == this.x) && (quaternion.y == this.y) && (quaternion.z == this.z) && (quaternion.w == this.w)
+	return (other.X == q.X) && (other.Y == q.Y) && (other.Z == q.Z) && (other.W == q.W)
 }
 
-func (this *Quaternion) FromArray(array []float32, offset int) *Quaternion {
+// FromArray sets this quaternion's components from array starting at offset.
+// Returns pointer to this updated quaternion.
+func (q *Quaternion) FromArray(array []float32, offset int) *Quaternion {
 
-	this.x = array[offset]
-	this.y = array[offset+1]
-	this.z = array[offset+2]
-	this.w = array[offset+3]
-	return this
+	q.X = array[offset]
+	q.Y = array[offset+1]
+	q.Z = array[offset+2]
+	q.W = array[offset+3]
+	return q
 }
 
-func (this *Quaternion) ToArray(array []float32, offset int) []float32 {
+// ToArray copies this quaternions's components to array starting at offset.
+// Returns pointer to this updated array.
+func (q *Quaternion) ToArray(array []float32, offset int) []float32 {
 
-	if array == nil {
-		array = make([]float32, 4)
-	}
-	array[offset] = this.x
-	array[offset+1] = this.y
-	array[offset+2] = this.z
-	array[offset+3] = this.w
+	array[offset] = q.X
+	array[offset+1] = q.Y
+	array[offset+2] = q.Z
+	array[offset+3] = q.W
 
 	return array
 }

@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 )
 
@@ -22,6 +21,7 @@ import (
 
 ****************************************/
 
+// Button represents a button GUI element
 type Button struct {
 	*Panel                  // Embedded Panel
 	Label     *Label        // Label panel
@@ -33,13 +33,7 @@ type Button struct {
 }
 
 // Button style
-type ButtonStyle struct {
-	Border      BorderSizes
-	Paddings    BorderSizes
-	BorderColor math32.Color4
-	BgColor     math32.Color
-	FgColor     math32.Color
-}
+type ButtonStyle BasicStyle
 
 // All Button styles
 type ButtonStyles struct {
@@ -55,21 +49,21 @@ type ButtonStyles struct {
 func NewButton(text string) *Button {
 
 	b := new(Button)
-	b.styles = &StyleDefault.Button
+	b.styles = &StyleDefault().Button
 
 	// Initializes the button panel
 	b.Panel = NewPanel(0, 0)
 
 	// Subscribe to panel events
-	b.Panel.Subscribe(OnKeyDown, b.onKey)
-	b.Panel.Subscribe(OnKeyUp, b.onKey)
-	b.Panel.Subscribe(OnMouseUp, b.onMouse)
-	b.Panel.Subscribe(OnMouseDown, b.onMouse)
-	b.Panel.Subscribe(OnCursor, b.onCursor)
-	b.Panel.Subscribe(OnCursorEnter, b.onCursor)
-	b.Panel.Subscribe(OnCursorLeave, b.onCursor)
-	b.Panel.Subscribe(OnEnable, func(name string, ev interface{}) { b.update() })
-	b.Panel.Subscribe(OnResize, func(name string, ev interface{}) { b.recalc() })
+	b.Subscribe(OnKeyDown, b.onKey)
+	b.Subscribe(OnKeyUp, b.onKey)
+	b.Subscribe(OnMouseUp, b.onMouse)
+	b.Subscribe(OnMouseDown, b.onMouse)
+	b.Subscribe(OnCursor, b.onCursor)
+	b.Subscribe(OnCursorEnter, b.onCursor)
+	b.Subscribe(OnCursorLeave, b.onCursor)
+	b.Subscribe(OnEnable, func(name string, ev interface{}) { b.update() })
+	b.Subscribe(OnResize, func(name string, ev interface{}) { b.recalc() })
 
 	// Creates label
 	b.Label = NewLabel(text)
@@ -83,9 +77,9 @@ func NewButton(text string) *Button {
 
 // SetIcon sets the button icon from the default Icon font.
 // If there is currently a selected image, it is removed
-func (b *Button) SetIcon(icode int) {
+func (b *Button) SetIcon(icode string) {
 
-	ico := NewIconLabel(string(icode))
+	ico := NewIcon(icode)
 	if b.image != nil {
 		b.Panel.Remove(b.image)
 		b.image = nil
@@ -199,14 +193,11 @@ func (b *Button) update() {
 // applyStyle applies the specified button style
 func (b *Button) applyStyle(bs *ButtonStyle) {
 
-	b.SetBordersColor4(&bs.BorderColor)
-	b.SetBordersFrom(&bs.Border)
-	b.SetPaddingsFrom(&bs.Paddings)
-	b.SetColor(&bs.BgColor)
+	b.Panel.ApplyStyle(&bs.PanelStyle)
 	if b.icon != nil {
-		b.icon.SetColor(&bs.FgColor)
+		b.icon.SetColor4(&bs.FgColor)
 	}
-	//b.Label.SetColor(&bs.FgColor)
+	b.Label.SetColor4(&bs.FgColor)
 }
 
 // recalc recalculates all dimensions and position from inside out
@@ -218,15 +209,25 @@ func (b *Button) recalc() {
 
 	// Image or icon width
 	imgWidth := float32(0)
+	spacing := float32(4)
 	if b.image != nil {
 		imgWidth = b.image.Width()
 	} else if b.icon != nil {
 		imgWidth = b.icon.Width()
 	}
+	if imgWidth == 0 {
+		spacing = 0
+	}
+
+	// If the label is empty and an icon of image was defined ignore the label widthh
+	// to centralize the icon/image in the button
+	labelWidth := spacing + b.Label.Width()
+	if b.Label.Text() == "" && imgWidth > 0 {
+		labelWidth = 0
+	}
 
 	// Sets new content width and height if necessary
-	spacing := float32(4)
-	minWidth := imgWidth + spacing + b.Label.Width()
+	minWidth := imgWidth + labelWidth
 	minHeight := b.Label.Height()
 	resize := false
 	if width < minWidth {

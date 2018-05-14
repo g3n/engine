@@ -195,7 +195,7 @@ func (p *Player) SetMinGain(gain float32) {
 	al.Sourcef(p.source, al.MinGain, gain)
 }
 
-// MinGain returns the current maximum gain of this player
+// MaxGain returns the current maximum gain of this player
 func (p *Player) MaxGain() float32 {
 
 	return al.GetSourcef(p.source, al.MaxGain)
@@ -282,7 +282,7 @@ func (p *Player) VelocityVec() math32.Vector3 {
 	return math32.Vector3{vx, vy, vz}
 }
 
-// SetRollofFactor sets this player rolloff factor user to calculate
+// SetRolloffFactor sets this player rolloff factor user to calculate
 // the gain attenuation by distance
 func (p *Player) SetRolloffFactor(rfactor float32) {
 

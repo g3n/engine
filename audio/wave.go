@@ -10,7 +10,7 @@ import (
 	"os"
 )
 
-// WaveSpecs describes the characterists of the audio encoded in a wave file.
+// WaveSpecs describes the characteristics of the audio encoded in a wave file.
 type WaveSpecs struct {
 	Format     int     // OpenAl Format
 	Type       int     // Type field from wave header
