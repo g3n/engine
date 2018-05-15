@@ -17,12 +17,11 @@ type Spot struct {
 	core.Node                // Embedded node
 	color     math32.Color   // Light color
 	intensity float32        // Light intensity
-	direction math32.Vector3 // Direction in world coordinates
 	uni       gls.Uniform    // Uniform location cache
 	udata     struct {       // Combined uniform data in 5 vec3:
 		color          math32.Color   // Light color
 		position       math32.Vector3 // Light position
-		direction      math32.Vector3 // Light position
+		direction      math32.Vector3 // Light direction
 		angularDecay   float32        // Angular decay factor
 		cutoffAngle    float32        // Cut off angle
 		linearDecay    float32        // Distance linear decay
@@ -74,18 +73,6 @@ func (l *Spot) SetIntensity(intensity float32) {
 func (l *Spot) Intensity() float32 {
 
 	return l.intensity
-}
-
-// SetDirection sets the direction of the spot light in world coordinates
-func (l *Spot) SetDirection(direction *math32.Vector3) {
-
-	l.direction = *direction
-}
-
-// Direction returns the current direction of this spot light in world coordinates
-func (l *Spot) Direction(direction *math32.Vector3) math32.Vector3 {
-
-	return l.direction
 }
 
 // SetCutoffAngle sets the cutoff angle in degrees from 0 to 90
@@ -150,7 +137,9 @@ func (l *Spot) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo, idx int) {
 	l.udata.position.Z = pos4.Z
 
 	// Calculates and updates light direction uniform in camera coordinates
-	pos4.SetVector3(&l.direction, 0.0)
+	var dir math32.Vector3
+	l.WorldDirection(&dir)
+	pos4.SetVector3(&dir, 0.0)
 	pos4.ApplyMatrix4(&rinfo.ViewMatrix)
 	l.udata.direction.X = pos4.X
 	l.udata.direction.Y = pos4.Y
