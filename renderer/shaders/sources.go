@@ -93,7 +93,6 @@ uniform vec3 Material[6];
 // It should be called for each texture index. It uses two externally defined variables:
 // vec4 texColor
 // vec4 texMixed
-// TODO alpha blending (dont use mix) see panel shader
 #define MIX_TEXTURE(i)                                                                       \
     if (MatTexVisible(i)) {                                                                  \
         texColor = texture(MatTexture[i], FragTexcoord * MatTexRepeat(i) + MatTexOffset(i)); \
@@ -104,6 +103,13 @@ uniform vec3 Material[6];
         }                                                                                    \
     }
 
+// TODO for alpha blending dont use mix use implementation below (similar to one in panel shader)
+            //vec4 prevTexPre = texMixed;                                                      \
+            //prevTexPre.rgb *= prevTexPre.a;                                                  \
+            //vec4 currTexPre = texColor;                                                      \
+            //currTexPre.rgb *= currTexPre.a;                                                  \
+            //texMixed = currTexPre + prevTexPre * (1 - currTexPre.a);                         \
+            //texMixed.rgb /= texMixed.a;                                                      \
 `
 
 const include_phong_model_source = `/***

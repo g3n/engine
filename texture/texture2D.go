@@ -54,7 +54,7 @@ func newTexture2D() *Texture2D {
 	t.refcount = 1
 	t.texname = 0
 	t.magFilter = gls.LINEAR
-	t.minFilter = gls.LINEAR
+	t.minFilter = gls.LINEAR_MIPMAP_LINEAR
 	t.wrapS = gls.CLAMP_TO_EDGE
 	t.wrapT = gls.CLAMP_TO_EDGE
 	t.updateData = false
