@@ -66,7 +66,7 @@ type Material struct {
 	wireframe        bool                 // show as wirefrme
 	depthMask        bool                 // Enable writing into the depth buffer
 	depthTest        bool                 // Enable depth buffer test
-	depthFunc        uint32               // Actvie depth test function
+	depthFunc        uint32               // Active depth test function
 	blending         Blending             // blending mode
 	blendRGB         uint32               // separate blend equation for RGB
 	blendAlpha       uint32               // separate blend equation for Alpha
@@ -77,6 +77,7 @@ type Material struct {
 	lineWidth        float32              // line width for lines and mesh wireframe
 	polyOffsetFactor float32              // polygon offset factor
 	polyOffsetUnits  float32              // polygon offset units
+	defines          map[string]string    // shader defines
 	textures         []*texture.Texture2D // List of textures
 }
 
@@ -232,6 +233,32 @@ func (mat *Material) SetPolygonOffset(factor, units float32) {
 	mat.polyOffsetUnits = units
 }
 
+// SetShaderDefine defines a name with the specified value which are
+// passed to this material shader.
+func (mat *Material) SetShaderDefine(name, value string) {
+
+	if mat.defines == nil {
+		mat.defines = make(map[string]string)
+	}
+	mat.defines[name] = value
+}
+
+// UnsetShaderDefines removes the specified name from the defines which
+// are passed to this material shader.
+func (mat *Material) UnsetShaderDefine(name string) {
+
+	if mat.defines == nil {
+		return
+	}
+	delete(mat.defines, name)
+}
+
+// ShaderDefines returns this material map of shader defines.
+func (mat *Material) ShaderDefines() map[string]string {
+
+	return mat.defines
+}
+
 func (mat *Material) RenderSetup(gs *gls.GLS) {
 
 	// Sets triangle side view mode
@@ -298,8 +325,13 @@ func (mat *Material) RenderSetup(gs *gls.GLS) {
 	}
 
 	// Render textures
-	for idx, tex := range mat.textures {
-		tex.RenderSetup(gs, idx)
+	// Keep track of counts of unique sampler names to correctly index sampler arrays
+	samplerCounts := make(map[string]int)
+	for slotIdx, tex := range mat.textures {
+		samplerName, _ := tex.GetUniformNames()
+		uniIdx, _ := samplerCounts[samplerName]
+		tex.RenderSetup(gs, slotIdx, uniIdx)
+		samplerCounts[samplerName] = uniIdx+1
 	}
 }
 
