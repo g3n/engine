@@ -188,7 +188,6 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 		defines[name] = value
 	}
 
-	log.Error("shaman1")
 	// Get vertex shader source
 	vertexSource, ok := sm.shadersm[progInfo.Vertex]
 	if !ok {
@@ -201,7 +200,6 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 	}
 	//fmt.Printf("vertexSource:%s\n", vertexSource)
 
-	log.Error("shaman2")
 	// Get fragment shader source
 	fragSource, ok := sm.shadersm[progInfo.Fragment]
 	if err != nil {
@@ -214,7 +212,6 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 	}
 	//fmt.Printf("fragSource:%s\n", fragSource)
 
-	log.Error("shaman3")
 	// Checks for optional geometry shader compiled template
 	var geomSource = ""
 	if progInfo.Geometry != "" {
@@ -237,12 +234,11 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 	if progInfo.Geometry != "" {
 		prog.AddShader(gls.GEOMETRY_SHADER, geomSource, nil)
 	}
-	log.Error("shaman4")
 	err = prog.Build()
 	if err != nil {
 		return nil, err
 	}
-	log.Error("shaman5")
+
 	return prog, nil
 }
 
