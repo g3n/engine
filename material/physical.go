@@ -42,7 +42,7 @@ func NewPhysical() *Physical {
 	// Creates uniform and set default values
 	m.uni.Init("Material")
 	m.udata.baseColorFactor = math32.Color4{1, 1, 1, 1}
-	m.udata.emissiveFactor = math32.Color4{1, 1, 1, 1}
+	m.udata.emissiveFactor = math32.Color4{0, 0, 0, 1}
 	m.udata.metallicFactor = 1
 	m.udata.roughnessFactor = 1
 	return m
@@ -58,7 +58,7 @@ func (m *Physical) SetBaseColorFactor(c *math32.Color4) *Physical {
 }
 
 // SetMetallicFactor sets this material metallic factor.
-// Its default value is 1.0
+// Its default value is 1.
 // Returns pointer to this updated material.
 func (m *Physical) SetMetallicFactor(v float32) *Physical {
 
@@ -67,7 +67,7 @@ func (m *Physical) SetMetallicFactor(v float32) *Physical {
 }
 
 // SetRoughnessFactor sets this material roughness factor.
-// Its default value is 1.0
+// Its default value is 1.
 // Returns pointer to this updated material.
 func (m *Physical) SetRoughnessFactor(v float32) *Physical {
 
@@ -76,7 +76,7 @@ func (m *Physical) SetRoughnessFactor(v float32) *Physical {
 }
 
 // SetEmissiveFactor sets the emissive color of the material.
-// Its default is {0, 0, 0}.
+// Its default is {1, 1, 1}.
 // Returns pointer to this updated material.
 func (m *Physical) SetEmissiveFactor(c *math32.Color) *Physical {
 
@@ -172,6 +172,5 @@ func (m *Physical) RenderSetup(gl *gls.GLS) {
 
 	m.Material.RenderSetup(gl)
 	location := m.uni.Location(gl)
-	log.Error("Physical RenderSetup location:%v udata:%+v", location, m.udata)
 	gl.Uniform4fvUP(location, physicalVec4Count, unsafe.Pointer(&m.udata))
 }

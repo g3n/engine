@@ -923,8 +923,10 @@ void main() {
 
 #ifdef HAS_EMISSIVEMAP
     vec3 emissive = SRGBtoLINEAR(texture2D(uEmissiveSampler, FragTexcoord)).rgb * vec3(uEmissiveColor);
-    color += emissive;
+#else
+    vec3 emissive = vec3(uEmissiveColor);
 #endif
+    color += emissive;
 
     // Base Color
 //    FragColor = baseColor;

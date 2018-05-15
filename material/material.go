@@ -330,7 +330,6 @@ func (mat *Material) RenderSetup(gs *gls.GLS) {
 	for slotIdx, tex := range mat.textures {
 		samplerName, _ := tex.GetUniformNames()
 		uniIdx, _ := samplerCounts[samplerName]
-		log.Error("slotIdx: %v, uniIdx: %v, sampleName: %v", slotIdx, uniIdx, samplerName)
 		tex.RenderSetup(gs, slotIdx, uniIdx)
 		samplerCounts[samplerName] = uniIdx+1
 	}
