@@ -325,8 +325,14 @@ func (mat *Material) RenderSetup(gs *gls.GLS) {
 	}
 
 	// Render textures
-	for idx, tex := range mat.textures {
-		tex.RenderSetup(gs, idx)
+	// Keep track of counts of unique sampler names to correctly index sampler arrays
+	samplerCounts := make(map[string]int)
+	for slotIdx, tex := range mat.textures {
+		samplerName, _ := tex.GetUniformNames()
+		uniIdx, _ := samplerCounts[samplerName]
+		log.Error("slotIdx: %v, uniIdx: %v, sampleName: %v", slotIdx, uniIdx, samplerName)
+		tex.RenderSetup(gs, slotIdx, uniIdx)
+		samplerCounts[samplerName] = uniIdx+1
 	}
 }
 

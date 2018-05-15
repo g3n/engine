@@ -135,6 +135,12 @@ func (t *Texture2D) SetUniformNames(sampler, info string) {
 	t.uniInfo.Init(info)
 }
 
+// GetUniformNames returns the names of the uniforms in the shader for sampler and texture info.
+func (t *Texture2D) GetUniformNames() (sampler, info string) {
+
+	return t.uniUnit.Name(), t.uniInfo.Name()
+}
+
 // SetImage sets a new image for this texture
 func (t *Texture2D) SetImage(imgfile string) error {
 
@@ -299,7 +305,7 @@ func DecodeImage(imgfile string) (*image.RGBA, error) {
 }
 
 // RenderSetup is called by the material render setup
-func (t *Texture2D) RenderSetup(gs *gls.GLS, idx int) {
+func (t *Texture2D) RenderSetup(gs *gls.GLS, slotIdx, uniIdx int) { // Could have as input - TEXTURE0 (slot) and uni location
 
 	// One time initialization
 	if t.gs == nil {
@@ -307,11 +313,12 @@ func (t *Texture2D) RenderSetup(gs *gls.GLS, idx int) {
 		t.gs = gs
 	}
 
+	// Sets the texture unit for this texture
+	gs.ActiveTexture(uint32(gls.TEXTURE0 + slotIdx))
+	gs.BindTexture(gls.TEXTURE_2D, t.texname)
+
 	// Transfer texture data to OpenGL if necessary
 	if t.updateData {
-		// Sets the texture unit for this texture
-		gs.ActiveTexture(uint32(gls.TEXTURE0 + idx))
-		gs.BindTexture(gls.TEXTURE_2D, t.texname)
 		gs.TexImage2D(
 			gls.TEXTURE_2D, // texture type
 			0,              // level of detail
@@ -331,10 +338,6 @@ func (t *Texture2D) RenderSetup(gs *gls.GLS, idx int) {
 		t.updateData = false
 	}
 
-	// Sets the texture unit for this texture
-	gs.ActiveTexture(uint32(gls.TEXTURE0 + idx))
-	gs.BindTexture(gls.TEXTURE_2D, t.texname)
-
 	// Sets texture parameters if needed
 	if t.updateParams {
 		gs.TexParameteri(gls.TEXTURE_2D, gls.TEXTURE_MAG_FILTER, int32(t.magFilter))
@@ -345,11 +348,16 @@ func (t *Texture2D) RenderSetup(gs *gls.GLS, idx int) {
 	}
 
 	// Transfer texture unit uniform
-	location := t.uniUnit.LocationIdx(gs, int32(idx))
-	gs.Uniform1i(location, int32(idx))
+	var location int32
+	if uniIdx == 0 {
+		location = t.uniUnit.Location(gs)
+	} else {
+		location = t.uniUnit.LocationIdx(gs, int32(uniIdx))
+	}
+	gs.Uniform1i(location, int32(slotIdx))
 
 	// Transfer texture info combined uniform
 	const vec2count = 3
-	location = t.uniInfo.LocationIdx(gs, vec2count*int32(idx))
+	location = t.uniInfo.LocationIdx(gs, vec2count*int32(uniIdx))
 	gs.Uniform2fvUP(location, vec2count, unsafe.Pointer(&t.udata))
 }

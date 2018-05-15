@@ -42,9 +42,9 @@ func NewPhysical() *Physical {
 	// Creates uniform and set default values
 	m.uni.Init("Material")
 	m.udata.baseColorFactor = math32.Color4{1, 1, 1, 1}
-	m.udata.emissiveFactor = math32.Color4{0, 0, 0, 0}
-	m.udata.metallicFactor = 0.5
-	m.udata.roughnessFactor = 0.5
+	m.udata.emissiveFactor = math32.Color4{1, 1, 1, 1}
+	m.udata.metallicFactor = 1
+	m.udata.roughnessFactor = 1
 	return m
 }
 
@@ -94,8 +94,10 @@ func (m *Physical) SetBaseColorMap(tex *texture.Texture2D) *Physical {
 	if m.baseColorTex != nil {
 		m.baseColorTex.SetUniformNames("uBaseColorSampler", "uBaseColorTexParams")
 		m.SetShaderDefine("HAS_BASECOLORMAP", "")
+		m.AddTexture(m.baseColorTex)
 	} else {
 		m.UnsetShaderDefine("HAS_BASECOLORMAP")
+		m.RemoveTexture(m.baseColorTex)
 	}
 	return m
 }
@@ -108,8 +110,10 @@ func (m *Physical) SetMetallicRoughnessMap(tex *texture.Texture2D) *Physical {
 	if m.metallicRoughnessTex != nil {
 		m.metallicRoughnessTex.SetUniformNames("uMetallicRoughnessSampler", "uMetallicRoughnessTexParams")
 		m.SetShaderDefine("HAS_METALROUGHNESSMAP", "")
+		m.AddTexture(m.metallicRoughnessTex)
 	} else {
 		m.UnsetShaderDefine("HAS_METALROUGHNESSMAP")
+		m.RemoveTexture(m.metallicRoughnessTex)
 	}
 	return m
 }
@@ -121,10 +125,12 @@ func (m *Physical) SetNormalMap(tex *texture.Texture2D) *Physical {
 
 	m.normalTex = tex
 	if m.normalTex != nil {
-		m.normalTex.SetUniformNames("uNormalSampler", "uNormalSamplerTexParams")
+		m.normalTex.SetUniformNames("uNormalSampler", "uNormalTexParams")
 		m.SetShaderDefine("HAS_NORMALMAP", "")
+		m.AddTexture(m.normalTex)
 	} else {
 		m.UnsetShaderDefine("HAS_NORMALMAP")
+		m.RemoveTexture(m.normalTex)
 	}
 	return m
 }
@@ -137,8 +143,10 @@ func (m *Physical) SetOcclusionMap(tex *texture.Texture2D) *Physical {
 	if m.occlusionTex != nil {
 		m.occlusionTex.SetUniformNames("uOcclusionSampler", "uOcclusionTexParams")
 		m.SetShaderDefine("HAS_OCCLUSIONMAP", "")
+		m.AddTexture(m.occlusionTex)
 	} else {
 		m.UnsetShaderDefine("HAS_OCCLUSIONMAP")
+		m.RemoveTexture(m.occlusionTex)
 	}
 	return m
 }
@@ -149,10 +157,12 @@ func (m *Physical) SetEmissiveMap(tex *texture.Texture2D) *Physical {
 
 	m.emissiveTex = tex
 	if m.emissiveTex != nil {
-		m.emissiveTex.SetUniformNames("uEmissiveSampler", "uEmissiveSamplerTexParams")
+		m.emissiveTex.SetUniformNames("uEmissiveSampler", "uEmissiveTexParams")
 		m.SetShaderDefine("HAS_EMISSIVEMAP", "")
+		m.AddTexture(m.emissiveTex)
 	} else {
 		m.UnsetShaderDefine("HAS_EMISSIVEMAP")
+		m.RemoveTexture(m.emissiveTex)
 	}
 	return m
 }
@@ -164,21 +174,4 @@ func (m *Physical) RenderSetup(gl *gls.GLS) {
 	location := m.uni.Location(gl)
 	log.Error("Physical RenderSetup location:%v udata:%+v", location, m.udata)
 	gl.Uniform4fvUP(location, physicalVec4Count, unsafe.Pointer(&m.udata))
-
-	// Transfer optional textures
-	if m.baseColorTex != nil {
-		m.baseColorTex.RenderSetup(gl, 0)
-	}
-	if m.metallicRoughnessTex != nil {
-		m.metallicRoughnessTex.RenderSetup(gl, 0)
-	}
-	if m.normalTex != nil {
-		m.normalTex.RenderSetup(gl, 0)
-	}
-	if m.occlusionTex != nil {
-		m.occlusionTex.RenderSetup(gl, 0)
-	}
-	if m.emissiveTex != nil {
-		m.emissiveTex.RenderSetup(gl, 0)
-	}
 }
