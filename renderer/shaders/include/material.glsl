@@ -41,3 +41,10 @@ uniform vec3 Material[6];
         }                                                                                    \
     }
 
+// TODO for alpha blending dont use mix use implementation below (similar to one in panel shader)
+            //vec4 prevTexPre = texMixed;                                                      \
+            //prevTexPre.rgb *= prevTexPre.a;                                                  \
+            //vec4 currTexPre = texColor;                                                      \
+            //currTexPre.rgb *= currTexPre.a;                                                  \
+            //texMixed = currTexPre + prevTexPre * (1 - currTexPre.a);                         \
+            //texMixed.rgb /= texMixed.a;                                                      \
