@@ -31,6 +31,7 @@ uniform vec3 Material[6];
 // It should be called for each texture index. It uses two externally defined variables:
 // vec4 texColor
 // vec4 texMixed
+// TODO alpha blending (dont use mix) see panel shader
 #define MIX_TEXTURE(i)                                                                       \
     if (MatTexVisible(i)) {                                                                  \
         texColor = texture(MatTexture[i], FragTexcoord * MatTexRepeat(i) + MatTexOffset(i)); \
