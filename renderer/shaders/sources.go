@@ -719,8 +719,6 @@ float microfacetDistribution(PBRInfo pbrInputs, PBRLightInfo pbrLight)
 
 vec3 pbrModel(PBRInfo pbrInputs, vec3 lightColor, vec3 lightDir) {
 
-//    vec3 lightDir = lightPos - vec3(Position);
-
     vec3 n = getNormal();                             // normal at surface point
     vec3 v = normalize(CamDir);                       // Vector from surface point to camera
     vec3 l = normalize(lightDir);                     // Vector from surface point to light
@@ -755,7 +753,6 @@ vec3 pbrModel(PBRInfo pbrInputs, vec3 lightColor, vec3 lightDir) {
     return color;
 }
 
-
 void main() {
 
     float perceptualRoughness = uRoughnessFactor;
@@ -785,11 +782,6 @@ void main() {
     vec3 f0 = vec3(0.04);
     vec3 diffuseColor = baseColor.rgb * (vec3(1.0) - f0);
     diffuseColor *= 1.0 - metallic;
-
-//    vec3 AmbientLight = vec3(0.5);
-//    diffuseColor.rgb += AmbientLight;
-//    diffuseColor *= baseColor.rgb;
-//    diffuseColor = max(diffuseColor, 0.0);
 
     vec3 specularColor = mix(f0, baseColor.rgb, uMetallicFactor);
 
@@ -852,38 +844,6 @@ void main() {
 #endif
 
 #if SPOT_LIGHTS>0
-//    for (int i = 0; i < SPOT_LIGHTS; i++) {
-//        // Calculates the direction and distance from the current vertex to this spot light.
-//        vec3 lightDirection = SpotLightPosition(i) - vec3(Position);
-//        float lightDistance = length(lightDirection);
-//        lightDirection = lightDirection / lightDistance;
-//
-//        // Calculates the attenuation due to the distance of the light
-//        float attenuation = 1.0 / (1.0 + SpotLightLinearDecay(i) * lightDistance +
-//            SpotLightQuadraticDecay(i) * lightDistance * lightDistance);
-//
-//        // Calculates the angle between the vertex direction and spot direction
-//        // If this angle is greater than the cutoff the spotlight will not contribute
-//        // to the final color.
-//        float angle = acos(dot(-lightDirection, SpotLightDirection(i)));
-//        float cutoff = radians(clamp(SpotLightCutoffAngle(i), 0.0, 90.0));
-//
-//        if (angle < cutoff) {
-//            float spotFactor = pow(dot(-lightDirection, SpotLightDirection(i)), SpotLightAngularDecay(i));
-//
-//            // Diffuse reflection
-//            float dotNormal = max(dot(lightDirection, normal), 0.0);
-//            color += SpotLightColor(i) * dotNormal * attenuation * spotFactor;
-//
-//            // Specular reflection
-//            vec3 ref = reflect(-lightDirection, normal);
-//            if (dotNormal > 0.0) {
-//                color += SpotLightColor(i) * pow(max(dot(ref, CamDir), 0.0), 5) * attenuation * spotFactor;
-//            }
-//        }
-//    }
-
-// TODO
     for (int i = 0; i < SPOT_LIGHTS; i++) {
 
         // Calculates the direction and distance from the current vertex to this spot light.
