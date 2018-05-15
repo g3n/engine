@@ -25,9 +25,14 @@ func (u *Uniform) Init(name string) {
 	u.lastIndex = -1 // invalid index
 }
 
-// Location returns the location of this uniform for
-// the current shader program
-// The returned location can be -1 if not found
+// Name returns the uniform name.
+func (u *Uniform) Name() string {
+
+	return u.name
+}
+
+// Location returns the location of this uniform for the current shader program.
+// The returned location can be -1 if not found.
 func (u *Uniform) Location(gs *GLS) int32 {
 
 	handle := gs.prog.Handle()
@@ -38,9 +43,8 @@ func (u *Uniform) Location(gs *GLS) int32 {
 	return u.location
 }
 
-// LocationIdx returns the location of this indexed uniform for
-// the current shader program
-// The returned location can be -1 if not found
+// LocationIdx returns the location of this indexed uniform for the current shader program.
+// The returned location can be -1 if not found.
 func (u *Uniform) LocationIdx(gs *GLS, idx int32) int32 {
 
 	if idx != u.lastIndex {
