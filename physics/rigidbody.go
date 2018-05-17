@@ -4,9 +4,12 @@
 
 package physics
 
+import "github.com/g3n/engine/math32"
+
 // RigidBody represents a physics-driven solid body.
 type RigidBody struct {
 	// TODO :)
+	position math32.Vector3 // World position of the center of gravity
 }
 
 // NewRigidBody creates and returns a pointer to a new RigidBody.
