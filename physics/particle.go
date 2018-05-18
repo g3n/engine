@@ -4,14 +4,28 @@
 
 package physics
 
+import (
+	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/core"
+)
+
 // Particle represents a physics-driven particle.
 type Particle struct {
-	// TODO :)
+	core.INode
+	mass      float32
+	radius    float32
+	position  math32.Vector3
+	velocity  math32.Vector3
+	//netForce  math32.Vector3
+	colliding bool
 }
 
 // NewParticle creates and returns a pointer to a new Particle.
-func NewParticle() *Particle {
+func  NewParticle(inode core.INode) *Particle {
 
-	b := new(Particle)
-	return b
+	p := new(Particle)
+	p.INode = inode
+	p.mass = 1
+	p.radius = 1
+	return p
 }
