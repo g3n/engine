@@ -4,17 +4,27 @@
 
 package physics
 
-import "github.com/g3n/engine/math32"
+import (
+	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/core"
+)
 
-// RigidBody represents a physics-driven solid body.
-type RigidBody struct {
-	// TODO :)
-	position math32.Vector3 // World position of the center of gravity
+// Body represents a physics-driven solid body.
+type Body struct {
+	core.INode
+	mass            float32        // Total mass
+	velocity        math32.Vector3 // Linear velocity
+	angularMass     math32.Matrix3 // Angular mass i.e. moment of inertia
+	angularVelocity math32.Vector3 // Angular velocity
+	position        math32.Vector3 // World position of the center of gravity
+	static          bool // If true - the rigidBody does not move or rotate
 }
 
-// NewRigidBody creates and returns a pointer to a new RigidBody.
-func NewRigidBody() *RigidBody {
+// NewBody creates and returns a pointer to a new RigidBody.
+func NewBody(inode core.INode) *Body {
 
-	b := new(RigidBody)
+	b := new(Body)
+	b.INode = inode
+	b.mass = 1
 	return b
 }
