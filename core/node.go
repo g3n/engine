@@ -12,6 +12,7 @@ import (
 
 // INode is the interface for all node types.
 type INode interface {
+	IDispatcher
 	GetNode() *Node
 	UpdateMatrixWorld()
 	Raycast(*Raycaster, *[]Intersect)

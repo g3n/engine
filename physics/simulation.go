@@ -6,6 +6,9 @@ package physics
 
 import (
 	"time"
+	"github.com/g3n/engine/physics/equation"
+	"github.com/g3n/engine/physics/solver"
+	"github.com/g3n/engine/physics/constraint"
 )
 
 type ICollidable interface {
@@ -27,13 +30,50 @@ type Simulation struct {
 	//dynamical   []int // non collidable but still affected by force fields
 	//collidables []ICollidable
 
+
+	allowSleep   bool // Makes bodies go to sleep when they've been inactive
+	contactEqs   []*equation.Contact // All the current contacts (instances of ContactEquation) in the world.
+	frictionEqs  []*equation.Friction
+
+	quatNormalizeSkip int // How often to normalize quaternions. Set to 0 for every step, 1 for every second etc..
+	                      // A larger value increases performance.
+	                      // If bodies tend to explode, set to a smaller value (zero to be sure nothing can go wrong).
+	quatNormalizeFast bool // Set to true to use fast quaternion normalization. It is often enough accurate to use. If bodies tend to explode, set to false.
+
+	time float32      // The wall-clock time since simulation start
+	stepnumber int    // Number of timesteps taken since start
+	default_dt float32 // Default and last timestep sizes
+
+	accumulator float32 // Time accumulator for interpolation. See http://gafferongames.com/game-physics/fix-your-timestep/
+
+	//broadphase IBroadphase // The broadphase algorithm to use. Default is NaiveBroadphase
+	//narrowphase INarrowphase // The narrowphase algorithm to use
+	solver solver.ISolver    // The solver algorithm to use. Default is GSSolver
+
+	constraints       []*constraint.Constraint  // All constraints
+	materials         []*Material               // All added materials
+	cMaterials        []*ContactMaterial
+
+
+
+
+
+
+	doProfiling      bool
 }
 
 // NewSimulation creates and returns a pointer to a new physics simulation.
 func NewSimulation() *Simulation {
 
-	b := new(Simulation)
-	return b
+	s := new(Simulation)
+	s.time = 0
+	s.default_dt = 1/60
+
+	//s.broadphase = NewNaiveBroadphase()
+	//s.narrowphase = NewNarrowphase()
+	s.solver = solver.NewGaussSeidel()
+
+	return s
 }
 
 // AddForceField adds a force field to the simulation.
@@ -58,24 +98,66 @@ func (s *Simulation) RemoveForceField(ff ForceField) bool {
 }
 
 // AddBody adds a body to the simulation.
-func (s *Simulation) AddBody(rb *Body) {
+// @todo If the simulation has not yet started, why recrete and copy arrays for each body? Accumulate in dynamic arrays in this case.
+// @todo Adding an array of bodies should be possible. This would save some loops too
+func (s *Simulation) AddBody(body *Body) {
 
-	s.bodies = append(s.bodies, rb)
+	// TODO only add if not already present
+	s.bodies = append(s.bodies, body)
+
+	//body.index = this.bodies.length
+	//s.bodies.push(body)
+	//body.simulation = s // TODO
+	//body.initPosition.Copy(body.position)
+	//body.initVelocity.Copy(body.velocity)
+	//body.timeLastSleepy = s.time
+
+	//if body instanceof Body { // TODO
+	//	body.initAngularVelocity.Copy(body.angularVelocity)
+	//	body.initQuaternion.Copy(body.quaternion)
+	//}
+	//
+	//// TODO
+	//s.collisionMatrix.setNumObjects(len(s.bodies))
+	//s.addBodyEvent.body = body
+	//s.idToBodyMap[body.id] = body
+	//s.dispatchEvent(s.addBodyEvent)
 }
 
 // RemoveBody removes the specified body from the simulation.
 // Returns true if found, false otherwise.
-func (s *Simulation) RemoveBody(rb *Body) bool {
+func (s *Simulation) RemoveBody(body *Body) bool {
 
 	for pos, current := range s.bodies {
-		if current == rb {
+		if current == body {
 			copy(s.bodies[pos:], s.bodies[pos+1:])
 			s.bodies[len(s.bodies)-1] = nil
 			s.bodies = s.bodies[:len(s.bodies)-1]
+
+			body.simulation = nil
+
+			// Recompute body indices (each body has a .index int property)
+			for i:=0; i<len(s.bodies); i++ {
+				s.bodies[i].index = i
+			}
+
+			// TODO
+			//s.collisionMatrix.setNumObjects(len(s.bodies) - 1)
+			//s.removeBodyEvent.body = body
+			//delete s.idToBodyMap[body.id]
+			//s.dispatchEvent(s.removeBodyEvent)
+
 			return true
 		}
 	}
+
 	return false
+}
+
+// Bodies returns the bodies under simulation.
+func (s *Simulation) Bodies() []*Body{
+
+	return s.bodies
 }
 
 // AddParticle adds a particle to the simulation.
@@ -135,7 +217,7 @@ func (s *Simulation) updatePositions(frameDelta time.Duration) {
 		pos := rb.GetNode().Position()
 		posDelta := rb.velocity
 		posDelta.MultiplyScalar(float32(frameDelta.Seconds()))
-		pos.Add(&posDelta)
+		pos.Add(posDelta)
 		rb.GetNode().SetPositionVec(&pos)
 	}
 
@@ -178,4 +260,89 @@ func (s *Simulation) Step(frameDelta time.Duration) {
 	// Update object positions based on calculated final speeds
 	s.updatePositions(frameDelta)
 
+}
+
+// ClearForces sets all body forces in the world to zero.
+func (s *Simulation) ClearForces() {
+
+	for i:=0; i < len(s.bodies); i++ {
+		s.bodies[i].force.Set(0,0,0)
+		s.bodies[i].torque.Set(0,0,0)
+	}
+}
+
+// Add a constraint to the simulation.
+func (s *Simulation) AddConstraint(c *constraint.Constraint) {
+
+	s.constraints = append(s.constraints, c)
+}
+
+func (s *Simulation) RemoveConstraint(c *constraint.Constraint) {
+
+	// TODO
+}
+
+func (s *Simulation) AddMaterial(mat *Material) {
+
+	s.materials = append(s.materials, mat)
+}
+
+func (s *Simulation) RemoveMaterial(mat *Material) {
+
+	// TODO
+}
+
+func (s *Simulation) AddContactMaterial(cmat *ContactMaterial) {
+
+	s.cMaterials = append(s.cMaterials, cmat)
+
+	// TODO add contactMaterial materials to contactMaterialTable
+}
+
+
+type ContactEvent struct {
+	bodyA *Body
+	bodyB *Body
+	// shapeA
+	// shapeB
+}
+
+const (
+	BeginContactEvent = "physics.BeginContactEvent"
+	EndContactEvent   = "physics.EndContactEvent"
+)
+
+func (s *Simulation) EmitContactEvents() {
+	//TODO
+}
+
+
+
+func (s *Simulation) Solve() {
+
+	//// Update solve mass for all bodies
+	//if Neq > 0 {
+	//	for i := 0; i < Nbodies; i++ {
+	//		bodies[i].UpdateSolveMassProperties()
+	//	}
+	//}
+	//
+	//s.solver.Solve(frameDelta, len(bodies))
+
+}
+
+
+// Note - this method alters the solution arrays
+func (s *Simulation) ApplySolution(solution *solver.Solution) {
+
+	// Add results to velocity and angular velocity of bodies
+	for i := 0; i < len(s.bodies); i++ {
+		b := s.bodies[i]
+
+		vDelta := solution.VelocityDeltas[i].Multiply(b.LinearFactor())
+		b.AddToVelocity(vDelta)
+
+		wDelta := solution.AngularVelocityDeltas[i].Multiply(b.AngularFactor())
+		b.AddToAngularVelocity(wDelta)
+	}
 }
