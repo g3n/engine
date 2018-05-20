@@ -97,14 +97,14 @@ func (pa *AttractorForceField) ForceAt(pos *math32.Vector3) math32.Vector3 {
 	dist := dir.Length()
 	dir.Normalize()
 	var val float32
-	log.Error("dist %v", dist)
+	//log.Error("dist %v", dist)
 	if dist > 0 {
 		val = pa.mass/(dist*dist)
 	} else {
 		val = 0
 	}
 	val = math32.Min(val, 100) // TODO deal with instability
-	log.Error("%v", val)
+	//log.Error("%v", val)
 	dir.MultiplyScalar(val) // TODO multiply by gravitational constant: 6.673×10−11 (N–m2)/kg2
 	return *dir
 }

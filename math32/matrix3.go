@@ -47,6 +47,18 @@ func (m *Matrix3) Identity() *Matrix3 {
 	return m
 }
 
+// Zero sets this matrix as the zero matrix.
+// Returns the pointer to this updated matrix.
+func (m *Matrix3) Zero() *Matrix3 {
+
+	m.Set(
+		0, 0, 0,
+		0, 0, 0,
+		0, 0, 0,
+	)
+	return m
+}
+
 // Copy copies src matrix into this one.
 // Returns the pointer to this updated matrix.
 func (m *Matrix3) Copy(src *Matrix3) *Matrix3 {
@@ -72,6 +84,52 @@ func (m *Matrix3) ApplyToVector3Array(array []float32, offset int, length int) [
 		array[j+2] = v1.Z
 	}
 	return array
+}
+
+// Multiply multiply this matrix by the other matrix
+// Returns pointer to this updated matrix.
+func (m *Matrix3) Multiply(other *Matrix3) *Matrix3 {
+
+	return m.MultiplyMatrices(m, other)
+}
+
+// MultiplyMatrices multiply matrix a by b storing the result in this matrix.
+// Returns pointer to this updated matrix.
+func (m *Matrix3) MultiplyMatrices(a, b *Matrix3) *Matrix3 {
+
+	a11 := a[0]
+	a12 := a[3]
+	a13 := a[6]
+	a21 := a[1]
+	a22 := a[4]
+	a23 := a[7]
+	a31 := a[2]
+	a32 := a[5]
+	a33 := a[8]
+
+	b11 := b[0]
+	b12 := b[3]
+	b13 := b[6]
+	b21 := b[1]
+	b22 := b[4]
+	b23 := b[7]
+	b31 := b[2]
+	b32 := b[5]
+	b33 := b[8]
+
+	m[0] = a11*b11 + a12*b21 + a13*b31
+	m[3] = a11*b12 + a12*b22 + a13*b32
+	m[6] = a11*b13 + a12*b23 + a13*b33
+
+	m[1] = a21*b11 + a22*b21 + a23*b31
+	m[4] = a21*b12 + a22*b22 + a23*b32
+	m[7] = a21*b13 + a22*b23 + a23*b33
+
+	m[2] = a31*b11 + a32*b21 + a33*b31
+	m[5] = a31*b12 + a32*b22 + a33*b32
+	m[8] = a31*b13 + a32*b23 + a33*b33
+
+	return m
 }
 
 // MultiplyScalar multiplies each of this matrix's components by the specified scalar.

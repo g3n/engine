@@ -46,12 +46,25 @@ func (m *Matrix4) Set(n11, n12, n13, n14, n21, n22, n23, n24, n31, n32, n33, n34
 // Returns pointer to this updated matrix.
 func (m *Matrix4) Identity() *Matrix4 {
 
-	*m = Matrix4{
+	m.Set(
 		1, 0, 0, 0,
 		0, 1, 0, 0,
 		0, 0, 1, 0,
 		0, 0, 0, 1,
-	}
+	)
+	return m
+}
+
+// Zero sets this matrix as the zero matrix.
+// Returns the pointer to this updated matrix.
+func (m *Matrix4) Zero() *Matrix4 {
+
+	m.Set(
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+	)
 	return m
 }
 

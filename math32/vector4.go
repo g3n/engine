@@ -18,6 +18,12 @@ func NewVector4(x, y, z, w float32) *Vector4 {
 	return &Vector4{X: x, Y: y, Z: z, W: w}
 }
 
+// NewVec4 creates and returns a pointer to a new zero-ed Vector4 (with W=1).
+func NewVec4() *Vector4 {
+
+	return &Vector4{X: 0, Y: 0, Z: 0, W: 1}
+}
+
 // Set sets this vector X, Y, Z and W components.
 // Returns the pointer to this updated vector.
 func (v *Vector4) Set(x, y, z, w float32) *Vector4 {
@@ -122,6 +128,17 @@ func (v *Vector4) SetByName(name string, value float32) {
 	default:
 		panic("Invalid Vector4 component name: " + name)
 	}
+}
+
+// Zero sets this vector X, Y and Z components to be zero and W to be one.
+// Returns the pointer to this updated vector.
+func (v *Vector4) Zero() *Vector4 {
+
+	v.X = 0
+	v.Y = 0
+	v.Z = 0
+	v.W = 1
+	return v
 }
 
 // Copy copies other vector to this one.
