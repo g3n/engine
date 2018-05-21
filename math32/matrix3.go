@@ -67,6 +67,43 @@ func (m *Matrix3) Copy(src *Matrix3) *Matrix3 {
 	return m
 }
 
+// MakeRotationFromQuaternion sets this matrix as a rotation matrix from the specified quaternion.
+// Returns pointer to this updated matrix.
+func (m *Matrix3) MakeRotationFromQuaternion(q *Quaternion) *Matrix3 {
+
+	x := q.X
+	y := q.Y
+	z := q.Z
+	w := q.W
+	x2 := x + x
+	y2 := y + y
+	z2 := z + z
+	xx := x * x2
+	xy := x * y2
+	xz := x * z2
+	yy := y * y2
+	yz := y * z2
+	zz := z * z2
+	wx := w * x2
+	wy := w * y2
+	wz := w * z2
+
+	m[0] = 1 - (yy + zz)
+	m[3] = xy - wz
+	m[6] = xz + wy
+
+	m[1] = xy + wz
+	m[4] = 1 - (xx + zz)
+	m[7] = yz - wx
+
+	m[2] = xz - wy
+	m[5] = yz + wx
+	m[8] = 1 - (xx + yy)
+
+	return m
+
+}
+
 // ApplyToVector3Array multiplies length vectors in the array starting at offset by this matrix.
 // Returns pointer to the updated array.
 // This matrix is unchanged.
@@ -146,6 +183,22 @@ func (m *Matrix3) MultiplyScalar(s float32) *Matrix3 {
 	m[5] *= s
 	m[8] *= s
 	return m
+}
+
+// ScaleColumns multiplies the matrix columns by the vector components.
+// This can be used when multiplying this matrix by a diagonal matrix if we store the diagonal components as a vector.
+// Returns pointer to this updated matrix.
+func (m *Matrix3) ScaleColumns(v *Vector3) *Matrix3 {
+
+	m[0] *= v.X
+	m[1] *= v.X
+	m[2] *= v.X
+	m[3] *= v.Y
+	m[4] *= v.Y
+	m[5] *= v.Y
+	m[6] *= v.Z
+	m[7] *= v.Z
+	m[8] *= v.Z
 }
 
 // Determinant calculates and returns the determinant of this matrix.

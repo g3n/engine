@@ -6,12 +6,12 @@ package physics
 
 import (
 	"github.com/g3n/engine/math32"
-	"github.com/g3n/engine/core"
+	"github.com/g3n/engine/graphic"
 )
 
 // Particle represents a physics-driven particle.
 type Particle struct {
-	core.INode
+	Body
 	mass      float32
 	radius    float32
 	position  math32.Vector3
@@ -21,10 +21,10 @@ type Particle struct {
 }
 
 // NewParticle creates and returns a pointer to a new Particle.
-func  NewParticle(inode core.INode) *Particle {
+func  NewParticle(igraphic graphic.IGraphic) *Particle {
 
 	p := new(Particle)
-	p.INode = inode
+	p.Graphic = igraphic.GetGraphic()
 	p.mass = 1
 	p.radius = 1
 	return p

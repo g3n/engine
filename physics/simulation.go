@@ -215,7 +215,7 @@ func (s *Simulation) updatePositions(frameDelta time.Duration) {
 
 	for _, rb := range s.bodies {
 		pos := rb.GetNode().Position()
-		posDelta := rb.velocity
+		posDelta := rb.velocity.Clone()
 		posDelta.MultiplyScalar(float32(frameDelta.Seconds()))
 		pos.Add(posDelta)
 		rb.GetNode().SetPositionVec(&pos)
@@ -223,9 +223,9 @@ func (s *Simulation) updatePositions(frameDelta time.Duration) {
 
 	for _, rb := range s.particles {
 		pos := rb.GetNode().Position()
-		posDelta := rb.velocity
+		posDelta := rb.velocity.Clone()
 		posDelta.MultiplyScalar(float32(frameDelta.Seconds()))
-		pos.Add(&posDelta)
+		pos.Add(posDelta)
 		rb.GetNode().SetPositionVec(&pos)
 	}
 }
