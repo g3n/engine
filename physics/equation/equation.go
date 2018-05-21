@@ -2,27 +2,26 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package physics implements a basic physics engine.
+// Package equation implements SPOOK equations based on
+// the 2007 PhD thesis of Claude Lacoursière titled
+// "Ghosts and Machines: Regularized Variational Methods for
+// Interactive Simulations of Multibodies with Dry Frictional Contacts"
 package equation
 
 import (
 	"github.com/g3n/engine/math32"
 )
 
+// IBody is the interface of all body types.
 type IBody interface {
+	Index() int
 	Position() math32.Vector3
 	Velocity() math32.Vector3
-	//Vlambda() math32.Vector3
-	//AddToVlambda(*math32.Vector3)
 	AngularVelocity() math32.Vector3
-	//Wlambda() math32.Vector3
-	//AddToWlambda(*math32.Vector3)
 	Force() math32.Vector3
 	Torque() math32.Vector3
 	InvMassSolve() float32
 	InvInertiaWorldSolve() *math32.Matrix3
-
-	Index() int
 }
 
 // Equation is a SPOOK constraint equation.

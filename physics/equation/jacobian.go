@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package physics implements a basic physics engine.
 package equation
 
 import "github.com/g3n/engine/math32"
