@@ -6,12 +6,14 @@ package physics
 
 import (
 	"github.com/g3n/engine/math32"
-	"github.com/g3n/engine/core"
+	"github.com/g3n/engine/graphic"
 )
 
 // Body represents a physics-driven body.
 type Body struct {
-	core.INode // TODO instead of embedding INode - embed Node and have a method SetNode ?
+	//core.INode // TODO instead of embedding INode - embed Node and have a method SetNode ?
+
+	*graphic.Graphic
 
 	mass            float32        // Total mass
 	invMass         float32
@@ -70,9 +72,9 @@ type Body struct {
 	linearFactor           *math32.Vector3 // Use this property to limit the motion along any world axis. (1,1,1) will allow motion along all axes while (0,0,0) allows none.
 	angularFactor          *math32.Vector3 // Use this property to limit the rotational motion along any world axis. (1,1,1) will allow rotation along all axes while (0,0,0) allows none.
 
-	//aabb *AABB // World space bounding box of the body and its shapes.
-	//aabbNeedsUpdate bool // Indicates if the AABB needs to be updated before use.
-	// boundingRadius float32 // Total bounding radius of the Body including its shapes, relative to body.position.
+	//aabb            *AABB   // World space bounding box of the body and its shapes.
+	aabbNeedsUpdate   bool    // Indicates if the AABB needs to be updated before use.
+	boundingRadius    float32 // Total bounding radius of the Body including its shapes, relative to body.position.
 
 	// shapes          []*Shape
 	// shapeOffsets    []float32 // Position of each Shape in the body, given in local Body space.
@@ -124,10 +126,10 @@ const (
 
 
 // NewBody creates and returns a pointer to a new RigidBody.
-func NewBody(inode core.INode) *Body {
+func NewBody(igraphic graphic.IGraphic) *Body {
 
 	b := new(Body)
-	b.INode = inode
+	b.Graphic = igraphic.GetGraphic()
 
 	// TODO mass setter/getter
 	b.mass = 1 // cannon.js default is 0
@@ -136,18 +138,18 @@ func NewBody(inode core.INode) *Body {
 	} else {
 		b.invMass = 0
 	}
-	b.bodyType = Dynamic // auto set to Static if mass == 0
+	b.bodyType = Dynamic // TODO auto set to Static if mass == 0
 
 	b.collisionFilterGroup = 1
 	b.collisionFilterMask = -1
 
-	pos := inode.GetNode().Position()
+	pos := igraphic.GetNode().Position()
 	b.position 			= math32.NewVector3(0,0,0).Copy(&pos)
 	b.prevPosition 		= math32.NewVector3(0,0,0).Copy(&pos)
 	b.interpPosition 	= math32.NewVector3(0,0,0).Copy(&pos)
 	b.initPosition 		= math32.NewVector3(0,0,0).Copy(&pos)
 
-	quat := inode.GetNode().Quaternion()
+	quat := igraphic.GetNode().Quaternion()
 	b.quaternion 		= math32.NewQuaternion(0,0,0,1).Copy(&quat)
 	b.prevQuaternion 	= math32.NewQuaternion(0,0,0,1).Copy(&quat)
 	b.interpQuaternion 	= math32.NewQuaternion(0,0,0,1).Copy(&quat)
@@ -365,6 +367,13 @@ func (b *Body) VectorToWorld(localVector *math32.Vector3) math32.Vector3 {
 	return *result
 }
 
+
+
+func (b *Body) ComputeAABB() {
+	// TODO
+}
+
+
 // UpdateSolveMassProperties
 // If the body is sleeping, it should be immovable / have infinite mass during solve. We solve it by having a separate "solve mass".
 func (b *Body) UpdateSolveMassProperties() {
@@ -384,43 +393,67 @@ func (b *Body) UpdateSolveMassProperties() {
 // Should be called whenever you change the body shape or mass.
 func (b *Body) UpdateMassProperties() {
 
-	//b.invMass = b.mass > 0 ? 1.0 / b.mass : 0 // TODO getter of invMass
-	//
-	//// Approximate with AABB box
-	//b.computeAABB()
-	//halfExtents := math32.NewVector3(0,0,0).Set(
+	// TODO getter of invMass ?
+	if b.mass > 0 {
+		b.invMass = 1.0/b.mass
+	} else {
+		b.invMass = 0
+	}
+
+	// Approximate with AABB box
+	b.ComputeAABB()
+	//halfExtents := math32.NewVector3(0,0,0).Set( // TODO
 	//	(b.aabb.upperBound.x-b.aabb.lowerBound.x) / 2,
 	//	(b.aabb.upperBound.y-b.aabb.lowerBound.y) / 2,
-	//	(b.aabb.upperBound.z-b.aabb.lowerBound.z) / 2
+	//	(b.aabb.upperBound.z-b.aabb.lowerBound.z) / 2,
 	//)
-	//Box.calculateInertia(halfExtents, b.mass, b.inertia)
-	//
-	//b.invInertia.set(
-	//	b.inertia.x > 0 && !b.fixedRotation ? 1.0 / b.inertia.x : 0,
-	//	b.inertia.y > 0 && !b.fixedRotation ? 1.0 / b.inertia.y : 0,
-	//	b.inertia.z > 0 && !b.fixedRotation ? 1.0 / b.inertia.z : 0
-	//)
-	//b.updateInertiaWorld(true)
+	//Box.CalculateInertia(halfExtents, b.mass, b.inertia) // TODO
+
+	if b.fixedRotation {
+		b.invInertia.Zero()
+	} else {
+		if b.inertia.X > 0 {
+			b.invInertia.SetX(1/b.inertia.X)
+		} else {
+			b.invInertia.SetX(0)
+		}
+		if b.inertia.Y > 0 {
+			b.invInertia.SetY(1/b.inertia.Y)
+		} else {
+			b.invInertia.SetY(0)
+		}
+		if b.inertia.Z > 0 {
+			b.invInertia.SetZ(1/b.inertia.Z)
+		} else {
+			b.invInertia.SetZ(0)
+		}
+	}
+
+	b.UpdateInertiaWorld(true)
 }
 
 // Update .inertiaWorld and .invInertiaWorld
-func (b *Body) UpdateInertiaWorld(force *math32.Vector3) {
+func (b *Body) UpdateInertiaWorld(force bool) {
 
     I := b.invInertia
-    if I.X == I.Y && I.Y == I.Z && force == nil { // TODO clean
-        // If inertia M = s*I, where I is identity and s a scalar, then
-        //    R*M*R' = R*(s*I)*R' = s*R*I*R' = s*R*R' = s*I = M
-        // where R is the rotation matrix.
-        // In other words, we don't have to transform the inertia if all
-        // inertia diagonal entries are equal.
-    } else {
+	// If angular mass M = s*I, where I is identity and s a scalar, then
+	//    R*M*R' = R*(s*I)*R' = s*R*I*R' = s*R*R' = s*I = M
+	// where R is the rotation matrix.
+	// In other words, we don't have to do the transformation if all diagonal entries are equal.
+    if I.X != I.Y || I.Y != I.Z || force {
+    	//
+    	// AngularMassWorld^(-1) = Rotation * AngularMassBody^(-1) * Rotation^(T)
+    	//          3x3              3x3            3x3                  3x3
+    	//
+    	// Since AngularMassBodyTensor^(-1) is diagonal, then Rotation*AngularMassBodyTensor^(-1) is
+    	// just scaling the columns of AngularMassBodyTensor by the diagonal components.
+    	//
         m1 := math32.NewMatrix3()
         m2 := math32.NewMatrix3()
 
-        //m1.MakeRotationFromQuaternion(b.quaternion) // TODO
-		//m2.Copy(m1)
-		//m2.Transpose()
-        //m1.Scale(I,m1) // TODO scale matrix columns
+        m1.MakeRotationFromQuaternion(b.quaternion)
+		m2.Copy(m1).Transpose()
+        m1.ScaleColumns(I)
 
 		b.invInertiaWorld.MultiplyMatrices(m1, m2)
     }
@@ -487,12 +520,6 @@ func (b *Body) ApplyImpulse(impulse, relativePoint *math32.Vector3) {
 
     // Compute produced rotational impulse velocity
 	rotVelo := math32.NewVector3(0,0,0).CrossVectors(r, impulse)
-
-    /*
-    rotVelo.x *= this.invInertia.x
-    rotVelo.y *= this.invInertia.y
-    rotVelo.z *= this.invInertia.z
-    */
 	rotVelo.ApplyMatrix3(b.invInertiaWorld)
 
     // Add rotational Impulse
@@ -533,7 +560,7 @@ func (b *Body) GetVelocityAtWorldPoint(worldPoint *math32.Vector3) *math32.Vecto
 func (b *Body) Integrate(dt float32, quatNormalize, quatNormalizeFast bool) {
 
 
-    // Save previous position
+    // Save previous position and rotation
     b.prevPosition.Copy(b.position)
     b.prevQuaternion.Copy(b.quaternion)
 
@@ -542,36 +569,51 @@ func (b *Body) Integrate(dt float32, quatNormalize, quatNormalizeFast bool) {
         return
     }
 
+    // Integrate force over mass (acceleration) to obtain estimate for instantaneous velocities
     iMdt := b.invMass * dt
     b.velocity.X += b.force.X * iMdt * b.linearFactor.X
     b.velocity.Y += b.force.Y * iMdt * b.linearFactor.Y
     b.velocity.Z += b.force.Z * iMdt * b.linearFactor.Z
 
-    //e := b.invInertiaWorld.elements // TODO
-    //tx := b.torque.X * b.angularFactor.X
-    //ty := b.torque.Y * b.angularFactor.Y
-    //tz := b.torque.Z * b.angularFactor.Z
-    //b.angularVelocity.X += dt * (e[0] * tx + e[1] * ty + e[2] * tz)
-    //b.angularVelocity.Y += dt * (e[3] * tx + e[4] * ty + e[5] * tz)
-    //b.angularVelocity.Z += dt * (e[6] * tx + e[7] * ty + e[8] * tz)
-	//
-    //// Use new velocity  - leap frog
-    //b.position.X += b.velocity.X * dt
-    //b.position.Y += b.velocity.Y * dt
-    //b.position.Z += b.velocity.Z * dt
-	//
-	//b.quaternion.integrate(b.angularVelocity, dt, b.angularFactor, b.quaternion) // TODO
-	//
-    //if quatNormalize {
-    //    if quatNormalizeFast {
-		//	b.quaternion.normalizeFast() // TODO
-    //    } else {
-		//	b.quaternion.normalize() // TODO
-    //    }
-    //}
-	//
-    //b.aabbNeedsUpdate = true  // TODO
+	// Integrate inverse angular mass times torque to obtain estimate for instantaneous angular velocities
+    e := b.invInertiaWorld
+    tx := b.torque.X * b.angularFactor.X
+    ty := b.torque.Y * b.angularFactor.Y
+    tz := b.torque.Z * b.angularFactor.Z
+    b.angularVelocity.X += dt * (e[0]*tx + e[3]*ty + e[6]*tz)
+    b.angularVelocity.Y += dt * (e[1]*tx + e[4]*ty + e[7]*tz)
+    b.angularVelocity.Z += dt * (e[2]*tx + e[5]*ty + e[8]*tz)
+
+	// Integrate velocity to obtain estimate for position
+    b.position.X += b.velocity.X * dt
+    b.position.Y += b.velocity.Y * dt
+    b.position.Z += b.velocity.Z * dt
+
+	// Integrate angular velocity to obtain estimate for rotation
+	ax := b.angularVelocity.X * b.angularFactor.X
+	ay := b.angularVelocity.Y * b.angularFactor.Y
+	az := b.angularVelocity.Z * b.angularFactor.Z
+	bx := b.quaternion.X
+	by := b.quaternion.Y
+	bz := b.quaternion.Z
+	bw := b.quaternion.W
+	halfDt := dt * 0.5
+	b.quaternion.X += halfDt * (ax * bw + ay * bz - az * by)
+	b.quaternion.Y += halfDt * (ay * bw + az * bx - ax * bz)
+	b.quaternion.X += halfDt * (az * bw + ax * by - ay * bx)
+	b.quaternion.W += halfDt * (- ax * bx - ay * by - az * bz)
+
+	// Normalize quaternion
+    if quatNormalize {
+       if quatNormalizeFast {
+			b.quaternion.NormalizeFast()
+       } else {
+			b.quaternion.Normalize()
+       }
+    }
+
+    b.aabbNeedsUpdate = true  // TODO
 
     // Update world inertia
-    b.UpdateInertiaWorld(nil)
+    b.UpdateInertiaWorld(false)
 }
