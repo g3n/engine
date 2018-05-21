@@ -139,8 +139,22 @@ func NewSegmentedBox(width, height, length float32, widthSegments, heightSegment
 	box.AddVBO(gls.NewVBO().AddAttrib("VertexNormal", 3).SetBuffer(normals))
 	box.AddVBO(gls.NewVBO().AddAttrib("VertexTexcoord", 2).SetBuffer(uvs))
 
-	box.boundingBox = math32.Box3{math32.Vector3{-wHalf, -hHalf, -lHalf}, math32.Vector3{wHalf, hHalf, lHalf}}
+	// Update bounding box
+	box.boundingBox.Min = math32.Vector3{-wHalf, -hHalf, -lHalf}
+	box.boundingBox.Max = math32.Vector3{wHalf, hHalf, lHalf}
 	box.boundingBoxValid = true
+
+	// Update bounding sphere
+	box.boundingSphere.Radius = math32.Sqrt(math32.Pow(width/2,2) + math32.Pow(height/2,2) + math32.Pow(length/2,2))
+	box.boundingSphereValid = true
+
+	// Update area
+	box.area = 2*width + 2*height + 2*length
+	box.areaValid = true
+
+	// Update volume
+	box.volume = width * height * length
+	box.volumeValid = true
 
 	return box
 }

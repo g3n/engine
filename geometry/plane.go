@@ -75,5 +75,13 @@ func NewPlane(width, height float32, widthSegments, heightSegments int) *Plane {
 	plane.AddVBO(gls.NewVBO().AddAttrib("VertexNormal", 3).SetBuffer(normals))
 	plane.AddVBO(gls.NewVBO().AddAttrib("VertexTexcoord", 2).SetBuffer(uvs))
 
+	// Update area
+	plane.area = width*height
+	plane.areaValid = true
+
+	// Update volume
+	plane.volume = 0
+	plane.volumeValid = true
+
 	return plane
 }
