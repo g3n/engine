@@ -199,6 +199,7 @@ func (m *Matrix3) ScaleColumns(v *Vector3) *Matrix3 {
 	m[6] *= v.Z
 	m[7] *= v.Z
 	m[8] *= v.Z
+	return m
 }
 
 // Determinant calculates and returns the determinant of this matrix.
