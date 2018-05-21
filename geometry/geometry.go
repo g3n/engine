@@ -30,14 +30,14 @@ type Geometry struct {
 	// Geometric properties
 	boundingBox         math32.Box3     // Last calculated bounding box
 	boundingSphere      math32.Sphere   // Last calculated bounding sphere
-	volume              float32         // Last calculated volume
 	area                float32         // Last calculated area
+	volume              float32         // Last calculated volume
 
 	// Flags indicating whether geometric properties are valid
 	boundingBoxValid    bool            // Indicates if last calculated bounding box is valid
 	boundingSphereValid bool            // Indicates if last calculated bounding sphere is valid
-	volumeValid         bool            // Indicates if last calculated volume is valid
 	areaValid           bool            // Indicates if last calculated area is valid
+	volumeValid         bool            // Indicates if last calculated volume is valid
 }
 
 // Geometry group object
