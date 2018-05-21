@@ -338,11 +338,7 @@ func (s *Simulation) ApplySolution(solution *solver.Solution) {
 	// Add results to velocity and angular velocity of bodies
 	for i := 0; i < len(s.bodies); i++ {
 		b := s.bodies[i]
-
-		vDelta := solution.VelocityDeltas[i].Multiply(b.LinearFactor())
-		b.AddToVelocity(vDelta)
-
-		wDelta := solution.AngularVelocityDeltas[i].Multiply(b.AngularFactor())
-		b.AddToAngularVelocity(wDelta)
+		b.velocity.Add(solution.VelocityDeltas[i].Multiply(b.LinearFactor()))
+		b.angularVelocity.Add(solution.AngularVelocityDeltas[i].Multiply(b.AngularFactor()))
 	}
 }

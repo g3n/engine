@@ -35,6 +35,17 @@ func (m *Matrix3) Set(n11, n12, n13, n21, n22, n23, n31, n32, n33 float32) *Matr
 	return m
 }
 
+// SetFromMatrix4 sets the matrix elements based on a Matrix4.
+func (m *Matrix3) SetFromMatrix4(src *Matrix4) *Matrix3 {
+
+	m.Set(
+		src[0], src[4], src[8],
+		src[1], src[5], src[9],
+		src[2], src[6], src[10],
+	)
+	return m
+}
+
 // Identity sets this matrix as the identity matrix.
 // Returns the pointer to this updated matrix.
 func (m *Matrix3) Identity() *Matrix3 {
@@ -216,26 +227,42 @@ func (m *Matrix3) Determinant() float32 {
 // GetInverse sets this matrix to the inverse of the src matrix.
 // If the src matrix cannot be inverted returns error and
 // sets this matrix to the identity matrix.
-func (m *Matrix3) GetInverse(src *Matrix4) error {
+func (m *Matrix3) GetInverse(src *Matrix3) error {
 
-	m[0] = src[10]*src[5] - src[6]*src[9]
-	m[1] = -src[10]*src[1] + src[2]*src[9]
-	m[2] = src[6]*src[1] - src[2]*src[5]
-	m[3] = -src[10]*src[4] + src[6]*src[8]
-	m[4] = src[10]*src[0] - src[2]*src[8]
-	m[5] = -src[6]*src[0] + src[2]*src[4]
-	m[6] = src[9]*src[4] - src[5]*src[8]
-	m[7] = -src[9]*src[0] + src[1]*src[8]
-	m[8] = src[5]*src[0] - src[1]*src[4]
+	n11 := src[0]
+	n21 := src[1]
+	n31 := src[2]
+	n12 := src[3]
+	n22 := src[4]
+	n32 := src[5]
+	n13 := src[6]
+	n23 := src[7]
+	n33 := src[8]
 
-	det := src[0]*m[0] + src[1]*m[3] + src[2]*m[6]
+	t11 := n33*n22 - n32*n23
+	t12 := n32*n13 - n33*n12
+	t13 := n23*n12 - n22*n13
+
+	det := n11*t11 + n21*t12 + n31*t13
 
 	// no inverse
 	if det == 0 {
 		m.Identity()
-		return errors.New("Cannot inverse matrix")
+		return errors.New("cannot invert matrix")
 	}
-	m.MultiplyScalar(1.0 / det)
+
+	detInv := 1 / det
+
+	m[0] = t11 * detInv
+	m[1] = ( n31 * n23 - n33 * n21 ) * detInv
+	m[2] = ( n32 * n21 - n31 * n22 ) * detInv
+	m[3] = t12 * detInv
+	m[4] = ( n33 * n11 - n31 * n13 ) * detInv
+	m[5] = ( n31 * n12 - n32 * n11 ) * detInv
+	m[6] = t13 * detInv
+	m[7] = ( n21 * n13 - n23 * n11 ) * detInv
+	m[8] = ( n22 * n11 - n21 * n12 ) * detInv
+
 	return nil
 }
 
@@ -261,7 +288,8 @@ func (m *Matrix3) Transpose() *Matrix3 {
 // If the src matrix cannot be inverted returns error.
 func (m *Matrix3) GetNormalMatrix(src *Matrix4) error {
 
-	err := m.GetInverse(src)
+	m.SetFromMatrix4(src)
+	err := m.GetInverse(m)
 	m.Transpose()
 	return err
 }
