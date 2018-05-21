@@ -16,6 +16,7 @@ type IGeometry interface {
 	Dispose()
 }
 
+// Geometry encapsulates a three-dimensional geometric shape.
 type Geometry struct {
 	refcount            int             // Current number of references
 	vbos                []*gls.VBO      // Array of VBOs
@@ -25,10 +26,18 @@ type Geometry struct {
 	handleVAO           uint32          // Handle to OpenGL VAO
 	handleIndices       uint32          // Handle to OpenGL buffer for indices
 	updateIndices       bool            // Flag to indicate that indices must be transferred
+
+	// Geometric properties
 	boundingBox         math32.Box3     // Last calculated bounding box
-	boundingBoxValid    bool            // Indicates if last calculated bounding box is valid
 	boundingSphere      math32.Sphere   // Last calculated bounding sphere
+	volume              float32         // Last calculated volume
+	area                float32         // Last calculated area
+
+	// Flags indicating whether geometric properties are valid
+	boundingBoxValid    bool            // Indicates if last calculated bounding box is valid
 	boundingSphereValid bool            // Indicates if last calculated bounding sphere is valid
+	volumeValid         bool            // Indicates if last calculated volume is valid
+	areaValid           bool            // Indicates if last calculated area is valid
 }
 
 // Geometry group object
@@ -183,24 +192,27 @@ func (g *Geometry) Items() int {
 // and returns is value
 func (g *Geometry) BoundingBox() math32.Box3 {
 
-	// If valid, returns its value
+	// If valid, return its value
 	if g.boundingBoxValid {
 		return g.boundingBox
 	}
 
+	// Reset bounding box
+	g.boundingBox.Min.Set(0, 0, 0)
+	g.boundingBox.Max.Set(0, 0, 0)
+
 	// Get buffer with position vertices
 	vboPos := g.VBO("VertexPosition")
 	if vboPos == nil {
+		// Return zero-ed bounding box
 		return g.boundingBox
 	}
 	stride := vboPos.Stride()
 	offset := vboPos.AttribOffset("VertexPosition")
 	positions := vboPos.Buffer()
 
-	// Calculates bounding box
+	// Calculate bounding box
 	var vertex math32.Vector3
-	g.boundingBox.Min.Set(0, 0, 0)
-	g.boundingBox.Max.Set(0, 0, 0)
 	for i := offset; i < positions.Size(); i += stride {
 		positions.GetVector3(i, &vertex)
 		g.boundingBox.ExpandByPoint(&vertex)
@@ -213,31 +225,35 @@ func (g *Geometry) BoundingBox() math32.Box3 {
 // if necessary and returns its value.
 func (g *Geometry) BoundingSphere() math32.Sphere {
 
-	// if valid, returns its value
+	// If valid, return its value
 	if g.boundingSphereValid {
 		return g.boundingSphere
 	}
 
+	// Calculate bounding box
+	box := g.BoundingBox()
+
+	// Set the center of the bounding sphere to the center of the bounding box
+	box.Center(&g.boundingSphere.Center)
+
+	// Reset radius
+	g.boundingSphere.Radius = float32(0)
+
 	// Get buffer with position vertices
 	vboPos := g.VBO("VertexPosition")
 	if vboPos == nil {
+		// Return zero-ed bounding sphere
 		return g.boundingSphere
 	}
 	stride := vboPos.Stride()
 	offset := vboPos.AttribOffset("VertexPosition")
 	positions := vboPos.Buffer()
 
-	// Get/calculates the bounding box
-	box := g.BoundingBox()
-
-	// Sets the center of the bounding sphere the same as the center of the bounding box.
-	box.Center(&g.boundingSphere.Center)
-	center := g.boundingSphere.Center
-
 	// Find the radius of the bounding sphere
+	center := g.boundingSphere.Center
 	maxRadiusSq := float32(0.0)
+	var vertex math32.Vector3
 	for i := offset; i < positions.Size(); i += stride {
-		var vertex math32.Vector3
 		positions.GetVector3(i, &vertex)
 		maxRadiusSq = math32.Max(maxRadiusSq, center.DistanceToSquared(&vertex))
 	}
@@ -248,6 +264,132 @@ func (g *Geometry) BoundingSphere() math32.Sphere {
 	g.boundingSphere.Radius = float32(radius)
 	g.boundingSphereValid = true
 	return g.boundingSphere
+}
+
+// Area returns the surface area.
+// NOTE: This only works for triangle-based meshes.
+func (g *Geometry) Area() float32 {
+
+	// If valid, return its value
+	if g.areaValid {
+		return g.area
+	}
+
+	// Reset area
+	g.area = 0
+
+	// Get buffer with position vertices
+	vboPos := g.VBO("VertexPosition")
+	if vboPos == nil {
+		// Return zero-ed area
+		return g.area
+	}
+	positions := vboPos.Buffer()
+
+	// Calculate area
+	var vA, vB, vC math32.Vector3
+	// Geometry has indexed vertices
+	if g.indices.Size() > 0 {
+		for i := 0; i < g.indices.Size(); i += 3 {
+			// Get face indices
+			a := g.indices[i]
+			b := g.indices[i+1]
+			c := g.indices[i+2]
+			// Get face position vectors
+			positions.GetVector3(int(3*a), &vA)
+			positions.GetVector3(int(3*b), &vB)
+			positions.GetVector3(int(3*c), &vC)
+			// Calculate triangle area
+			vA.Sub(&vC)
+			vB.Sub(&vC)
+			vC.CrossVectors(&vA, &vB)
+			g.area += vC.Length() / 2.0
+		}
+		// Geometry has NO indexed vertices
+	} else {
+		stride := vboPos.Stride()
+		offset := vboPos.AttribOffset("VertexPosition")
+		for i := offset; i < positions.Size(); i += 3*stride {
+			// Get face indices
+			a := i
+			b := i + stride
+			c := i + 2*stride
+			// Set face position vectors
+			positions.GetVector3(int(a), &vA)
+			positions.GetVector3(int(b), &vB)
+			positions.GetVector3(int(c), &vC)
+			// Calculate triangle area
+			vA.Sub(&vC)
+			vB.Sub(&vC)
+			vC.CrossVectors(&vA, &vB)
+			g.area += vC.Length() / 2.0
+		}
+	}
+
+	g.areaValid = true
+	return g.area
+}
+
+// Volume returns the volume.
+// NOTE: This only works for closed triangle-based meshes.
+func (g *Geometry) Volume() float32 {
+
+	// If valid, return its value
+	if g.volumeValid {
+		return g.volume
+	}
+
+	// Reset volume
+	g.volume = 0
+
+	// Get buffer with position vertices
+	vboPos := g.VBO("VertexPosition")
+	if vboPos == nil {
+		// Return zero-ed area
+		return g.area
+	}
+	positions := vboPos.Buffer()
+
+	// Calculate volume
+	var vA, vB, vC math32.Vector3
+	// Geometry has indexed vertices
+	if g.indices.Size() > 0 {
+		for i := 0; i < g.indices.Size(); i += 3 {
+			// Get face indices
+			a := g.indices[i]
+			b := g.indices[i+1]
+			c := g.indices[i+2]
+			// Get face position vectors
+			positions.GetVector3(int(3*a), &vA)
+			positions.GetVector3(int(3*b), &vB)
+			positions.GetVector3(int(3*c), &vC)
+			// Calculate tetrahedron volume
+			vA.Sub(&vC)
+			vB.Sub(&vC)
+			g.volume += vC.Dot(vA.Cross(&vB)) / 6.0
+		}
+		// Geometry has NO indexed vertices
+	} else {
+		stride := vboPos.Stride()
+		offset := vboPos.AttribOffset("VertexPosition")
+		for i := offset; i < positions.Size(); i += 3*stride {
+			// Get face indices
+			a := i
+			b := i + stride
+			c := i + 2*stride
+			// Set face position vectors
+			positions.GetVector3(int(a), &vA)
+			positions.GetVector3(int(b), &vB)
+			positions.GetVector3(int(c), &vC)
+			// Calculate tetrahedron volume
+			vA.Sub(&vC)
+			vB.Sub(&vC)
+			g.volume += vC.Dot(vA.Cross(&vB)) / 6.0
+		}
+	}
+
+	g.volumeValid = true
+	return g.volume
 }
 
 // ApplyMatrix multiplies each of the geometry position vertices
