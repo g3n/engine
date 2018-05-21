@@ -32,12 +32,14 @@ type Geometry struct {
 	boundingSphere      math32.Sphere   // Last calculated bounding sphere
 	area                float32         // Last calculated area
 	volume              float32         // Last calculated volume
+	rotInertia          math32.Matrix3  // Last calculated rotational inertia matrix
 
 	// Flags indicating whether geometric properties are valid
 	boundingBoxValid    bool            // Indicates if last calculated bounding box is valid
 	boundingSphereValid bool            // Indicates if last calculated bounding sphere is valid
 	areaValid           bool            // Indicates if last calculated area is valid
 	volumeValid         bool            // Indicates if last calculated volume is valid
+	rotInertiaValid     bool            // Indicates if last calculated rotational inertia matrix is valid
 }
 
 // Geometry group object
@@ -230,14 +232,14 @@ func (g *Geometry) BoundingSphere() math32.Sphere {
 		return g.boundingSphere
 	}
 
+	// Reset radius
+	g.boundingSphere.Radius = float32(0)
+
 	// Calculate bounding box
 	box := g.BoundingBox()
 
 	// Set the center of the bounding sphere to the center of the bounding box
 	box.Center(&g.boundingSphere.Center)
-
-	// Reset radius
-	g.boundingSphere.Radius = float32(0)
 
 	// Get buffer with position vertices
 	vboPos := g.VBO("VertexPosition")
@@ -390,6 +392,39 @@ func (g *Geometry) Volume() float32 {
 
 	g.volumeValid = true
 	return g.volume
+}
+
+// RotationalInertia returns the rotational inertia tensor, also known as the moment of inertia.
+// This assumes constant density of 1 (kg/m^2).
+// To adjust for a different constant density simply scale the returning matrix by the density.
+func (g *Geometry) RotationalInertia() math32.Matrix3 {
+
+	// If valid, return its value
+	if g.rotInertiaValid {
+		return g.rotInertia
+	}
+
+	// Reset rotational inertia
+	g.rotInertia.Zero()
+
+	// For now approximate result based on bounding box
+	b := math32.NewVec3()
+	box := g.BoundingBox()
+	box.Size(b)
+	vol := g.Volume()
+	multiplier := vol / 12.0
+
+	x := (b.Y*b.Y + b.Z*b.Z) * multiplier
+	y := (b.X*b.X + b.Z*b.Z) * multiplier
+	z := (b.Y*b.Y + b.X*b.X) * multiplier
+
+	g.rotInertia.Set(
+		x, 0, 0,
+		0, y, 0,
+		0, 0, z,
+	)
+
+	return g.rotInertia
 }
 
 // ApplyMatrix multiplies each of the geometry position vertices
