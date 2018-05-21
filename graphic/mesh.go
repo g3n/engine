@@ -178,15 +178,15 @@ func (m *Mesh) Raycast(rc *core.Raycaster, intersects *[]core.Intersect) {
 	} else {
 		stride := vboPos.Stride()
 		offset := vboPos.AttribOffset("VertexPosition")
-		for i := offset; i < positions.Size(); i += stride {
+		for i := offset; i < positions.Size(); i += 3*stride {
 			// Get face indices
-			a := i / 3
-			b := a + 1
-			c := a + 2
+			a := i
+			b := i + stride
+			c := i + 2*stride
 			// Set face position vectors
-			positions.GetVector3(int(3*a), &vA)
-			positions.GetVector3(int(3*b), &vB)
-			positions.GetVector3(int(3*c), &vC)
+			positions.GetVector3(int(a), &vA)
+			positions.GetVector3(int(b), &vB)
+			positions.GetVector3(int(c), &vC)
 			// Checks intersection of the ray with this face
 			mat := m.GetMaterial(i).GetMaterial()
 			var point math32.Vector3
