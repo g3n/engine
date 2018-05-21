@@ -405,3 +405,9 @@ func (q *Quaternion) ToArray(array []float32, offset int) []float32 {
 
 	return array
 }
+
+// Clone returns a copy of this quaternion
+func (q *Quaternion) Clone() *Quaternion {
+
+	return NewQuaternion(q.X, q.Y, q.Z, q.W)
+}
