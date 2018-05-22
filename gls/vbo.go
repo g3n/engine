@@ -203,3 +203,72 @@ func (vbo *VBO) Transfer(gs *GLS) {
 	gs.BufferData(ARRAY_BUFFER, vbo.buffer.Bytes(), &vbo.buffer[0], vbo.usage)
 	vbo.update = false
 }
+
+// OperateOnVectors3 iterates over all 3-float32 items for the specified attribute
+// and calls the specified callback function with a pointer to each item as a Vector3.
+// The vector pointers can be modified inside the callback and the modifications will be applied to the buffer at each iteration.
+// The callback function returns false to continue or true to break.
+func (vbo *VBO) OperateOnVectors3(vboAttrib string, cb func(vec *math32.Vector3) bool) {
+
+	stride := vbo.Stride()
+	offset := vbo.AttribOffset(vboAttrib)
+	buffer := vbo.Buffer()
+
+	// Call callback for each vector3, updating the buffer afterward
+	var vec math32.Vector3
+	for i := offset; i < vbo.buffer.Size(); i += stride {
+		buffer.GetVector3(i, &vec)
+		brk := cb(&vec)
+		buffer.SetVector3(i, &vec)
+		if brk {
+			break
+		}
+	}
+	vbo.Update()
+}
+
+// ReadVectors3 iterates over all 3-float32 items for the specified attribute
+// and calls the specified callback function with the value of each item as a Vector3.
+// The callback function returns false to continue or true to break.
+func (vbo *VBO) ReadVectors3(vboAttrib string, cb func(vec math32.Vector3) bool) {
+
+	stride := vbo.Stride()
+	offset := vbo.AttribOffset(vboAttrib)
+	positions := vbo.Buffer()
+
+	// Call callback for each vector3
+	var vec math32.Vector3
+	for i := offset; i < positions.Size(); i += stride {
+		positions.GetVector3(i, &vec)
+		brk := cb(vec)
+		if brk {
+			break
+		}
+	}
+}
+
+
+// Read3Vectors3 iterates over all 3-float32 items (3 items at a time) for the specified attribute
+// and calls the specified callback function with the value of each of the 3 items as Vector3.
+// The callback function returns false to continue or true to break.
+func (vbo *VBO) ReadTripleVectors3(vboAttrib string, cb func(vec1, vec2, vec3 math32.Vector3) bool) {
+
+	stride := vbo.Stride()
+	offset := vbo.AttribOffset(vboAttrib)
+	positions := vbo.Buffer()
+
+	doubleStride := 2*stride
+	loopStride := 3*stride
+
+	// Call callback for each vector3 triple
+	var vec1, vec2, vec3 math32.Vector3
+	for i := offset; i < positions.Size(); i += loopStride {
+		positions.GetVector3(i, &vec1)
+		positions.GetVector3(i + stride, &vec2)
+		positions.GetVector3(i + doubleStride, &vec3)
+		brk := cb(vec1, vec2, vec3)
+		if brk {
+			break
+		}
+	}
+}
