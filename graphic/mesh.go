@@ -144,57 +144,17 @@ func (m *Mesh) Raycast(rc *core.Raycaster, intersects *[]core.Intersect) {
 		}
 	}
 
-	// Get buffer with position vertices
-	vboPos := geom.VBO("VertexPosition")
-	if vboPos == nil {
-		panic("mesh.Raycast(): VertexPosition VBO not found")
-	}
-	positions := vboPos.Buffer()
-	indices := geom.Indices()
-
-	var vA, vB, vC math32.Vector3
-
-	// Geometry has indexed vertices
-	if indices.Size() > 0 {
-		for i := 0; i < indices.Size(); i += 3 {
-			// Get face indices
-			a := indices[i]
-			b := indices[i+1]
-			c := indices[i+2]
-			// Get face position vectors
-			positions.GetVector3(int(3*a), &vA)
-			positions.GetVector3(int(3*b), &vB)
-			positions.GetVector3(int(3*c), &vC)
-			// Checks intersection of the ray with this face
-			mat := m.GetMaterial(i).GetMaterial()
-			var point math32.Vector3
-			intersect := checkIntersection(mat, &vA, &vB, &vC, &point)
-			if intersect != nil {
-				intersect.Index = uint32(i)
-				*intersects = append(*intersects, *intersect)
-			}
+	i := 0
+	geom.ReadFaces(func(vA, vB, vC math32.Vector3) bool {
+		// Checks intersection of the ray with this face
+		mat := m.GetMaterial(i).GetMaterial()
+		var point math32.Vector3
+		intersect := checkIntersection(mat, &vA, &vB, &vC, &point)
+		if intersect != nil {
+			intersect.Index = uint32(i)
+			*intersects = append(*intersects, *intersect)
 		}
-		// Geometry has NO indexed vertices
-	} else {
-		stride := vboPos.Stride()
-		offset := vboPos.AttribOffset("VertexPosition")
-		for i := offset; i < positions.Size(); i += 3*stride {
-			// Get face indices
-			a := i
-			b := i + stride
-			c := i + 2*stride
-			// Set face position vectors
-			positions.GetVector3(int(a), &vA)
-			positions.GetVector3(int(b), &vB)
-			positions.GetVector3(int(c), &vC)
-			// Checks intersection of the ray with this face
-			mat := m.GetMaterial(i).GetMaterial()
-			var point math32.Vector3
-			intersect := checkIntersection(mat, &vA, &vB, &vC, &point)
-			if intersect != nil {
-				intersect.Index = uint32(a)
-				*intersects = append(*intersects, *intersect)
-			}
-		}
-	}
+		i++
+		return false
+	})
 }

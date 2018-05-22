@@ -190,6 +190,102 @@ func (g *Geometry) Items() int {
 	return vbo.Buffer().Bytes() / vbo.StrideSize()
 }
 
+// OperateOnVertices iterates over all the vertices and calls
+// the specified callback function with a pointer to each vertex.
+// The vertex pointers can be modified inside the callback and
+// the modifications will be applied to the buffer at each iteration.
+// The callback function returns false to continue or true to break.
+func (g *Geometry) OperateOnVertices(cb func(vertex *math32.Vector3) bool) {
+
+	// Get buffer with position vertices
+	vbo := g.VBO("VertexPosition")
+	if vbo == nil {
+		return
+	}
+	vbo.OperateOnVectors3("VertexPosition", cb)
+}
+
+// ReadVertices iterates over all the vertices and calls
+// the specified callback function with the value of each vertex.
+// The callback function returns false to continue or true to break.
+func (g *Geometry) ReadVertices(cb func(vertex math32.Vector3) bool) {
+
+	// Get buffer with position vertices
+	vbo := g.VBO("VertexPosition")
+	if vbo == nil {
+		return
+	}
+	vbo.ReadVectors3("VertexPosition", cb)
+}
+
+// OperateOnVertexNormals iterates over all the vertex normals
+// and calls the specified callback function with a pointer to each normal.
+// The vertex pointers can be modified inside the callback and
+// the modifications will be applied to the buffer at each iteration.
+// The callback function returns false to continue or true to break.
+func (g *Geometry) OperateOnVertexNormals(cb func(normal *math32.Vector3) bool) {
+
+	// Get buffer with position vertices
+	vbo := g.VBO("VertexNormal")
+	if vbo == nil {
+		return
+	}
+	vbo.OperateOnVectors3("VertexNormal", cb)
+}
+
+// ReadVertexNormals iterates over all the vertex normals and calls
+// the specified callback function with the value of each normal.
+// The callback function returns false to continue or true to break.
+func (g *Geometry) ReadVertexNormals(cb func(vertex math32.Vector3) bool) {
+
+	// Get buffer with position vertices
+	vbo := g.VBO("VertexNormal")
+	if vbo == nil {
+		return
+	}
+	vbo.ReadVectors3("VertexNormal", cb)
+}
+
+// ReadFaces iterates over all the vertices and calls
+// the specified callback function with face-forming vertex triples.
+// The callback function returns false to continue or true to break.
+func (g *Geometry) ReadFaces(cb func(vA, vB, vC math32.Vector3) bool) {
+
+	// Get buffer with position vertices
+	vbo := g.VBO("VertexPosition")
+	if vbo == nil {
+		return
+	}
+
+	// If geometry has indexed vertices need to loop over indexes
+	if g.Indexed() {
+		var vA, vB, vC math32.Vector3
+		positions := vbo.Buffer()
+		for i := 0; i < g.indices.Size(); i += 3 {
+			// Get face vertices
+			positions.GetVector3(int(3*g.indices[i]), &vA)
+			positions.GetVector3(int(3*g.indices[i+1]), &vB)
+			positions.GetVector3(int(3*g.indices[i+2]), &vC)
+			// Call callback with face vertices
+			brk := cb(vA, vB, vC)
+			if brk {
+				break
+			}
+		}
+	} else {
+		// Geometry does NOT have indexed vertices - can read vertices in sequence
+		vbo.ReadTripleVectors3("VertexPosition", cb)
+	}
+}
+
+// TODO Read and Operate on Texcoords, Faces, Edges, FaceNormals, etc...
+
+// Indexed returns whether the geometry is indexed or not.
+func (g *Geometry) Indexed() bool {
+
+	return g.indices.Size() > 0
+}
+
 // BoundingBox computes the bounding box of the geometry if necessary
 // and returns is value
 func (g *Geometry) BoundingBox() math32.Box3 {
@@ -203,22 +299,11 @@ func (g *Geometry) BoundingBox() math32.Box3 {
 	g.boundingBox.Min.Set(0, 0, 0)
 	g.boundingBox.Max.Set(0, 0, 0)
 
-	// Get buffer with position vertices
-	vboPos := g.VBO("VertexPosition")
-	if vboPos == nil {
-		// Return zero-ed bounding box
-		return g.boundingBox
-	}
-	stride := vboPos.Stride()
-	offset := vboPos.AttribOffset("VertexPosition")
-	positions := vboPos.Buffer()
-
-	// Calculate bounding box
-	var vertex math32.Vector3
-	for i := offset; i < positions.Size(); i += stride {
-		positions.GetVector3(i, &vertex)
+	// Expand bounding box by each vertex
+	g.ReadVertices(func(vertex math32.Vector3) bool {
 		g.boundingBox.ExpandByPoint(&vertex)
-	}
+		return false
+	})
 	g.boundingBoxValid = true
 	return g.boundingBox
 }
@@ -232,38 +317,18 @@ func (g *Geometry) BoundingSphere() math32.Sphere {
 		return g.boundingSphere
 	}
 
-	// Reset radius
+	// Reset radius, calculate bounding box and copy center
 	g.boundingSphere.Radius = float32(0)
-
-	// Calculate bounding box
 	box := g.BoundingBox()
-
-	// Set the center of the bounding sphere to the center of the bounding box
 	box.Center(&g.boundingSphere.Center)
 
-	// Get buffer with position vertices
-	vboPos := g.VBO("VertexPosition")
-	if vboPos == nil {
-		// Return zero-ed bounding sphere
-		return g.boundingSphere
-	}
-	stride := vboPos.Stride()
-	offset := vboPos.AttribOffset("VertexPosition")
-	positions := vboPos.Buffer()
-
 	// Find the radius of the bounding sphere
-	center := g.boundingSphere.Center
-	maxRadiusSq := float32(0.0)
-	var vertex math32.Vector3
-	for i := offset; i < positions.Size(); i += stride {
-		positions.GetVector3(i, &vertex)
-		maxRadiusSq = math32.Max(maxRadiusSq, center.DistanceToSquared(&vertex))
-	}
-	radius := math32.Sqrt(maxRadiusSq)
-	if math32.IsNaN(radius) {
-		panic("geometry.BoundingSphere: computed radius is NaN")
-	}
-	g.boundingSphere.Radius = float32(radius)
+	maxRadiusSq := float32(0)
+	g.ReadVertices(func(vertex math32.Vector3) bool {
+		maxRadiusSq = math32.Max(maxRadiusSq, g.boundingSphere.Center.DistanceToSquared(&vertex))
+		return false
+	})
+	g.boundingSphere.Radius = float32(math32.Sqrt(maxRadiusSq))
 	g.boundingSphereValid = true
 	return g.boundingSphere
 }
@@ -280,54 +345,14 @@ func (g *Geometry) Area() float32 {
 	// Reset area
 	g.area = 0
 
-	// Get buffer with position vertices
-	vboPos := g.VBO("VertexPosition")
-	if vboPos == nil {
-		// Return zero-ed area
-		return g.area
-	}
-	positions := vboPos.Buffer()
-
-	// Calculate area
-	var vA, vB, vC math32.Vector3
-	// Geometry has indexed vertices
-	if g.indices.Size() > 0 {
-		for i := 0; i < g.indices.Size(); i += 3 {
-			// Get face indices
-			a := g.indices[i]
-			b := g.indices[i+1]
-			c := g.indices[i+2]
-			// Get face position vectors
-			positions.GetVector3(int(3*a), &vA)
-			positions.GetVector3(int(3*b), &vB)
-			positions.GetVector3(int(3*c), &vC)
-			// Calculate triangle area
-			vA.Sub(&vC)
-			vB.Sub(&vC)
-			vC.CrossVectors(&vA, &vB)
-			g.area += vC.Length() / 2.0
-		}
-		// Geometry has NO indexed vertices
-	} else {
-		stride := vboPos.Stride()
-		offset := vboPos.AttribOffset("VertexPosition")
-		for i := offset; i < positions.Size(); i += 3*stride {
-			// Get face indices
-			a := i
-			b := i + stride
-			c := i + 2*stride
-			// Set face position vectors
-			positions.GetVector3(int(a), &vA)
-			positions.GetVector3(int(b), &vB)
-			positions.GetVector3(int(c), &vC)
-			// Calculate triangle area
-			vA.Sub(&vC)
-			vB.Sub(&vC)
-			vC.CrossVectors(&vA, &vB)
-			g.area += vC.Length() / 2.0
-		}
-	}
-
+	// Sum area of all triangles
+	g.ReadFaces(func(vA, vB, vC math32.Vector3) bool {
+		vA.Sub(&vC)
+		vB.Sub(&vC)
+		vC.CrossVectors(&vA, &vB)
+		g.area += vC.Length() / 2.0
+		return false
+	})
 	g.areaValid = true
 	return g.area
 }
@@ -344,52 +369,13 @@ func (g *Geometry) Volume() float32 {
 	// Reset volume
 	g.volume = 0
 
-	// Get buffer with position vertices
-	vboPos := g.VBO("VertexPosition")
-	if vboPos == nil {
-		// Return zero-ed area
-		return g.area
-	}
-	positions := vboPos.Buffer()
-
-	// Calculate volume
-	var vA, vB, vC math32.Vector3
-	// Geometry has indexed vertices
-	if g.indices.Size() > 0 {
-		for i := 0; i < g.indices.Size(); i += 3 {
-			// Get face indices
-			a := g.indices[i]
-			b := g.indices[i+1]
-			c := g.indices[i+2]
-			// Get face position vectors
-			positions.GetVector3(int(3*a), &vA)
-			positions.GetVector3(int(3*b), &vB)
-			positions.GetVector3(int(3*c), &vC)
-			// Calculate tetrahedron volume
-			vA.Sub(&vC)
-			vB.Sub(&vC)
-			g.volume += vC.Dot(vA.Cross(&vB)) / 6.0
-		}
-		// Geometry has NO indexed vertices
-	} else {
-		stride := vboPos.Stride()
-		offset := vboPos.AttribOffset("VertexPosition")
-		for i := offset; i < positions.Size(); i += 3*stride {
-			// Get face indices
-			a := i
-			b := i + stride
-			c := i + 2*stride
-			// Set face position vectors
-			positions.GetVector3(int(a), &vA)
-			positions.GetVector3(int(b), &vB)
-			positions.GetVector3(int(c), &vC)
-			// Calculate tetrahedron volume
-			vA.Sub(&vC)
-			vB.Sub(&vC)
-			g.volume += vC.Dot(vA.Cross(&vB)) / 6.0
-		}
-	}
-
+	// Calculate volume of all tetrahedrons
+	g.ReadFaces(func(vA, vB, vC math32.Vector3) bool {
+		vA.Sub(&vC)
+		vB.Sub(&vC)
+		g.volume += vC.Dot(vA.Cross(&vB)) / 6.0
+		return false
+	})
 	g.volumeValid = true
 	return g.volume
 }
@@ -411,8 +397,7 @@ func (g *Geometry) RotationalInertia() math32.Matrix3 {
 	b := math32.NewVec3()
 	box := g.BoundingBox()
 	box.Size(b)
-	vol := g.Volume()
-	multiplier := vol / 12.0
+	multiplier := g.Volume() / 12.0
 
 	x := (b.Y*b.Y + b.Z*b.Z) * multiplier
 	y := (b.X*b.X + b.Z*b.Z) * multiplier
@@ -423,8 +408,26 @@ func (g *Geometry) RotationalInertia() math32.Matrix3 {
 		0, y, 0,
 		0, 0, z,
 	)
-
 	return g.rotInertia
+}
+
+// ProjectOntoAxis projects the geometry onto the specified axis,
+// effectively squashing it into a line passing through the local origin.
+// Returns the maximum and the minimum values on that line (i.e. signed distances from the local origin).
+func (g *Geometry) ProjectOntoAxis(localAxis *math32.Vector3) (float32, float32) {
+
+	var max, min float32
+	g.ReadVertices(func(vertex math32.Vector3) bool {
+		val := vertex.Dot(localAxis)
+		if val > max {
+			max = val
+		}
+		if val < min {
+			min = val
+		}
+		return false
+	})
+	return max, min
 }
 
 // ApplyMatrix multiplies each of the geometry position vertices
@@ -433,41 +436,19 @@ func (g *Geometry) RotationalInertia() math32.Matrix3 {
 // The geometry's bounding box and sphere are recomputed if needed.
 func (g *Geometry) ApplyMatrix(m *math32.Matrix4) {
 
-	// Get positions buffer
-	vboPos := g.VBO("VertexPosition")
-	if vboPos == nil {
-		return
-	}
-	stride := vboPos.Stride()
-	offset := vboPos.AttribOffset("VertexPosition")
-	positions := vboPos.Buffer()
-	// Apply matrix to all position vertices
-	for i := offset; i < positions.Size(); i += stride {
-		var vertex math32.Vector3
-		positions.GetVector3(i, &vertex)
+	// Apply matrix to all vertices
+	g.OperateOnVertices(func(vertex *math32.Vector3) bool {
 		vertex.ApplyMatrix4(m)
-		positions.SetVector3(i, &vertex)
-	}
-	vboPos.Update()
+		return false
+	})
 
-	// Get normals buffer
-	vboNormals := g.VBO("VertexNormal")
-	if vboNormals == nil {
-		return
-	}
-	stride = vboNormals.Stride()
-	offset = vboNormals.AttribOffset("VertexNormal")
-	normals := vboNormals.Buffer()
 	// Apply normal matrix to all normal vectors
 	var normalMatrix math32.Matrix3
 	normalMatrix.GetNormalMatrix(m)
-	for i := offset; i < normals.Size(); i += stride {
-		var vertex math32.Vector3
-		normals.GetVector3(i, &vertex)
-		vertex.ApplyMatrix3(&normalMatrix).Normalize()
-		normals.SetVector3(i, &vertex)
-	}
-	vboNormals.Update()
+	g.OperateOnVertexNormals(func(normal *math32.Vector3) bool {
+		normal.ApplyMatrix3(&normalMatrix).Normalize()
+		return false
+	})
 }
 
 // RenderSetup is called by the renderer before drawing the geometry
