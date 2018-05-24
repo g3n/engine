@@ -666,3 +666,15 @@ func (v *Vector3) RandomTangents() (*Vector3, *Vector3) {
 
 	return t1, t2
 }
+
+// TODO: implement similar methods for Vector2 and Vector4
+// AlmostEquals returns whether the vector is almost equal to another vector within the specified tolerance.
+func (v *Vector3) AlmostEquals(other *Vector3, tolerance float32) bool {
+
+	if (v.X - other.X < tolerance) &&
+		(v.Y - other.Y < tolerance) &&
+		(v.Z - other.Z < tolerance) {
+			return true
+	}
+	return false
+}

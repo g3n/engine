@@ -31,6 +31,36 @@ func NewFriction(bodyA, bodyB IBody, slipForce float32) *Friction {
 	return fe
 }
 
+func (fe *Friction) SetTangent(newTangent *math32.Vector3)  {
+
+	fe.t = newTangent
+}
+
+func (fe *Friction) Tangent() math32.Vector3 {
+
+	return *fe.t
+}
+
+func (fe *Friction) SetRA(newRa *math32.Vector3)  {
+
+	fe.rA = newRa
+}
+
+func (fe *Friction) RA() math32.Vector3 {
+
+	return *fe.rA
+}
+
+func (fe *Friction) SetRB(newRb *math32.Vector3)  {
+
+	fe.rB = newRb
+}
+
+func (fe *Friction) RB() math32.Vector3 {
+
+	return *fe.rB
+}
+
 // ComputeB
 func (fe *Friction) ComputeB(h float32) float32 {
 

@@ -28,8 +28,7 @@ func NewDistance(bodyA, bodyB IBody, distance, maxForce float32) *Distance {
 	dc.distance = distance
 
 	dc.equation = equation.NewContact(bodyA, bodyB, -maxForce, maxForce) // Make it bidirectional
-	dc.equations = append(dc.equations, &dc.equation.Equation)
-
+	dc.AddEquation(dc.equation)
 
 	return dc
 }

@@ -20,8 +20,26 @@ type IBody interface {
 	AngularVelocity() math32.Vector3
 	Force() math32.Vector3
 	Torque() math32.Vector3
-	InvMassSolve() float32
-	InvInertiaWorldSolve() *math32.Matrix3
+	InvMassEff() float32
+	InvRotInertiaWorldEff() *math32.Matrix3
+}
+
+// IEquation is the interface type for all equations types.
+type IEquation interface {
+	SetBodyA(IBody)
+	BodyA() IBody
+	SetBodyB(IBody)
+	BodyB() IBody
+	JeA() JacobianElement
+	JeB() JacobianElement
+	SetEnabled(state bool)
+	Enabled() bool
+	MinForce() float32
+	MaxForce() float32
+	Eps() float32
+	SetMultiplier(multiplier float32)
+	ComputeB(h float32) float32
+	ComputeC() float32
 }
 
 // Equation is a SPOOK constraint equation.
@@ -63,12 +81,22 @@ func (e *Equation) initialize(bi, bj IBody, minForce, maxForce float32) {
 	e.multiplier = 0
 
 	// Set typical spook params
-	e.SetSpookParams(1e7, 4, 1/60)
+	e.SetSpookParams(1e7, 3, 1/60)
+}
+
+func (e *Equation) SetBodyA(ibody IBody) {
+
+	e.bA = ibody
 }
 
 func (e *Equation) BodyA() IBody {
 
 	return e.bA
+}
+
+func (e *Equation) SetBodyB(ibody IBody) {
+
+	e.bB = ibody
 }
 
 func (e *Equation) BodyB() IBody {
@@ -110,7 +138,7 @@ func (e *Equation) MaxForce() float32 {
 	return e.maxForce
 }
 
-// TODO
+// Returns epsilon - the regularization constant which is multiplied by the identity matrix.
 func (e *Equation) Eps() float32 {
 
 	return e.eps
@@ -183,14 +211,14 @@ func (e *Equation) ComputeGiMf() float32 {
 	forceA := e.bA.Force()
 	forceB := e.bB.Force()
 
-	iMfA := forceA.MultiplyScalar(e.bA.InvMassSolve())
-	iMfB := forceB.MultiplyScalar(e.bB.InvMassSolve())
+	iMfA := forceA.MultiplyScalar(e.bA.InvMassEff())
+	iMfB := forceB.MultiplyScalar(e.bB.InvMassEff())
 
 	torqueA := e.bA.Torque()
 	torqueB := e.bB.Torque()
 
-	invIiTaui := torqueA.ApplyMatrix3(e.bA.InvInertiaWorldSolve())
-	invIjTauj := torqueB.ApplyMatrix3(e.bB.InvInertiaWorldSolve())
+	invIiTaui := torqueA.ApplyMatrix3(e.bA.InvRotInertiaWorldEff())
+	invIjTauj := torqueB.ApplyMatrix3(e.bB.InvRotInertiaWorldEff())
 
 	return e.jeA.MultiplyVectors(iMfA, invIiTaui) + e.jeB.MultiplyVectors(iMfB, invIjTauj)
 }
@@ -203,9 +231,9 @@ func (e *Equation) ComputeGiMGt() float32 {
 	rotAcopy := e.jeA.Rotational()
 	rotBcopy := e.jeB.Rotational()
 
-	result := e.bA.InvMassSolve() + e.bB.InvMassSolve()
-	result += rotA.ApplyMatrix3(e.bA.InvInertiaWorldSolve()).Dot(&rotAcopy)
-	result += rotB.ApplyMatrix3(e.bB.InvInertiaWorldSolve()).Dot(&rotBcopy)
+	result := e.bA.InvMassEff() + e.bB.InvMassEff()
+	result += rotA.ApplyMatrix3(e.bA.InvRotInertiaWorldEff()).Dot(&rotAcopy)
+	result += rotB.ApplyMatrix3(e.bB.InvRotInertiaWorldEff()).Dot(&rotBcopy)
 
 	return result
 }

@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 // Package physics implements a basic physics engine.
-package physics
+package material
 
 type Material struct {
 	name        string
@@ -21,3 +21,23 @@ type ContactMaterial struct {
 	frictionEquationStiffness  float32
 	frictionEquationRelaxation float32
 }
+
+func NewContactMaterial() *ContactMaterial {
+
+	cm := new(ContactMaterial)
+	cm.friction = 0.3
+	cm.restitution = 0.3
+	cm.contactEquationStiffness = 1e7
+	cm.contactEquationRelaxation = 3
+	cm.frictionEquationStiffness = 1e7
+	cm.frictionEquationRelaxation = 3
+	return cm
+}
+
+
+//type intPair struct {
+//	i int
+//	j int
+//}
+
+//type ContactMaterialTable map[intPair]*ContactMaterial

@@ -24,7 +24,7 @@ func NewContact(bodyA, bodyB IBody, minForce, maxForce float32) *Contact {
 
 	// minForce default should be 0.
 
-	ce.restitution = 0
+	ce.restitution = 0.3
 	ce.rA = &math32.Vector3{0,0,0}
 	ce.rB = &math32.Vector3{0,0,0}
 	ce.nA = &math32.Vector3{0,0,0}
@@ -32,6 +32,16 @@ func NewContact(bodyA, bodyB IBody, minForce, maxForce float32) *Contact {
 	ce.Equation.initialize(bodyA, bodyB, minForce, maxForce)
 
 	return ce
+}
+
+func (ce *Contact) SetRestitution(r float32) {
+
+	ce.restitution = r
+}
+
+func (ce *Contact) Restitution() float32 {
+
+	return ce.restitution
 }
 
 func (ce *Contact) SetNormal(newNormal *math32.Vector3)  {
@@ -44,9 +54,9 @@ func (ce *Contact) Normal() math32.Vector3 {
 	return *ce.nA
 }
 
-func (ce *Contact) SetRA(newRi *math32.Vector3)  {
+func (ce *Contact) SetRA(newRa *math32.Vector3)  {
 
-	ce.rA = newRi
+	ce.rA = newRa
 }
 
 func (ce *Contact) RA() math32.Vector3 {
@@ -54,9 +64,9 @@ func (ce *Contact) RA() math32.Vector3 {
 	return *ce.rA
 }
 
-func (ce *Contact) SetRB(newRj *math32.Vector3)  {
+func (ce *Contact) SetRB(newRb *math32.Vector3)  {
 
-	ce.rB = newRj
+	ce.rB = newRb
 }
 
 func (ce *Contact) RB() math32.Vector3 {

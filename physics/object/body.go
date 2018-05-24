@@ -2,18 +2,19 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package physics
+package object
 
 import (
 	"github.com/g3n/engine/graphic"
 	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/material"
 )
 
 // Body represents a physics-driven body.
 type Body struct {
 	*graphic.Graphic // TODO future - embed core.Node instead and calculate properties recursively
-	simulation           *Simulation // Reference to the simulation the body is living in\
-	material             *Material   // Physics material specifying friction and restitution
+
+	material             *material.Material   // Physics material specifying friction and restitution
 	index int
 
 	// Mass properties
@@ -67,13 +68,23 @@ type Body struct {
 	wakeUpAfterNarrowphase bool
 
 	// Collision settings
-	collisionFilterGroup int
-	collisionFilterMask  int
-	collisionResponse    bool // Whether to produce contact forces when in contact with other bodies. Note that contacts will be generated, but they will be disabled.
+	colFilterGroup int  // Collision filter group
+	colFilterMask  int  // Collision filter mask
+	colResponse    bool // Whether to produce contact forces when in contact with other bodies. Note that contacts will be generated, but they will be disabled.
 
 	aabb            *math32.Box3 // World space bounding box of the body and its shapes.
 	aabbNeedsUpdate bool         // Indicates if the AABB needs to be updated before use.
 	boundingRadius  float32      // Total bounding radius of the body (TODO including its shapes, relative to body.position.)
+
+	// Cached geometry properties
+	faces            [][3]math32.Vector3
+
+	faceNormals      []math32.Vector3
+	worldFaceNormals []math32.Vector3
+
+	uniqueEdges      []math32.Vector3
+	worldUniqueEdges []math32.Vector3
+
 
 	// TODO future (for now a body is a single graphic with a single geometry)
 	// shapes          []*Shape
@@ -105,6 +116,8 @@ const (
 	Dynamic
 )
 
+// TODO Update simulation checks for BodyType to use bitwise operators ?
+
 // BodyStatus specifies
 type BodySleepState int
 
@@ -123,6 +136,7 @@ const (
 )
 
 // NewBody creates and returns a pointer to a new RigidBody.
+// The igraphic's geometry *must* be convex.
 func NewBody(igraphic graphic.IGraphic) *Body {
 
 	b := new(Body)
@@ -180,14 +194,177 @@ func NewBody(igraphic graphic.IGraphic) *Body {
 	b.sleepTimeLimit = 1
 	b.timeLastSleepy = 0
 
-	b.collisionFilterGroup = 1
-	b.collisionFilterMask = -1
+	b.colFilterGroup = 1
+	b.colFilterMask = -1
 
 	b.wakeUpAfterNarrowphase = false
+
+	// Perform single-time computations
+	b.computeFaceNormalsAndUniqueEdges()
 
 	b.UpdateMassProperties()
 
 	return b
+}
+
+// Compute and store face normals and unique edges
+func (b *Body) computeFaceNormalsAndUniqueEdges() {
+
+	b.GetGeometry().ReadFaces(func(vA, vB, vC math32.Vector3) bool {
+
+		// Store face vertices
+		var face [3]math32.Vector3
+		face[0] = vA
+		face[1] = vB
+		face[2] = vC
+		b.faces = append(b.faces, face)
+
+		// Compute edges
+		edge1 := math32.NewVec3().SubVectors(&vB, &vA)
+		edge2 := math32.NewVec3().SubVectors(&vC, &vB)
+		edge3 := math32.NewVec3().SubVectors(&vA, &vC)
+
+		// Compute and store face normal in b.faceNormals
+		faceNormal := math32.NewVec3().CrossVectors(edge2, edge1)
+		if faceNormal.Length() > 0 {
+			faceNormal.Normalize()
+		}
+		b.faceNormals = append(b.faceNormals, *faceNormal)
+
+		// Compare unique edges recorded so far with the three new face edges and store the unique ones
+		tol := float32(1e-6)
+		for p := 0; p < len(b.uniqueEdges); p++ {
+			ue := b.uniqueEdges[p]
+			if !ue.AlmostEquals(edge1, tol) {
+				b.uniqueEdges = append(b.uniqueEdges, *edge1)
+			}
+			if !ue.AlmostEquals(edge2, tol) {
+				b.uniqueEdges = append(b.uniqueEdges, *edge1)
+			}
+			if !ue.AlmostEquals(edge3, tol) {
+				b.uniqueEdges = append(b.uniqueEdges, *edge1)
+			}
+		}
+
+		return false
+	})
+
+	// Allocate space for worldFaceNormals and worldUniqueEdges
+	b.worldFaceNormals = make([]math32.Vector3, len(b.faceNormals))
+	b.worldUniqueEdges = make([]math32.Vector3, len(b.uniqueEdges))
+}
+
+// ComputeWorldFaceNormalsAndUniqueEdges
+func (b *Body) ComputeWorldFaceNormalsAndUniqueEdges() {
+
+	// Re-compute world face normals from local face normals
+	for i := 0; i < len(b.faceNormals); i++ {
+		b.worldFaceNormals[i] = b.faceNormals[i]
+		b.worldFaceNormals[i].ApplyQuaternion(b.quaternion)
+	}
+	// Re-compute world unique edges from local unique edges
+	for i := 0; i < len(b.uniqueEdges); i++ {
+		b.worldUniqueEdges[i] = b.uniqueEdges[i]
+		b.worldUniqueEdges[i].ApplyQuaternion(b.quaternion)
+	}
+}
+
+func (b *Body) Faces() [][3]math32.Vector3 {
+
+	return b.faces
+}
+
+func (b *Body) FaceNormals() []math32.Vector3 {
+
+	return b.faceNormals
+}
+
+func (b *Body) WorldFaceNormals() []math32.Vector3 {
+
+	return b.worldFaceNormals
+}
+
+func (b *Body) UniqueEdges() []math32.Vector3 {
+
+	return b.uniqueEdges
+}
+
+func (b *Body) WorldUniqueEdges() []math32.Vector3 {
+
+	return b.worldUniqueEdges
+}
+
+func (b *Body) BoundingBox() math32.Box3 {
+
+	return b.GetGeometry().BoundingBox()
+}
+
+func (b *Body) SetIndex(i int) {
+
+	b.index = i
+}
+
+func (b *Body) Index() int {
+
+	return b.index
+}
+
+func (b *Body) Material() *material.Material {
+
+	return b.material
+}
+
+func (b *Body) SetAllowSleep(state bool) {
+
+	b.allowSleep = state
+}
+
+func (b *Body) AllowSleep() bool {
+
+	return b.allowSleep
+}
+
+func (b *Body) SleepSpeedLimit() float32 {
+
+	return b.sleepSpeedLimit
+}
+
+func (b *Body) SleepState() BodySleepState {
+
+	return b.sleepState
+}
+
+func (b *Body) BodyType() BodyType {
+
+	return b. bodyType
+}
+
+func (b *Body) SetWakeUpAfterNarrowphase(state bool) {
+
+	b.wakeUpAfterNarrowphase = state
+}
+
+func (b *Body) WakeUpAfterNarrowphase() bool {
+
+	return b.wakeUpAfterNarrowphase
+}
+
+func (b *Body) ApplyDamping(dt float32) {
+
+	b.velocity.MultiplyScalar(math32.Pow(1.0 - b.linearDamping, dt))
+	b.angularVelocity.MultiplyScalar(math32.Pow(1.0 - b.angularDamping, dt))
+}
+
+func (b *Body) ApplyVelocityDeltas(linearD, angularD *math32.Vector3) {
+
+	b.velocity.Add(linearD.Multiply(b.LinearFactor()))
+	b.angularVelocity.Add(angularD.Multiply(b.AngularFactor()))
+}
+
+func (b *Body) ClearForces() {
+
+	b.force.Zero()
+	b.torque.Zero()
 }
 
 func (b *Body) InvMassEff() float32 {
@@ -300,6 +477,29 @@ func (b *Body) SleepTick(time float32) {
 	}
 }
 
+// If checkSleeping is true then returns false if both bodies are currently sleeping.
+func (b *Body) Sleeping() bool {
+
+	return b.sleepState == Sleeping
+}
+
+// CollidableWith returns whether the body can collide with the specified body.
+func (b *Body) CollidableWith(other *Body) bool {
+
+	if (b.colFilterGroup & other.colFilterMask == 0) ||
+		(other.colFilterGroup & b.colFilterMask == 0) ||
+		(b.bodyType == Static) && (other.bodyType == Static) {
+		return false
+	}
+
+	return true
+}
+
+func (b *Body) CollisionResponse() bool {
+
+	return b.colResponse
+}
+
 // PointToLocal converts a world point to local body frame. TODO maybe move to Node
 func (b *Body) PointToLocal(worldPoint *math32.Vector3) math32.Vector3 {
 
@@ -356,8 +556,7 @@ func (b *Body) UpdateMassProperties() {
 		b.invRotInertia.Zero()
 	} else {
 		*b.rotInertia = b.GetGeometry().RotationalInertia()
-		b.invRotInertia.GetInverse(b.rotInertia)
-		// Note: rotInertia is always positive definite and thus always invertible
+		b.invRotInertia.GetInverse(b.rotInertia) // Note: rotInertia is always positive definite and thus always invertible
 }
 
 	b.UpdateInertiaWorld(true)
@@ -378,6 +577,12 @@ func (b *Body) UpdateInertiaWorld(force bool) {
 		m2.Multiply(iRI)
 		b.invRotInertiaWorld.MultiplyMatrices(m2, m1)
 	}
+}
+
+// Forces from a force field need to be multiplied by mass.
+func (b *Body) ApplyForceField(force *math32.Vector3) {
+
+	b.force.Add(force.MultiplyScalar(b.mass))
 }
 
 // Apply force to a world point.
@@ -516,6 +721,11 @@ func (b *Body) Integrate(dt float32, quatNormalize, quatNormalizeFast bool) {
 	b.quaternion.Y += halfDt * (ay*bw + az*bx - ax*bz)
 	b.quaternion.X += halfDt * (az*bw + ax*by - ay*bx)
 	b.quaternion.W += halfDt * (-ax*bx - ay*by - az*bz)
+
+	// Update position and rotation of Node (containing visual representation of the body)
+	b.GetNode().SetPositionVec(b.position)
+	vRot := math32.NewVec3().SetFromQuaternion(b.quaternion)
+	b.GetNode().SetRotationVec(vRot)
 
 	// Normalize quaternion
 	if quatNormalize {

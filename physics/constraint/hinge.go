@@ -19,7 +19,6 @@ type Hinge struct {
 	rotEq1  *equation.Rotational
 	rotEq2  *equation.Rotational
 	motorEq *equation.RotationalMotor
-
 }
 
 // NewHinge creates and returns a pointer to a new Hinge constraint object.
@@ -39,9 +38,9 @@ func NewHinge(bodyA, bodyB IBody, pivotA, pivotB, axisA, axisB *math32.Vector3, 
 	hc.motorEq = equation.NewRotationalMotor(bodyA, bodyB, maxForce)
 	hc.motorEq.SetEnabled(false) // Not enabled by default
 
-	hc.equations = append(hc.equations, &hc.rotEq1.Equation)
-	hc.equations = append(hc.equations, &hc.rotEq2.Equation)
-	hc.equations = append(hc.equations, &hc.motorEq.Equation)
+	hc.AddEquation(hc.rotEq1)
+	hc.AddEquation(hc.rotEq2)
+	hc.AddEquation(hc.motorEq)
 
 	return hc
 }

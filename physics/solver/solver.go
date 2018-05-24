@@ -7,36 +7,39 @@ package solver
 
 import (
 	"github.com/g3n/engine/physics/equation"
-	"time"
 	"github.com/g3n/engine/math32"
 )
 
 // ISolver is the interface type for all constraint solvers.
 type ISolver interface {
-	// Solve should return the number of iterations performed
-	Solve(frameDelta time.Duration, nBodies int) int
+	Solve(dt float32, nBodies int) *Solution // Solve should return the number of iterations performed
+	AddEquation(eq equation.IEquation)
+	RemoveEquation(eq equation.IEquation) bool
+	ClearEquations()
 }
 
 // Solution represents a solver solution
 type Solution struct {
 	VelocityDeltas        []math32.Vector3
 	AngularVelocityDeltas []math32.Vector3
+	Iterations            int
 }
 
 // Constraint equation solver base class.
 type Solver struct {
-	equations []*equation.Equation // All equations to be solved
+	Solution
+	equations []equation.IEquation // All equations to be solved
 }
 
 // AddEquation adds an equation to the solver.
-func (s *Solver) AddEquation(eq *equation.Equation) {
+func (s *Solver) AddEquation(eq equation.IEquation) {
 
 	s.equations = append(s.equations, eq)
 }
 
 // RemoveEquation removes the specified equation from the solver.
 // Returns true if found, false otherwise.
-func (s *Solver) RemoveEquation(eq *equation.Equation) bool {
+func (s *Solver) RemoveEquation(eq equation.IEquation) bool {
 
 	for pos, current := range s.equations {
 		if current == eq {
