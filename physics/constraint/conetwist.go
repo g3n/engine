@@ -51,8 +51,8 @@ func NewConeTwist(bodyA, bodyB IBody, pivotA, pivotB, axisA, axisB *math32.Vecto
 	ctc.twistEq.SetMaxForce(0)
 	ctc.twistEq.SetMinForce(-maxForce)
 
-	ctc.AddEquation(&ctc.coneEq.Equation)
-	ctc.AddEquation(&ctc.twistEq.Equation)
+	ctc.AddEquation(ctc.coneEq)
+	ctc.AddEquation(ctc.twistEq)
 
 	return ctc
 }

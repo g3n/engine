@@ -6,7 +6,6 @@
 package solver
 
 import (
-	"time"
 	"github.com/g3n/engine/math32"
 )
 
@@ -16,7 +15,6 @@ import (
 // More iterations yield a better solution but require more computation.
 type GaussSeidel struct {
 	Solver
-	Solution
 	maxIter   int     // Number of solver iterations.
 	tolerance float32 // When the error is less than the tolerance, the system is assumed to be converged.
 
@@ -44,28 +42,25 @@ func NewGaussSeidel() *GaussSeidel {
 
 func (gs *GaussSeidel) Reset() {
 
+	// Reset solution
 	gs.VelocityDeltas = gs.VelocityDeltas[0:0]
 	gs.AngularVelocityDeltas = gs.AngularVelocityDeltas[0:0]
+	gs.Iterations = 0
 
+	// Reset internal arrays
 	gs.solveInvCs = gs.solveInvCs[0:0]
 	gs.solveBs = gs.solveBs[0:0]
 	gs.solveLambda = gs.solveLambda[0:0]
 }
 
 // Solve
-func (gs *GaussSeidel) Solve(frameDelta time.Duration, nBodies int) int {
+func (gs *GaussSeidel) Solve(dt float32, nBodies int) *Solution {
 
 	gs.Reset()
 
 	iter := 0
 	nEquations := len(gs.equations)
-	h := float32(frameDelta.Seconds())
-
-	// Reset deltas
-	for i := 0; i < nBodies; i++ {
-		gs.VelocityDeltas = append(gs.VelocityDeltas, math32.Vector3{0,0,0})
-		gs.AngularVelocityDeltas = append(gs.AngularVelocityDeltas, math32.Vector3{0,0,0})
-	}
+	h := dt
 
 	// Things that do not change during iteration can be computed once
 	for i := 0; i < nEquations; i++ {
@@ -106,7 +101,6 @@ func (gs *GaussSeidel) Solve(frameDelta time.Duration, nBodies int) int {
 				rotB := jeB.Rotational()
 
 				GWlambda := jeA.MultiplyVectors(&vA, &wA) + jeB.MultiplyVectors(&vB, &wB)
-
 				deltaLambda := gs.solveInvCs[j] * ( gs.solveBs[j]  - GWlambda - eq.Eps() *lambdaJ)
 
 				// Clamp if we are outside the min/max interval
@@ -119,13 +113,12 @@ func (gs *GaussSeidel) Solve(frameDelta time.Duration, nBodies int) int {
 				deltaLambdaTot += math32.Abs(deltaLambda)
 
 				// Add to velocity deltas
-				gs.VelocityDeltas[idxBodyA].Add(spatA.MultiplyScalar(eq.BodyA().InvMassSolve() * deltaLambda))
-				gs.VelocityDeltas[idxBodyB].Add(spatB.MultiplyScalar(eq.BodyB().InvMassSolve() * deltaLambda))
+				gs.VelocityDeltas[idxBodyA].Add(spatA.MultiplyScalar(eq.BodyA().InvMassEff() * deltaLambda))
+				gs.VelocityDeltas[idxBodyB].Add(spatB.MultiplyScalar(eq.BodyB().InvMassEff() * deltaLambda))
 
 				// Add to angular velocity deltas
-				gs.AngularVelocityDeltas[idxBodyA].Add(rotA.ApplyMatrix3(eq.BodyA().InvInertiaWorldSolve()).MultiplyScalar(deltaLambda))
-				gs.AngularVelocityDeltas[idxBodyB].Add(rotB.ApplyMatrix3(eq.BodyB().InvInertiaWorldSolve()).MultiplyScalar(deltaLambda))
-
+				gs.AngularVelocityDeltas[idxBodyA].Add(rotA.ApplyMatrix3(eq.BodyA().InvRotInertiaWorldEff()).MultiplyScalar(deltaLambda))
+				gs.AngularVelocityDeltas[idxBodyB].Add(rotB.ApplyMatrix3(eq.BodyB().InvRotInertiaWorldEff()).MultiplyScalar(deltaLambda))
 			}
 
 			// If the total error is small enough - stop iterating
@@ -138,9 +131,10 @@ func (gs *GaussSeidel) Solve(frameDelta time.Duration, nBodies int) int {
 		for i := range gs.equations {
 			gs.equations[i].SetMultiplier(gs.solveLambda[i] / h)
 		}
-
 		iter += 1
 	}
 
-	return iter
+	gs.Iterations = iter
+
+	return &gs.Solution
 }

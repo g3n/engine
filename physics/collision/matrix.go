@@ -6,16 +6,12 @@
 package collision
 
 // Matrix is a triangular collision matrix indicating which pairs of bodies are colliding.
-type Matrix struct {
-	col [][]bool
-}
+type Matrix [][]bool
 
 // NewMatrix creates and returns a pointer to a new collision Matrix.
-func NewMatrix() *Matrix {
+func NewMatrix() Matrix {
 
-	m := new(Matrix)
-	m.col = make([][]bool, 0)
-	return m
+	return make([][]bool, 0)
 }
 
 // Set sets whether i and j are colliding.
@@ -29,21 +25,21 @@ func (m *Matrix) Set(i, j int, val bool) {
 		s = j
 		l = i
 	}
-	diff := s + 1 - len(m.col)
+	diff := s + 1 - len(*m)
 	if diff > 0 {
 		for i := 0; i < diff; i++ {
-			m.col = append(m.col, make([]bool,0))
+			*m = append(*m, make([]bool, 0))
 		}
 	}
-	for idx := range m.col {
-		diff = l + 1 - len(m.col[idx]) - idx
+	for idx := range *m {
+		diff = l + 1 - len((*m)[idx]) - idx
 		if diff > 0 {
 			for i := 0; i < diff; i++ {
-				m.col[idx] = append(m.col[idx], false)
+				(*m)[idx] = append((*m)[idx], false)
 			}
 		}
 	}
-	m.col[s][l-s] = val
+	(*m)[s][l-s] = val
 }
 
 // Get returns whether i and j are colliding.
@@ -57,5 +53,11 @@ func (m *Matrix) Get(i, j int) bool {
 		s = j
 		l = i
 	}
-	return m.col[s][l-s]
+	return (*m)[s][l-s]
+}
+
+// Reset clears all values.
+func (m *Matrix) Reset() {
+
+	*m = make([][]bool, 0)
 }

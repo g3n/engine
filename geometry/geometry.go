@@ -430,6 +430,12 @@ func (g *Geometry) ProjectOntoAxis(localAxis *math32.Vector3) (float32, float32)
 	return max, min
 }
 
+// TODO:
+// https://stackoverflow.com/questions/21640545/how-to-check-for-convexity-of-a-3d-mesh
+// func (g *Geometry) IsConvex() bool {
+//
+// {
+
 // ApplyMatrix multiplies each of the geometry position vertices
 // by the specified matrix and apply the correspondent normal
 // transform matrix to the geometry normal vectors.

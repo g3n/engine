@@ -61,9 +61,9 @@ func NewLock(bodyA, bodyB IBody, maxForce float32) *Lock {
 	lc.rotEq2 = equation.NewRotational(bodyA, bodyB, maxForce)
 	lc.rotEq3 = equation.NewRotational(bodyA, bodyB, maxForce)
 
-	lc.equations = append(lc.equations, &lc.rotEq1.Equation)
-	lc.equations = append(lc.equations, &lc.rotEq2.Equation)
-	lc.equations = append(lc.equations, &lc.rotEq3.Equation)
+	lc.AddEquation(lc.rotEq1)
+	lc.AddEquation(lc.rotEq2)
+	lc.AddEquation(lc.rotEq3)
 
 	return lc
 }
