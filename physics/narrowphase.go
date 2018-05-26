@@ -106,9 +106,7 @@ func (n *Narrowphase) Resolve(bodyA, bodyB *object.Body) (bool, []*equation.Cont
 
 			log.Error("contact.Depth: %v", contact.Depth)
 
-			//contactEq.SetRA(contact.Point.Clone().Sub(&posA).MultiplyScalar(1-contact.Depth))//.MultiplyScalar(2))
-			contactEq.SetRA(contact.Normal.Clone().MultiplyScalar(contact.Depth - 0).Add(&contact.Point).Sub(&posA))
-			//contactEq.SetRA(contact.Normal.MultiplyScalar(-contact.Depth*10).Add(&contact.Point).Sub(&posA))
+			contactEq.SetRA(contact.Normal.Clone().MultiplyScalar(contact.Depth).Add(&contact.Point).Sub(&posA))
 			contactEq.SetRB(contact.Point.Clone().Sub(&posB))
 			contactEqs = append(contactEqs, contactEq)
 
@@ -116,8 +114,8 @@ func (n *Narrowphase) Resolve(bodyA, bodyB *object.Body) (bool, []*equation.Cont
 			// We will create average friction equations later based on all contacts
 			// TODO
 			if !n.enableFrictionReduction {
-				//fEq1, fEq2 := n.createFrictionEquationsFromContact(contactEq)
-				//frictionEqs = append(frictionEqs, fEq1, fEq2)
+				fEq1, fEq2 := n.createFrictionEquationsFromContact(contactEq)
+				frictionEqs = append(frictionEqs, fEq1, fEq2)
 			}
 		}
 

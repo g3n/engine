@@ -314,7 +314,7 @@ func (b *Body) SetMass(mass float32) {
 		b.invMass = 1.0 / b.mass
 	} else {
 		b.invMass = 0
-		b.SetBodyType(Static)
+		b.bodyType = Static
 	}
 }
 
@@ -365,6 +365,10 @@ func (b *Body) SleepState() BodySleepState {
 
 func (b *Body) SetBodyType(bt BodyType) {
 
+	if bt == Static {
+		b.mass = 0
+		b.invMass = 0
+	}
 	b.bodyType = bt
 }
 
