@@ -74,14 +74,14 @@ func ShowContact(scene *core.Node, contact *Contact) {
 	vertices := math32.NewArrayF32(0, 16)
 
 	size := float32(0.0005)
-	otherPoint := contact.Point.Clone().Add(contact.Normal.MultiplyScalar(-contact.Depth))
+	otherPoint := contact.Point.Clone().Add(contact.Normal.Clone().MultiplyScalar(-contact.Depth))
 	vertices.AppendVector3(contact.Point.Clone().SetX(contact.Point.X - size))
 	vertices.AppendVector3(contact.Point.Clone().SetX(contact.Point.X + size))
 	vertices.AppendVector3(contact.Point.Clone().SetY(contact.Point.Y - size))
 	vertices.AppendVector3(contact.Point.Clone().SetY(contact.Point.Y + size))
 	vertices.AppendVector3(contact.Point.Clone().SetZ(contact.Point.Z - size))
 	vertices.AppendVector3(contact.Point.Clone().SetZ(contact.Point.Z + size))
-	vertices.AppendVector3(&contact.Point)
+	vertices.AppendVector3(contact.Point.Clone())
 	vertices.AppendVector3(otherPoint)
 
 	geom := geometry.NewGeometry()

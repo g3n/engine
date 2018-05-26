@@ -35,7 +35,7 @@ func NewNarrowphase(simulation *Simulation) *Narrowphase {
 	//n.enableFrictionReduction = true
 
 	// FOR DEBUGGING
-	n.debugging = true
+	//n.debugging = true
 
 	return n
 }
@@ -84,10 +84,12 @@ func (n *Narrowphase) Resolve(bodyA, bodyB *object.Body) (bool, []*equation.Cont
 
 	if penetrating {
 		// Colliding! Find contacts.
-		ShowPenAxis(n.simulation.Scene(), &penAxis) //, -1000, 1000)
-		log.Error("Colliding (%v|%v) penAxis: %v", bodyA.Name(), bodyB.Name(), penAxis)
+		if n.debugging {
+			ShowPenAxis(n.simulation.Scene(), &penAxis) //, -1000, 1000)
+			log.Error("Colliding (%v|%v) penAxis: %v", bodyA.Name(), bodyB.Name(), penAxis)
+		}
 		contacts := n.ClipAgainstHull(bodyA, bodyB, &penAxis, -100, 100)
-		log.Error(" .... contacts: %v", contacts)
+		//log.Error(" .... contacts: %v", contacts)
 
 		posA := bodyA.Position()
 		posB := bodyB.Position()
@@ -95,7 +97,10 @@ func (n *Narrowphase) Resolve(bodyA, bodyB *object.Body) (bool, []*equation.Cont
 		for j := 0; j < len(contacts); j++ {
 
 			contact := contacts[j]
-			ShowContact(n.simulation.Scene(), &contact) // TODO DEBUGGING
+			if n.debugging {
+				ShowContact(n.simulation.Scene(), &contact) // TODO DEBUGGING
+			}
+
 			// Note - contact Normals point from B to A (contacts live in B)
 
 			// Create contact equation and append it
@@ -104,9 +109,9 @@ func (n *Narrowphase) Resolve(bodyA, bodyB *object.Body) (bool, []*equation.Cont
 			contactEq.SetEnabled(bodyA.CollisionResponse() && bodyB.CollisionResponse())
 			contactEq.SetNormal(penAxis.Clone())
 
-			log.Error("contact.Depth: %v", contact.Depth)
+			//log.Error("contact.Depth: %v", contact.Depth)
 
-			contactEq.SetRA(contact.Normal.Clone().MultiplyScalar(contact.Depth).Add(&contact.Point).Sub(&posA))
+			contactEq.SetRA(contact.Normal.Clone().MultiplyScalar(-contact.Depth).Add(&contact.Point).Sub(&posA))
 			contactEq.SetRB(contact.Point.Clone().Sub(&posB))
 			contactEqs = append(contactEqs, contactEq)
 
@@ -483,17 +488,19 @@ func (n *Narrowphase) ClipFaceAgainstHull(penAxis *math32.Vector3, bodyA *object
 	}
 
 
-	// DEBUGGING
-	//log.Error("CONN-FACES: %v", len(connectedFaces))
-	for _, fidx := range connectedFaces {
-		wFace := n.WorldFace(facesA[fidx], bodyA)
-		ShowWorldFace(n.simulation.Scene(), wFace[:], &math32.Color{0.8,0.8,0.8})
-	}
 	worldClosestFaceA := n.WorldFace(closestFaceA, bodyA)
-	//log.Error("worldClosestFaceA: %v", worldClosestFaceA)
-	//log.Error("worldClosestFaceB: %v", worldClosestFaceB)
-	ShowWorldFace(n.simulation.Scene(), worldClosestFaceA[:], &math32.Color{2,0,0})
-	ShowWorldFace(n.simulation.Scene(), worldClosestFaceB[:], &math32.Color{0,2,0})
+	// DEBUGGING
+	if n.debugging {
+		//log.Error("CONN-FACES: %v", len(connectedFaces))
+		for _, fidx := range connectedFaces {
+			wFace := n.WorldFace(facesA[fidx], bodyA)
+			ShowWorldFace(n.simulation.Scene(), wFace[:], &math32.Color{0.8, 0.8, 0.8})
+		}
+		//log.Error("worldClosestFaceA: %v", worldClosestFaceA)
+		//log.Error("worldClosestFaceB: %v", worldClosestFaceB)
+		ShowWorldFace(n.simulation.Scene(), worldClosestFaceA[:], &math32.Color{2, 0, 0})
+		ShowWorldFace(n.simulation.Scene(), worldClosestFaceB[:], &math32.Color{0, 2, 0})
+	}
 
 	clippedFace := make([]math32.Vector3, len(worldClosestFaceB))
 	for i, v := range worldClosestFaceB {
@@ -516,9 +523,10 @@ func (n *Narrowphase) ClipFaceAgainstHull(penAxis *math32.Vector3, bodyA *object
 	}
 
 	// Plot clipped face
-	log.Error("worldClosestFaceBClipped: %v", clippedFace)
-	ShowWorldFace(n.simulation.Scene(), clippedFace, &math32.Color{0,0,2})
-
+	if n.debugging {
+		log.Error("worldClosestFaceBClipped: %v", clippedFace)
+		ShowWorldFace(n.simulation.Scene(), clippedFace, &math32.Color{0, 0, 2})
+	}
 
 	closestFaceAnormal := worldFaceNormalsA[closestFaceAidx]
 	worldFirstVertex := worldClosestFaceA[0].Clone()//.ApplyQuaternion(quatA).Add(&posA)
