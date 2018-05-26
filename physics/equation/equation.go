@@ -80,7 +80,7 @@ func (e *Equation) initialize(bi, bj IBody, minForce, maxForce float32) {
 	e.enabled = true
 	e.multiplier = 0
 
-	// Set typical spook params
+	// Set typical spook params (k, d, dt)
 	e.SetSpookParams(1e7, 3, 1/60)
 }
 

@@ -97,9 +97,7 @@ func (ce *Contact) ComputeB(h float32) float32 {
 	// Calculate the penetration vector
 	posA := ce.bA.Position()
 	posB := ce.bB.Position()
-	(&posB).Add(ce.rB)
-	x := (&posA).Sub(&posB)
-	penetrationVec := ce.rA.Clone().Sub(x)
+	penetrationVec := ce.rB.Clone().Add(&posB).Sub(ce.rA).Sub(&posA)
 
 	g := ce.nA.Dot(penetrationVec)
 

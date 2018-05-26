@@ -27,7 +27,7 @@ type GaussSeidel struct {
 func NewGaussSeidel() *GaussSeidel {
 
 	gs := new(GaussSeidel)
-	gs.maxIter = 10
+	gs.maxIter = 20
 	gs.tolerance = 1e-7
 
 	gs.VelocityDeltas = make([]math32.Vector3, 0)
@@ -40,11 +40,11 @@ func NewGaussSeidel() *GaussSeidel {
 	return gs
 }
 
-func (gs *GaussSeidel) Reset() {
+func (gs *GaussSeidel) Reset(numBodies int) {
 
 	// Reset solution
-	gs.VelocityDeltas = gs.VelocityDeltas[0:0]
-	gs.AngularVelocityDeltas = gs.AngularVelocityDeltas[0:0]
+	gs.VelocityDeltas = make([]math32.Vector3, numBodies)
+	gs.AngularVelocityDeltas = make([]math32.Vector3, numBodies)
 	gs.Iterations = 0
 
 	// Reset internal arrays
@@ -56,7 +56,7 @@ func (gs *GaussSeidel) Reset() {
 // Solve
 func (gs *GaussSeidel) Solve(dt float32, nBodies int) *Solution {
 
-	gs.Reset()
+	gs.Reset(nBodies)
 
 	iter := 0
 	nEquations := len(gs.equations)
@@ -92,31 +92,30 @@ func (gs *GaussSeidel) Solve(dt float32, nBodies int) *Solution {
 				vB := gs.VelocityDeltas[idxBodyB]
 				wA := gs.AngularVelocityDeltas[idxBodyA]
 				wB := gs.AngularVelocityDeltas[idxBodyB]
-
 				jeA := eq.JeA()
 				jeB := eq.JeB()
-				spatA := jeA.Spatial()
-				spatB := jeB.Spatial()
-				rotA := jeA.Rotational()
-				rotB := jeB.Rotational()
-
 				GWlambda := jeA.MultiplyVectors(&vA, &wA) + jeB.MultiplyVectors(&vB, &wB)
+
 				deltaLambda := gs.solveInvCs[j] * ( gs.solveBs[j]  - GWlambda - eq.Eps() *lambdaJ)
 
 				// Clamp if we are outside the min/max interval
-				if lambdaJ+deltaLambda < eq.MinForce() {
+				if lambdaJ + deltaLambda < eq.MinForce() {
 					deltaLambda = eq.MinForce() - lambdaJ
-				} else if lambdaJ+deltaLambda > eq.MaxForce() {
+				} else if lambdaJ + deltaLambda > eq.MaxForce() {
 					deltaLambda = eq.MaxForce() - lambdaJ
 				}
 				gs.solveLambda[j] += deltaLambda
 				deltaLambdaTot += math32.Abs(deltaLambda)
 
 				// Add to velocity deltas
+				spatA := jeA.Spatial()
+				spatB := jeB.Spatial()
 				gs.VelocityDeltas[idxBodyA].Add(spatA.MultiplyScalar(eq.BodyA().InvMassEff() * deltaLambda))
 				gs.VelocityDeltas[idxBodyB].Add(spatB.MultiplyScalar(eq.BodyB().InvMassEff() * deltaLambda))
 
 				// Add to angular velocity deltas
+				rotA := jeA.Rotational()
+				rotB := jeB.Rotational()
 				gs.AngularVelocityDeltas[idxBodyA].Add(rotA.ApplyMatrix3(eq.BodyA().InvRotInertiaWorldEff()).MultiplyScalar(deltaLambda))
 				gs.AngularVelocityDeltas[idxBodyB].Add(rotB.ApplyMatrix3(eq.BodyB().InvRotInertiaWorldEff()).MultiplyScalar(deltaLambda))
 			}

@@ -18,6 +18,8 @@ type Narrowphase struct {
 	currentContactMaterial *material.ContactMaterial
 
 	enableFrictionReduction bool // If true friction is computed as average
+
+	debugging bool
 }
 
 type Pair struct {
@@ -30,7 +32,11 @@ func NewNarrowphase(simulation *Simulation) *Narrowphase {
 
 	n := new(Narrowphase)
 	n.simulation = simulation
-	n.enableFrictionReduction = true
+	//n.enableFrictionReduction = true
+
+	// FOR DEBUGGING
+	n.debugging = true
+
 	return n
 }
 
@@ -78,7 +84,10 @@ func (n *Narrowphase) Resolve(bodyA, bodyB *object.Body) (bool, []*equation.Cont
 
 	if penetrating {
 		// Colliding! Find contacts.
+		ShowPenAxis(n.simulation.Scene(), &penAxis) //, -1000, 1000)
+		log.Error("Colliding (%v|%v) penAxis: %v", bodyA.Name(), bodyB.Name(), penAxis)
 		contacts := n.ClipAgainstHull(bodyA, bodyB, &penAxis, -100, 100)
+		log.Error(" .... contacts: %v", contacts)
 
 		posA := bodyA.Position()
 		posB := bodyB.Position()
@@ -86,29 +95,39 @@ func (n *Narrowphase) Resolve(bodyA, bodyB *object.Body) (bool, []*equation.Cont
 		for j := 0; j < len(contacts); j++ {
 
 			contact := contacts[j]
+			ShowContact(n.simulation.Scene(), &contact) // TODO DEBUGGING
+			// Note - contact Normals point from B to A (contacts live in B)
 
 			// Create contact equation and append it
 			contactEq := equation.NewContact(bodyA, bodyB, 0, 1e6)
+			contactEq.SetSpookParams(1e6, 3, n.simulation.dt)
 			contactEq.SetEnabled(bodyA.CollisionResponse() && bodyB.CollisionResponse())
-			contactEq.SetNormal(penAxis.Negate())
-			contactEq.SetRA(contact.Normal.Negate().MultiplyScalar(contact.Depth).Add(&contact.Point).Sub(&posA))
+			contactEq.SetNormal(penAxis.Clone())
+
+			log.Error("contact.Depth: %v", contact.Depth)
+
+			//contactEq.SetRA(contact.Point.Clone().Sub(&posA).MultiplyScalar(1-contact.Depth))//.MultiplyScalar(2))
+			contactEq.SetRA(contact.Normal.Clone().MultiplyScalar(contact.Depth - 0).Add(&contact.Point).Sub(&posA))
+			//contactEq.SetRA(contact.Normal.MultiplyScalar(-contact.Depth*10).Add(&contact.Point).Sub(&posA))
 			contactEq.SetRB(contact.Point.Clone().Sub(&posB))
 			contactEqs = append(contactEqs, contactEq)
 
 			// If enableFrictionReduction is true then skip creating friction equations for individual contacts
 			// We will create average friction equations later based on all contacts
+			// TODO
 			if !n.enableFrictionReduction {
-				fEq1, fEq2 := n.createFrictionEquationsFromContact(contactEq)
-				frictionEqs = append(frictionEqs, fEq1, fEq2)
+				//fEq1, fEq2 := n.createFrictionEquationsFromContact(contactEq)
+				//frictionEqs = append(frictionEqs, fEq1, fEq2)
 			}
 		}
 
 		// If enableFrictionReduction is true then we skipped creating friction equations for individual contacts
 		// We now want to create average friction equations based on all contact points.
 		// If we only have one contact however, then friction is small and we don't need to create the friction equations at all.
+		// TODO
 		if n.enableFrictionReduction && len(contactEqs) > 1 {
-			fEq1, fEq2 := n.createFrictionFromAverage(contactEqs)
-			frictionEqs = append(frictionEqs, fEq1, fEq2)
+			//fEq1, fEq2 := n.createFrictionFromAverage(contactEqs)
+			//frictionEqs = append(frictionEqs, fEq1, fEq2)
 		}
 	}
 
@@ -132,6 +151,9 @@ func (n *Narrowphase) createFrictionEquationsFromContact(contactEquation *equati
 
 	fricEq1 := equation.NewFriction(bodyA, bodyB, slipForce)
 	fricEq2 := equation.NewFriction(bodyA, bodyB, slipForce)
+
+	fricEq1.SetSpookParams(1e7, 3, n.simulation.dt)
+	fricEq2.SetSpookParams(1e7, 3, n.simulation.dt)
 
 	// Copy over the relative vectors
 	cRA := contactEquation.RA()
@@ -213,9 +235,9 @@ func (n *Narrowphase) createFrictionFromAverage(contactEqs []*equation.Contact) 
 // Penetration Axis =============================================
 //
 
-// FindSeparatingAxis between two convex hulls
-// Returns false if a separation is found, else true
-//@param {Vec3} target The target vector to save the axis in
+// FindPenetrationAxis finds the penetration axis between two convex bodies.
+// The normal points from bodyA to bodyB.
+// Returns false if there is no penetration. If there is a penetration - returns true and the penetration axis.
 func (n *Narrowphase) FindPenetrationAxis(bodyA, bodyB *object.Body) (bool, math32.Vector3) {
 
 	// Keep track of the smaller depth found so far
@@ -287,7 +309,7 @@ func (n *Narrowphase) FindPenetrationAxis(bodyA, bodyB *object.Body) (bool, math
 	posA := bodyA.Position()
 	posB := bodyB.Position()
 
-	deltaC := math32.NewVec3().SubVectors(&posB, &posA)
+	deltaC := math32.NewVec3().SubVectors(&posA, &posB)
    	if deltaC.Dot(&penetrationAxis) > 0.0 {
        	penetrationAxis.Negate()
    	}
@@ -348,6 +370,10 @@ type Contact struct {
 //{array} result The an array of contact point objects, see clipFaceAgainstHull
 func (n *Narrowphase) ClipAgainstHull(bodyA, bodyB *object.Body, penAxis *math32.Vector3, minDist, maxDist float32) []Contact {
 
+	var contacts []Contact
+
+	// Invert penetration axis so it points from b to a
+	invPenAxis := penAxis.Clone().Negate()
 
 	// Find face of B that is closest (i.e. that is most aligned with the penetration axis)
 	closestFaceBidx := -1
@@ -355,22 +381,23 @@ func (n *Narrowphase) ClipAgainstHull(bodyA, bodyB *object.Body, penAxis *math32
 	worldFaceNormalsB := bodyB.WorldFaceNormals()
 	for i, worldFaceNormal := range worldFaceNormalsB {
 		// Note - normals must be pointing out of the body so that they align with the penetration axis in the line below
-		d := worldFaceNormal.Dot(penAxis)
+		d := worldFaceNormal.Dot(invPenAxis)
 		if d > dmax {
 			dmax = d
 			closestFaceBidx = i
 		}
 	}
 
-	// If found a closest face (TODO is this check necessary?)
-	//if closestFaceBidx >= 0 {
+	// If found a closest face (sometimes we don't find one)
+	if closestFaceBidx >= 0 {
 
-	// Copy and transform face vertices to world coordinates
-	faces := bodyB.Faces()
-	worldClosestFaceB := n.WorldFace(faces[closestFaceBidx], bodyB)
+		// Copy and transform face vertices to world coordinates
+		faces := bodyB.Faces()
+		worldClosestFaceB := n.WorldFace(faces[closestFaceBidx], bodyB)
+		contacts = n.ClipFaceAgainstHull(penAxis, bodyA, worldClosestFaceB, minDist, maxDist)
+	}
 
-	return n.ClipFaceAgainstHull(penAxis, bodyA, worldClosestFaceB, minDist, maxDist)
-	//}
+	return contacts
 }
 
 func (n *Narrowphase) WorldFace(face [3]math32.Vector3, body *object.Body) [3]math32.Vector3 {
@@ -400,21 +427,7 @@ func (n *Narrowphase) WorldFaceNormal(normal *math32.Vector3, body *object.Body)
 //@param Array result Array to store resulting contact points in. Will be objects with properties: point, depth, normal. These are represented in world coordinates.
 func (n *Narrowphase) ClipFaceAgainstHull(penAxis *math32.Vector3, bodyA *object.Body, worldClosestFaceB [3]math32.Vector3, minDist, maxDist float32) []Contact {
 
-	//faceANormalWS := cfah_faceANormalWS
-	//edge0 := cfah_edge0
-	//WorldEdge0 := cfah_WorldEdge0
-	//worldPlaneAnormal1 := cfah_worldPlaneAnormal1
-	//planeNormalWS1 := cfah_planeNormalWS1
-	//worldA1 := cfah_worldA1
-	//localPlaneNormal := cfah_localPlaneNormal
-	//planeNormalWS := cfah_planeNormalWS
-	//
-	//worldVertsB2 := []
-	//pVtxIn := worldVertsB1
-	//pVtxOut := worldVertsB2
-
 	contacts := make([]Contact, 0)
-
 
 	// Find the face of A with normal closest to the separating axis (i.e. that is most aligned with the penetration axis)
 	closestFaceAidx := -1
@@ -434,14 +447,15 @@ func (n *Narrowphase) ClipFaceAgainstHull(penAxis *math32.Vector3, bodyA *object
 		return contacts
 	}
 
-	//console.log("closest A: ",closestFaceA);
+	//console.log("closest A: ",worldClosestFaceA);
 
 	// Get the face and construct connected faces
 	facesA := bodyA.Faces()
-	closestFaceA := n.WorldFace(facesA[closestFaceAidx], bodyA)
+	//worldClosestFaceA := n.WorldFace(facesA[closestFaceAidx], bodyA)
+	closestFaceA := facesA[closestFaceAidx]
 	connectedFaces := make([]int, 0) // indexes of the connected faces
 	for faceIdx := 0; faceIdx < len(facesA); faceIdx++ {
-		// Skip closestFaceA
+		// Skip worldClosestFaceA
 		if faceIdx == closestFaceAidx {
 			continue
 		}
@@ -470,6 +484,24 @@ func (n *Narrowphase) ClipFaceAgainstHull(penAxis *math32.Vector3, bodyA *object
 	    }
 	}
 
+
+	// DEBUGGING
+	//log.Error("CONN-FACES: %v", len(connectedFaces))
+	for _, fidx := range connectedFaces {
+		wFace := n.WorldFace(facesA[fidx], bodyA)
+		ShowWorldFace(n.simulation.Scene(), wFace[:], &math32.Color{0.8,0.8,0.8})
+	}
+	worldClosestFaceA := n.WorldFace(closestFaceA, bodyA)
+	//log.Error("worldClosestFaceA: %v", worldClosestFaceA)
+	//log.Error("worldClosestFaceB: %v", worldClosestFaceB)
+	ShowWorldFace(n.simulation.Scene(), worldClosestFaceA[:], &math32.Color{2,0,0})
+	ShowWorldFace(n.simulation.Scene(), worldClosestFaceB[:], &math32.Color{0,2,0})
+
+	clippedFace := make([]math32.Vector3, len(worldClosestFaceB))
+	for i, v := range worldClosestFaceB {
+		clippedFace[i] = v
+	}
+
 	// TODO port simplified loop to cannon.js once done and verified
 	// https://github.com/schteppe/cannon.js/issues/378
 	// https://github.com/TheRohans/cannon.js/commit/62a1ce47a851b7045e68f7b120b9e4ecb0d91aab#r29106924
@@ -482,18 +514,20 @@ func (n *Narrowphase) ClipFaceAgainstHull(penAxis *math32.Vector3, bodyA *object
 		// Choose a vertex in the connected face and use it to find the plane constant
 		worldFirstVertex := connFace[0].Clone().ApplyQuaternion(quatA).Add(&posA)
 		planeDelta := - worldFirstVertex.Dot(&connFaceNormal)
-		n.ClipFaceAgainstPlane(worldClosestFaceB, &connFaceNormal, planeDelta)
+		clippedFace = n.ClipFaceAgainstPlane(clippedFace, connFaceNormal.Clone(), planeDelta)
 	}
 
-	//console.log("Resulting points after clip:",pVtxIn);
+	// Plot clipped face
+	log.Error("worldClosestFaceBClipped: %v", clippedFace)
+	ShowWorldFace(n.simulation.Scene(), clippedFace, &math32.Color{0,0,2})
+
 
 	closestFaceAnormal := worldFaceNormalsA[closestFaceAidx]
-	worldFirstVertex := closestFaceA[0].Clone().ApplyQuaternion(quatA).Add(&posA)
-	planeDelta := - worldFirstVertex.Dot(&closestFaceAnormal)
-	planeEqWS := planeDelta - closestFaceAnormal.Dot(&posA)
+	worldFirstVertex := worldClosestFaceA[0].Clone()//.ApplyQuaternion(quatA).Add(&posA)
+	planeDelta := -worldFirstVertex.Dot(&closestFaceAnormal)
 
-	for _, vertex := range worldClosestFaceB {
-		depth := closestFaceAnormal.Dot(&vertex) + planeEqWS // TODO verify MATH! Depth should be negative when penetrating (according to cannon.js)
+	for _, vertex := range clippedFace {
+		depth := closestFaceAnormal.Dot(&vertex) + planeDelta
 		// Cap distance
 		if depth <= minDist {
 			depth = minDist
@@ -516,36 +550,42 @@ func (n *Narrowphase) ClipFaceAgainstHull(penAxis *math32.Vector3, bodyA *object
 
 // Clip a face in a hull against the back of a plane.
 // @param {Number} planeConstant The constant in the mathematical plane equation
-func (n *Narrowphase) ClipFaceAgainstPlane(face [3]math32.Vector3, planeNormal *math32.Vector3, planeConstant float32) []math32.Vector3 {
+func (n *Narrowphase) ClipFaceAgainstPlane(face []math32.Vector3, planeNormal *math32.Vector3, planeConstant float32) []math32.Vector3 {
 
 	// inVertices are the verts making up the face of hullB
-	var outVertices []math32.Vector3
+
+	clippedFace := make([]math32.Vector3, 0)
+
+	if len(face) < 2 {
+		return face
+	}
 
 	firstVertex := face[len(face)-1]
 	dotFirst := planeNormal.Dot(&firstVertex) + planeConstant
 
 	for vi := 0; vi < len(face); vi++ {
-	    lastVertex := face[vi]
-	    dotLast := planeNormal.Dot(&lastVertex) + planeConstant
-	    if dotFirst < 0 {
-	    	var newv *math32.Vector3
-	        if dotLast < 0 { // Start < 0, end < 0, so output lastVertex
-	            newv = lastVertex.Clone()
-	        } else { // Start < 0, end >= 0, so output intersection
-	            newv = firstVertex.Clone().Lerp(&lastVertex, dotFirst / (dotFirst - dotLast))
-	        }
-			outVertices = append(outVertices, *newv)
-	    } else {
-	        if dotLast < 0 { // Start >= 0, end < 0 so output intersection and end
-	            newv := firstVertex.Clone().Lerp(&lastVertex, dotFirst / (dotFirst - dotLast))
-				outVertices = append(outVertices, *newv, lastVertex)
-	        }
-	    }
-	    firstVertex = lastVertex
+		lastVertex := face[vi]
+		dotLast := planeNormal.Dot(&lastVertex) + planeConstant
+		if dotFirst < 0 { // Inside hull
+	       	if dotLast < 0 { // Start < 0, end < 0, so output lastVertex
+				clippedFace = append(clippedFace, lastVertex)
+	       	} else { // Start < 0, end >= 0, so output intersection
+				newv := firstVertex.Clone().Lerp(&lastVertex, dotFirst / (dotFirst - dotLast))
+				clippedFace = append(clippedFace, *newv)
+	       	}
+	   	} else { // Outside hull
+	       	if dotLast < 0 { // Start >= 0, end < 0 so output intersection and end
+	           	newv := firstVertex.Clone().Lerp(&lastVertex, dotFirst / (dotFirst - dotLast))
+				clippedFace = append(clippedFace, *newv)
+				clippedFace = append(clippedFace, lastVertex)
+	       	}
+		}
+		firstVertex = lastVertex
 		dotFirst = dotLast
 	}
 
-	return outVertices
+	return clippedFace
+
 }
 
 //// TODO ?

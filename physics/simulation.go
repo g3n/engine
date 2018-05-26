@@ -5,7 +5,6 @@
 package physics
 
 import (
-	"time"
 	"github.com/g3n/engine/physics/equation"
 	"github.com/g3n/engine/physics/solver"
 	"github.com/g3n/engine/physics/constraint"
@@ -13,6 +12,7 @@ import (
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/physics/object"
 	"github.com/g3n/engine/physics/material"
+	"github.com/g3n/engine/core"
 )
 
 type ICollidable interface {
@@ -38,6 +38,7 @@ type Simulation struct {
 	allowSleep  bool                // Makes bodies go to sleep when they've been inactive
 	contactEqs  []*equation.Contact // All the current contacts (instances of ContactEquation) in the world.
 	frictionEqs []*equation.Friction
+	paused bool
 
 	quatNormalizeSkip int // How often to normalize quaternions. Set to 0 for every step, 1 for every second etc..
 	                      // A larger value increases performance.
@@ -69,26 +70,36 @@ type Simulation struct {
 
 
 	doProfiling      bool
+	scene *core.Node
 }
 
 // NewSimulation creates and returns a pointer to a new physics simulation.
-func NewSimulation() *Simulation {
+func NewSimulation(scene *core.Node) *Simulation {
 
 	s := new(Simulation)
 	s.time = 0
 	s.dt = -1
 	s.default_dt = 1/60
+	s.scene = scene
 
 	// Set up broadphase, narrowphase, and solver
 	s.broadphase = collision.NewBroadphase()
 	s.narrowphase = NewNarrowphase(s)
 	s.solver = solver.NewGaussSeidel()
 
+	s.collisionMatrix = collision.NewMatrix()
+	s.prevCollisionMatrix = collision.NewMatrix()
+
 	//s.contactMaterialTable = make(map[intPair]*ContactMaterial)
 	//s.defaultMaterial = NewMaterial
 	s.defaultContactMaterial = material.NewContactMaterial()
 
 	return s
+}
+
+func (s *Simulation) Scene() *core.Node {
+
+	return s.scene
 }
 
 // AddForceField adds a force field to the simulation.
@@ -113,7 +124,7 @@ func (s *Simulation) RemoveForceField(ff ForceField) bool {
 }
 
 // AddBody adds a body to the simulation.
-func (s *Simulation) AddBody(body *object.Body) {
+func (s *Simulation) AddBody(body *object.Body, name string) {
 
 	// Do nothing if body already present
 	for _, existingBody := range s.bodies {
@@ -128,10 +139,16 @@ func (s *Simulation) AddBody(body *object.Body) {
 		idx = s.nilBodies[nilLen]
 		s.nilBodies = s.nilBodies[0:nilLen-1]
 	} else {
+		idx = len(s.bodies)
 		s.bodies = append(s.bodies, body)
 	}
 
 	body.SetIndex(idx)
+	body.SetName(name)
+
+	// Initialize values up to the current index (and set the colliding flag to false)
+	s.collisionMatrix.Set(idx, idx, false)
+	s.prevCollisionMatrix.Set(idx, idx, false)
 
 	// TODO dispatch add-body event
 	//s.Dispatch(AddBodyEvent, BodyEvent{body})
@@ -179,27 +196,61 @@ func (s *Simulation) Bodies() []*object.Body{
 	return s.bodies
 }
 
+func (s *Simulation) Step(frameDelta float32) {
+
+	s.StepPlus(frameDelta, 0, 10)
+}
+
 
 // Step steps the simulation.
-func (s *Simulation) Step(frameDelta time.Duration) {
+// maxSubSteps should be 10 by default
+func (s *Simulation) StepPlus(frameDelta float32, timeSinceLastCalled float32, maxSubSteps int) {
 
-	// Check for collisions
-	//collisions := s.CheckCollisions()
-	//if len(collisions) > 0 {
-	//	// Backtrack to 0 penetration
-	//	s.Backtrack()
-	//}
+	if s.paused {
+		return
+	}
 
-	// Apply static forces/inertia/impulses (only to objects that did not collide)
-	//s.applyForceFields()
-	// s.applyDrag(frameDelta) // TODO
+	dt := frameDelta//float32(frameDelta.Seconds())
 
-	// Apply impact forces/inertia/impulses to objects that collided
-	//s.applyImpactForces(frameDelta)
+    //if timeSinceLastCalled == 0 { // Fixed, simple stepping
 
-	// Update object positions based on calculated final speeds
-	//s.updatePositions(frameDelta)
+        s.internalStep(dt)
 
+        // Increment time
+        //s.time += dt
+
+    //} else {
+	//
+    //    s.accumulator += timeSinceLastCalled
+    //    var substeps = 0
+    //    for s.accumulator >= dt && substeps < maxSubSteps {
+    //        // Do fixed steps to catch up
+    //        s.internalStep(dt)
+    //        s.accumulator -= dt
+    //        substeps++
+    //    }
+	//
+    //    var t = (s.accumulator % dt) / dt
+    //    for j := 0; j < len(s.bodies); j++ {
+    //        var b = s.bodies[j]
+    //        b.previousPosition.lerp(b.position, t, b.interpolatedPosition)
+    //        b.previousQuaternion.slerp(b.quaternion, t, b.interpolatedQuaternion)
+    //        b.previousQuaternion.normalize()
+    //    }
+    //    s.time += timeSinceLastCalled
+    //}
+
+}
+
+func (s *Simulation) SetPaused(state bool) {
+
+	s.paused = state
+}
+
+
+func (s *Simulation) Paused() bool {
+
+	return s.paused
 }
 
 // ClearForces sets all body forces in the world to zero.
@@ -294,6 +345,14 @@ func (s *Simulation) collisionMatrixTick() {
 	s.prevCollisionMatrix = s.collisionMatrix
 	s.collisionMatrix = collision.NewMatrix()
 
+	lb := len(s.bodies)
+	s.collisionMatrix.Set(lb, lb, false)
+
+	// TODO verify that the matrices are indeed different
+	//if s.prevCollisionMatrix == s.collisionMatrix {
+	//	log.Error("SAME")
+	//}
+
 	// TODO
 	//s.bodyOverlapKeeper.tick()
 	//s.shapeOverlapKeeper.tick()
@@ -301,6 +360,8 @@ func (s *Simulation) collisionMatrixTick() {
 
 // TODO read https://gafferongames.com/post/fix_your_timestep/
 func (s *Simulation) internalStep(dt float32) {
+
+	s.dt = dt
 
 	// Apply force fields and compute world normals/edges
 	for _, b := range s.bodies {
@@ -384,7 +445,7 @@ func (s *Simulation) internalStep(dt float32) {
     // TODO s.Dispatch(World_step_preStepEvent)
 
 	// Integrate the forces into velocities into position deltas
-    quatNormalize := s.stepnumber % (s.quatNormalizeSkip + 1) == 0
+    quatNormalize := true// s.stepnumber % (s.quatNormalizeSkip + 1) == 0
     for i := 0; i < len(s.bodies); i++ {
 		s.bodies[i].Integrate(dt, quatNormalize, s.quatNormalizeFast)
     }
