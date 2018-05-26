@@ -29,8 +29,8 @@ func (b *Broadphase) FindCollisionPairs(objects []*object.Body) []Pair {
 
 	pairs := make([]Pair,0)
 
-	for _, bodyA := range objects {
-		for _, bodyB := range objects {
+	for iA, bodyA := range objects {
+		for _, bodyB := range objects[iA+1:] {
 			if b.NeedTest(bodyA, bodyB) {
 				BBa := bodyA.BoundingBox()
 				BBb := bodyB.BoundingBox()

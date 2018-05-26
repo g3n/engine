@@ -16,6 +16,7 @@ type Body struct {
 
 	material             *material.Material   // Physics material specifying friction and restitution
 	index int
+	name string
 
 	// Mass properties
 	mass       float32 // Total mass
@@ -135,21 +136,23 @@ const (
 	CollideEvent = "physics.CollideEvent" // Dispatched after two bodies collide. This event is dispatched on each of the two bodies involved in the collision.
 )
 
+// TODO
+type HullType int
+const (
+	Sphere = HullType(iota)
+	Capsule
+	Mesh // use mesh itself
+)
+
+
 // NewBody creates and returns a pointer to a new RigidBody.
 // The igraphic's geometry *must* be convex.
 func NewBody(igraphic graphic.IGraphic) *Body {
 
 	b := new(Body)
 	b.Graphic = igraphic.GetGraphic()
-
-	// TODO mass setter/getter
-	b.mass = 1 // cannon.js default is 0
-	if b.mass > 0 {
-		b.invMass = 1.0 / b.mass
-	} else {
-		b.invMass = 0
-	}
-	b.bodyType = Dynamic // TODO auto set to Static if mass == 0
+	b.SetMass(1)
+	b.bodyType = Dynamic
 
 	// Rotational inertia and related properties
 	b.rotInertia = math32.NewMatrix3()
@@ -188,14 +191,18 @@ func NewBody(igraphic graphic.IGraphic) *Body {
 	b.linearFactor = math32.NewVector3(1, 1, 1)
 	b.angularFactor = math32.NewVector3(1, 1, 1)
 
+	// Sleep settings
 	b.allowSleep = true
 	b.sleepState = Awake
 	b.sleepSpeedLimit = 0.1
 	b.sleepTimeLimit = 1
 	b.timeLastSleepy = 0
 
+	// Collision filtering
 	b.colFilterGroup = 1
 	b.colFilterMask = -1
+
+	//b.fixedRotation = true
 
 	b.wakeUpAfterNarrowphase = false
 
@@ -203,6 +210,7 @@ func NewBody(igraphic graphic.IGraphic) *Body {
 	b.computeFaceNormalsAndUniqueEdges()
 
 	b.UpdateMassProperties()
+	b.UpdateEffectiveMassProperties()
 
 	return b
 }
@@ -227,7 +235,7 @@ func (b *Body) computeFaceNormalsAndUniqueEdges() {
 		// Compute and store face normal in b.faceNormals
 		faceNormal := math32.NewVec3().CrossVectors(edge2, edge1)
 		if faceNormal.Length() > 0 {
-			faceNormal.Normalize()
+			faceNormal.Normalize().Negate()
 		}
 		b.faceNormals = append(b.faceNormals, *faceNormal)
 
@@ -299,9 +307,30 @@ func (b *Body) BoundingBox() math32.Box3 {
 	return b.GetGeometry().BoundingBox()
 }
 
+func (b *Body) SetMass(mass float32) {
+
+	b.mass = mass
+	if b.mass > 0 {
+		b.invMass = 1.0 / b.mass
+	} else {
+		b.invMass = 0
+		b.SetBodyType(Static)
+	}
+}
+
 func (b *Body) SetIndex(i int) {
 
 	b.index = i
+}
+
+func (b *Body) SetName(name string) {
+
+	b.name = name
+}
+
+func (b *Body) Name() string {
+
+	return b.name
 }
 
 func (b *Body) Index() int {
@@ -334,6 +363,11 @@ func (b *Body) SleepState() BodySleepState {
 	return b.sleepState
 }
 
+func (b *Body) SetBodyType(bt BodyType) {
+
+	b.bodyType = bt
+}
+
 func (b *Body) BodyType() BodyType {
 
 	return b. bodyType
@@ -349,16 +383,10 @@ func (b *Body) WakeUpAfterNarrowphase() bool {
 	return b.wakeUpAfterNarrowphase
 }
 
-func (b *Body) ApplyDamping(dt float32) {
-
-	b.velocity.MultiplyScalar(math32.Pow(1.0 - b.linearDamping, dt))
-	b.angularVelocity.MultiplyScalar(math32.Pow(1.0 - b.angularDamping, dt))
-}
-
 func (b *Body) ApplyVelocityDeltas(linearD, angularD *math32.Vector3) {
 
-	b.velocity.Add(linearD.Multiply(b.LinearFactor()))
-	b.angularVelocity.Add(angularD.Multiply(b.AngularFactor()))
+	b.velocity.Add(linearD.Multiply(b.linearFactor))
+	b.angularVelocity.Add(angularD.Multiply(b.angularFactor))
 }
 
 func (b *Body) ClearForces() {
@@ -384,7 +412,7 @@ func (b *Body) Position() math32.Vector3 {
 
 func (b *Body) Quaternion() *math32.Quaternion {
 
-	return b.quaternion
+	return b.quaternion.Clone()
 }
 
 func (b *Body) SetVelocity(vel *math32.Vector3) {
@@ -417,9 +445,19 @@ func (b *Body) Torque() math32.Vector3 {
 	return *b.torque
 }
 
+func (b *Body) SetLinearDamping(d float32) {
+
+	b.linearDamping = d
+}
+
 func (b *Body) LinearDamping() float32 {
 
 	return b.linearDamping
+}
+
+func (b *Body) SetAngularDamping(d float32) {
+
+	b.angularDamping = d
 }
 
 func (b *Body) AngularDamping() float32 {
@@ -427,15 +465,33 @@ func (b *Body) AngularDamping() float32 {
 	return b.angularDamping
 }
 
-func (b *Body) LinearFactor() *math32.Vector3 {
+func (b *Body) ApplyDamping(dt float32) {
 
-	return b.linearFactor
+	b.velocity.MultiplyScalar(math32.Pow(1.0 - b.linearDamping, dt))
+	b.angularVelocity.MultiplyScalar(math32.Pow(1.0 - b.angularDamping, dt))
 }
 
-func (b *Body) AngularFactor() *math32.Vector3 {
+func (b *Body) SetLinearFactor(factor *math32.Vector3) {
 
-	return b.angularFactor
+	b.linearFactor = factor
 }
+
+func (b *Body) LinearFactor() math32.Vector3 {
+
+	return *b.linearFactor
+}
+
+func (b *Body) SetAngularFactor(factor *math32.Vector3) {
+
+	b.angularFactor = factor
+}
+
+func (b *Body) AngularFactor() math32.Vector3 {
+
+	return *b.angularFactor
+}
+
+
 
 // WakeUp wakes the body up.
 func (b *Body) WakeUp() {
@@ -556,8 +612,9 @@ func (b *Body) UpdateMassProperties() {
 		b.invRotInertia.Zero()
 	} else {
 		*b.rotInertia = b.GetGeometry().RotationalInertia()
+		b.rotInertia.MultiplyScalar(1000) // multiply by high density // TODO remove this ?
 		b.invRotInertia.GetInverse(b.rotInertia) // Note: rotInertia is always positive definite and thus always invertible
-}
+	}
 
 	b.UpdateInertiaWorld(true)
 }
@@ -719,22 +776,22 @@ func (b *Body) Integrate(dt float32, quatNormalize, quatNormalizeFast bool) {
 	halfDt := dt * 0.5
 	b.quaternion.X += halfDt * (ax*bw + ay*bz - az*by)
 	b.quaternion.Y += halfDt * (ay*bw + az*bx - ax*bz)
-	b.quaternion.X += halfDt * (az*bw + ax*by - ay*bx)
+	b.quaternion.Z += halfDt * (az*bw + ax*by - ay*bx)
 	b.quaternion.W += halfDt * (-ax*bx - ay*by - az*bz)
+
+	// Normalize quaternion
+	b.quaternion.Normalize()
+	//if quatNormalize { // TODO future
+	//	if quatNormalizeFast {
+	//		b.quaternion.NormalizeFast()
+	//	} else {
+	//		b.quaternion.Normalize()
+	//	}
+	//}
 
 	// Update position and rotation of Node (containing visual representation of the body)
 	b.GetNode().SetPositionVec(b.position)
-	vRot := math32.NewVec3().SetFromQuaternion(b.quaternion)
-	b.GetNode().SetRotationVec(vRot)
-
-	// Normalize quaternion
-	if quatNormalize {
-		if quatNormalizeFast {
-			b.quaternion.NormalizeFast()
-		} else {
-			b.quaternion.Normalize()
-		}
-	}
+	b.GetNode().SetRotationQuat(b.quaternion)
 
 	b.aabbNeedsUpdate = true
 

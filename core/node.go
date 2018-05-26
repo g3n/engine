@@ -415,6 +415,14 @@ func (n *Node) SetRotationVec(vrot *math32.Vector3) {
 	n.changed = true
 }
 
+// SetRotationQuat sets the rotation based on the specified quaternion pointer.
+// The stored quaternion is updated accordingly.
+func (n *Node) SetRotationQuat(quat *math32.Quaternion) {
+
+	n.quaternion = *quat
+	n.changed = true
+}
+
 // SetRotationX sets the X rotation to the specified angle in radians.
 // The stored quaternion is updated accordingly.
 func (n *Node) SetRotationX(x float32) {
