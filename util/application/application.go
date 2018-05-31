@@ -50,6 +50,7 @@ type Application struct {
 	noglErrors        *bool                 // No OpenGL check errors options
 	cpuProfile        *string               // File to write cpu profile to
 	execTrace         *string               // File to write execution trace data to
+	userData          interface{}			// for user singleton data
 }
 
 // Options defines initial options passed to the application creation function
@@ -310,6 +311,18 @@ func (app *Application) Camera() camera.ICamera {
 func (app *Application) SetCamera(cam camera.ICamera) {
 
 	app.camera = cam
+}
+
+// SetUserData sets the users singleton data associated to the application.
+func (n *Application) SetUserData(data interface{}) {
+
+	n.userData = data
+}
+
+// UserData returns the users singleton data associated to the application.
+func (n *Application) UserData() interface{} {
+
+	return n.userData
 }
 
 // Orbit returns the current camera orbit control
