@@ -8,6 +8,7 @@ import (
 	"github.com/g3n/engine/graphic"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/material"
+	"github.com/g3n/engine/physics/shape"
 )
 
 // Body represents a physics-driven body.
@@ -86,6 +87,7 @@ type Body struct {
 	uniqueEdges      []math32.Vector3
 	worldUniqueEdges []math32.Vector3
 
+	shape shape.IShape
 
 	// TODO future (for now a body is a single graphic with a single geometry)
 	// shapes          []*Shape
@@ -151,7 +153,6 @@ func NewBody(igraphic graphic.IGraphic) *Body {
 
 	b := new(Body)
 	b.Graphic = igraphic.GetGraphic()
-	b.SetMass(1)
 	b.bodyType = Dynamic
 
 	// Rotational inertia and related properties
@@ -206,116 +207,54 @@ func NewBody(igraphic graphic.IGraphic) *Body {
 
 	b.wakeUpAfterNarrowphase = false
 
-	// Perform single-time computations
-	b.computeFaceNormalsAndUniqueEdges()
+	b.SetShape(shape.NewConvexHull(b.GetGeometry()))
 
+	b.SetMass(1)
 	b.UpdateMassProperties()
 	b.UpdateEffectiveMassProperties()
 
 	return b
 }
 
-// Compute and store face normals and unique edges
-func (b *Body) computeFaceNormalsAndUniqueEdges() {
+// TODO future: modify this to be "AddShape" and keep track of list of shapes, their positions and orientations
+// For now each body can only be a single shape or a single geometry
+func (b *Body) SetShape(shape shape.IShape) {
 
-	b.GetGeometry().ReadFaces(func(vA, vB, vC math32.Vector3) bool {
-
-		// Store face vertices
-		var face [3]math32.Vector3
-		face[0] = vA
-		face[1] = vB
-		face[2] = vC
-		b.faces = append(b.faces, face)
-
-		// Compute edges
-		edge1 := math32.NewVec3().SubVectors(&vB, &vA)
-		edge2 := math32.NewVec3().SubVectors(&vC, &vB)
-		edge3 := math32.NewVec3().SubVectors(&vA, &vC)
-
-		// Compute and store face normal in b.faceNormals
-		faceNormal := math32.NewVec3().CrossVectors(edge2, edge1)
-		if faceNormal.Length() > 0 {
-			faceNormal.Normalize().Negate()
-		}
-		b.faceNormals = append(b.faceNormals, *faceNormal)
-
-		// Compare unique edges recorded so far with the three new face edges and store the unique ones
-		tol := float32(1e-6)
-		for p := 0; p < len(b.uniqueEdges); p++ {
-			ue := b.uniqueEdges[p]
-			if !ue.AlmostEquals(edge1, tol) {
-				b.uniqueEdges = append(b.uniqueEdges, *edge1)
-			}
-			if !ue.AlmostEquals(edge2, tol) {
-				b.uniqueEdges = append(b.uniqueEdges, *edge1)
-			}
-			if !ue.AlmostEquals(edge3, tol) {
-				b.uniqueEdges = append(b.uniqueEdges, *edge1)
-			}
-		}
-
-		return false
-	})
-
-	// Allocate space for worldFaceNormals and worldUniqueEdges
-	b.worldFaceNormals = make([]math32.Vector3, len(b.faceNormals))
-	b.worldUniqueEdges = make([]math32.Vector3, len(b.uniqueEdges))
+	b.shape = shape
 }
 
-// ComputeWorldFaceNormalsAndUniqueEdges
-func (b *Body) ComputeWorldFaceNormalsAndUniqueEdges() {
+func (b *Body) Shape() shape.IShape {
 
-	// Re-compute world face normals from local face normals
-	for i := 0; i < len(b.faceNormals); i++ {
-		b.worldFaceNormals[i] = b.faceNormals[i]
-		b.worldFaceNormals[i].ApplyQuaternion(b.quaternion)
-	}
-	// Re-compute world unique edges from local unique edges
-	for i := 0; i < len(b.uniqueEdges); i++ {
-		b.worldUniqueEdges[i] = b.uniqueEdges[i]
-		b.worldUniqueEdges[i].ApplyQuaternion(b.quaternion)
-	}
-}
-
-func (b *Body) Faces() [][3]math32.Vector3 {
-
-	return b.faces
-}
-
-func (b *Body) FaceNormals() []math32.Vector3 {
-
-	return b.faceNormals
-}
-
-func (b *Body) WorldFaceNormals() []math32.Vector3 {
-
-	return b.worldFaceNormals
-}
-
-func (b *Body) UniqueEdges() []math32.Vector3 {
-
-	return b.uniqueEdges
-}
-
-func (b *Body) WorldUniqueEdges() []math32.Vector3 {
-
-	return b.worldUniqueEdges
+	return b.shape
 }
 
 func (b *Body) BoundingBox() math32.Box3 {
 
-	return b.GetGeometry().BoundingBox()
+	// TODO future allow multiple shapes
+	mat4 := math32.NewMatrix4().Compose(b.position, b.quaternion, math32.NewVector3(1,1,1))
+	localBB := b.shape.BoundingBox()
+	worldBB := localBB.ApplyMatrix4(mat4)
+	return *worldBB
 }
 
 func (b *Body) SetMass(mass float32) {
 
+	// Do nothing if current mass is already the specified mass
+	if mass == b.mass {
+		return
+	}
+
+	// Set mass and update inverse mass
 	b.mass = mass
 	if b.mass > 0 {
 		b.invMass = 1.0 / b.mass
 	} else {
+		// Body mass is zero - this means that the body is static
 		b.invMass = 0
 		b.bodyType = Static
 	}
+
+	b.UpdateMassProperties()
 }
 
 func (b *Body) SetIndex(i int) {
@@ -363,13 +302,27 @@ func (b *Body) SleepState() BodySleepState {
 	return b.sleepState
 }
 
-func (b *Body) SetBodyType(bt BodyType) {
+// SetBodyType sets the body type.
+func (b *Body) SetBodyType(bodyType BodyType) {
 
-	if bt == Static {
-		b.mass = 0
-		b.invMass = 0
+	// Do nothing if body is already of the specified bodyType
+	if b.bodyType == bodyType {
+		return
 	}
-	b.bodyType = bt
+
+	// If we want the body to be static we need to zero its mass
+	if bodyType == Static {
+		b.mass = 0
+	}
+
+	// Temporarily save original body type and update current body type
+	origBodyType := b.bodyType
+	b.bodyType = bodyType
+
+	// If changed body type to or from Static then we need to update mass properties
+	if origBodyType == Static || b.bodyType == Static {
+		b.UpdateMassProperties()
+	}
 }
 
 func (b *Body) BodyType() BodyType {
@@ -387,12 +340,14 @@ func (b *Body) WakeUpAfterNarrowphase() bool {
 	return b.wakeUpAfterNarrowphase
 }
 
+// ApplyVelocityDeltas adds the specified deltas to the body's linear and angular velocities.
 func (b *Body) ApplyVelocityDeltas(linearD, angularD *math32.Vector3) {
 
 	b.velocity.Add(linearD.Multiply(b.linearFactor))
 	b.angularVelocity.Add(angularD.Multiply(b.angularFactor))
 }
 
+// ClearForces clears all forces on the body.
 func (b *Body) ClearForces() {
 
 	b.force.Zero()
@@ -495,7 +450,18 @@ func (b *Body) AngularFactor() math32.Vector3 {
 	return *b.angularFactor
 }
 
+// SetFixedRotation specifies whether the body should rotate.
+func (b *Body) SetFixedRotation(state bool) {
 
+	// Do nothing if the fixedRotation flag already has the specified value
+	if b.fixedRotation == state {
+		return
+	}
+
+	// Set the fixedRotation flag and update mass properties
+	b.fixedRotation = state
+	b.UpdateMassProperties()
+}
 
 // WakeUp wakes the body up.
 func (b *Body) WakeUp() {
@@ -604,19 +570,18 @@ func (b *Body) UpdateEffectiveMassProperties() {
 // Should be called whenever you change the body shape or mass.
 func (b *Body) UpdateMassProperties() {
 
-	// TODO getter of invMass ?
 	if b.mass > 0 {
 		b.invMass = 1.0 / b.mass
 	} else {
 		b.invMass = 0
 	}
 
-	if b.fixedRotation {
+	if b.fixedRotation || b.bodyType == Static {
 		b.rotInertia.Zero()
 		b.invRotInertia.Zero()
 	} else {
-		*b.rotInertia = b.GetGeometry().RotationalInertia()
-		b.rotInertia.MultiplyScalar(1000) // multiply by high density // TODO remove this ?
+		*b.rotInertia = b.GetGeometry().RotationalInertia(b.mass)
+		b.rotInertia.MultiplyScalar(10) // multiply by high density // TODO remove this ?
 		b.invRotInertia.GetInverse(b.rotInertia) // Note: rotInertia is always positive definite and thus always invertible
 	}
 

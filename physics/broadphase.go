@@ -3,19 +3,20 @@
 // license that can be found in the LICENSE file.
 
 // Package collision implements collision related algorithms and data structures.
-package collision
+package physics
 
 import (
 	"github.com/g3n/engine/physics/object"
 )
 
-// Broadphase is the base class for broadphase implementations.
-type Broadphase struct {}
-
-type Pair struct {
+// CollisionPair is a pair of bodies that may be colliding.
+type CollisionPair struct {
 	BodyA *object.Body
 	BodyB *object.Body
 }
+
+// Broadphase is the base class for broadphase implementations.
+type Broadphase struct {}
 
 // NewBroadphase creates and returns a pointer to a new Broadphase.
 func NewBroadphase() *Broadphase {
@@ -25,9 +26,9 @@ func NewBroadphase() *Broadphase {
 }
 
 // FindCollisionPairs (naive implementation)
-func (b *Broadphase) FindCollisionPairs(objects []*object.Body) []Pair {
+func (b *Broadphase) FindCollisionPairs(objects []*object.Body) []CollisionPair {
 
-	pairs := make([]Pair,0)
+	pairs := make([]CollisionPair,0)
 
 	for iA, bodyA := range objects {
 		for _, bodyB := range objects[iA+1:] {
@@ -35,7 +36,7 @@ func (b *Broadphase) FindCollisionPairs(objects []*object.Body) []Pair {
 				BBa := bodyA.BoundingBox()
 				BBb := bodyB.BoundingBox()
 				if BBa.IsIntersectionBox(&BBb) {
-					pairs = append(pairs, Pair{bodyA, bodyB})
+					pairs = append(pairs, CollisionPair{bodyA, bodyB})
 				}
 			}
 		}

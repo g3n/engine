@@ -12,6 +12,7 @@ import (
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/graphic"
 	"github.com/g3n/engine/material"
+	"github.com/g3n/engine/physics/collision"
 )
 
 // This file contains helpful infrastructure for debugging physics
@@ -69,7 +70,7 @@ func ShowPenAxis(scene *core.Node, axis *math32.Vector3) {//}, min, max float32)
 	scene.Add(faceGraphic)
 }
 
-func ShowContact(scene *core.Node, contact *Contact) {
+func ShowContact(scene *core.Node, contact *collision.Contact) {
 
 	vertices := math32.NewArrayF32(0, 16)
 

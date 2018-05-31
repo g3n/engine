@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 // Package physics implements a basic physics engine.
-package material
+package physics
 
 type Material struct {
 	name        string

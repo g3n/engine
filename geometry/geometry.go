@@ -383,7 +383,7 @@ func (g *Geometry) Volume() float32 {
 // RotationalInertia returns the rotational inertia tensor, also known as the moment of inertia.
 // This assumes constant density of 1 (kg/m^2).
 // To adjust for a different constant density simply scale the returning matrix by the density.
-func (g *Geometry) RotationalInertia() math32.Matrix3 {
+func (g *Geometry) RotationalInertia(mass float32) math32.Matrix3 {
 
 	// If valid, return its value
 	if g.rotInertiaValid {
@@ -397,7 +397,7 @@ func (g *Geometry) RotationalInertia() math32.Matrix3 {
 	b := math32.NewVec3()
 	box := g.BoundingBox()
 	box.Size(b)
-	multiplier := g.Volume() / 12.0
+	multiplier := mass / 12.0
 
 	x := (b.Y*b.Y + b.Z*b.Z) * multiplier
 	y := (b.X*b.X + b.Z*b.Z) * multiplier

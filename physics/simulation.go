@@ -11,38 +11,29 @@ import (
 	"github.com/g3n/engine/physics/collision"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/physics/object"
-	"github.com/g3n/engine/physics/material"
 	"github.com/g3n/engine/core"
+	"github.com/g3n/engine/physics/shape"
 )
-
-type ICollidable interface {
-	Collided() bool
-	Static() bool
-	//GetCollisions() []*Collision
-}
-
-type CollisionGroup struct {
-	// TODO future
-}
 
 // Simulation represents a physics simulation.
 type Simulation struct {
+	scene       *core.Node
 	forceFields []ForceField
 
-	bodies      []*object.Body
-	nilBodies   []int   // Array keeps track of which indices of the 'bodies' array are nil
+	// Bodies under simulation
+	bodies      []*object.Body  // Slice of bodies. May contain nil values.
+	nilBodies   []int           // Array keeps track of which indices of the 'bodies' array are nil
 
+	// Collision tracking
 	collisionMatrix     collision.Matrix // Boolean triangular matrix indicating which pairs of bodies are colliding
 	prevCollisionMatrix collision.Matrix // CollisionMatrix from the previous step.
 
 	allowSleep  bool                // Makes bodies go to sleep when they've been inactive
-	contactEqs  []*equation.Contact // All the current contacts (instances of ContactEquation) in the world.
-	frictionEqs []*equation.Friction
 	paused bool
 
-	quatNormalizeSkip int // How often to normalize quaternions. Set to 0 for every step, 1 for every second etc..
-	                      // A larger value increases performance.
-	                      // If bodies tend to explode, set to a smaller value (zero to be sure nothing can go wrong).
+	quatNormalizeSkip int  // How often to normalize quaternions. Set to 0 for every step, 1 for every second etc..
+	                       // A larger value increases performance.
+	                       // If bodies tend to explode, set to a smaller value (zero to be sure nothing can go wrong).
 	quatNormalizeFast bool // Set to true to use fast quaternion normalization. It is often enough accurate to use. If bodies tend to explode, set to false.
 
 	time float32      // The wall-clock time since simulation start
@@ -50,27 +41,22 @@ type Simulation struct {
 	default_dt float32 // Default and last timestep sizes
 	dt float32      // Currently / last used timestep. Is set to -1 if not available. This value is updated before each internal step, which means that it is "fresh" inside event callbacks.
 
-
 	accumulator float32 // Time accumulator for interpolation. See http://gafferongames.com/game-physics/fix-your-timestep/
 
-	broadphase *collision.Broadphase // The broadphase algorithm to use. Default is NaiveBroadphase
-	narrowphase *Narrowphase // The narrowphase algorithm to use
-	solver solver.ISolver    // The solver algorithm to use. Default is GSSolver
+	broadphase  *Broadphase    // The broadphase algorithm to use, default is NaiveBroadphase
+	narrowphase *Narrowphase   // The narrowphase algorithm to use
+	solver      solver.ISolver // The solver algorithm to use, default is Gauss-Seidel
 
 	constraints       []constraint.IConstraint  // All constraints
 
-	materials         []*material.Material               // All added materials
-	cMaterials        []*material.ContactMaterial
-
-
+	materials         []*Material               // All added materials
+	cMaterials        []*ContactMaterial
 
 	//contactMaterialTable map[intPair]*ContactMaterial // Used to look up a ContactMaterial given two instances of Material.
 	//defaultMaterial *Material
-	defaultContactMaterial *material.ContactMaterial
-
+	defaultContactMaterial *ContactMaterial
 
 	doProfiling      bool
-	scene *core.Node
 }
 
 // NewSimulation creates and returns a pointer to a new physics simulation.
@@ -83,7 +69,7 @@ func NewSimulation(scene *core.Node) *Simulation {
 	s.scene = scene
 
 	// Set up broadphase, narrowphase, and solver
-	s.broadphase = collision.NewBroadphase()
+	s.broadphase = NewBroadphase()
 	s.narrowphase = NewNarrowphase(s)
 	s.solver = solver.NewGaussSeidel()
 
@@ -92,7 +78,7 @@ func NewSimulation(scene *core.Node) *Simulation {
 
 	//s.contactMaterialTable = make(map[intPair]*ContactMaterial)
 	//s.defaultMaterial = NewMaterial
-	s.defaultContactMaterial = material.NewContactMaterial()
+	s.defaultContactMaterial = NewContactMaterial()
 
 	return s
 }
@@ -126,13 +112,15 @@ func (s *Simulation) RemoveForceField(ff ForceField) bool {
 // AddBody adds a body to the simulation.
 func (s *Simulation) AddBody(body *object.Body, name string) {
 
-	// Do nothing if body already present
+	// Do nothing if body is already present
 	for _, existingBody := range s.bodies {
 		if existingBody == body {
 			return // Do nothing
 		}
 	}
 
+	// If there are any open/nil spots in the body slice - add the body to one of them
+	// Else, just append to the end of the slice. Either way compute the body's index in the slice.
 	var idx int
 	nilLen := len(s.nilBodies)
 	if nilLen > 0 {
@@ -141,14 +129,14 @@ func (s *Simulation) AddBody(body *object.Body, name string) {
 	} else {
 		idx = len(s.bodies)
 		s.bodies = append(s.bodies, body)
+
+		// Initialize collision matrix values up to the current index (and set the colliding flag to false)
+		s.collisionMatrix.Set(idx, idx, false)
+		s.prevCollisionMatrix.Set(idx, idx, false)
 	}
 
 	body.SetIndex(idx)
 	body.SetName(name)
-
-	// Initialize values up to the current index (and set the colliding flag to false)
-	s.collisionMatrix.Set(idx, idx, false)
-	s.prevCollisionMatrix.Set(idx, idx, false)
 
 	// TODO dispatch add-body event
 	//s.Dispatch(AddBodyEvent, BodyEvent{body})
@@ -161,14 +149,11 @@ func (s *Simulation) RemoveBody(body *object.Body) bool {
 	for idx, current := range s.bodies {
 		if current == body {
 			s.bodies[idx] = nil
-
 			// TODO dispatch remove-body event
 			//s.Dispatch(AddBodyEvent, BodyEvent{body})
-
 			return true
 		}
 	}
-
 	return false
 }
 
@@ -242,12 +227,13 @@ func (s *Simulation) StepPlus(frameDelta float32, timeSinceLastCalled float32, m
 
 }
 
+// SetPaused sets the paused state of the simulation.
 func (s *Simulation) SetPaused(state bool) {
 
 	s.paused = state
 }
 
-
+// Paused returns the paused state of the simulation.
 func (s *Simulation) Paused() bool {
 
 	return s.paused
@@ -261,7 +247,7 @@ func (s *Simulation) ClearForces() {
 	}
 }
 
-// Add a constraint to the simulation.
+// AddConstraint adds a constraint to the simulation.
 func (s *Simulation) AddConstraint(c constraint.IConstraint) {
 
 	s.constraints = append(s.constraints, c)
@@ -272,18 +258,18 @@ func (s *Simulation) RemoveConstraint(c constraint.IConstraint) {
 	// TODO
 }
 
-func (s *Simulation) AddMaterial(mat *material.Material) {
+func (s *Simulation) AddMaterial(mat *Material) {
 
 	s.materials = append(s.materials, mat)
 }
 
-func (s *Simulation) RemoveMaterial(mat *material.Material) {
+func (s *Simulation) RemoveMaterial(mat *Material) {
 
 	// TODO
 }
 
 // Adds a contact material to the simulation
-func (s *Simulation) AddContactMaterial(cmat *material.ContactMaterial) {
+func (s *Simulation) AddContactMaterial(cmat *ContactMaterial) {
 
 	s.cMaterials = append(s.cMaterials, cmat)
 
@@ -292,9 +278,9 @@ func (s *Simulation) AddContactMaterial(cmat *material.ContactMaterial) {
 }
 
 // GetContactMaterial returns the contact material between the specified bodies.
-func (s *Simulation) GetContactMaterial(bodyA, bodyB *object.Body) *material.ContactMaterial {
+func (s *Simulation) GetContactMaterial(bodyA, bodyB *object.Body) *ContactMaterial {
 
-	var cm *material.ContactMaterial
+	var cm *ContactMaterial
 	// TODO
 	//if bodyA.material != nil && bodyB.material != nil {
 	//	cm = s.contactMaterialTable.get(bodyA.material.id, bodyB.material.id)
@@ -330,7 +316,9 @@ const (
 // ===========================
 
 
-// Note - this method alters the solution arrays
+// ApplySolution applies the specified solution to the bodies under simulation.
+// The solution is a set of linear and angular velocity deltas for each body.
+// This method alters the solution arrays.
 func (s *Simulation) ApplySolution(sol *solver.Solution) {
 
 	// Add results to velocity and angular velocity of bodies
@@ -358,15 +346,44 @@ func (s *Simulation) collisionMatrixTick() {
 	//s.shapeOverlapKeeper.tick()
 }
 
+func (s *Simulation) uniqueBodiesFromPairs(pairs []CollisionPair) []*object.Body {
+
+	bodiesUndergoingNarrowphase := make([]*object.Body, 0) // array of indices of s.bodies
+	for _, pair := range pairs {
+		alreadyAddedA := false
+		alreadyAddedB := false
+		for _, body := range bodiesUndergoingNarrowphase {
+			if pair.BodyA == body {
+				alreadyAddedA = true
+				if alreadyAddedB {
+					break
+				}
+			}
+			if pair.BodyB == body {
+				alreadyAddedB = true
+				if alreadyAddedA {
+					break
+				}
+			}
+		}
+		if !alreadyAddedA {
+			bodiesUndergoingNarrowphase = append(bodiesUndergoingNarrowphase, pair.BodyA)
+		}
+		if !alreadyAddedB {
+			bodiesUndergoingNarrowphase = append(bodiesUndergoingNarrowphase, pair.BodyB)
+		}
+	}
+
+	return bodiesUndergoingNarrowphase
+}
+
 // TODO read https://gafferongames.com/post/fix_your_timestep/
 func (s *Simulation) internalStep(dt float32) {
 
 	s.dt = dt
 
-	// Apply force fields and compute world normals/edges
+	// Apply force fields (only to dynamic bodies
 	for _, b := range s.bodies {
-
-		// Only apply to dynamic bodies
 		if b.BodyType() == object.Dynamic {
 			for _, ff := range s.forceFields {
 				pos := b.Position()
@@ -374,80 +391,94 @@ func (s *Simulation) internalStep(dt float32) {
 				b.ApplyForceField(&force)
 			}
 		}
-
-		// Compute for the new rotation
-		// TODO optimization: only need to compute the below for objects that will go through narrowphase
-		b.ComputeWorldFaceNormalsAndUniqueEdges()
 	}
 
-    // TODO update subsystems ?
-
-    // Find pairs of bodies that are potentially colliding
+    // Find pairs of bodies that are potentially colliding (broadphase)
 	pairs := s.broadphase.FindCollisionPairs(s.bodies)
 
-	// Remove some pairs before proceeding to narrophase based on constraints' colConn property
-	// which specified if constrained bodies should collide with one another
-    s.prunePairs(pairs) // TODO review
+	// Remove some pairs before proceeding to narrowphase based on constraints' colConn property
+	// which specifies if constrained bodies should collide with one another
+    s.prunePairs(pairs) // TODO review/implement
 
-	//
+	// Precompute world normals/edges only for convex bodies that will undergo narrowphase
+	for _, body := range s.uniqueBodiesFromPairs(pairs) {
+		if ch, ok := body.Shape().(*shape.ConvexHull); ok{
+			ch.ComputeWorldFaceNormalsAndUniqueEdges(body.Quaternion())
+		}
+	}
+
+	// Switch collision matrices (to keep track of which collisions started/ended)
     s.collisionMatrixTick()
 
-    // Generate contacts
-	s.generateContacts(pairs)
+    // Resolve collisions and generate contact and friction equations
+	contactEqs, frictionEqs := s.narrowphase.GenerateEquations(pairs)
 
-    s.emitContactEvents()
+	// Add all friction equations to solver
+	for i := 0; i < len(frictionEqs); i++ {
+		s.solver.AddEquation(frictionEqs[i])
+	}
 
-    // Wake up bodies
-    // TODO why not wake bodies up inside s.generateContacs when setting the WakeUpAfterNarrowphase flag?
-    // Maybe there we are only looking at bodies that belong to current contact equations...
-    // and need to wake up all marked bodies
-    for i := 0; i < len(s.bodies); i++ {
-        bi := s.bodies[i]
-        if bi != nil && bi.WakeUpAfterNarrowphase() {
-            bi.WakeUp()
-            bi.SetWakeUpAfterNarrowphase(false)
-        }
-    }
+	// Add all contact equations to solver (and update some things)
+	for i := 0; i < len(contactEqs); i++ {
+		s.solver.AddEquation(contactEqs[i])
+		s.updateSleepAndCollisionMatrix(contactEqs[i])
+	}
 
-    // Add user-added constraints
+    // Add all equations from user-added constraints to the solver
 	userAddedEquations := 0
     for i := 0; i < len(s.constraints); i++ {
-        c := s.constraints[i]
-        c.Update()
-        eqs := c.Equations()
+		s.constraints[i].Update()
+        eqs := s.constraints[i].Equations()
         for j := 0; j < len(eqs); j++ {
 			userAddedEquations++
             s.solver.AddEquation(eqs[j])
         }
     }
 
-	// Update solve mass for all bodies
-	// NOTE: This was originally inside the beginning of solver.Solve()
-	if len(s.frictionEqs) + len(s.contactEqs) + userAddedEquations > 0 {
-		for i := 0; i < len(s.bodies); i++ {
-			s.bodies[i].UpdateEffectiveMassProperties()
+	// Emit events TODO implement
+	s.emitContactEvents()
+	// Wake up bodies
+	// TODO why not wake bodies up inside s.updateSleepAndCollisionMatrix when setting the WakeUpAfterNarrowphase flag?
+	// Maybe there we are only looking at bodies that belong to current contact equations...
+	// and need to wake up all marked bodies
+	for i := 0; i < len(s.bodies); i++ {
+		bi := s.bodies[i]
+		if bi != nil && bi.WakeUpAfterNarrowphase() {
+			bi.WakeUp()
+			bi.SetWakeUpAfterNarrowphase(false)
 		}
 	}
 
-    // Solve the constrained system
-    solution := s.solver.Solve(dt, len(s.bodies))
-	s.ApplySolution(solution) // Applies velocity deltas
-	s.solver.ClearEquations()
+	// If we have any equations to solve
+	if len(frictionEqs) + len(contactEqs) + userAddedEquations > 0 {
+		// Update effective mass for all bodies
+		for i := 0; i < len(s.bodies); i++ {
+			s.bodies[i].UpdateEffectiveMassProperties()
+		}
+		// Solve the constrained system
+		solution := s.solver.Solve(dt, len(s.bodies))
+		// Apply linear and angular velocity deltas to bodies
+		s.ApplySolution(solution)
+		// Clear all equations added to the solver
+		s.solver.ClearEquations()
+	}
 
-    // Apply damping, see http://code.google.com/p/bullet/issues/detail?id=74 for details
-    for i := 0; i < len(s.bodies); i++ {
-        bi := s.bodies[i]
-        if bi != nil && bi.BodyType() == object.Dynamic { // Only apply damping to dynamic bodies
-			bi.ApplyDamping(dt)
+    // Apply damping (only to dynamic bodies)
+    // See http://code.google.com/p/bullet/issues/detail?id=74 for details
+    for _, body := range s.bodies {
+        if body != nil && body.BodyType() == object.Dynamic {
+			body.ApplyDamping(dt)
         }
     }
 
     // TODO s.Dispatch(World_step_preStepEvent)
 
-	// Integrate the forces into velocities into position deltas
-    quatNormalize := true// s.stepnumber % (s.quatNormalizeSkip + 1) == 0
-    for i := 0; i < len(s.bodies); i++ {
-		s.bodies[i].Integrate(dt, quatNormalize, s.quatNormalizeFast)
+	// Integrate the forces into velocities and the velocities into position deltas for all bodies
+    // TODO future: quatNormalize := s.stepnumber % (s.quatNormalizeSkip + 1) == 0
+    for _, body := range s.bodies {
+		if body != nil {
+			body.Integrate(dt, true, s.quatNormalizeFast)
+		}
     }
     s.ClearForces()
 
@@ -469,7 +500,7 @@ func (s *Simulation) internalStep(dt float32) {
 }
 
 // TODO - REVIEW THIS
-func (s *Simulation) prunePairs(pairs []collision.Pair) []collision.Pair {
+func (s *Simulation) prunePairs(pairs []CollisionPair) []CollisionPair {
 
 	// TODO There is probably a bug here when the same body can have multiple constraints and appear in multiple pairs
 
@@ -491,7 +522,7 @@ func (s *Simulation) prunePairs(pairs []collision.Pair) []collision.Pair {
 	//}
 	//
 	//// Remove pairs
-	////var prunedPairs []Pair
+	////var prunedPairs []CollisionPair
 	//for i := range pairs {
 	//	for _, idx := range pairIdxsToRemove {
 	//		copy(pairs[i:], pairs[i+1:])
@@ -504,62 +535,46 @@ func (s *Simulation) prunePairs(pairs []collision.Pair) []collision.Pair {
 }
 
 // generateContacts
-func (s *Simulation) generateContacts(pairs []collision.Pair) {
+func (s *Simulation) updateSleepAndCollisionMatrix(contactEq *equation.Contact) {
 
-	// Find all contacts and generate contact and friction equations (narrowphase)
-	s.contactEqs, s.frictionEqs = s.narrowphase.GetContacts(pairs)
+	// Get current collision indices
+	bodyA := s.bodies[contactEq.BodyA().Index()]
+	bodyB := s.bodies[contactEq.BodyB().Index()]
 
-	// Add all friction equations to solver
-	for i := 0; i < len(s.frictionEqs); i++ {
-		s.solver.AddEquation(s.frictionEqs[i])
+	// TODO future: update equations with physical material properties
+
+	if bodyA.AllowSleep() && bodyA.BodyType() == object.Dynamic && bodyA.SleepState() == object.Sleeping && bodyB.SleepState() == object.Awake && bodyB.BodyType() != object.Static {
+		velocityB := bodyB.Velocity()
+		angularVelocityB := bodyB.AngularVelocity()
+		speedSquaredB := velocityB.LengthSq() + angularVelocityB.LengthSq()
+		speedLimitSquaredB := math32.Pow(bodyB.SleepSpeedLimit(), 2)
+		if speedSquaredB >= speedLimitSquaredB*2 {
+			bodyA.SetWakeUpAfterNarrowphase(true)
+		}
 	}
 
-	for k := 0; k < len(s.contactEqs); k++ {
-
-		// Current contact
-		contactEq := s.contactEqs[k]
-
-		// Get current collision indices
-		bodyA := s.bodies[contactEq.BodyA().Index()]
-		bodyB := s.bodies[contactEq.BodyB().Index()]
-
-		// TODO future: update equations with physical material properties
-
-		s.solver.AddEquation(contactEq)
-
-		if bodyA.AllowSleep() && bodyA.BodyType() == object.Dynamic && bodyA.SleepState() == object.Sleeping && bodyB.SleepState() == object.Awake && bodyB.BodyType() != object.Static {
-			velocityB := bodyB.Velocity()
-			angularVelocityB := bodyB.AngularVelocity()
-			speedSquaredB := velocityB.LengthSq() + angularVelocityB.LengthSq()
-			speedLimitSquaredB := math32.Pow(bodyB.SleepSpeedLimit(), 2)
-			if speedSquaredB >= speedLimitSquaredB*2 {
-				bodyA.SetWakeUpAfterNarrowphase(true)
-			}
+	if bodyB.AllowSleep() && bodyB.BodyType() == object.Dynamic && bodyB.SleepState() == object.Sleeping && bodyA.SleepState() == object.Awake && bodyA.BodyType() != object.Static {
+		velocityA := bodyA.Velocity()
+		angularVelocityA := bodyA.AngularVelocity()
+		speedSquaredA := velocityA.LengthSq() + angularVelocityA.LengthSq()
+		speedLimitSquaredA := math32.Pow(bodyA.SleepSpeedLimit(), 2)
+		if speedSquaredA >= speedLimitSquaredA*2 {
+			bodyB.SetWakeUpAfterNarrowphase(true)
 		}
-
-		if bodyB.AllowSleep() && bodyB.BodyType() == object.Dynamic && bodyB.SleepState() == object.Sleeping && bodyA.SleepState() == object.Awake && bodyA.BodyType() != object.Static {
-			velocityA := bodyA.Velocity()
-			angularVelocityA := bodyA.AngularVelocity()
-			speedSquaredA := velocityA.LengthSq() + angularVelocityA.LengthSq()
-			speedLimitSquaredA := math32.Pow(bodyA.SleepSpeedLimit(), 2)
-			if speedSquaredA >= speedLimitSquaredA*2 {
-				bodyB.SetWakeUpAfterNarrowphase(true)
-			}
-		}
-
-		// Now we know that i and j are in contact. Set collision matrix state
-		s.collisionMatrix.Set(bodyA.Index(), bodyB.Index(), true)
-
-		if s.prevCollisionMatrix.Get(bodyA.Index(), bodyB.Index()) == false {
-			// First contact!
-			bodyA.Dispatch(CollisionEv, &CollideEvent{bodyB, contactEq})
-			bodyB.Dispatch(CollisionEv, &CollideEvent{bodyA, contactEq})
-		}
-
-		// TODO this is only for events
-		//s.bodyOverlapKeeper.set(bodyA.id, bodyB.id)
-		//s.shapeOverlapKeeper.set(si.id, sj.id)
 	}
+
+	// Now we know that i and j are in contact. Set collision matrix state
+	s.collisionMatrix.Set(bodyA.Index(), bodyB.Index(), true)
+
+	if s.prevCollisionMatrix.Get(bodyA.Index(), bodyB.Index()) == false {
+		// First contact!
+		bodyA.Dispatch(CollisionEv, &CollideEvent{bodyB, contactEq})
+		bodyB.Dispatch(CollisionEv, &CollideEvent{bodyA, contactEq})
+	}
+
+	// TODO this is only for events
+	//s.bodyOverlapKeeper.set(bodyA.id, bodyB.id)
+	//s.shapeOverlapKeeper.set(si.id, sj.id)
 
 }
 
