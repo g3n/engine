@@ -24,7 +24,7 @@ func NewContact(bodyA, bodyB IBody, minForce, maxForce float32) *Contact {
 
 	// minForce default should be 0.
 
-	ce.restitution = 0.3
+	ce.restitution = 0.5
 	ce.rA = &math32.Vector3{0,0,0}
 	ce.rB = &math32.Vector3{0,0,0}
 	ce.nA = &math32.Vector3{0,0,0}
