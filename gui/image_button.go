@@ -21,20 +21,22 @@ type ImageButton struct {
 	stateImages [ButtonDisabled + 1]*texture.Texture2D // array of images for each button state
 }
 
+// ButtonState specifies a button state.
 type ButtonState int
 
+// The possible button states.
 const (
 	ButtonNormal ButtonState = iota
 	ButtonOver
-	//ButtonFocus
 	ButtonPressed
 	ButtonDisabled
+	// ButtonFocus
 )
 
-// ImageButton style
+// ImageButtonStyle contains the styling of an ImageButton.
 type ImageButtonStyle BasicStyle
 
-// All ImageButton styles
+// ImageButtonStyles contains one ImageButtonStyle for each possible ImageButton state.
 type ImageButtonStyles struct {
 	Normal   ImageButtonStyle
 	Over     ImageButtonStyle

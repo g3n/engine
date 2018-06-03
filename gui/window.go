@@ -64,6 +64,7 @@ type WindowStyles struct {
 // ResizeBorders specifies which window borders can be resized
 type ResizeBorders int
 
+// Resizing can be allowed or disallowed on each window edge
 const (
 	ResizeTop = ResizeBorders(1 << (iota + 1))
 	ResizeRight

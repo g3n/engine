@@ -118,9 +118,9 @@ func (m *Physical) SetMetallicRoughnessMap(tex *texture.Texture2D) *Physical {
 	return m
 }
 
-// TODO add SetNormalMap (and SetSpecularMap) to StandardMaterial.
 // SetNormalMap sets this material optional normal texture.
 // Returns pointer to this updated material.
+// TODO add SetNormalMap (and SetSpecularMap) to StandardMaterial.
 func (m *Physical) SetNormalMap(tex *texture.Texture2D) *Physical {
 
 	m.normalTex = tex

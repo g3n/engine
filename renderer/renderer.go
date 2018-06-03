@@ -310,9 +310,9 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 
 				if backToFront {
 					return g1pos.Z < g2pos.Z
-				} else {
-					return g1pos.Z > g2pos.Z
 				}
+
+				return g1pos.Z > g2pos.Z
 			})
 		}
 
