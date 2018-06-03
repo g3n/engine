@@ -39,12 +39,12 @@ func NewDarkStyle() *Style {
 	oneBounds := RectBounds{1, 1, 1, 1}
 	twoBounds := RectBounds{2, 2, 2, 2}
 
-	s.Color.BgDark = math32.Color4{43.0/256.0, 43.0/256.0, 43.0/256.0, 1}
-	s.Color.BgMed = math32.Color4{49.0/256.0, 51.0/256.0, 53.0/256.0, 1}
-	s.Color.BgNormal = math32.Color4{60.0/256.0, 63.0/256.0, 65.0/256.0, 1}
-	s.Color.BgOver = math32.Color4{70.0/256.0, 74.0/256.0, 77.0/256.0, 1}
-	s.Color.Highlight = math32.Color4{75.0/256.0, 110.0/256.0, 175.0/256.0, 1}
-	s.Color.Select = math32.Color4{13.0/256.0, 41.0/256.0, 62.0/256.0, 1}
+	s.Color.BgDark = math32.Color4{43.0 / 256.0, 43.0 / 256.0, 43.0 / 256.0, 1}
+	s.Color.BgMed = math32.Color4{49.0 / 256.0, 51.0 / 256.0, 53.0 / 256.0, 1}
+	s.Color.BgNormal = math32.Color4{60.0 / 256.0, 63.0 / 256.0, 65.0 / 256.0, 1}
+	s.Color.BgOver = math32.Color4{70.0 / 256.0, 74.0 / 256.0, 77.0 / 256.0, 1}
+	s.Color.Highlight = math32.Color4{75.0 / 256.0, 110.0 / 256.0, 175.0 / 256.0, 1}
+	s.Color.Select = math32.Color4{13.0 / 256.0, 41.0 / 256.0, 62.0 / 256.0, 1}
 	s.Color.Text = math32.Color4{1, 1, 1, 1}
 	s.Color.TextDis = math32.Color4{0.4, 0.4, 0.4, 1}
 
@@ -65,8 +65,8 @@ func NewDarkStyle() *Style {
 	s.Label.FontAttributes.DPI = 72
 	s.Label.FontAttributes.Hinting = text.HintingNone
 	s.Label.FontAttributes.LineSpacing = 1.0
-	s.Label.BgColor = math32.Color4{1,1,1, 0}
-	s.Label.FgColor = math32.Color4{1,1,1,1}
+	s.Label.BgColor = math32.Color4{1, 1, 1, 0}
+	s.Label.FgColor = math32.Color4{1, 1, 1, 1}
 
 	// Button styles
 	s.Button = ButtonStyles{}
@@ -122,7 +122,7 @@ func NewDarkStyle() *Style {
 	s.ScrollBar.Normal.BgColor = math32.Color4{0, 0, 0, 0.2}
 	s.ScrollBar.Normal.ButtonLength = 32
 	s.ScrollBar.Normal.Button = PanelStyle{
-		BgColor:     math32.Color4{0.8, 0.8, 0.8, 0.5},
+		BgColor: math32.Color4{0.8, 0.8, 0.8, 0.5},
 	}
 	s.ScrollBar.Over = s.ScrollBar.Normal
 	s.ScrollBar.Disabled = s.ScrollBar.Normal

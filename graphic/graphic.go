@@ -24,8 +24,8 @@ type Graphic struct {
 	renderable bool               // Renderable flag
 	cullable   bool               // Cullable flag
 
-	mvm        math32.Matrix4     // Cached ModelView matrix
-	mvpm       math32.Matrix4     // Cached ModelViewProjection matrix
+	mvm  math32.Matrix4 // Cached ModelView matrix
+	mvpm math32.Matrix4 // Cached ModelViewProjection matrix
 }
 
 // GraphicMaterial specifies the material to be used for

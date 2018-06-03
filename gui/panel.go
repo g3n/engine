@@ -58,30 +58,30 @@ type IPanel interface {
 // and a content area. The content area can be associated with a texture
 // It is the building block of most GUI widgets.
 type Panel struct {
-	*graphic.Graphic                // Embedded graphic
-	root         *Root              // pointer to root container
-	width        float32            // external width in pixels
-	height       float32            // external height in pixels
-	mat          *material.Material // panel material
-	marginSizes  RectBounds         // external margin sizes in pixel coordinates
-	borderSizes  RectBounds         // border sizes in pixel coordinates
-	paddingSizes RectBounds         // padding sizes in pixel coordinates
-	content      Rect               // current content rectangle in pixel coordinates
-	pospix       math32.Vector3     // absolute position in pixels
-	posclip      math32.Vector3     // position in clip (NDC) coordinates
-	wclip        float32            // width in clip coordinates
-	hclip        float32            // height in clip coordinates
-	xmin         float32            // minimum absolute x this panel can use
-	xmax         float32            // maximum absolute x this panel can use
-	ymin             float32        // minimum absolute y this panel can use
-	ymax             float32        // maximum absolute y this panel can use
-	bounded          bool           // panel is bounded by its parent
-	enabled          bool           // enable event processing
-	cursorEnter      bool           // mouse enter dispatched
-	layout           ILayout        // current layout for children
-	layoutParams     interface{}    // current layout parameters used by container panel
-	uniMatrix        gls.Uniform    // model matrix uniform location cache
-	uniPanel         gls.Uniform    // panel parameters uniform location cache
+	*graphic.Graphic                    // Embedded graphic
+	root             *Root              // pointer to root container
+	width            float32            // external width in pixels
+	height           float32            // external height in pixels
+	mat              *material.Material // panel material
+	marginSizes      RectBounds         // external margin sizes in pixel coordinates
+	borderSizes      RectBounds         // border sizes in pixel coordinates
+	paddingSizes     RectBounds         // padding sizes in pixel coordinates
+	content          Rect               // current content rectangle in pixel coordinates
+	pospix           math32.Vector3     // absolute position in pixels
+	posclip          math32.Vector3     // position in clip (NDC) coordinates
+	wclip            float32            // width in clip coordinates
+	hclip            float32            // height in clip coordinates
+	xmin             float32            // minimum absolute x this panel can use
+	xmax             float32            // maximum absolute x this panel can use
+	ymin             float32            // minimum absolute y this panel can use
+	ymax             float32            // maximum absolute y this panel can use
+	bounded          bool               // panel is bounded by its parent
+	enabled          bool               // enable event processing
+	cursorEnter      bool               // mouse enter dispatched
+	layout           ILayout            // current layout for children
+	layoutParams     interface{}        // current layout parameters used by container panel
+	uniMatrix        gls.Uniform        // model matrix uniform location cache
+	uniPanel         gls.Uniform        // panel parameters uniform location cache
 	udata            struct {           // Combined uniform data 8 * vec4
 		bounds        math32.Vector4 // panel bounds in texture coordinates
 		borders       math32.Vector4 // panel borders in texture coordinates
@@ -108,7 +108,7 @@ type PanelStyle struct {
 // Many GUI components can be styled using BasicStyle or redeclared versions thereof (e.g. ButtonStyle)
 type BasicStyle struct {
 	PanelStyle
-	FgColor     math32.Color4
+	FgColor math32.Color4
 }
 
 const (
@@ -599,8 +599,8 @@ func (p *Panel) ContainsPosition(x, y float32) bool {
 // Unlike "ContainsPosition" is does not consider the panel margins.
 func (p *Panel) InsideBorders(x, y float32) bool {
 
-	if 	x < (p.pospix.X + p.marginSizes.Left) || x >= (p.pospix.X + p.width - p.marginSizes.Right) ||
-		y < (p.pospix.Y + p.marginSizes.Top) ||	y >= (p.pospix.Y + p.height - p.marginSizes.Bottom) {
+	if x < (p.pospix.X+p.marginSizes.Left) || x >= (p.pospix.X+p.width-p.marginSizes.Right) ||
+		y < (p.pospix.Y+p.marginSizes.Top) || y >= (p.pospix.Y+p.height-p.marginSizes.Bottom) {
 		return false
 	}
 	return true

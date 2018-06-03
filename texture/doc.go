@@ -5,4 +5,3 @@
 // Package texture contains several types of textures which
 // can be added to materials.
 package texture
-
