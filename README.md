@@ -210,4 +210,4 @@ send pull requests.
 
 ## Community
 
-Join our [channel](https://gophers.slack.com/messages/g3n) on Gophers Slack.
+Join our [channel](https://gophers.slack.com/messages/g3n) on Gophers Slack ([Click here to register for Gophers Slack](https://invite.slack.golangbridge.org/)).
