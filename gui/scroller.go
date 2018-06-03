@@ -6,6 +6,7 @@ package gui
 
 import (
 	"github.com/g3n/engine/window"
+	"github.com/g3n/engine/math32"
 )
 
 // Scroller is the GUI element that allows scrolling of a target IPanel.
@@ -79,10 +80,7 @@ type ScrollerScrollbarStyle struct {
 // TODO these configuration variables could be made part of a global engine configuration object in the future
 // They should not be added to style since they are not style changes and not to the struct since they are global
 
-// ScrollPreference specifies the default scroll direction if both scrollbars are present
-const ScrollPreference = ScrollVertical
-
-// ScrollModifierKey is the Key that changes the scrolling direction to the non-preferred direction
+// ScrollModifierKey is the Key that changes the scrolling direction from vertical to horizontal
 const ScrollModifierKey = window.KeyLeftShift
 
 // NewScroller creates and returns a pointer to a new Scroller with the specified
@@ -301,33 +299,32 @@ func (s *Scroller) onScroll(evname string, ev interface{}) {
 	vScrollVisible := (s.vscroll != nil) && s.vscroll.Visible()
 	hScrollVisible := (s.hscroll != nil) && s.hscroll.Visible()
 
-	valOffset := sev.Yoffset / 10
+	mult := float32(1)/float32(10)
+	offsetX := sev.Xoffset * mult
+	offsetY := sev.Yoffset * mult
+
+	// If modifier key is pressed (left shift by default) - then scroll in the horizontal direction
+	if s.modKeyPressed {
+		if math32.Abs(offsetY) > math32.Abs(offsetX) {
+			offsetX = offsetY
+		}
+		offsetY = 0
+	}
+
+	log.Error("X: %v, Y: %v", offsetX, offsetY)
 
 	if vScrollVisible {
 		if hScrollVisible {
-			// Both scrollbars are present. Which to scroll depends on the system-set preference
-			pref := ScrollPreference
-			// If modifier key is pressed (left shift by default) - then scroll in the non-preferential direction
-			if s.modKeyPressed {
-				if pref == ScrollVertical {
-					pref = ScrollHorizontal
-				} else if pref == ScrollHorizontal {
-					pref = ScrollVertical
-				}
-			}
-			// Scroll the appropriate scrollbar
-			if pref == ScrollVertical {
-				s.vscroll.SetValue(float32(s.vscroll.Value()) - valOffset)
-			} else if pref == ScrollHorizontal {
-				s.hscroll.SetValue(float32(s.hscroll.Value()) - valOffset)
-			}
+			// Both scrollbars are present - scroll both
+			s.vscroll.SetValue(float32(s.vscroll.Value()) - offsetY)
+			s.hscroll.SetValue(float32(s.hscroll.Value()) - offsetX)
 		} else {
 			// Only vertical scrollbar present - scroll it
-			s.vscroll.SetValue(float32(s.vscroll.Value()) - valOffset)
+			s.vscroll.SetValue(float32(s.vscroll.Value()) - offsetY)
 		}
 	} else if hScrollVisible {
 		// Only horizontal scrollbar present - scroll it
-		s.hscroll.SetValue(float32(s.hscroll.Value()) - valOffset)
+		s.hscroll.SetValue(float32(s.hscroll.Value()) - offsetX)
 	}
 
 	s.recalc()
