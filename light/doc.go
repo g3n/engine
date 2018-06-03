@@ -5,4 +5,3 @@
 // Package light contains common light types which can be
 // add to a 3D scene to illuminate it.
 package light
-

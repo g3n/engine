@@ -4,4 +4,3 @@
 
 // Package core implements some basic types used by other packages.
 package core
-
