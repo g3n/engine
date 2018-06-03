@@ -5,8 +5,8 @@
 package gui
 
 import (
-	"github.com/g3n/engine/window"
 	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/window"
 )
 
 // Scroller is the GUI element that allows scrolling of a target IPanel.
@@ -299,7 +299,7 @@ func (s *Scroller) onScroll(evname string, ev interface{}) {
 	vScrollVisible := (s.vscroll != nil) && s.vscroll.Visible()
 	hScrollVisible := (s.hscroll != nil) && s.hscroll.Visible()
 
-	mult := float32(1)/float32(10)
+	mult := float32(1) / float32(10)
 	offsetX := sev.Xoffset * mult
 	offsetY := sev.Yoffset * mult
 
