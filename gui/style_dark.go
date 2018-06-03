@@ -11,7 +11,7 @@ import (
 	"github.com/g3n/engine/text"
 )
 
-// NewLightStyle creates and returns a pointer to the a new "light" style
+// NewDarkStyle creates and returns a pointer to the a new "dark" style
 func NewDarkStyle() *Style {
 
 	// Fonts to use

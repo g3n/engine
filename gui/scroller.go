@@ -27,9 +27,10 @@ type Scroller struct {
 	modKeyPressed bool           // Modifier key is pressed
 }
 
-// ScrollMode specifies which scroll directions are allowed
+// ScrollMode specifies which scroll directions are allowed.
 type ScrollMode int
 
+// The various scroll modes.
 const (
 	ScrollNone       = ScrollMode(0x00)                              // No scrolling allowed
 	ScrollVertical   = ScrollMode(0x01)                              // Vertical scrolling allowed
@@ -40,6 +41,7 @@ const (
 // ScrollbarInterlocking specifies what happens where the vertical and horizontal scrollbars meet.
 type ScrollbarInterlocking int
 
+// The three scrollbar interlocking types.
 const (
 	ScrollbarInterlockingNone       = ScrollbarInterlocking(iota) // No scrollbar interlocking
 	ScrollbarInterlockingVertical                                 // Vertical scrollbar takes precedence
@@ -51,6 +53,7 @@ const (
 // For the horizontal scrollbar it specifies whether it's added to the top or to the bottom.
 type ScrollbarPosition int
 
+// The four possible scrollbar positions.
 const (
 	ScrollbarLeft   = ScrollbarPosition(iota) // Scrollbar is positioned on the left of the scroller
 	ScrollbarRight                            // Scrollbar is positioned on the right of the scroller

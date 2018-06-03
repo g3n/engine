@@ -13,6 +13,7 @@ type DockLayoutParams struct {
 	Edge int
 }
 
+// The different types of docking.
 const (
 	DockTop = iota + 1
 	DockRight

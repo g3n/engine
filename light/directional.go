@@ -12,6 +12,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
+// Directional represents a directional, positionless light
 type Directional struct {
 	core.Node              // Embedded node
 	color     math32.Color // Light color

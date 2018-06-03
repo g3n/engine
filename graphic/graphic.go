@@ -169,24 +169,24 @@ func (gr *Graphic) GetMaterial(vpos int) material.IMaterial {
 }
 
 // CalculateMatrices calculates the model view and model view projection matrices.
-func (g *Graphic) CalculateMatrices(gs *gls.GLS, rinfo *core.RenderInfo) {
+func (gr *Graphic) CalculateMatrices(gs *gls.GLS, rinfo *core.RenderInfo) {
 
 	// Calculate model view and model view projection matrices
-	mw := g.MatrixWorld()
-	g.mvm.MultiplyMatrices(&rinfo.ViewMatrix, &mw)
-	g.mvpm.MultiplyMatrices(&rinfo.ProjMatrix, &g.mvm)
+	mw := gr.MatrixWorld()
+	gr.mvm.MultiplyMatrices(&rinfo.ViewMatrix, &mw)
+	gr.mvpm.MultiplyMatrices(&rinfo.ProjMatrix, &gr.mvm)
 }
 
 // ModelViewMatrix returns the last cached model view matrix for this graphic.
-func (g *Graphic) ModelViewMatrix() *math32.Matrix4 {
+func (gr *Graphic) ModelViewMatrix() *math32.Matrix4 {
 
-	return &g.mvm
+	return &gr.mvm
 }
 
 // ModelViewProjectionMatrix returns the last cached model view projection matrix for this graphic.
-func (g *Graphic) ModelViewProjectionMatrix() *math32.Matrix4 {
+func (gr *Graphic) ModelViewProjectionMatrix() *math32.Matrix4 {
 
-	return &g.mvpm
+	return &gr.mvpm
 }
 
 // GetMaterial returns the material associated with the GraphicMaterial.
