@@ -328,7 +328,7 @@ func (ss *ShaderSpecs) compareDefines(other *ShaderSpecs) bool {
 		if len(ss.Defines) != len(other.Defines) {
 			return false
 		}
-		for k, _ := range ss.Defines {
+		for k := range ss.Defines {
 			v1, ok1 := ss.Defines[k]
 			v2, ok2 := other.Defines[k]
 			if v1 != v2 || ok1 != ok2 {
