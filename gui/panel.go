@@ -905,9 +905,13 @@ func (p *Panel) resize(width, height float32, dispatch bool) {
 	p.width = p.marginSizes.Left + border.Width + p.marginSizes.Right
 	p.height = p.marginSizes.Top + border.Height + p.marginSizes.Bottom
 
-	sXo, sYo := p.root.Window().Scale()
-	sX := float32(sXo)
-	sY := float32(sYo)
+	sX := float32(1)
+	sY := float32(1)
+	if p.root != nil {
+		sXo, sYo := p.root.Window().Scale()
+		sX = float32(sXo)
+		sY = float32(sYo)
+	}
 
 	// Updates border uniform in texture coordinates (0,0 -> 1,1)
 	p.udata.borders = math32.Vector4{
