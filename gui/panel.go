@@ -905,26 +905,30 @@ func (p *Panel) resize(width, height float32, dispatch bool) {
 	p.width = p.marginSizes.Left + border.Width + p.marginSizes.Right
 	p.height = p.marginSizes.Top + border.Height + p.marginSizes.Bottom
 
+	sXo, sYo := p.root.Window().Scale()
+	sX := float32(sXo)
+	sY := float32(sYo)
+
 	// Updates border uniform in texture coordinates (0,0 -> 1,1)
 	p.udata.borders = math32.Vector4{
-		float32(border.X) / float32(p.width),
-		float32(border.Y) / float32(p.height),
-		float32(border.Width) / float32(p.width),
-		float32(border.Height) / float32(p.height),
+		sX * float32(border.X) / float32(p.width),
+		sY * float32(border.Y) / float32(p.height),
+		sX * float32(border.Width) / float32(p.width),
+		sY * float32(border.Height) / float32(p.height),
 	}
 	// Updates padding uniform in texture coordinates (0,0 -> 1,1)
 	p.udata.paddings = math32.Vector4{
-		float32(padding.X) / float32(p.width),
-		float32(padding.Y) / float32(p.height),
-		float32(padding.Width) / float32(p.width),
-		float32(padding.Height) / float32(p.height),
+		sX * float32(padding.X) / float32(p.width),
+		sY * float32(padding.Y) / float32(p.height),
+		sX * float32(padding.Width) / float32(p.width),
+		sY * float32(padding.Height) / float32(p.height),
 	}
 	// Updates content uniform in texture coordinates (0,0 -> 1,1)
 	p.udata.content = math32.Vector4{
-		float32(p.content.X) / float32(p.width),
-		float32(p.content.Y) / float32(p.height),
-		float32(p.content.Width) / float32(p.width),
-		float32(p.content.Height) / float32(p.height),
+		sX * float32(p.content.X) / float32(p.width),
+		sY * float32(p.content.Y) / float32(p.height),
+		sX * float32(p.content.Width) / float32(p.width),
+		sY * float32(p.content.Height) / float32(p.height),
 	}
 	p.SetChanged(true)
 

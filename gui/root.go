@@ -50,6 +50,12 @@ func NewRoot(gs *gls.GLS, win window.IWindow) *Root {
 	return r
 }
 
+// Window returns the root's IWindow
+func (r *Root) Window() window.IWindow {
+
+	return r.win
+}
+
 // SubscribeWin subscribes this root panel to window events
 func (r *Root) SubscribeWin() {
 
