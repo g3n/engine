@@ -21,6 +21,8 @@ G3N was heavily inspired by [three.js](https://threejs.org/).
 
 ## Dependencies
 
+**G3N requires Go 1.8+**
+
 The engine needs an OpenGL driver installed in the system and on Unix like systems
 depends on some C libraries that can be installed using the distribution package manager.
 In all cases it is necessary to have a gcc compatible C compiler installed.
@@ -47,8 +49,6 @@ In all cases it is necessary to have a gcc compatible C compiler installed.
 * (Not fully-tested on OSX) On OSX, you should install the development files of OpenAL and Vorbis. If
   your are using [Homebrew](https://brew.sh/) as your package manager, run:
   `brew install libvorbis openal-soft`
-
-G3N requires Go 1.8+
 
 ## Installation
 
