@@ -905,6 +905,7 @@ func (p *Panel) resize(width, height float32, dispatch bool) {
 	p.width = p.marginSizes.Left + border.Width + p.marginSizes.Right
 	p.height = p.marginSizes.Top + border.Height + p.marginSizes.Bottom
 
+	// TODO DO THIS IN RENDER SETUP
 	sX := float32(1)
 	sY := float32(1)
 	if p.root != nil {
@@ -964,6 +965,8 @@ func (p *Panel) RenderSetup(gl *gls.GLS, rinfo *core.RenderInfo) {
 	// Transfer model matrix uniform
 	location := p.uniMatrix.Location(gl)
 	gl.UniformMatrix4fv(location, 1, false, &mm[0])
+
+	// TODO HERE APPLY SCALING (FOR HiDPI)
 
 	// Transfer panel parameters combined uniform
 	location = p.uniPanel.Location(gl)
