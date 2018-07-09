@@ -97,19 +97,12 @@ func (cam *Perspective) Project(v *math32.Vector3) (*math32.Vector3, error) {
 // Unproject transforms the specified position from camera projected coordinates to world coordinates.
 func (cam *Perspective) Unproject(v *math32.Vector3) (*math32.Vector3, error) {
 
-	// Get inverted camera view matrix
-	var viewMatrix math32.Matrix4
-	cam.ViewMatrix(&viewMatrix)
-	var invertedViewMatrix math32.Matrix4
-	err := invertedViewMatrix.GetInverse(&viewMatrix)
-	if err != nil {
-		return nil, err
-	}
+	invertedViewMatrix := cam.MatrixWorld()
 
 	// Get inverted camera projection matrix
 	cam.updateProjMatrix()
 	var invertedProjMatrix math32.Matrix4
-	err = invertedProjMatrix.GetInverse(&cam.projMatrix)
+	err := invertedProjMatrix.GetInverse(&cam.projMatrix)
 	if err != nil {
 		return nil, err
 	}

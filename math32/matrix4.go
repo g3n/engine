@@ -211,29 +211,41 @@ func (m *Matrix4) MakeRotationFromQuaternion(q *Quaternion) *Matrix4 {
 // Returns pointer to this updated matrix.
 func (m *Matrix4) LookAt(eye, target, up *Vector3) *Matrix4 {
 
-	var f Vector3
-	var s Vector3
-	var u Vector3
-	f.SubVectors(target, eye).Normalize()
-	s.CrossVectors(&f, up).Normalize()
-	u.CrossVectors(&s, &f)
+	var x, y, z Vector3
 
-	m[0] = s.X
-	m[1] = u.X
-	m[2] = -f.X
-	m[3] = 0.0
-	m[4] = s.Y
-	m[5] = u.Y
-	m[6] = -f.Y
-	m[7] = 0.0
-	m[8] = s.Z
-	m[9] = u.Z
-	m[10] = -f.Z
-	m[11] = 0.0
-	m[12] = -s.Dot(eye)
-	m[13] = -u.Dot(eye)
-	m[14] = f.Dot(eye)
-	m[15] = 1.0
+	z.SubVectors(eye, target)
+	if z.LengthSq() == 0 {
+		// Eye and target are in the same position
+		z.Z = 1
+	}
+	z.Normalize()
+
+	x.CrossVectors(up, &z)
+	if x.LengthSq() == 0 {
+		// Up and Z are parallel
+		if Abs(up.Z) == 1 {
+			z.X += 0.0001
+		} else {
+			z.Z += 0.0001
+		}
+		z.Normalize()
+		x.CrossVectors(up, &z)
+	}
+	x.Normalize()
+
+	y.CrossVectors(&z, &x)
+
+	m[0] = x.X
+	m[1] = x.Y
+	m[2] = x.Z
+
+	m[4] = y.X
+	m[5] = y.Y
+	m[6] = y.Z
+
+	m[8] = z.X
+	m[9] = z.Y
+	m[10] = z.Z
 
 	return m
 }
