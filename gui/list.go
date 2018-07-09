@@ -10,13 +10,13 @@ import (
 
 // List represents a list GUI element
 type List struct {
-	ItemScroller         // Embedded scroller
-	styles   *ListStyles // Pointer to styles
-	single   bool        // Single selection flag (default is true)
-	focus    bool        // has keyboard focus
-	dropdown bool        // this is used as dropdown
-	keyNext  window.Key  // Code of key to select next item
-	keyPrev  window.Key  // Code of key to select previous item
+	ItemScroller             // Embedded scroller
+	styles       *ListStyles // Pointer to styles
+	single       bool        // Single selection flag (default is true)
+	focus        bool        // has keyboard focus
+	dropdown     bool        // this is used as dropdown
+	keyNext      window.Key  // Code of key to select next item
+	keyPrev      window.Key  // Code of key to select previous item
 }
 
 // ListItem encapsulates each item inserted into the list
@@ -440,6 +440,7 @@ func (li *List) setSelection(litem *ListItem, state bool, force bool, dispatch b
 		for _, curr := range li.items {
 			if curr.(*ListItem) != litem {
 				curr.(*ListItem).SetSelected(false)
+				curr.(*ListItem).SetHighlighted(false)
 			}
 		}
 	}
