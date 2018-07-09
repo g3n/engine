@@ -38,11 +38,10 @@ func (cam *Camera) Initialize() {
 	cam.SetDirection(0, 0, -1)
 }
 
-// LookAt sets the camera target position
-// TODO - maybe move to Node, or create similar in Node
+// LookAt rotates the camera to look at the specified target position.
+// This method does not support objects with rotated and/or translated parent(s).
+// TODO: maybe move method to Node, or create similar in Node.
 func (cam *Camera) LookAt(target *math32.Vector3) {
-
-	// This method does not support objects with rotated and/or translated parent(s)
 
 	cam.target = *target
 
@@ -54,7 +53,6 @@ func (cam *Camera) LookAt(target *math32.Vector3) {
 	var q math32.Quaternion
 	q.SetFromRotationMatrix(&rotMat)
 	cam.SetQuaternionQuat(&q)
-
 }
 
 // GetCamera satisfies the ICamera interface
@@ -79,7 +77,7 @@ func (cam *Camera) Up() math32.Vector3 {
 func (cam *Camera) SetUp(up *math32.Vector3) {
 
 	cam.up = *up
-	cam.LookAt(&cam.target)
+	cam.LookAt(&cam.target) // TODO Maybe remove and let user call LookAt explicitly
 }
 
 // ViewMatrix returns the current view matrix of this camera
