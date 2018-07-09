@@ -9,7 +9,7 @@ import (
 	"github.com/g3n/engine/core"
 )
 
-// Orthographic is
+// Orthographic is an orthographic camera.
 type Orthographic struct {
 	Camera              // Embedded camera
 	left        float32 // left plane x coordinate
@@ -39,26 +39,26 @@ func NewOrthographic(left, right, top, bottom, near, far float32) *Orthographic 
 	return cam
 }
 
-// SetZoom sets the zoom factor of the camera
+// SetZoom sets the zoom factor of the camera.
 func (cam *Orthographic) SetZoom(zoom float32) {
 
 	cam.zoom = math32.Abs(zoom)
 	cam.projChanged = true
 }
 
-// Zoom returns the zoom factor of the camera
+// Zoom returns the zoom factor of the camera.
 func (cam *Orthographic) Zoom() float32 {
 
 	return cam.zoom
 }
 
-// Planes returns the coordinates of the camera planes
+// Planes returns the coordinates of the camera planes.
 func (cam *Orthographic) Planes() (left, right, top, bottom, near, far float32) {
 
 	return cam.left, cam.right, cam.top, cam.bottom, cam.near, cam.far
 }
 
-// ProjMatrix satisfies the ICamera interface
+// ProjMatrix satisfies the ICamera interface.
 func (cam *Orthographic) ProjMatrix(m *math32.Matrix4) {
 
 	if cam.projChanged {
