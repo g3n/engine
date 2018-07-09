@@ -6,6 +6,7 @@ package camera
 
 import (
 	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/core"
 )
 
 // Orthographic is
@@ -65,4 +66,25 @@ func (cam *Orthographic) ProjMatrix(m *math32.Matrix4) {
 		cam.projChanged = false
 	}
 	*m = cam.projMatrix
+}
+
+// Project satisfies the ICamera interface and must
+// be implemented for specific camera types.
+func (cam *Camera) Project(v *math32.Vector3) (*math32.Vector3, error) {
+
+	panic("Not implemented")
+}
+
+// Unproject satisfies the ICamera interface and must
+// be implemented for specific camera types.
+func (cam *Camera) Unproject(v *math32.Vector3) (*math32.Vector3, error) {
+
+	panic("Not implemented")
+}
+
+// SetRaycaster satisfies the ICamera interface and must
+// be implemented for specific camera types.
+func (cam *Camera) SetRaycaster(rc *core.Raycaster, x, y float32) error {
+
+	panic("Not implemented")
 }
