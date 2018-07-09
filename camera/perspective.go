@@ -9,7 +9,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
-// Perspective represents a perspective camera
+// Perspective is a perspective camera.
 type Perspective struct {
 	Camera                     // Embedded camera
 	fov         float32        // field of view in degrees
@@ -34,45 +34,45 @@ func NewPerspective(fov, aspect, near, far float32) *Perspective {
 	return cam
 }
 
-// SetFov sets the camera field of view in degrees
+// SetFov sets the camera field of view in degrees.
 func (cam *Perspective) SetFov(fov float32) {
 
 	cam.fov = fov
 	cam.projChanged = true
 }
 
-// SetAspect sets the camera aspect ratio (width/height)
+// SetAspect sets the camera aspect ratio (width/height).
 func (cam *Perspective) SetAspect(aspect float32) {
 
 	cam.aspect = aspect
 	cam.projChanged = true
 }
 
-// Fov returns the current camera FOV (field of view) in degrees
+// Fov returns the current camera FOV (field of view) in degrees.
 func (cam *Perspective) Fov() float32 {
 
 	return cam.fov
 }
 
-// Aspect returns the current camera aspect ratio
+// Aspect returns the current camera aspect ratio.
 func (cam Perspective) Aspect() float32 {
 
 	return cam.aspect
 }
 
-// Near returns the current camera near plane Z coordinate
+// Near returns the current camera near plane Z coordinate.
 func (cam *Perspective) Near() float32 {
 
 	return cam.near
 }
 
-// Far returns the current camera far plane Z coordinate
+// Far returns the current camera far plane Z coordinate.
 func (cam *Perspective) Far() float32 {
 
 	return cam.far
 }
 
-// ProjMatrix satisfies the ICamera interface
+// ProjMatrix satisfies the ICamera interface.
 func (cam *Perspective) ProjMatrix(m *math32.Matrix4) {
 
 	cam.updateProjMatrix()
@@ -141,7 +141,7 @@ func (cam *Perspective) SetRaycaster(rc *core.Raycaster, sx, sy float32) error {
 	return nil
 }
 
-// updateProjMatrix updates this camera projection matrix if necessary
+// updateProjMatrix updates the projection matrix if necessary.
 func (cam *Perspective) updateProjMatrix() {
 
 	if cam.projChanged {
