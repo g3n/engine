@@ -5,6 +5,7 @@
 
 package icon
 
+// Icon constants.
 const (
 	N3dRotation                           = string(0xe84d)
 	AcUnit                                = string(0xeb3b)

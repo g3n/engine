@@ -32,10 +32,10 @@ type Button struct {
 	pressed   bool          // true if button is pressed
 }
 
-// Button style
+// ButtonStyle contains the styling of a Button
 type ButtonStyle BasicStyle
 
-// All Button styles
+// ButtonStyles contains one ButtonStyle for each possible button state
 type ButtonStyles struct {
 	Normal   ButtonStyle
 	Over     ButtonStyle

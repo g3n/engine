@@ -38,7 +38,7 @@ var colorMap = map[int]string{
 	FATAL: bmagenta,
 }
 
-// logger Console writer type
+// Console is a console writer used for logging.
 type Console struct {
 	writer *os.File
 	color  bool
@@ -52,6 +52,7 @@ func NewConsole(color bool) *Console {
 	return &Console{os.Stdout, color}
 }
 
+// Write writes the provided logger event to the console.
 func (w *Console) Write(event *Event) {
 
 	if w.color {

@@ -331,7 +331,7 @@ func (mat *Material) RenderSetup(gs *gls.GLS) {
 		samplerName, _ := tex.GetUniformNames()
 		uniIdx, _ := samplerCounts[samplerName]
 		tex.RenderSetup(gs, slotIdx, uniIdx)
-		samplerCounts[samplerName] = uniIdx+1
+		samplerCounts[samplerName] = uniIdx + 1
 	}
 }
 

@@ -130,7 +130,7 @@ vec3 getNormal()
 
 #ifdef HAS_NORMALMAP
     float uNormalScale = 1.0;
-    vec3 n = texture2D(uNormalSampler, FragTexcoord).rgb;
+    vec3 n = texture(uNormalSampler, FragTexcoord).rgb;
     n = normalize(tbn * ((2.0 * n - 1.0) * vec3(uNormalScale, uNormalScale, 1.0)));
 #else
     // The tbn matrix is linearly interpolated, so we need to re-normalize
@@ -148,7 +148,7 @@ vec3 getIBLContribution(PBRInfo pbrInputs, PBRLightInfo pbrLight, vec3 n, vec3 r
     float mipCount = 9.0; // resolution of 512x512
     float lod = (pbrInputs.perceptualRoughness * mipCount);
     // retrieve a scale and bias to F0. See [1], Figure 3
-    vec3 brdf = vec3(0.5,0.5,0.5);//SRGBtoLINEAR(texture2D(u_brdfLUT, vec2(pbrLight.NdotV, 1.0 - pbrInputs.perceptualRoughness))).rgb;
+    vec3 brdf = vec3(0.5,0.5,0.5);//SRGBtoLINEAR(texture(u_brdfLUT, vec2(pbrLight.NdotV, 1.0 - pbrInputs.perceptualRoughness))).rgb;
     vec3 diffuseLight = vec3(0.5,0.5,0.5);//SRGBtoLINEAR(textureCube(u_DiffuseEnvSampler, n)).rgb;
 
 //#ifdef USE_TEX_LOD
@@ -251,7 +251,7 @@ void main() {
 #ifdef HAS_METALROUGHNESSMAP
     // Roughness is stored in the 'g' channel, metallic is stored in the 'b' channel.
     // This layout intentionally reserves the 'r' channel for (optional) occlusion map data
-    vec4 mrSample = texture2D(uMetallicRoughnessSampler, FragTexcoord);
+    vec4 mrSample = texture(uMetallicRoughnessSampler, FragTexcoord);
     perceptualRoughness = mrSample.g * perceptualRoughness;
     metallic = mrSample.b * metallic;
 #endif
@@ -264,7 +264,7 @@ void main() {
 
     // The albedo may be defined from a base texture or a flat color
 #ifdef HAS_BASECOLORMAP
-    vec4 baseColor = SRGBtoLINEAR(texture2D(uBaseColorSampler, FragTexcoord)) * uBaseColor;
+    vec4 baseColor = SRGBtoLINEAR(texture(uBaseColorSampler, FragTexcoord)) * uBaseColor;
 #else
     vec4 baseColor = uBaseColor;
 #endif
@@ -367,12 +367,12 @@ void main() {
 
     // Apply optional PBR terms for additional (optional) shading
 #ifdef HAS_OCCLUSIONMAP
-    float ao = texture2D(uOcclusionSampler, FragTexcoord).r;
+    float ao = texture(uOcclusionSampler, FragTexcoord).r;
     color = mix(color, color * ao, 1.0);//, uOcclusionStrength);
 #endif
 
 #ifdef HAS_EMISSIVEMAP
-    vec3 emissive = SRGBtoLINEAR(texture2D(uEmissiveSampler, FragTexcoord)).rgb * vec3(uEmissiveColor);
+    vec3 emissive = SRGBtoLINEAR(texture(uEmissiveSampler, FragTexcoord)).rgb * vec3(uEmissiveColor);
 #else
     vec3 emissive = vec3(uEmissiveColor);
 #endif

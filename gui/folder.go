@@ -22,8 +22,8 @@ type Folder struct {
 // FolderStyle contains the styling of a Folder.
 type FolderStyle struct {
 	PanelStyle
-	FgColor     math32.Color4
-	Icons       [2]string
+	FgColor math32.Color4
+	Icons   [2]string
 }
 
 // FolderStyles contains a FolderStyle for each valid GUI state.

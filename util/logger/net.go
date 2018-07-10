@@ -8,10 +8,12 @@ import (
 	"net"
 )
 
+// Net is a network writer used for logging.
 type Net struct {
 	conn net.Conn
 }
 
+// NewNet creates and returns a pointer to a new Net object along with any error that occurred.
 func NewNet(network string, address string) (*Net, error) {
 
 	n := new(Net)
@@ -23,11 +25,13 @@ func NewNet(network string, address string) (*Net, error) {
 	return n, nil
 }
 
+// Write writes the provided logger event to the network.
 func (n *Net) Write(event *Event) {
 
 	n.conn.Write([]byte(event.fmsg))
 }
 
+// Clone closes the network connection.
 func (n *Net) Close() {
 
 	n.conn.Close()
