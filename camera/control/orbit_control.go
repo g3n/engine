@@ -12,6 +12,7 @@ import (
 	"math"
 )
 
+// OrbitControl is a camera controller that allows orbiting a center point while looking at it.
 type OrbitControl struct {
 	Enabled         bool    // Control enabled state
 	EnableRotate    bool    // Rotate enabled state
@@ -109,6 +110,7 @@ func NewOrbitControl(icam camera.ICamera, win window.IWindow) *OrbitControl {
 	return oc
 }
 
+// Dispose unsubscribes from all events
 func (oc *OrbitControl) Dispose() {
 
 	// Unsubscribe to event handlers
@@ -142,21 +144,21 @@ func (oc *OrbitControl) Zoom(delta float32) {
 	oc.updateZoom()
 }
 
-// Rotate camera left by specified angle
+// RotateLeft rotates the camera left by specified angle
 func (oc *OrbitControl) RotateLeft(angle float32) {
 
 	oc.thetaDelta -= angle
 	oc.updateRotate()
 }
 
-// Rotate camera up by specified angle
+// RotateUp rotates the camera up by specified angle
 func (oc *OrbitControl) RotateUp(angle float32) {
 
 	oc.phiDelta -= angle
 	oc.updateRotate()
 }
 
-// Updates camera rotation from tethaDelta and phiDelta
+// Updates the camera rotation from thetaDelta and phiDelta
 func (oc *OrbitControl) updateRotate() {
 
 	const EPS = 0.01
@@ -203,6 +205,7 @@ func (oc *OrbitControl) updateRotate() {
 	position = target
 	position.Add(&vdir)
 	oc.cam.SetPositionVec(&position)
+	oc.cam.LookAt(&target)
 
 	// Reset deltas
 	oc.thetaDelta = 0
@@ -249,6 +252,7 @@ func (oc *OrbitControl) updateRotate2() {
 	position.Add(&vdir)
 	log.Debug("orbit set position")
 	oc.cam.SetPositionVec(&position)
+	oc.cam.LookAt(&target)
 
 	// Reset deltas
 	oc.thetaDelta = 0

@@ -30,8 +30,8 @@ type TreeNodeStyles struct {
 // TreeNodeStyle contains the styling of a TreeNode.
 type TreeNodeStyle struct {
 	PanelStyle
-	FgColor     math32.Color4
-	Icons       [2]string
+	FgColor math32.Color4
+	Icons   [2]string
 }
 
 // TreeNode is a tree node.

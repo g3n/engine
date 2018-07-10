@@ -405,7 +405,7 @@ func (s *ItemScroller) vRecalc() {
 			// Break when the view/content proportion becomes smaller than the minimum button size
 			totalHeight += item.TotalHeight()
 		}
-		s.vscroll.SetButtonSize(s.height * s.height/totalHeight)
+		s.vscroll.SetButtonSize(s.height * s.height / totalHeight)
 	}
 
 	// Items width
@@ -470,7 +470,7 @@ func (s *ItemScroller) hRecalc() {
 			// Break when the view/content proportion becomes smaller than the minimum button size
 			totalWidth += item.GetPanel().Width()
 		}
-		s.hscroll.SetButtonSize(s.width * s.width/totalWidth)
+		s.hscroll.SetButtonSize(s.width * s.width / totalWidth)
 	}
 
 	// Items height

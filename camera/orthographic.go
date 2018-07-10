@@ -6,9 +6,10 @@ package camera
 
 import (
 	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/core"
 )
 
-// Orthographic is
+// Orthographic is an orthographic camera.
 type Orthographic struct {
 	Camera              // Embedded camera
 	left        float32 // left plane x coordinate
@@ -38,26 +39,26 @@ func NewOrthographic(left, right, top, bottom, near, far float32) *Orthographic 
 	return cam
 }
 
-// SetZoom sets the zoom factor of the camera
+// SetZoom sets the zoom factor of the camera.
 func (cam *Orthographic) SetZoom(zoom float32) {
 
 	cam.zoom = math32.Abs(zoom)
 	cam.projChanged = true
 }
 
-// Zoom returns the zoom factor of the camera
+// Zoom returns the zoom factor of the camera.
 func (cam *Orthographic) Zoom() float32 {
 
 	return cam.zoom
 }
 
-// Planes returns the coordinates of the camera planes
+// Planes returns the coordinates of the camera planes.
 func (cam *Orthographic) Planes() (left, right, top, bottom, near, far float32) {
 
 	return cam.left, cam.right, cam.top, cam.bottom, cam.near, cam.far
 }
 
-// ProjMatrix satisfies the ICamera interface
+// ProjMatrix satisfies the ICamera interface.
 func (cam *Orthographic) ProjMatrix(m *math32.Matrix4) {
 
 	if cam.projChanged {
@@ -65,4 +66,25 @@ func (cam *Orthographic) ProjMatrix(m *math32.Matrix4) {
 		cam.projChanged = false
 	}
 	*m = cam.projMatrix
+}
+
+// Project satisfies the ICamera interface and must
+// be implemented for specific camera types.
+func (cam *Camera) Project(v *math32.Vector3) (*math32.Vector3, error) {
+
+	panic("Not implemented")
+}
+
+// Unproject satisfies the ICamera interface and must
+// be implemented for specific camera types.
+func (cam *Camera) Unproject(v *math32.Vector3) (*math32.Vector3, error) {
+
+	panic("Not implemented")
+}
+
+// SetRaycaster satisfies the ICamera interface and must
+// be implemented for specific camera types.
+func (cam *Camera) SetRaycaster(rc *core.Raycaster, x, y float32) error {
+
+	panic("Not implemented")
 }

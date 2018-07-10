@@ -18,29 +18,29 @@ import (
 // Renderer renders a 3D scene and/or a 2D GUI on the current window.
 type Renderer struct {
 	gs           *gls.GLS
-	shaman       Shaman                      // Internal shader manager
-	stats        Stats                       // Renderer statistics
-	prevStats    Stats                       // Renderer statistics for previous frame
-	scene        core.INode                  // Node containing 3D scene to render
-	panelGui     gui.IPanel                  // Panel containing GUI to render
-	panel3D      gui.IPanel                  // Panel which contains the 3D scene
-	ambLights    []*light.Ambient            // Array of ambient lights for last scene
-	dirLights    []*light.Directional        // Array of directional lights for last scene
-	pointLights  []*light.Point              // Array of point
-	spotLights   []*light.Spot               // Array of spot lights for the scene
-	others       []core.INode                // Other nodes (audio, players, etc)
-	rgraphics    []*graphic.Graphic          // Array of rendered graphics
-	cgraphics    []*graphic.Graphic          // Array of rendered graphics
-	grmatsOpaque []*graphic.GraphicMaterial  // Array of rendered opaque graphic materials for scene
-	grmatsTransp []*graphic.GraphicMaterial  // Array of rendered transparent graphic materials for scene
-	rinfo        core.RenderInfo             // Preallocated Render info
-	specs        ShaderSpecs                 // Preallocated Shader specs
-	sortObjects  bool                        // Flag indicating whether objects should be sorted before rendering
-	redrawGui    bool                        // Flag indicating the gui must be redrawn completely
-	rendered     bool                        // Flag indicating if anything was rendered
-	panList      []gui.IPanel                // list of panels to render
-	frameBuffers int                         // Number of frame buffers
-	frameCount   int                         // Current number of frame buffers to write
+	shaman       Shaman                     // Internal shader manager
+	stats        Stats                      // Renderer statistics
+	prevStats    Stats                      // Renderer statistics for previous frame
+	scene        core.INode                 // Node containing 3D scene to render
+	panelGui     gui.IPanel                 // Panel containing GUI to render
+	panel3D      gui.IPanel                 // Panel which contains the 3D scene
+	ambLights    []*light.Ambient           // Array of ambient lights for last scene
+	dirLights    []*light.Directional       // Array of directional lights for last scene
+	pointLights  []*light.Point             // Array of point
+	spotLights   []*light.Spot              // Array of spot lights for the scene
+	others       []core.INode               // Other nodes (audio, players, etc)
+	rgraphics    []*graphic.Graphic         // Array of rendered graphics
+	cgraphics    []*graphic.Graphic         // Array of rendered graphics
+	grmatsOpaque []*graphic.GraphicMaterial // Array of rendered opaque graphic materials for scene
+	grmatsTransp []*graphic.GraphicMaterial // Array of rendered transparent graphic materials for scene
+	rinfo        core.RenderInfo            // Preallocated Render info
+	specs        ShaderSpecs                // Preallocated Shader specs
+	sortObjects  bool                       // Flag indicating whether objects should be sorted before rendering
+	redrawGui    bool                       // Flag indicating the gui must be redrawn completely
+	rendered     bool                       // Flag indicating if anything was rendered
+	panList      []gui.IPanel               // list of panels to render
+	frameBuffers int                        // Number of frame buffers
+	frameCount   int                        // Current number of frame buffers to write
 }
 
 // Stats describes how many object types were rendered.
@@ -310,14 +310,14 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 
 				if backToFront {
 					return g1pos.Z < g2pos.Z
-				} else {
-					return g1pos.Z > g2pos.Z
 				}
+
+				return g1pos.Z > g2pos.Z
 			})
 		}
 
 		zSortGraphicMaterials(r.grmatsOpaque, false) // Sort opaque graphics front to back
-		zSortGraphicMaterials(r.grmatsTransp, true) // Sort transparent graphics back to front
+		zSortGraphicMaterials(r.grmatsTransp, true)  // Sort transparent graphics back to front
 	}
 
 	// Render other nodes (audio players, etc)

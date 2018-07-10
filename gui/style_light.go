@@ -59,8 +59,8 @@ func NewLightStyle() *Style {
 	s.Label.FontAttributes.DPI = 72
 	s.Label.FontAttributes.Hinting = text.HintingNone
 	s.Label.FontAttributes.LineSpacing = 1.0
-	s.Label.BgColor = math32.Color4{0,0,0,0}
-	s.Label.FgColor = math32.Color4{0,0,0,1}
+	s.Label.BgColor = math32.Color4{0, 0, 0, 0}
+	s.Label.FgColor = math32.Color4{0, 0, 0, 1}
 
 	// Button styles
 	s.Button = ButtonStyles{}

@@ -239,16 +239,7 @@ func (b *Box3) Union(other *Box3) *Box3 {
 // Returns pointer to this updated bounding box.
 func (b *Box3) ApplyMatrix4(matrix *Matrix4) *Box3 {
 
-	points := []Vector3{
-		Vector3{},
-		Vector3{},
-		Vector3{},
-		Vector3{},
-		Vector3{},
-		Vector3{},
-		Vector3{},
-		Vector3{},
-	}
+	points := make([]Vector3, 8)
 
 	points[0].Set(b.Min.X, b.Min.Y, b.Min.Z).ApplyMatrix4(matrix) // 000
 	points[1].Set(b.Min.X, b.Min.Y, b.Max.Z).ApplyMatrix4(matrix) // 001

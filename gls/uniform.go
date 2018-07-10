@@ -8,6 +8,7 @@ import (
 	"fmt"
 )
 
+// Uniform represents an OpenGL uniform.
 type Uniform struct {
 	name      string // base name
 	nameIdx   string // cached indexed name
@@ -16,7 +17,7 @@ type Uniform struct {
 	lastIndex int32  // last index
 }
 
-// Init initializes this uniform location cache and sets its name
+// Init initializes this uniform location cache and sets its name.
 func (u *Uniform) Init(name string) {
 
 	u.name = name
