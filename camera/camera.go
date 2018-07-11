@@ -48,7 +48,6 @@ func (cam *Camera) LookAt(target *math32.Vector3) {
 	var rotMat math32.Matrix4
 	pos := cam.Position()
 	rotMat.LookAt(&pos, &cam.target, &cam.up)
-	log.Error("pos = %v, target = %v", pos, cam.target)
 
 	var q math32.Quaternion
 	q.SetFromRotationMatrix(&rotMat)
