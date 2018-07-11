@@ -33,17 +33,14 @@ import (
 // and returns a pointer to the parsed structure.
 func ParseJSON(filename string) (*GLTF, error) {
 
-	// Opens file
+	// Open file
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
-
 	// Extract path from file
 	path := filepath.Dir(filename)
-
 	defer f.Close()
-
 	return ParseJSONReader(f, path)
 }
 
@@ -66,7 +63,7 @@ func ParseJSONReader(r io.Reader, path string) (*GLTF, error) {
 // and returns a pointer to the parsed structure.
 func ParseBin(filename string) (*GLTF, error) {
 
-	// Opens file
+	// Open file
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -96,59 +93,65 @@ func ParseBinReader(r io.Reader, path string) (*GLTF, error) {
 		return nil, fmt.Errorf("GLB version:%v not supported", header.Version)
 	}
 
-	// Reads first chunk header (JSON)
-	var chunk0 GLBChunk
-	err = binary.Read(r, binary.LittleEndian, &chunk0)
-	if err != nil {
-		return nil, err
-	}
-	// Checks chunk type
-	if chunk0.Type != GLBJson {
-		return nil, fmt.Errorf("GLB Chunk0 type:%v not recognized", chunk0.Type)
-	}
-	// Reads first chunck data (JSON)
-	buf := make([]byte, chunk0.Length)
-	err = binary.Read(r, binary.LittleEndian, &buf)
-	if err != nil {
-		return nil, err
-	}
-	// Parses JSON
-	bb := bytes.NewBuffer(buf)
-	g, err := ParseJSONReader(bb, path)
+	// Read first chunk (JSON)
+	buf, err := readChunk(r, GLBJson)
 	if err != nil {
 		return nil, err
 	}
 
-	// Checks for chunk 1 (optional)
-	var chunk1 GLBChunk
-	err = binary.Read(r, binary.LittleEndian, &chunk1)
+	// Parse JSON into gltf object
+	bb := bytes.NewBuffer(buf)
+	gltf, err := ParseJSONReader(bb, path)
 	if err != nil {
-		if err != io.EOF {
-			return nil, err
+		return nil, err
+	}
+
+	// Check for and read second chunk (binary, optional)
+	data, err := readChunk(r, GLBBin)
+	if err != nil {
+		return nil, err
+	}
+
+	gltf.data = data
+
+	return gltf, nil
+}
+
+// readChunk reads a GLB chunk with the specified type and returns the data in a byte array.
+func readChunk(r io.Reader, chunkType uint32) ([]byte, error) {
+
+	// Read chunk header
+	var chunk GLBChunk
+	err := binary.Read(r, binary.LittleEndian, &chunk)
+	if err != nil {
+		if err == io.EOF {
+			return nil, nil
 		}
-		return g, nil
+		return nil, err
 	}
-	// Check chunk1 type
-	if chunk1.Type != GLBBin {
-		return nil, fmt.Errorf("GLB Chunk1 type:%v not recognized", chunk1.Type)
+
+	// Check chunk type
+	if chunk.Type != chunkType {
+		return nil, fmt.Errorf("expected GLB chunk type [%v] but obtained chunk type [%v]", chunkType, chunk.Type)
 	}
-	// Reads chunk1 data
-	data := make([]byte, chunk1.Length)
+
+	// Read chunk data
+	data := make([]byte, chunk.Length)
 	err = binary.Read(r, binary.LittleEndian, &data)
 	if err != nil {
 		return nil, err
 	}
-	g.data = data
 
-	return g, nil
+	return data, nil
 }
 
 // NewScene creates a parent Node which contains all nodes contained by
 // the specified scene index from the GLTF Scenes array
 func (g *GLTF) NewScene(si int) (core.INode, error) {
 
+	// Check if provided scene index is valid
 	if si < 0 || si >= len(g.Scenes) {
-		return nil, fmt.Errorf("Invalid Scene index")
+		return nil, fmt.Errorf("invalid scene index")
 	}
 	s := g.Scenes[si]
 
@@ -172,19 +175,19 @@ func (g *GLTF) NewNode(i int) (core.INode, error) {
 	var err error
 	node := g.Nodes[i]
 
-	// Checks if the node is a Mesh (triangles, lines, etc...)
+	// Check if the node is a Mesh (triangles, lines, etc...)
 	if node.Mesh != nil {
 		in, err = g.loadMesh(*node.Mesh)
 		if err != nil {
 			return nil, err
 		}
-		// Checks if the node is Camera
+		// Check if the node is Camera
 	} else if node.Camera != nil {
 		in, err = g.loadCamera(*node.Camera)
 		if err != nil {
 			return nil, err
 		}
-		// Other cases, returns empty node
+		// Other cases, return empty node
 	} else {
 		in = core.NewNode()
 	}
@@ -193,33 +196,29 @@ func (g *GLTF) NewNode(i int) (core.INode, error) {
 	n := in.GetNode()
 	n.SetName(node.Name)
 
-	// If defined, sets node local transformation matrix
+	// If defined, set node local transformation matrix
 	if node.Matrix != nil {
 		n.SetMatrix((*math32.Matrix4)(node.Matrix))
-		// Otherwise, checks rotation, scale and translation fields.
+		// Otherwise, check rotation, scale and translation fields
 	} else {
 		// Rotation quaternion
 		if node.Rotation != nil {
+			log.Error("Rotation:%v", node.Translation)
 			n.SetQuaternion(node.Rotation[0], node.Rotation[1], node.Rotation[2], node.Rotation[3])
-		} else {
-			n.SetQuaternion(0, 0, 0, 1)
 		}
 		// Scale
 		if node.Scale != nil {
+			log.Error("Scale:%v", node.Translation)
 			n.SetScale(node.Scale[0], node.Scale[1], node.Scale[2])
-		} else {
-			n.SetScale(1, 1, 1)
 		}
 		// Translation
 		if node.Translation != nil {
-			log.Error("translation:%v", node.Translation)
+			log.Error("Translation:%v", node.Translation)
 			n.SetPosition(node.Translation[0], node.Translation[1], node.Translation[2])
-		} else {
-			n.SetPosition(0, 0, 0)
 		}
 	}
 
-	// Loads node children recursively and adds to the parent
+	// Recursively load node children  and add them to the parent
 	for _, ci := range node.Children {
 		child, err := g.NewNode(ci)
 		if err != nil {
@@ -247,45 +246,37 @@ func (g *GLTF) loadCamera(ci int) (core.INode, error) {
 		if desc.Zfar != nil {
 			far = *desc.Zfar
 		}
-		return camera.NewPerspective(fov, aspect, desc.Znear, far), nil
+		cam := camera.NewPerspective(fov, aspect, desc.Znear, far)
+		return cam, nil
 	}
 
 	if camDesc.Type == "orthographic" {
 		desc := camDesc.Orthographic
-		cam := camera.NewOrthographic(desc.Xmag/-2, desc.Xmag/2, desc.Ymag/2, desc.Ymag/-2,
-			desc.Znear, desc.Zfar)
+		cam := camera.NewOrthographic(desc.Xmag/-2, desc.Xmag/2, desc.Ymag/2, desc.Ymag/-2, desc.Znear, desc.Zfar)
 		return cam, nil
 
 	}
-	return nil, fmt.Errorf("Unsupported camera type:%s", camDesc.Type)
+
+	return nil, fmt.Errorf("unsupported camera type: %s", camDesc.Type)
 }
 
 // loadMesh creates and returns a Graphic Node (graphic.Mesh, graphic.Lines, graphic.Points, etc)
 // from the specified GLTF Mesh index
 func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 
-	// Create buffers and VBO
-	indices := math32.NewArrayU32(0, 0)
-	//vbuf := math32.NewArrayF32(0, 0)
-
-	// Array of primitive materials
-	type matGroup struct {
-		imat  material.IMaterial
-		start int
-		count int
-	}
-	grMats := make([]matGroup, 0)
-
-	// Process mesh primitives
-	var mode int = -1
 	var err error
 	m := g.Meshes[mi]
 
-	geom := geometry.NewGeometry()
+	// Create container node
+	meshNode := core.NewNode()
 
 	for i := 0; i < len(m.Primitives); i++ {
+
+		// Get primitive information
 		p := m.Primitives[i]
+
 		// Indexed Geometry
+		indices := math32.NewArrayU32(0, 0)
 		if p.Indices != nil {
 			pidx, err := g.loadIndices(*p.Indices)
 			if err != nil {
@@ -297,31 +288,23 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 			// indices array stay empty
 		}
 
-		// Currently the mode MUST be the same for all primitives
-		if p.Mode != nil {
-			mode = *p.Mode
-		} else {
-			mode = TRIANGLES
-		}
-
 		// Load primitive material
-		var mat material.IMaterial
+		var grMat material.IMaterial
 		if p.Material != nil {
-			mat, err = g.loadMaterial(*p.Material)
+			grMat, err = g.loadMaterial(*p.Material)
 			if err != nil {
 				return nil, err
 			}
 		} else {
-			mat = g.newDefaultMaterial()
+			grMat = g.newDefaultMaterial()
 		}
-		grMats = append(grMats, matGroup{
-			imat:  mat,
-			start: int(0),
-			count: len(indices),
-		})
+
+		// Create geometry
+		geom := geometry.NewGeometry()
 
 		// Load primitive attributes
 		for name, aci := range p.Attributes {
+			// TODO
 			//interleaved := g.isInterleaved(aci)
 			//if interleaved {
 			//	buf, err := g.loadBufferView(*g.Accessors[aci].BufferView)
@@ -363,47 +346,50 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 				continue
 			}
 		}
-	}
 
-	// Creates Geometry and add attribute VBO
-	if len(indices) > 0 {
-		geom.SetIndices(indices)
-	}
-
-	//log.Error("positions:%v", positions)
-	//log.Error("indices..:%v", indices)
-	//log.Error("normals..:%v", normals)
-	//log.Error("uvs0.....:%v", uvs0)
-	//log.Error("VBUF size in number of floats:%v", len(vbuf))
-
-	// Create Mesh
-	if mode == TRIANGLES {
-		node := graphic.NewMesh(geom, nil)
-		for i := 0; i < len(grMats); i++ {
-			grm := grMats[i]
-			node.AddMaterial(grm.imat, grm.start, grm.count)
+		// Creates Geometry and add attribute VBO
+		if len(indices) > 0 {
+			geom.SetIndices(indices)
 		}
-		return node, nil
+
+		//log.Error("positions:%v", positions)
+		//log.Error("indices..:%v", indices)
+		//log.Error("normals..:%v", normals)
+		//log.Error("uvs0.....:%v", uvs0)
+		//log.Error("VBUF size in number of floats:%v", len(vbuf))
+
+		// Default mode is 4 (TRIANGLES)
+		mode := TRIANGLES
+		if p.Mode != nil {
+			mode = *p.Mode
+		}
+
+		// Create Mesh
+		if mode == TRIANGLES {
+			primitiveMesh := graphic.NewMesh(geom, nil)
+			primitiveMesh.AddMaterial(grMat, 0, 0)
+			meshNode.Add(primitiveMesh)
+		}
+		// Create Lines
+		if mode == LINES {
+			primitiveMesh := graphic.NewLines(geom, grMat)
+			meshNode.Add(primitiveMesh)
+		}
+		// Create LineStrip
+		if mode == LINE_STRIP {
+			primitiveMesh := graphic.NewLineStrip(geom, grMat)
+			meshNode.Add(primitiveMesh)
+		}
+		// Create Points
+		if mode == POINTS {
+			primitiveMesh := graphic.NewPoints(geom, grMat)
+			meshNode.Add(primitiveMesh)
+		}
+		// TODO error when primitive is unsupported
+		// fmt.Errorf("Unsupported primitive:%v", mode)
 	}
 
-	// Create Lines
-	if mode == LINES {
-		node := graphic.NewLines(geom, grMats[0].imat)
-		return node, nil
-	}
-
-	// Create LineStrip
-	if mode == LINE_STRIP {
-		node := graphic.NewLineStrip(geom, grMats[0].imat)
-		return node, nil
-	}
-
-	// Create Points
-	if mode == POINTS {
-		node := graphic.NewPoints(geom, grMats[0].imat)
-		return node, nil
-	}
-	return nil, fmt.Errorf("Unsupported primitive:%v", mode)
+	return meshNode, nil
 }
 
 func (g *GLTF) newDefaultMaterial() material.IMaterial {
