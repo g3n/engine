@@ -2,333 +2,369 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package gltf
 package gltf
 
-// GLTF is the root object for a glTF asset
+// GLTF is the root object for a glTF asset.
 type GLTF struct {
-	ExtensionsUsed     []string
-	ExtensionsRequired []string
-	Accessors          []Accessor
-	Animations         []Animation
-	Asset              Asset
-	Buffers            []Buffer
-	BufferViews        []BufferView
-	Cameras            []Camera
-	Images             []Image
-	Materials          []Material
-	Meshes             []Mesh
-	Nodes              []Node
-	Samplers           []Sampler
-	Scene              *int
-	Scenes             []Scene
-	Skins              []Skin
-	Textures           []Texture
-	Extensions         map[string]interface{}
-	Extras             interface{}
-	path               string // file path for resources
-	data               []byte // binary file Chunk 1 data
+	ExtensionsUsed     []string               // Names of glTF extensions used somewhere in this asset. Not required.
+	ExtensionsRequired []string               // Names of glTF extensions required to properly load this asset. Not required.
+	Accessors          []Accessor             // An array of accessors. Not required.
+	Animations         []Animation            // An array of keyframe animations. Not required.
+	Asset              Asset                  // Metadata about the glTF asset. Required.
+	Buffers            []Buffer               // An array of buffers. Not required.
+	BufferViews        []BufferView           // An array of bufferViews. Not required.
+	Cameras            []Camera               // An array of cameras. Not required.
+	Images             []Image                // An array of images. Not required.
+	Materials          []Material             // An array of materials. Not required.
+	Meshes             []Mesh                 // An array of meshes. Not required.
+	Nodes              []Node                 // An array of nodes. Not required.
+	Samplers           []Sampler              // An array of samplers. Not required.
+	Scene              *int                   // The index of the default scene. Not required.
+	Scenes             []Scene                // An array of scenes. Not required.
+	Skins              []Skin                 // An array of skins. Not required.
+	Textures           []Texture              // An array of textures. Not required.
+	Extensions         map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras             interface{}            // Application-specific data. Not required.
+
+	path string // File path for resources.
+	data []byte // Binary file Chunk 1 data.
 }
 
-// Accessor describes a view into a BufferView
+// Accessor is a typed view into a BufferView.
 type Accessor struct {
-	BufferView    *int                   // The index of the buffer view
-	ByteOffset    *int                   // The offset relative to the start of the BufferView in bytes
-	ComponentType int                    // The datatype of components in the attribute
-	Normalized    bool                   // Specifies whether integer data values should be normalized
-	Count         int                    // The number of attributes referenced by this accessor
-	Type          string                 // Specifies if the attribute is a scalar, vector or matrix
-	Max           []float32              // Maximum value of each component in this attribute
-	Min           []float32              // Minimum value of each component in this attribute
-	Sparse        *Sparse                // Sparse storage attribute that deviates from their initialization value
-	Name          string                 // The user-defined name of this object
-	Extensions    map[string]interface{} // Dictionary object with extension specific objects
-	Extras        interface{}            // Application-specific data
+	BufferView *int // The index of the buffer view. Not required.
+	ByteOffset *int // The offset relative to the start of the BufferView in bytes. Not required. Default is 0.
+
+	// TODO define ComponentType type ?
+	ComponentType int // The data type of components in the attribute. Required.
+
+	Normalized bool                   // Specifies whether integer data values should be normalized. Not required. Default is false.
+	Count      int                    // The number of attributes referenced by this accessor. Required.
+	Type       string                 // Specifies if the attribute is a scalar, vector or matrix. Required.
+	Max        []float32              // Maximum value of each component in this attribute. Not required.
+	Min        []float32              // Minimum value of each component in this attribute. Not required.
+	Sparse     *Sparse                // Sparse storage attribute that deviates from their initialization value. Not required.
+	Name       string                 // The user-defined name of this object. Not required.
+	Extensions map[string]interface{} // Dictionary object with extension specific objects. Not required.
+	Extras     interface{}            // Application-specific data. Not required.
 }
 
-// A Keyframe animation
+// Animation is a keyframe animation.
 type Animation struct {
-	Channels   []Channel              // An array of Channels
-	Samplers   []Sampler              // An array of samplers that combines input and output accessors with an interpolation algorithm to define a keyframe graph
-	Name       string                 // The user-defined name of this object
-	Extensions map[string]interface{} // Dictionary object with extension specific objects
-	Extras     interface{}            // Application-specific data
+	Channels   []Channel              // An array of channels, each of which targets an animation's sampler at a node's property. Different channels of the same animation can't have equal targets. Required.
+	Samplers   []AnimationSampler     // An array of samplers that combines input and output accessors with an interpolation algorithm to define a keyframe graph (but not its target). Required.
+	Name       string                 // The user-defined name of this object. Not required.
+	Extensions map[string]interface{} // Dictionary object with extension specific objects. Not required.
+	Extras     interface{}            // Application-specific data. Not required.
 }
 
-// Combines input and output accessors with an interpolation algorithm to define a keyframe graph
+// AnimationSample combines input and output accessors with an interpolation algorithm to define a keyframe graph (but not its target).
 type AnimationSampler struct {
-	Input         int                    // The index of the accessor containing keyframe input values
-	Interpolation string                 // Interpolation algorithm
-	Output        int                    // The index of an accessor containing keyframe output values
-	Extensions    map[string]interface{} // Dictionary object with extension specific objects
-	Extras        interface{}            // Application-specific data
+	Input         int                    // The index of an accessor containing keyframe input values, e.g., time. Required.
+	Interpolation string                 // Interpolation algorithm. Not required. Default is "LINEAR".
+	Output        int                    // The index of an accessor, containing keyframe output values. Required.
+	Extensions    map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras        interface{}            // Application-specific data. Not required.
 }
 
-// Metadata about the glTF asset.
+// Asset contains metadata about the glTF asset.
 type Asset struct {
-	Copyright  string                 // A copyright message suitable for display to credit the content creator
-	Generator  string                 // Tool that generated this glTF model. Useful for debugging
-	Version    string                 // The glTF version that this asset targets
-	MinVersion string                 // The minimum glTF version that this asset targets
-	Extensions map[string]interface{} // Dictionary object with extension specific objects
-	Extras     interface{}            // Application-specific data
+	Copyright  string                 // A copyright message suitable for display to credit the content creator. Not required.
+	Generator  string                 // Tool that generated this glTF model. Useful for debugging. Not required.
+	Version    string                 // The glTF version that this asset targets. Required.
+	MinVersion string                 // The minimum glTF version that this asset targets. Not required.
+	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras     interface{}            // Application-specific data. Not required.
 }
 
-// A Buffer points to binary geometry, animation or skins
+// Buffer points to binary geometry, animation, or skins.
 type Buffer struct {
-	Uri        string                 // The URI of the buffer
-	ByteLength int                    // The length of the buffer in bytes
-	Name       string                 // The user-defined name of this object
-	Extensions map[string]interface{} // Dictionary object with extension specific objects
-	Extras     interface{}            // Application-specific data
-	data       []byte                 // cached buffer data
+	Uri        string                 // The URI of the buffer. Not required.
+	ByteLength int                    // The length of the buffer in bytes. Required.
+	Name       string                 // The user-defined name of this object. Not required.
+	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras     interface{}            // Application-specific data. Not required.
+
+	data []byte // Cached buffer data.
 }
 
-// A view into a buffer generally representing a subset of the buffer.
+// BufferView is a view into a buffer generally representing a subset of the buffer.
 type BufferView struct {
-	Buffer     int                    // The index of the buffer
-	ByteOffset *int                   // The offset into the buffer in bytes
-	ByteLength int                    // The length of the buffer view in bytes
-	ByteStride *int                   // The stride in bytes
-	Target     *int                   // The target that the GPU buffer should be bound to
-	Name       string                 // The user-defined name of this object
-	Extensions map[string]interface{} // Dictionary object with extension specific objects
-	Extras     interface{}            // Application-specific data
+	Buffer     int                    // The index of the buffer. Required.
+	ByteOffset *int                   // The offset into the buffer, in bytes. Not required. Default is 0.
+	ByteLength int                    // The length of the buffer view, in bytes. Required.
+	ByteStride *int                   // The stride, in bytes. Not required.
+	Target     *int                   // The target that the GPU buffer should be bound to. Not required.
+	Name       string                 // The user-defined name of this object. Not required.
+	Extensions map[string]interface{} // Dictionary object with extension specific objects. Not required.
+	Extras     interface{}            // Application-specific data. Not required.
 }
 
-// A camera's projection.
+// Camera is a camera's projection.
+// A node can reference a camera to apply a transform to place the camera in the scene.
 type Camera struct {
-	Orthographic *Orthographic          // An orthographic camera containing properties to create an orthographic projection matrix
-	Perspective  *Perspective           // A perspective camera containing properties to create a perspective projection matrix
-	Type         string                 // Specifies if the camera uses a perspective or orthographic projection
-	Name         string                 // The user-defined name of this object
-	Extensions   map[string]interface{} // Dictionary object with extension specific objects
-	Extras       interface{}            // Application-specific data
+	Orthographic *Orthographic          // An orthographic camera containing properties to create an orthographic projection matrix. Not required.
+	Perspective  *Perspective           // A perspective camera containing properties to create a perspective projection matrix. Not required.
+	Type         string                 // Specifies if the camera uses a perspective or orthographic projection. Required.
+	Name         string                 // The user-defined name of this object. Not required.
+	Extensions   map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras       interface{}            // Application-specific data. Not required.
 }
 
-// Targets an animation's sampler at a node's property
+// Channel targets an animation's sampler at a node's property.
 type Channel struct {
-	Sampler    int                    // The index of a sampler in this animation used to compute the value of the target
-	Target     Target                 // The index of the node and TRS property to target
-	Extensions map[string]interface{} // Dictionary object with extension specific objects
-	Extras     interface{}            // Application-specific data
+	Sampler    int                    // The index of a sampler in this animation used to compute the value for the target. Required.
+	Target     Target                 // The index of the node and TRS property to target. Required.
+	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras     interface{}            // Application-specific data. Not required.
 }
 
-// Image data used to create a texture
+// Image data used to create a texture.
+// Image can be referenced by URI or bufferView index. mimeType is required in the latter case.
 type Image struct {
-	Uri        string                 // The URI of the image
-	MimeType   string                 // The image's MIME type
-	BufferView *int                   // The index of the BufferView the contains the image
-	Name       string                 // The user-defined name of this object
-	Extensions map[string]interface{} // Dictionary object with extension specific objects
-	Extras     interface{}            // Application-specific data
+	Uri        string                 // The URI of the image. Not required.
+	MimeType   string                 // The image's MIME type. Not required.
+	BufferView *int                   // The index of the bufferView that contains the image. Use this instead of the image's uri property. Not required.
+	Name       string                 // The user-defined name of this object. Not required.
+	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras     interface{}            // Application-specific data. Not required.
 }
 
 // Indices of those attributes that deviate from their initialization value.
 type Indices struct {
-	BufferView    int                    // The index of the BufferView with sparse indices
-	ByteOffset    int                    // The offset relative to the start of the BufferView in bytes
-	ComponentType int                    // The indices data type
-	Extensions    map[string]interface{} // Dictionary object with extension specific objects
-	Extras        interface{}            // Application-specific data
+	BufferView    int                    // The index of the bufferView with sparse indices. Referenced bufferView can't have ARRAY_BUFFER or ELEMENT_ARRAY_BUFFER target. Required.
+	ByteOffset    int                    // The offset relative to the start of the bufferView in bytes. Must be aligned. Not required. Default is 0.
+	ComponentType int                    // The indices data type. Required.
+	Extensions    map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras        interface{}            // Application-specific data. Not required.
 }
 
-// Material describes the material appearance of a primitive
+// Material describes the material appearance of a primitive.
 type Material struct {
-	Name                 string                 // The user-defined name of this object
-	Extensions           map[string]interface{} // Dictionary object with extension specific objects
-	Extras               interface{}            // Application-specific data
-	PbrMetallicRoughness *PbrMetallicRoughness
-	NormalTexture        *NormalTextureInfo    // The normal map texture
-	OcclusionTexture     *OcclusionTextureInfo // The occlusion map texture
-	EmissiveTexture      *TextureInfo          // The emissive map texture
-	EmissiveFactor       [3]float32            // The emissive color of the material
-	AlphaMode            string                // The alpha rendering mode of the material
-	AlphaCutoff          float32               // The alpha cutoff value of the material
-	DoubleSided          bool                  // Specifies whether the material is double sided
+	Name                 string                 // The user-defined name of this object. Not required.
+	Extensions           map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras               interface{}            // Application-specific data. Not required.
+	PbrMetallicRoughness *PbrMetallicRoughness  // A set of parameter values that are used to define the metallic-roughness material model from Physically-Based Rendering (PBR) methodology. When not specified, all the default values of pbrMetallicRoughness apply. Not required.
+	NormalTexture        *NormalTextureInfo     // The normal map texture. Not required.
+	OcclusionTexture     *OcclusionTextureInfo  // The occlusion map texture. Not required.
+	EmissiveTexture      *TextureInfo           // The emissive map texture. Not required.
+	EmissiveFactor       [3]float32             // The emissive color of the material. Not required. Default is [0,0,0]
+	AlphaMode            string                 // The alpha rendering mode of the material. Not required. Default is OPAQUE.
+	AlphaCutoff          float32                // The alpha cutoff value of the material. Not required. Default is 0.5.
+	DoubleSided          bool                   // Specifies whether the material is double sided. Not required. Default is false.
 }
 
 // Mesh is a set of primitives to be rendered.
+// A node can contain one mesh. A node's transform places the mesh in the scene.
 type Mesh struct {
-	Primitives []Primitive            // Array of primitives
-	Weights    []float32              // Array of weights to be applied to the Morph Targets
-	Name       string                 // The user-define name of this object
-	Extensions map[string]interface{} // Dictionary object with extension specific objects
-	Extras     interface{}            // Application-specific data
+	Primitives []Primitive            // An array of primitives, each defining geometry to be rendered with a material. Required.
+	Weights    []float32              // Array of weights to be applied to the Morph Targets. Not required.
+	Name       string                 // The user-defined name of this object. Not required.
+	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras     interface{}            // Application-specific data. Not required.
 }
 
-// A Node in the hierarchy
+// Node is a node in the node hierarchy.
+// When the node contains skin, all mesh.primitives must contain JOINTS_0 and WEIGHTS_0 attributes.
+// A node can have either a matrix or any combination of translation/rotation/scale (TRS) properties.
+// TRS properties are converted to matrices and postmultiplied in the T * R * S order to compose the transformation matrix; first the scale is applied to the vertices, then the rotation, and then the translation.
+// If none are provided, the transform is the identity.
+// When a node is targeted for animation (referenced by an animation.channel.target), only TRS properties may be present; matrix will not be present.
 type Node struct {
-	Camera      *int                   // Index of the camera referenced by this node
-	Children    []int                  // The indices of this node's children
-	Skin        *int                   // The index of the skin referenced by this node
-	Matrix      *[16]float32           // Floating point 4x4 transformation matrix in column-major order
-	Mesh        *int                   // The index of the mesh in this node
-	Rotation    *[4]float32            // The node's unit quaternion rotation in the order x,y,z,w
-	Scale       *[3]float32            // The node's non-uniform scale
-	Translation *[3]float32            // The node's translation
-	Weights     []float32              // The weight's of the instantiated Morph Target
-	Name        string                 // User-defined name of this object
-	Extensions  map[string]interface{} // Dictionary object with extension specific objects
-	Extras      interface{}            // Application-specific data
+	Camera      *int                   // Index of the camera referenced by this node. Not required.
+	Children    []int                  // The indices of this node's children. Not required.
+	Skin        *int                   // The index of the skin referenced by this node. Not required.
+	Matrix      *[16]float32           // Floating point 4x4 transformation matrix in column-major order. Not required. Default is the identity matrix.
+	Mesh        *int                   // The index of the mesh in this node. Not required.
+	Rotation    *[4]float32            // The node's unit quaternion rotation in the order (x, y, z, w), where w is the scalar. Not required. Default is [0,0,0,1].
+	Scale       *[3]float32            // The node's non-uniform scale, given as the scaling factors along the x, y, and z axes. Not required. Default is [1,1,1].
+	Translation *[3]float32            // The node's translation along the x, y, and z axes. Not required. Default is [0,0,0].
+	Weights     []float32              // The weights of the instantiated Morph Target. Number of elements must match number of Morph Targets of used mesh. Not required.
+	Name        string                 // The user-defined name of this object. Not required.
+	Extensions  map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras      interface{}            // Application-specific data. Not required.
 }
 
-// Reference to a texture
+// TODO Why not combine NormalTextureInfo and OcclusionTextureInfo ? Or simply add Scale to TextureInfo and use only TextureInfo?
+// Propose this change to the official specification!
+
+// NormalTextureInfo is a reference to a texture.
 type NormalTextureInfo struct {
-	Index      int                    // The index of the texture
-	TexCoord   int                    // The set index of texture's TEXCOORD attribute used for texture coordinate mapping
-	Scale      float32                // The scalar multiplier applied to each normal vector of the normal texture
-	Extensions map[string]interface{} // Dictionary object with extension specific objects
-	Extras     interface{}            // Application-specific data
+	Index      int                    // The index of the texture. Required.
+	TexCoord   int                    // The set index of texture's TEXCOORD attribute used for texture coordinate mapping. Not required. Default is 0.
+	Scale      float32                // The scalar multiplier applied to each normal vector of the normal texture. Not required. Default is 1.
+	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras     interface{}            // Application-specific data. Not required.
 }
 
-// Reference to a texture
+// OcclusionTextureInfo is a reference to a texture.
 type OcclusionTextureInfo struct {
-	Index      int                    // The index of the texture
-	TexCoord   int                    // The set index of texture's TEXCOORD attribute used for texture coordinate mapping
-	Strength   float32                // A scalar multiplier controlling the amount of occlusion applied
-	Extensions map[string]interface{} // Dictionary object with extension specific objects
-	Extras     interface{}            // Application-specific data
+	Index      int                    // The index of the texture. Required.
+	TexCoord   int                    // The set index of texture's TEXCOORD attribute used for texture coordinate mapping. Not required. Default is 0.
+	Strength   float32                // The scalar multiplier controlling the amount of occlusion applied. Not required. Default is 1.
+	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras     interface{}            // Application-specific data. Not required.
 }
 
-// An orthographic camera containing properties to create an orthographic projection matrix
+// Orthographic is an orthographic camera containing properties to create an orthographic projection matrix.
 type Orthographic struct {
-	Xmag       float32                // The floating-point horizontal magnification of the view
-	Ymag       float32                // The floating-point vertical magnification of the view
-	Zfar       float32                // The floating-point distance to the far clipping plane. zfar must be greater than znear
-	Znear      float32                // The floating-point distance to the near clipping plane
-	Extensions map[string]interface{} // Dictionary object with extension specific objects
-	Extras     interface{}            // Application-specific data
+	Xmag       float32                // The floating-point horizontal magnification of the view. Required.
+	Ymag       float32                // The floating-point vertical magnification of the view. Required.
+	Zfar       float32                // The floating-point distance to the far clipping plane. Zfar must be greater than Znear. Required.
+	Znear      float32                // The floating-point distance to the near clipping plane. Required.
+	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras     interface{}            // Application-specific data. Not required.
 }
 
-// A set of parameter values that are used to define the metallic-roughness material model
-// from Physically-Based Rendering (PBR) methodology.
+// PbrMetallicRoughness is a set of parameter values that are used to define the metallic-roughness material model from Physically-Based Rendering (PBR) methodology.
 type PbrMetallicRoughness struct {
-	BaseColorFactor          [4]float32             // The material's base color factor
-	BaseColorTexture         *TextureInfo           // The base color texture
-	MetallicFactor           float32                // The metalness of the material
-	RoughnessFactor          float32                // The roughness of the material
-	MetallicRoughnessTexture *TextureInfo           // The metallic-roughness texture
-	Extensions               map[string]interface{} // Dictionary object with extension specific objects
-	Extras                   interface{}            // Application-specific data
+	BaseColorFactor          *[4]float32             // The material's base color factor. Not required. Default is [1,1,1,1]
+	BaseColorTexture         *TextureInfo           // The base color texture. Not required.
+	MetallicFactor           *float32                // The metalness of the material. Not required. Default is 1.
+	RoughnessFactor          *float32                // The roughness of the material. Not required. Default is 1.
+	MetallicRoughnessTexture *TextureInfo           // The metallic-roughness texture. Not required.
+	Extensions               map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras                   interface{}            // Application-specific data. Not required.
 }
 
-// A perspective camera containing properties to create a perspective projection matrix
+// Perspective is a perspective camera containing properties to create a perspective projection matrix.
 type Perspective struct {
-	AspectRatio *float32               // The floating-point aspect ratio of the field of view
-	Yfov        float32                // The floating-point vertical field of view in radians
-	Zfar        *float32               // The floating-point distance to the far clipping plane
-	Znear       float32                // The floating-point distance to the near clipping plane.
-	Extensions  map[string]interface{} // Dictionary object with extension specific objects
-	Extras      interface{}            // Application-specific data
+	AspectRatio *float32               // The floating-point aspect ratio of the field of view. Not required.
+	Yfov        float32                // The floating-point vertical field of view in radians. Required.
+	Zfar        *float32               // The floating-point distance to the far clipping plane. Not required.
+	Znear       float32                // The floating-point distance to the near clipping plane. Required.
+	Extensions  map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras      interface{}            // Application-specific data. Not required.
 }
 
-// Geometry to be rendered with the given material
+// Primitive represents geometry to be rendered with the given material.
 type Primitive struct {
-	Attributes map[string]int         // A dictionary object, where each key corresponds to mesh attribute semantic and each value is the index of the accessor containing attribute's data
-	Indices    *int                   // The index of the accessor that contains the indices
-	Material   *int                   // The index of the material to apply to this primitive when rendering
-	Mode       *int                   // The type of primitive to render
-	Targets    []map[string]int       // An array of Morph Targets
-	Extensions map[string]interface{} // Dictionary object with extension specific objects
-	Extras     interface{}            // Application-specific data
+	Attributes map[string]int         // A dictionary object, where each key corresponds to mesh attribute semantic and each value is the index of the accessor containing attribute's data. Required.
+	Indices    *int                   // The index of the accessor that contains the indices. Not required.
+	Material   *int                   // The index of the material to apply to this primitive when rendering. Not required.
+	Mode       *int                   // The type of primitives to render. Not required. Default is 4 (TRIANGLES).
+	Targets    []map[string]int       // An array of Morph Targets. Each Morph Target is a dictionary mapping attributes (only POSITION, NORMAL, and TANGENT supported) to their deviations in the Morph Target.
+	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras     interface{}            // Application-specific data. Not required.
 }
 
-// Texture sampler properties for filtering and wrapping modes
+// Sampler represents a texture sampler with properties for filtering and wrapping modes.
 type Sampler struct {
-	MagFilter  *int                   // Magnification filter
-	MinFilter  *int                   // Minification filter
-	WrapS      *int                   // s coordinate wrapping mode
-	WrapT      *int                   // t coordinate wrapping mode
-	Name       string                 // The user-define name for this object
-	Extensions map[string]interface{} // Dictionary object with extension specific objects
-	Extras     interface{}            // Application-specific data
+	MagFilter  *int                   // Magnification filter. Not required.
+	MinFilter  *int                   // Minification filter. Not required.
+	WrapS      *int                   // s coordinate wrapping mode. Not required. Default is 10497 (REPEAT).
+	WrapT      *int                   // t coordinate wrapping mode. Not required. Default is 10497 (REPEAT).
+	Name       string                 // The user-defined name of this object. Not required.
+	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras     interface{}            // Application-specific data. Not required.
 }
 
-// The root nodes of a scene
+// Scene contains root nodes.
 type Scene struct {
-	Nodes      []int                  // The indices of each root node
-	Name       string                 // The user-define name for this object
-	Extensions map[string]interface{} // Dictionary object with extension specific objects
-	Extras     interface{}            // Application-specific data
+	Nodes      []int                  // The indices of the root nodes. Not required.
+	Name       string                 // The user-defined name of this object. Not required.
+	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required. Not required.
+	Extras     interface{}            // Application-specific data. Not required. Not required.
 }
 
 // Joints and matrices defining a skin.
 type Skin struct {
-	InverseBindMatrices int                    // The index of the accessor containing the 4x4 inverse-bind matrices
-	Skeleton            int                    // The index of the node used as a skeleton root
-	Joints              []int                  // Indices of skeleton nodes, used as joints in this skin
-	Name                string                 // The user-define name for this object
-	Extensions          map[string]interface{} // Dictionary object with extension specific objects
-	Extras              interface{}            // Application-specific data
+	InverseBindMatrices int                    // The index of the accessor containing the floating-point 4x4 inverse-bind matrices. The default is that each matrix is a 4x4 identity matrix, which implies that inverse-bind matrices were pre-applied. Not required.
+	Skeleton            int                    // The index of the node used as a skeleton root. When undefined, joints transforms resolve to scene root. Not required.
+	Joints              []int                  // Indices of skeleton nodes, used as joints in this skin. Required.
+	Name                string                 // The user-define named of this object. Not required.
+	Extensions          map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras              interface{}            // Application-specific data. Not required.
 }
 
 // Sparse storage of attributes that deviate from their initialization value.
 type Sparse struct {
-	Count int // Number of entries stored in the sparse array
-	//Indices
-	//Values
-	Extensions map[string]interface{} // Dictionary object with extension specific objects
-	Extras     interface{}            // Application-specific data
+	Count      int                    // Number of entries stored in the sparse array. Required.
+	Indices    []int                  // Index array of size count that points to those accessor attributes that deviate from their initialization value. Indices must strictly increase. Required.
+	Values     []int                  // Array of size count times number of components, storing the displaced accessor attributes pointed by indices. Substituted values must have the same componentType and number of components as the base accessor. Required.
+	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras     interface{}            // Application-specific data. Not required.
 }
 
-// The index of the node and TRS property than an animation channel targets
+// Target represents the index of the node and TRS property than an animation channel targets.
 type Target struct {
-	Node       int                    // The index of the node to target
-	Path       string                 // The name of the node's TRS property to modify
-	Extensions map[string]interface{} // Dictionary object with extension specific objects
-	Extras     interface{}            // Application-specific data
+	Node int    // The index of the node to target. Not required.
+	Path string // The name of the node's TRS property to modify, or the "weights" of the Morph Targets it instantiates. Required.
+	            // For the "translation" property, the values that are provided by the sampler are the translation along the x, y, and z axes.
+	            // For the "rotation" property, the values are a quaternion in the order (x, y, z, w), where w is the scalar.
+	            // For the "scale" property, the values are the scaling factors along the x, y, and z axes.
+	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras     interface{}            // Application-specific data. Not required.
 }
 
-// A texture and its sampler.
+// Texture represents a texture and its sampler.
 type Texture struct {
-	Sampler    int                    // The index of the sampler used by this texture
-	Source     int                    // The index of the image used by this texture
-	Name       string                 // The user-define name for this object
-	Extensions map[string]interface{} // Dictionary object with extension specific objects
-	Extras     interface{}            // Application-specific data
+	Sampler    int                    // The index of the sampler used by this texture. When undefined, a sampler with REPEAT wrapping and AUTO filtering should be used. Not required.
+	Source     int                    // The index of the image used by this texture. Not required.
+	Name       string                 // The user-defined name of this object. Not required.
+	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required. Not required.
+	Extras     interface{}            // Application-specific data. Not required. Not required.
 }
 
-// Reference to a texture.
+// TextureInfo is a reference to a texture.
 type TextureInfo struct {
-	Index      int                    // The index of the texture
-	TexCoord   int                    // The set index of texture's TEXCOORD attribute used for texture coordinate mapping
-	Extensions map[string]interface{} // Dictionary object with extension specific objects
-	Extras     interface{}            // Application-specific data
+	Index      int                    // The index of the texture. Required.
+	TexCoord   int                    // The set index of texture's TEXCOORD attribute used for texture coordinate mapping. Not required. Default is 0.
+	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras     interface{}            // Application-specific data. Not required.
 }
 
-// Array of size accessor.sparse.count times number of components storing
-// the displaced accessor attributes pointed by accessor.sparse.indices.
+// Values is an array of size accessor.sparse.count times number of components storing the displaced accessor attributes pointed by accessor.sparse.indices.
 type Values struct {
-	BufferView int                    // The index of the bufferView with sparse values
-	ByteOffset int                    // he offset relative to the start of the bufferView in bytes
-	Extensions map[string]interface{} // Dictionary object with extension specific objects
-	Extras     interface{}            // Application-specific data
+	BufferView int                    // The index of the bufferView with sparse values. Referenced bufferView can't have ARRAY_BUFFER or ELEMENT_ARRAY_BUFFER target. Required.
+	ByteOffset int                    // The offset relative to the start of the bufferView in bytes. Must be aligned. Not required. Default is 0.
+	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras     interface{}            // Application-specific data. Not required.
 }
+
+// Primitive types.
+const (
+	POINTS         = 0
+	LINES          = 1
+	LINE_LOOP      = 2
+	LINE_STRIP     = 3
+	TRIANGLES      = 4
+	TRIANGLE_STRIP = 5
+	TRIANGLE_FAN   = 6
+)
 
 const (
-	POINTS                 = 0
-	LINES                  = 1
-	LINE_LOOP              = 2
-	LINE_STRIP             = 3
-	TRIANGLES              = 4
-	TRIANGLE_STRIP         = 5
-	TRIANGLE_FAN           = 6
-	ARRAY_BUFFER           = 34962
-	ELEMENT_ARRAY_BUFFER   = 34963
+	ARRAY_BUFFER         = 34962
+	ELEMENT_ARRAY_BUFFER = 34963
+)
+
+const (
 	NEAREST                = 9728
 	LINEAR                 = 9729
 	NEAREST_MIPMAP_NEAREST = 9984
 	LINEAR_MIPMAP_NEAREST  = 9985
 	NEAREST_MIPMAP_LINEAR  = 9986
 	LINEAR_MIPMAP_LINEAR   = 9987
-	CLAMP_TO_EDGE          = 33071
-	MIRRORED_REPEAT        = 33648
-	REPEAT                 = 10497
-	UNSIGNED_BYTE          = 5121
-	UNSIGNED_SHORT         = 5123
-	UNSIGNED_INT           = 5125
-	FLOAT                  = 5126
 )
+
+const (
+	CLAMP_TO_EDGE   = 33071
+	MIRRORED_REPEAT = 33648
+	REPEAT          = 10497
+)
+
+// Possible componentType values. TODO maybe create ComponentType type
+const (
+	BYTE           = 5120
+	UNSIGNED_BYTE  = 5121
+	SHORT          = 5122
+	UNSIGNED_SHORT = 5123
+	UNSIGNED_INT   = 5125
+	FLOAT          = 5126
+)
+
+// TODO Create table mapping componentType to size in bytes?
 
 const (
 	POSITION   = "POSITION"
@@ -339,6 +375,9 @@ const (
 	COLOR_0    = "COLOR_0"
 	JOINTS_0   = "JOINTS_0"
 	WEIGHTS_0  = "WEIGHTS_0"
+)
+
+const (
 	SCALAR     = "SCALAR"
 	VEC2       = "VEC2"
 	VEC3       = "VEC3"
@@ -368,7 +407,7 @@ type GLB struct {
 type GLBHeader struct {
 	Magic   uint32
 	Version uint32
-	Length  uint32
+	Length  uint32 // Not used directly
 }
 
 type GLBChunk struct {

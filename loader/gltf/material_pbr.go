@@ -10,17 +10,43 @@ import (
 
 func (g *GLTF) loadMaterialPBR(m *Material) (material.IMaterial, error) {
 
-	// Currently simulating PBR material with our common materials
+	// Get pbr information
 	pbr := m.PbrMetallicRoughness
 	if pbr == nil {
 		return nil, fmt.Errorf("PbrMetallicRoughness not supplied")
 	}
-	pm := material.NewPhong(&math32.Color{pbr.BaseColorFactor[0], pbr.BaseColorFactor[1], pbr.BaseColorFactor[2]})
-	pm.SetAmbientColor(&math32.Color{1, 1, 1})
-	pm.SetEmissiveColor(&math32.Color{0, 0, 0})
-	//pm.SetSpecularColor(&math32.Color{0, 0, 0})
-	//pm.SetShininess(0)
-	//pm.SetOpacity(1)
+
+	// Create new physically based material
+	pm := material.NewPhysical()
+
+	// TODO emmisive factor, emmissive map, occlusion, etc...
+
+	// BaseColorFactor
+	var baseColorFactor math32.Color4
+	if pbr.BaseColorFactor != nil {
+		baseColorFactor = math32.Color4{pbr.BaseColorFactor[0], pbr.BaseColorFactor[1], pbr.BaseColorFactor[2], pbr.BaseColorFactor[3]}
+	} else {
+		baseColorFactor = math32.Color4{1,1,1,1}
+	}
+	pm.SetBaseColorFactor(&baseColorFactor)
+
+	// MetallicFactor
+	var metallicFactor float32
+	if pbr.MetallicFactor != nil {
+		metallicFactor = *pbr.MetallicFactor
+	} else {
+		metallicFactor = 1
+	}
+	pm.SetMetallicFactor(metallicFactor)
+
+	// RoughnessFactor
+	var roughnessFactor float32
+	if pbr.RoughnessFactor != nil {
+		roughnessFactor = *pbr.RoughnessFactor
+	} else {
+		roughnessFactor = 1
+	}
+	pm.SetRoughnessFactor(roughnessFactor)
 
 	// BaseColorTexture
 	var tex *texture.Texture2D
@@ -30,7 +56,7 @@ func (g *GLTF) loadMaterialPBR(m *Material) (material.IMaterial, error) {
 		if err != nil {
 			return nil, err
 		}
-		pm.AddTexture(tex)
+		pm.SetBaseColorMap(tex)
 	}
 
 	return pm, nil
