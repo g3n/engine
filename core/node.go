@@ -481,6 +481,13 @@ func (n *Node) SetQuaternion(x, y, z, w float32) {
 	n.changed = true
 }
 
+// SetQuaternionVec sets the quaternion based on the specified quaternion unit multiples vector.
+func (n *Node) SetQuaternionVec(q *math32.Vector4) {
+
+	n.quaternion.Set(q.X, q.Y, q.Z, q.W)
+	n.changed = true
+}
+
 // SetQuaternionQuat sets the quaternion based on the specified quaternion pointer.
 func (n *Node) SetQuaternionQuat(q *math32.Quaternion) {
 

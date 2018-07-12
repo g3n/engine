@@ -59,6 +59,14 @@ func (a *ArrayF32) AppendVector3(v ...*Vector3) {
 	}
 }
 
+// AppendVector4 appends any number of Vector4 to the array
+func (a *ArrayF32) AppendVector4(v ...*Vector4) {
+
+	for i := 0; i < len(v); i++ {
+		*a = append(*a, v[i].X, v[i].Y, v[i].Z, v[i].W)
+	}
+}
+
 // AppendColor appends any number of Color to the array
 func (a *ArrayF32) AppendColor(v ...*Color) {
 
@@ -92,6 +100,16 @@ func (a ArrayF32) GetVector3(pos int, v *Vector3) {
 	v.Z = a[pos+2]
 }
 
+// GetVector4 stores in the specified Vector4 the
+// values from the array starting at the specified pos.
+func (a ArrayF32) GetVector4(pos int, v *Vector4) {
+
+	v.X = a[pos]
+	v.Y = a[pos+1]
+	v.Z = a[pos+2]
+	v.W = a[pos+3]
+}
+
 // GetColor stores in the specified Color the
 // values from the array starting at the specified pos
 func (a ArrayF32) GetColor(pos int, v *Color) {
@@ -99,6 +117,16 @@ func (a ArrayF32) GetColor(pos int, v *Color) {
 	v.R = a[pos]
 	v.G = a[pos+1]
 	v.B = a[pos+2]
+}
+
+// GetColor4 stores in the specified Color the
+// values from the array starting at the specified pos
+func (a ArrayF32) GetColor4(pos int, v *Color4) {
+
+	v.R = a[pos]
+	v.G = a[pos+1]
+	v.B = a[pos+2]
+	v.A = a[pos+3]
 }
 
 // Set sets the values of the array starting at the specified pos
@@ -125,6 +153,16 @@ func (a ArrayF32) SetVector3(pos int, v *Vector3) {
 	a[pos] = v.X
 	a[pos+1] = v.Y
 	a[pos+2] = v.Z
+}
+
+// SetVector4 sets the values of the array at the specified pos
+// from the XYZ values of the specified Vector4
+func (a ArrayF32) SetVector4(pos int, v *Vector4) {
+
+	a[pos] = v.X
+	a[pos+1] = v.Y
+	a[pos+2] = v.Z
+	a[pos+3] = v.W
 }
 
 // SetColor sets the values of the array at the specified pos
