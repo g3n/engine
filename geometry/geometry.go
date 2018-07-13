@@ -50,6 +50,13 @@ type Group struct {
 	Matid    string // Material id used when loading external models
 }
 
+const (
+	VertexPosition = "VertexPosition"
+	VertexNormal = "VertexNormal"
+	VertexColor = "VertexColor"
+	VertexTexcoord = "VertexTexcoord"
+)
+
 // NewGeometry creates and returns a pointer to a new Geometry.
 func NewGeometry() *Geometry {
 
@@ -200,11 +207,11 @@ func (g *Geometry) Items() int {
 func (g *Geometry) OperateOnVertices(cb func(vertex *math32.Vector3) bool) {
 
 	// Get buffer with position vertices
-	vbo := g.VBO("VertexPosition")
+	vbo := g.VBO(VertexPosition)
 	if vbo == nil {
 		return
 	}
-	vbo.OperateOnVectors3("VertexPosition", cb)
+	vbo.OperateOnVectors3(VertexPosition, cb)
 }
 
 // ReadVertices iterates over all the vertices and calls
@@ -213,11 +220,11 @@ func (g *Geometry) OperateOnVertices(cb func(vertex *math32.Vector3) bool) {
 func (g *Geometry) ReadVertices(cb func(vertex math32.Vector3) bool) {
 
 	// Get buffer with position vertices
-	vbo := g.VBO("VertexPosition")
+	vbo := g.VBO(VertexPosition)
 	if vbo == nil {
 		return
 	}
-	vbo.ReadVectors3("VertexPosition", cb)
+	vbo.ReadVectors3(VertexPosition, cb)
 }
 
 // OperateOnVertexNormals iterates over all the vertex normals
@@ -228,11 +235,11 @@ func (g *Geometry) ReadVertices(cb func(vertex math32.Vector3) bool) {
 func (g *Geometry) OperateOnVertexNormals(cb func(normal *math32.Vector3) bool) {
 
 	// Get buffer with position vertices
-	vbo := g.VBO("VertexNormal")
+	vbo := g.VBO(VertexNormal)
 	if vbo == nil {
 		return
 	}
-	vbo.OperateOnVectors3("VertexNormal", cb)
+	vbo.OperateOnVectors3(VertexNormal, cb)
 }
 
 // ReadVertexNormals iterates over all the vertex normals and calls
@@ -241,11 +248,11 @@ func (g *Geometry) OperateOnVertexNormals(cb func(normal *math32.Vector3) bool) 
 func (g *Geometry) ReadVertexNormals(cb func(vertex math32.Vector3) bool) {
 
 	// Get buffer with position vertices
-	vbo := g.VBO("VertexNormal")
+	vbo := g.VBO(VertexNormal)
 	if vbo == nil {
 		return
 	}
-	vbo.ReadVectors3("VertexNormal", cb)
+	vbo.ReadVectors3(VertexNormal, cb)
 }
 
 // ReadFaces iterates over all the vertices and calls
@@ -254,7 +261,7 @@ func (g *Geometry) ReadVertexNormals(cb func(vertex math32.Vector3) bool) {
 func (g *Geometry) ReadFaces(cb func(vA, vB, vC math32.Vector3) bool) {
 
 	// Get buffer with position vertices
-	vbo := g.VBO("VertexPosition")
+	vbo := g.VBO(VertexPosition)
 	if vbo == nil {
 		return
 	}
@@ -276,7 +283,7 @@ func (g *Geometry) ReadFaces(cb func(vA, vB, vC math32.Vector3) bool) {
 		}
 	} else {
 		// Geometry does NOT have indexed vertices - can read vertices in sequence
-		vbo.ReadTripleVectors3("VertexPosition", cb)
+		vbo.ReadTripleVectors3(VertexPosition, cb)
 	}
 }
 
