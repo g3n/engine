@@ -8,12 +8,13 @@ import (
 	"time"
 )
 
+// TimerManager manages multiple timers
 type TimerManager struct {
 	nextID int       // next timer id
 	timers []timeout // list of timeouts
 }
 
-// Type for timer callback functions
+// TimerCallback is the type for timer callback functions
 type TimerCallback func(interface{})
 
 // Internal structure for each active timer

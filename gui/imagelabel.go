@@ -29,7 +29,7 @@ type ImageLabel struct {
 	icon  *Label // optional internal icon label
 }
 
-// ImageLabelStyle
+// ImageLabelStyle contains the styling of an ImageLabel.
 type ImageLabelStyle BasicStyle
 
 // NewImageLabel creates and returns a pointer to a new image label widget

@@ -9,7 +9,7 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
-// Perspective represents a perspective camera
+// Perspective is a perspective camera.
 type Perspective struct {
 	Camera                     // Embedded camera
 	fov         float32        // field of view in degrees
@@ -34,45 +34,45 @@ func NewPerspective(fov, aspect, near, far float32) *Perspective {
 	return cam
 }
 
-// SetFov sets the camera field of view in degrees
+// SetFov sets the camera field of view in degrees.
 func (cam *Perspective) SetFov(fov float32) {
 
 	cam.fov = fov
 	cam.projChanged = true
 }
 
-// SetAspect sets the camera aspect ratio (width/height)
+// SetAspect sets the camera aspect ratio (width/height).
 func (cam *Perspective) SetAspect(aspect float32) {
 
 	cam.aspect = aspect
 	cam.projChanged = true
 }
 
-// Fov returns the current camera FOV (field of view) in degrees
+// Fov returns the current camera FOV (field of view) in degrees.
 func (cam *Perspective) Fov() float32 {
 
 	return cam.fov
 }
 
-// Aspect returns the current camera aspect ratio
+// Aspect returns the current camera aspect ratio.
 func (cam Perspective) Aspect() float32 {
 
 	return cam.aspect
 }
 
-// Near returns the current camera near plane Z coordinate
+// Near returns the current camera near plane Z coordinate.
 func (cam *Perspective) Near() float32 {
 
 	return cam.near
 }
 
-// Far returns the current camera far plane Z coordinate
+// Far returns the current camera far plane Z coordinate.
 func (cam *Perspective) Far() float32 {
 
 	return cam.far
 }
 
-// ProjMatrix satisfies the ICamera interface
+// ProjMatrix satisfies the ICamera interface.
 func (cam *Perspective) ProjMatrix(m *math32.Matrix4) {
 
 	cam.updateProjMatrix()
@@ -82,13 +82,18 @@ func (cam *Perspective) ProjMatrix(m *math32.Matrix4) {
 // Project transforms the specified position from world coordinates to this camera projected coordinates.
 func (cam *Perspective) Project(v *math32.Vector3) (*math32.Vector3, error) {
 
-	cam.updateProjMatrix()
+	// Get camera view matrix
 	var matrix math32.Matrix4
 	matrixWorld := cam.MatrixWorld()
 	err := matrix.GetInverse(&matrixWorld)
 	if err != nil {
 		return nil, err
 	}
+
+	// Update camera projection matrix
+	cam.updateProjMatrix()
+
+	// Multiply viewMatrix by projMatrix and apply the resulting projection matrix to the provided vector
 	matrix.MultiplyMatrices(&cam.projMatrix, &matrix)
 	v.ApplyProjection(&matrix)
 	return v, nil
@@ -98,18 +103,12 @@ func (cam *Perspective) Project(v *math32.Vector3) (*math32.Vector3, error) {
 func (cam *Perspective) Unproject(v *math32.Vector3) (*math32.Vector3, error) {
 
 	// Get inverted camera view matrix
-	var viewMatrix math32.Matrix4
-	cam.ViewMatrix(&viewMatrix)
-	var invertedViewMatrix math32.Matrix4
-	err := invertedViewMatrix.GetInverse(&viewMatrix)
-	if err != nil {
-		return nil, err
-	}
+	invertedViewMatrix := cam.MatrixWorld()
 
 	// Get inverted camera projection matrix
 	cam.updateProjMatrix()
 	var invertedProjMatrix math32.Matrix4
-	err = invertedProjMatrix.GetInverse(&cam.projMatrix)
+	err := invertedProjMatrix.GetInverse(&cam.projMatrix)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +141,7 @@ func (cam *Perspective) SetRaycaster(rc *core.Raycaster, sx, sy float32) error {
 	return nil
 }
 
-// updateProjMatrix updates this camera projection matrix if necessary
+// updateProjMatrix updates the projection matrix if necessary.
 func (cam *Perspective) updateProjMatrix() {
 
 	if cam.projChanged {

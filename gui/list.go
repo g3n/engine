@@ -10,13 +10,13 @@ import (
 
 // List represents a list GUI element
 type List struct {
-	ItemScroller         // Embedded scroller
-	styles   *ListStyles // Pointer to styles
-	single   bool        // Single selection flag (default is true)
-	focus    bool        // has keyboard focus
-	dropdown bool        // this is used as dropdown
-	keyNext  window.Key  // Code of key to select next item
-	keyPrev  window.Key  // Code of key to select previous item
+	ItemScroller             // Embedded scroller
+	styles       *ListStyles // Pointer to styles
+	single       bool        // Single selection flag (default is true)
+	focus        bool        // has keyboard focus
+	dropdown     bool        // this is used as dropdown
+	keyNext      window.Key  // Code of key to select next item
+	keyPrev      window.Key  // Code of key to select previous item
 }
 
 // ListItem encapsulates each item inserted into the list
@@ -29,13 +29,13 @@ type ListItem struct {
 	list        *List   // Pointer to list
 }
 
-// ListStyles
+// ListStyles encapsulates a set of styles for the list and item.
 type ListStyles struct {
 	Scroller *ItemScrollerStyles
 	Item     *ListItemStyles
 }
 
-// ListItemStyles
+// ListItemStyles contains one ListItemStyle for each possible item state.
 type ListItemStyles struct {
 	Normal      ListItemStyle
 	Over        ListItemStyle
@@ -44,7 +44,7 @@ type ListItemStyles struct {
 	SelHigh     ListItemStyle
 }
 
-// ListItemStyle
+// ListItemStyle contains the styling of a list item.
 type ListItemStyle BasicStyle
 
 // OnListItemResize is the identifier of the event dispatched when a ListItem's child panel is resized

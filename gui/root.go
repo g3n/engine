@@ -25,6 +25,7 @@ type Root struct {
 	targets           []IPanel       // preallocated list of target panels
 }
 
+// Types of event propagation stopping.
 const (
 	StopGUI = 0x01             // Stop event propagation to GUI
 	Stop3D  = 0x02             // Stop event propagation to 3D
@@ -164,7 +165,7 @@ func (r *Root) SetCursorText() {
 	r.win.SetStandardCursor(window.IBeamCursor)
 }
 
-// SetCursorText sets the cursor over the associated window to the crosshair type.
+// SetCursorCrosshair sets the cursor over the associated window to the crosshair type.
 func (r *Root) SetCursorCrosshair() {
 
 	r.win.SetStandardCursor(window.CrosshairCursor)

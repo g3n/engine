@@ -4,8 +4,6 @@
 
 package math32
 
-import ()
-
 // Plane represents a plane in 3D space by its normal vector and a constant.
 // When the the normal vector is the unit vector the constant is the distance from the origin.
 type Plane struct {

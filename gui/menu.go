@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+// Menu is the menu GUI element
 type Menu struct {
 	Panel                // embedded panel
 	styles   *MenuStyles // pointer to current styles
