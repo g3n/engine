@@ -6,7 +6,7 @@ package constraint
 
 import (
 	"github.com/g3n/engine/math32"
-	"github.com/g3n/engine/physics/equation"
+	"github.com/g3n/engine/experimental/physics/equation"
 )
 
 // ConeTwist constraint.
