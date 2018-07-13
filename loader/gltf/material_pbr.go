@@ -5,7 +5,6 @@ import (
 
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
-	"github.com/g3n/engine/texture"
 )
 
 func (g *GLTF) loadMaterialPBR(m *Material) (material.IMaterial, error) {
@@ -18,8 +17,6 @@ func (g *GLTF) loadMaterialPBR(m *Material) (material.IMaterial, error) {
 
 	// Create new physically based material
 	pm := material.NewPhysical()
-
-	// TODO emmisive factor, emmissive map, occlusion, etc...
 
 	// BaseColorFactor
 	var baseColorFactor math32.Color4
@@ -48,15 +45,62 @@ func (g *GLTF) loadMaterialPBR(m *Material) (material.IMaterial, error) {
 	}
 	pm.SetRoughnessFactor(roughnessFactor)
 
+	// EmissiveFactor
+	var emissiveFactor math32.Color
+	if m.EmissiveFactor != nil {
+		emissiveFactor = math32.Color{m.EmissiveFactor[0], m.EmissiveFactor[1], m.EmissiveFactor[2]}
+	} else {
+		if m.EmissiveTexture != nil {
+			emissiveFactor = math32.Color{1, 1, 1}
+		} else {
+			emissiveFactor = math32.Color{0,0,0}
+		}
+	}
+	pm.SetEmissiveFactor(&emissiveFactor)
+
 	// BaseColorTexture
-	var tex *texture.Texture2D
-	var err error
 	if pbr.BaseColorTexture != nil {
-		tex, err = g.loadTextureInfo(pbr.BaseColorTexture)
+		tex, err := g.loadTextureInfo(pbr.BaseColorTexture)
 		if err != nil {
 			return nil, err
 		}
 		pm.SetBaseColorMap(tex)
+	}
+
+	// MetallicRoughnessTexture
+	if pbr.MetallicRoughnessTexture != nil {
+		tex, err := g.loadTextureInfo(pbr.MetallicRoughnessTexture)
+		if err != nil {
+			return nil, err
+		}
+		pm.SetMetallicRoughnessMap(tex)
+	}
+
+	// NormalTexture
+	if m.NormalTexture != nil {
+		tex, err := g.loadTexture(m.NormalTexture.Index)
+		if err != nil {
+			return nil, err
+		}
+		pm.SetNormalMap(tex)
+	}
+
+	// OcclusionTexture
+	if m.OcclusionTexture != nil {
+		tex, err := g.loadTexture(m.OcclusionTexture.Index)
+		if err != nil {
+			return nil, err
+		}
+		pm.SetOcclusionMap(tex)
+	}
+
+	// EmissiveTexture
+	if m.EmissiveTexture != nil {
+		tex, err := g.loadTexture(m.EmissiveTexture.Index)
+		if err != nil {
+			return nil, err
+		}
+		pm.SetEmissiveMap(tex)
 	}
 
 	return pm, nil

@@ -5,6 +5,8 @@
 // Package gltf
 package gltf
 
+import "github.com/g3n/engine/core"
+
 // GLTF is the root object for a glTF asset.
 type GLTF struct {
 	ExtensionsUsed     []string               // Names of glTF extensions used somewhere in this asset. Not required.
@@ -143,16 +145,16 @@ type Indices struct {
 // Material describes the material appearance of a primitive.
 type Material struct {
 	Name                 string                 // The user-defined name of this object. Not required.
-	Extensions           map[string]interface{} // Dictionary object with extension-specific objects. Not required.
-	Extras               interface{}            // Application-specific data. Not required.
 	PbrMetallicRoughness *PbrMetallicRoughness  // A set of parameter values that are used to define the metallic-roughness material model from Physically-Based Rendering (PBR) methodology. When not specified, all the default values of pbrMetallicRoughness apply. Not required.
 	NormalTexture        *NormalTextureInfo     // The normal map texture. Not required.
 	OcclusionTexture     *OcclusionTextureInfo  // The occlusion map texture. Not required.
 	EmissiveTexture      *TextureInfo           // The emissive map texture. Not required.
-	EmissiveFactor       [3]float32             // The emissive color of the material. Not required. Default is [0,0,0]
+	EmissiveFactor       *[3]float32            // The emissive color of the material. Not required. Default is [0,0,0]
 	AlphaMode            string                 // The alpha rendering mode of the material. Not required. Default is OPAQUE.
 	AlphaCutoff          float32                // The alpha cutoff value of the material. Not required. Default is 0.5.
 	DoubleSided          bool                   // Specifies whether the material is double sided. Not required. Default is false.
+	Extensions           map[string]interface{} // Dictionary object with extension-specific objects. Not required.
+	Extras               interface{}            // Application-specific data. Not required.
 }
 
 // Mesh is a set of primitives to be rendered.
@@ -184,6 +186,8 @@ type Node struct {
 	Name        string                 // The user-defined name of this object. Not required.
 	Extensions  map[string]interface{} // Dictionary object with extension-specific objects. Not required.
 	Extras      interface{}            // Application-specific data. Not required.
+
+	node        core.INode             // Cached node
 }
 
 // TODO Why not combine NormalTextureInfo and OcclusionTextureInfo ? Or simply add Scale to TextureInfo and use only TextureInfo?
@@ -300,7 +304,7 @@ type Target struct {
 
 // Texture represents a texture and its sampler.
 type Texture struct {
-	Sampler    int                    // The index of the sampler used by this texture. When undefined, a sampler with REPEAT wrapping and AUTO filtering should be used. Not required.
+	Sampler    *int                   // The index of the sampler used by this texture. When undefined, a sampler with REPEAT wrapping and AUTO filtering should be used. Not required.
 	Source     int                    // The index of the image used by this texture. Not required.
 	Name       string                 // The user-defined name of this object. Not required.
 	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required. Not required.
