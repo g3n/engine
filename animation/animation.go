@@ -42,6 +42,8 @@ func (anim *Animation) Name() string {
 func (anim *Animation) Reset() {
 
 	anim.time = anim.start
+	anim.paused = false
+	// TODO reset channels?
 }
 
 // SetPaused sets whether the animation is paused.
@@ -77,25 +79,26 @@ func (anim *Animation) SetStart(v float32) {
 // Update interpolates and updates the target values for each channel.
 // If the animation is paused, returns false. If the animation is not paused,
 // returns true if the input value is inside the key frames ranges or false otherwise.
-func (anim *Animation) Update(delta float32) bool {
+func (anim *Animation) Update(delta float32) {
 
 	// Check if paused
 	if anim.paused {
-		return false
+		return
 	}
 
 	// Check if input is less than minimum
 	anim.time = anim.time + delta
 	if anim.time < anim.minTime {
-		return false
+		return
 	}
 
 	// Check if input is greater than maximum
 	if anim.time > anim.maxTime {
 		if anim.loop {
-			anim.Reset()
+			anim.time = anim.time - anim.maxTime
 		} else {
-			return false
+			anim.time = anim.maxTime - 0.000001
+			anim.SetPaused(true)
 		}
 	}
 
@@ -104,8 +107,6 @@ func (anim *Animation) Update(delta float32) bool {
 		ch := anim.channels[i]
 		ch.Update(anim.time)
 	}
-
-	return true
 }
 
 // AddChannel adds a channel to the animation.
@@ -118,12 +119,12 @@ func (anim *Animation) AddChannel(ch IChannel) {
 
 	// Update maxTime and minTime values
 	kf := ch.Keyframes()
-	firstKf := kf[0]
-	if anim.minTime > firstKf {
-		anim.minTime = firstKf
+	firstTime := kf[0]
+	if anim.minTime > firstTime {
+		anim.minTime = firstTime
 	}
-	lastKf := kf[len(kf)-1]
-	if anim.maxTime < lastKf {
-		anim.maxTime = lastKf
+	lastTime := kf[len(kf)-1]
+	if anim.maxTime < lastTime {
+		anim.maxTime = lastTime
 	}
 }
