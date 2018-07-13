@@ -290,7 +290,7 @@ func (c Canvas) DrawTextCaret(x, y int, text string, f *Font, line, col int) err
 			// Draw caret vertical line
 			caretH := int(f.attrib.PointSize) + 2
 			caretY := int(d.Dot.Y>>6) - int(f.attrib.PointSize) + 2
-			color := Color4RGBA(&math32.Color4{0,0,0,1}) // Hardcoded to black
+			color := Color4RGBA(&math32.Color4{0, 0, 0, 1}) // Hardcoded to black
 			for j := caretY; j < caretY+caretH; j++ {
 				c.RGBA.Set(x+width, j, color)
 			}

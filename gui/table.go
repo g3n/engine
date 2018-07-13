@@ -16,16 +16,17 @@ import (
 )
 
 const (
-	// Name of the event generated when the table is right or left clicked
+	// OnTableClick is the event generated when the table is right or left clicked
 	// Parameter is TableClickEvent
 	OnTableClick = "onTableClick"
-	// Name of the event generated when the table row count changes (no parameters)
+	// OnTableRowCount is the event generated when the table row count changes (no parameters)
 	OnTableRowCount = "onTableRowCount"
 )
 
 // TableSortType is the type used to specify the sort method for a table column
 type TableSortType int
 
+// The various sorting types
 const (
 	TableSortNone TableSortType = iota
 	TableSortString
@@ -36,9 +37,9 @@ const (
 type TableSelType int
 
 const (
-	// Single row selection mode (default)
-	TableSelSingleRow = iota
-	// Multiple row selection mode
+	// TableSelSingleRow is the single row selection mode (default)
+	TableSelSingleRow TableSelType = iota
+	// TableSelMultiRow is the multiple row selection mode
 	TableSelMultiRow
 )
 
@@ -1615,9 +1616,8 @@ func (ts tableSortString) Less(i, j int) bool {
 	sj := fmt.Sprintf(ts.format, vj)
 	if ts.asc {
 		return si < sj
-	} else {
-		return sj < si
 	}
+	return sj < si
 }
 
 // tableSortNumber is an internal type implementing the sort.Interface
@@ -1638,9 +1638,8 @@ func (ts tableSortNumber) Less(i, j int) bool {
 	nj := cv2f64(vj)
 	if ts.asc {
 		return ni < nj
-	} else {
-		return nj < ni
 	}
+	return nj < ni
 }
 
 // Try to convert an interface value to a float64 number

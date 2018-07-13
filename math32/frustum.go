@@ -9,6 +9,7 @@ type Frustum struct {
 	planes []Plane
 }
 
+// NewFrustumFromMatrix creates and returns a Frustum based on the provided matrix
 func NewFrustumFromMatrix(m *Matrix4) *Frustum {
 	f := new(Frustum)
 	f.planes = make([]Plane, 6)

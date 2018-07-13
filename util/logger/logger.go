@@ -38,11 +38,11 @@ const (
 var levelNames = [...]string{"DEBUG", "INFO", "WARN", "ERROR", "FATAL"}
 
 // Default logger and global mutex
-var Default *Logger = nil
+var Default *Logger
 var rootLoggers = []*Logger{}
 var mutex sync.Mutex
 
-// Interface for all logger writers
+// LoggerWriter is the interface for all logger writers
 type LoggerWriter interface {
 	Write(*Event)
 	Close()
@@ -61,7 +61,7 @@ type Logger struct {
 	children []*Logger
 }
 
-// Logger event passed from the logger to its writers.
+// Event is a logger event passed from the logger to its writers.
 type Event struct {
 	time    time.Time
 	level   int
@@ -76,7 +76,7 @@ func init() {
 	Default.AddWriter(NewConsole(false))
 }
 
-// New() creates and returns a new logger with the specified name.
+// New creates and returns a new logger with the specified name.
 // If a parent logger is specified, the created logger inherits the
 // parent's configuration.
 func New(name string, parent *Logger) *Logger {
@@ -177,21 +177,21 @@ func (l *Logger) Info(format string, v ...interface{}) {
 }
 
 // Warn emits a WARN level log message
-func (self *Logger) Warn(format string, v ...interface{}) {
+func (l *Logger) Warn(format string, v ...interface{}) {
 
-	self.Log(WARN, format, v...)
+	l.Log(WARN, format, v...)
 }
 
 // Error emits an ERROR level log message
-func (self *Logger) Error(format string, v ...interface{}) {
+func (l *Logger) Error(format string, v ...interface{}) {
 
-	self.Log(ERROR, format, v...)
+	l.Log(ERROR, format, v...)
 }
 
 // Fatal emits a FATAL level log message
-func (self *Logger) Fatal(format string, v ...interface{}) {
+func (l *Logger) Fatal(format string, v ...interface{}) {
 
-	self.Log(FATAL, format, v...)
+	l.Log(FATAL, format, v...)
 }
 
 // Log emits a log message with the specified level

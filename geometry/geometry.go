@@ -9,14 +9,14 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
-// Interface for all geometries
+// IGeometry is the interface for all geometries.
 type IGeometry interface {
 	GetGeometry() *Geometry
 	RenderSetup(gs *gls.GLS)
 	Dispose()
 }
 
-// Geometry encapsulates a three-dimensional geometric shape.
+// Geometry encapsulates a three-dimensional vertex-based geometry.
 type Geometry struct {
 	refcount            int             // Current number of references
 	vbos                []*gls.VBO      // Array of VBOs
@@ -42,7 +42,7 @@ type Geometry struct {
 	rotInertiaValid     bool            // Indicates if last calculated rotational inertia matrix is valid
 }
 
-// Geometry group object
+// Group is a geometry group object.
 type Group struct {
 	Start    int    // Index of first element of the group
 	Count    int    // Number of elements in the group
@@ -50,6 +50,7 @@ type Group struct {
 	Matid    string // Material id used when loading external models
 }
 
+// NewGeometry creates and returns a pointer to a new Geometry.
 func NewGeometry() *Geometry {
 
 	g := new(Geometry)
@@ -57,7 +58,7 @@ func NewGeometry() *Geometry {
 	return g
 }
 
-// Init initializes the geometry
+// Init initializes the geometry.
 func (g *Geometry) Init() {
 
 	g.refcount = 1
@@ -101,19 +102,20 @@ func (g *Geometry) Dispose() {
 	g.Init()
 }
 
+// GetGeometry satisfies the IGeometry interface.
 func (g *Geometry) GetGeometry() *Geometry {
 
 	return g
 }
 
-// AddGroup adds a geometry group (for multimaterial)
+// AddGroup adds a geometry group (for multimaterial).
 func (g *Geometry) AddGroup(start, count, matIndex int) *Group {
 
 	g.groups = append(g.groups, Group{start, count, matIndex, ""})
 	return &g.groups[len(g.groups)-1]
 }
 
-// AddGroupList adds the specified list of groups to this geometry
+// AddGroupList adds the specified list of groups to this geometry.
 func (g *Geometry) AddGroupList(groups []Group) {
 
 	for _, group := range groups {
@@ -121,19 +123,19 @@ func (g *Geometry) AddGroupList(groups []Group) {
 	}
 }
 
-// GroupCount returns the number of geometry groups (for multimaterial)
+// GroupCount returns the number of geometry groups (for multimaterial).
 func (g *Geometry) GroupCount() int {
 
 	return len(g.groups)
 }
 
-// GroupAt returns pointer to geometry group at the specified index
+// GroupAt returns pointer to geometry group at the specified index.
 func (g *Geometry) GroupAt(idx int) *Group {
 
 	return &g.groups[idx]
 }
 
-// SetIndices sets the indices array for this geometry
+// SetIndices sets the indices array for this geometry.
 func (g *Geometry) SetIndices(indices math32.ArrayU32) {
 
 	g.indices = indices
@@ -142,13 +144,13 @@ func (g *Geometry) SetIndices(indices math32.ArrayU32) {
 	g.boundingSphereValid = false
 }
 
-// Indices returns this geometry indices array
+// Indices returns this geometry indices array.
 func (g *Geometry) Indices() math32.ArrayU32 {
 
 	return g.indices
 }
 
-// AddVBO adds a Vertex Buffer Object for this geometry
+// AddVBO adds a Vertex Buffer Object for this geometry.
 func (g *Geometry) AddVBO(vbo *gls.VBO) {
 
 	// Check that the provided VBO doesn't have conflicting attributes with existing VBOs
@@ -175,9 +177,9 @@ func (g *Geometry) VBO(attrib string) *gls.VBO {
 	return nil
 }
 
-// Returns the number of items in the first VBO
+// Items returns the number of items in the first VBO.
 // (The number of items should be same for all VBOs)
-// An item is a complete group of attributes in the VBO buffer
+// An item is a complete group of attributes in the VBO buffer.
 func (g *Geometry) Items() int {
 
 	if len(g.vbos) == 0 {
@@ -287,7 +289,7 @@ func (g *Geometry) Indexed() bool {
 }
 
 // BoundingBox computes the bounding box of the geometry if necessary
-// and returns is value
+// and returns is value.
 func (g *Geometry) BoundingBox() math32.Box3 {
 
 	// If valid, return its value
@@ -457,7 +459,7 @@ func (g *Geometry) ApplyMatrix(m *math32.Matrix4) {
 	})
 }
 
-// RenderSetup is called by the renderer before drawing the geometry
+// RenderSetup is called by the renderer before drawing the geometry.
 func (g *Geometry) RenderSetup(gs *gls.GLS) {
 
 	// First time initialization

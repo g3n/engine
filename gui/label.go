@@ -35,7 +35,7 @@ func NewLabel(text string) *Label {
 	return NewLabelWithFont(text, StyleDefault().Font)
 }
 
-// NewLabel creates and returns a label panel with
+// NewIcon creates and returns a label panel with
 // the specified text drawn using the default icon font.
 func NewIcon(icon string) *Label {
 	return NewLabelWithFont(icon, StyleDefault().FontIcon)
