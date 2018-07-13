@@ -69,9 +69,9 @@ func NewTorus(radius, tube float64, radialSegments, tubularSegments int, arc flo
 	}
 
 	t.SetIndices(indices)
-	t.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(positions))
-	t.AddVBO(gls.NewVBO().AddAttrib("VertexNormal", 3).SetBuffer(normals))
-	t.AddVBO(gls.NewVBO().AddAttrib("VertexTexcoord", 2).SetBuffer(uvs))
+	t.AddVBO(gls.NewVBO().AddAttrib(VertexPosition, 3).SetBuffer(positions))
+	t.AddVBO(gls.NewVBO().AddAttrib(VertexNormal, 3).SetBuffer(normals))
+	t.AddVBO(gls.NewVBO().AddAttrib(VertexTexcoord, 2).SetBuffer(uvs))
 
 	return t
 }

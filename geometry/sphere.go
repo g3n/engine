@@ -83,9 +83,9 @@ func NewSphere(radius float64, widthSegments, heightSegments int, phiStart, phiL
 	}
 
 	s.SetIndices(indices)
-	s.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(positions))
-	s.AddVBO(gls.NewVBO().AddAttrib("VertexNormal", 3).SetBuffer(normals))
-	s.AddVBO(gls.NewVBO().AddAttrib("VertexTexcoord", 2).SetBuffer(uvs))
+	s.AddVBO(gls.NewVBO().AddAttrib(VertexPosition, 3).SetBuffer(positions))
+	s.AddVBO(gls.NewVBO().AddAttrib(VertexNormal, 3).SetBuffer(normals))
+	s.AddVBO(gls.NewVBO().AddAttrib(VertexTexcoord, 2).SetBuffer(uvs))
 
 	r := float32(radius)
 

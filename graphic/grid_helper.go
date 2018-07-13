@@ -37,8 +37,8 @@ func NewGridHelper(size, step float32, color *math32.Color) *GridHelper {
 	geom := geometry.NewGeometry()
 	geom.AddVBO(
 		gls.NewVBO().
-			AddAttrib("VertexPosition", 3).
-			AddAttrib("VertexColor", 3).
+			AddAttrib(geometry.VertexPosition, 3).
+			AddAttrib(geometry.VertexColor, 3).
 			SetBuffer(positions),
 	)
 

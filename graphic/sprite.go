@@ -44,8 +44,8 @@ func NewSprite(width, height float32, imat material.IMaterial) *Sprite {
 	geom.SetIndices(indices)
 	geom.AddVBO(
 		gls.NewVBO().
-			AddAttrib("VertexPosition", 3).
-			AddAttrib("VertexTexcoord", 2).
+			AddAttrib(geometry.VertexPosition, 3).
+			AddAttrib(geometry.VertexTexcoord, 2).
 			SetBuffer(positions),
 	)
 
@@ -114,7 +114,7 @@ func (s *Sprite) Raycast(rc *core.Raycaster, intersects *[]core.Intersect) {
 
 	// Get buffer with vertices and uvs
 	geom := s.GetGeometry()
-	vboPos := geom.VBO("VertexPosition")
+	vboPos := geom.VBO(geometry.VertexPosition)
 	if vboPos == nil {
 		panic("sprite.Raycast(): VertexPosition VBO not found")
 	}

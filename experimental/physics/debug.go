@@ -33,7 +33,7 @@ func ShowWorldFace(scene *core.Node, face []math32.Vector3, color *math32.Color)
 	vertices.AppendVector3(&face[0])
 
 	geom := geometry.NewGeometry()
-	geom.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(vertices))
+	geom.AddVBO(gls.NewVBO().AddAttrib(geometry.VertexPosition, 3).SetBuffer(vertices))
 
 	mat := material.NewStandard(color)
 	faceGraphic := graphic.NewLineStrip(geom, mat)
@@ -63,7 +63,7 @@ func ShowPenAxis(scene *core.Node, axis *math32.Vector3) {//}, min, max float32)
 	vertices.AppendVector3(maxPoint)
 
 	geom := geometry.NewGeometry()
-	geom.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(vertices))
+	geom.AddVBO(gls.NewVBO().AddAttrib(geometry.VertexPosition, 3).SetBuffer(vertices))
 
 	mat := material.NewStandard(&math32.Color{1,1,1})
 	faceGraphic := graphic.NewLines(geom, mat)
@@ -86,7 +86,7 @@ func ShowContact(scene *core.Node, contact *collision.Contact) {
 	vertices.AppendVector3(otherPoint)
 
 	geom := geometry.NewGeometry()
-	geom.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(vertices))
+	geom.AddVBO(gls.NewVBO().AddAttrib(geometry.VertexPosition, 3).SetBuffer(vertices))
 
 	mat := material.NewStandard(&math32.Color{0,0,1})
 	faceGraphic := graphic.NewLines(geom, mat)
