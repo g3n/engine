@@ -34,7 +34,7 @@ type ShaderSpecs struct {
 	PointLightsMax   int                // Current Number of point lights
 	SpotLightsMax    int                // Current Number of spot lights
 	MatTexturesMax   int                // Current Number of material textures
-	Defines          map[string]string  // Additional shader defines
+	Defines          gls.ShaderDefines  // Additional shader defines
 }
 
 // ProgSpecs represents a compiled shader program along with its specs
@@ -139,13 +139,13 @@ func (sm *Shaman) SetProgram(s *ShaderSpecs) (bool, error) {
 	}
 
 	// If current shader specs are the same as the specified specs, nothing to do.
-	if sm.specs.compare(&specs) {
+	if sm.specs.equals(&specs) {
 		return false, nil
 	}
 
 	// Search for compiled program with the specified specs
 	for _, pinfo := range sm.programs {
-		if pinfo.specs.compare(&specs) {
+		if pinfo.specs.equals(&specs) {
 			sm.gs.UseProgram(pinfo.program)
 			sm.specs = specs
 			return true, nil
@@ -291,15 +291,13 @@ func (ss *ShaderSpecs) copy(other *ShaderSpecs) {
 
 	*ss = *other
 	if other.Defines != nil {
-		ss.Defines = make(map[string]string)
-		for k, v := range other.Defines {
-			ss.Defines[k] = v
-		}
+		ss.Defines = *gls.NewShaderDefines()
+		ss.Defines.Add(&other.Defines)
 	}
 }
 
-// Compare compares two shaders specifications structures
-func (ss *ShaderSpecs) compare(other *ShaderSpecs) bool {
+// equals compares two ShaderSpecs and returns true if they are effectively equal.
+func (ss *ShaderSpecs) equals(other *ShaderSpecs) bool {
 
 	if ss.Name != other.Name {
 		return false
@@ -312,31 +310,8 @@ func (ss *ShaderSpecs) compare(other *ShaderSpecs) bool {
 		ss.PointLightsMax == other.PointLightsMax &&
 		ss.SpotLightsMax == other.SpotLightsMax &&
 		ss.MatTexturesMax == other.MatTexturesMax &&
-		ss.compareDefines(other) {
+		ss.Defines.Equals(&other.Defines) {
 		return true
 	}
-	return false
-}
-
-// compareDefines compares two shaders specification define maps.
-func (ss *ShaderSpecs) compareDefines(other *ShaderSpecs) bool {
-
-	if ss.Defines == nil && other.Defines == nil {
-		return true
-	}
-	if ss.Defines != nil && other.Defines != nil {
-		if len(ss.Defines) != len(other.Defines) {
-			return false
-		}
-		for k := range ss.Defines {
-			v1, ok1 := ss.Defines[k]
-			v2, ok2 := other.Defines[k]
-			if v1 != v2 || ok1 != ok2 {
-				return false
-			}
-		}
-		return true
-	}
-	// One is nil and the other is not nil
 	return false
 }
