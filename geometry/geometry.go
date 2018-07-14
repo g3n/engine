@@ -18,28 +18,33 @@ type IGeometry interface {
 
 // Geometry encapsulates a three-dimensional vertex-based geometry.
 type Geometry struct {
-	refcount            int             // Current number of references
-	vbos                []*gls.VBO      // Array of VBOs
-	groups              []Group         // Array geometry groups
-	indices             math32.ArrayU32 // Buffer with indices
-	gs                  *gls.GLS        // Pointer to gl context. Valid after first render setup
-	handleVAO           uint32          // Handle to OpenGL VAO
-	handleIndices       uint32          // Handle to OpenGL buffer for indices
-	updateIndices       bool            // Flag to indicate that indices must be transferred
+	refcount      int             // Current number of references
+	vbos          []*gls.VBO      // Array of VBOs
+	groups        []Group         // Array geometry groups
+	indices       math32.ArrayU32 // Buffer with indices
+	gs            *gls.GLS        // Pointer to gl context. Valid after first render setup
+	handleVAO     uint32          // Handle to OpenGL VAO
+	handleIndices uint32          // Handle to OpenGL buffer for indices
+	updateIndices bool            // Flag to indicate that indices must be transferred
+
+	// Map from attribute type to actual vbo attribute name
+	// Allows the user to use arbitrary attribute names while
+	// maintaining functionality of methods such as "ReadVertices"
+	attribNameMap map[attribType]string
 
 	// Geometric properties
-	boundingBox         math32.Box3     // Last calculated bounding box
-	boundingSphere      math32.Sphere   // Last calculated bounding sphere
-	area                float32         // Last calculated area
-	volume              float32         // Last calculated volume
-	rotInertia          math32.Matrix3  // Last calculated rotational inertia matrix
+	boundingBox    math32.Box3    // Last calculated bounding box
+	boundingSphere math32.Sphere  // Last calculated bounding sphere
+	area           float32        // Last calculated area
+	volume         float32        // Last calculated volume
+	rotInertia     math32.Matrix3 // Last calculated rotational inertia matrix
 
 	// Flags indicating whether geometric properties are valid
-	boundingBoxValid    bool            // Indicates if last calculated bounding box is valid
-	boundingSphereValid bool            // Indicates if last calculated bounding sphere is valid
-	areaValid           bool            // Indicates if last calculated area is valid
-	volumeValid         bool            // Indicates if last calculated volume is valid
-	rotInertiaValid     bool            // Indicates if last calculated rotational inertia matrix is valid
+	boundingBoxValid    bool // Indicates if last calculated bounding box is valid
+	boundingSphereValid bool // Indicates if last calculated bounding sphere is valid
+	areaValid           bool // Indicates if last calculated area is valid
+	volumeValid         bool // Indicates if last calculated volume is valid
+	rotInertiaValid     bool // Indicates if last calculated rotational inertia matrix is valid
 }
 
 // Group is a geometry group object.
@@ -50,10 +55,21 @@ type Group struct {
 	Matid    string // Material id used when loading external models
 }
 
+// attribType is the functional type of an attribute.
+type attribType int
+
+const (
+	vPosition = attribType(iota)
+	vNormal
+	vColor
+	vTexcoord
+)
+
+// The various default attribute names as recognized by shaders.
 const (
 	VertexPosition = "VertexPosition"
-	VertexNormal = "VertexNormal"
-	VertexColor = "VertexColor"
+	VertexNormal   = "VertexNormal"
+	VertexColor    = "VertexColor"
 	VertexTexcoord = "VertexTexcoord"
 )
 
@@ -75,6 +91,12 @@ func (g *Geometry) Init() {
 	g.handleVAO = 0
 	g.handleIndices = 0
 	g.updateIndices = true
+	g.attribNameMap = map[attribType]string{
+		vPosition: VertexPosition,
+		vNormal:   VertexNormal,
+		vColor:    VertexColor,
+		vTexcoord: VertexTexcoord,
+	}
 }
 
 // Incref increments the reference count for this geometry
@@ -199,6 +221,18 @@ func (g *Geometry) Items() int {
 	return vbo.Buffer().Bytes() / vbo.StrideSize()
 }
 
+// SetAttributeName sets the name of the VBO attribute associated with the provided attribute type.
+func (g *Geometry) SetAttributeName(atype attribType, attribName string) {
+
+	g.attribNameMap[atype] = attribName
+}
+
+// AttributeName returns the name of the VBO attribute associated with the provided attribute type.
+func (g *Geometry) AttributeName(atype attribType) string {
+
+	return g.attribNameMap[atype]
+}
+
 // OperateOnVertices iterates over all the vertices and calls
 // the specified callback function with a pointer to each vertex.
 // The vertex pointers can be modified inside the callback and
@@ -207,11 +241,12 @@ func (g *Geometry) Items() int {
 func (g *Geometry) OperateOnVertices(cb func(vertex *math32.Vector3) bool) {
 
 	// Get buffer with position vertices
-	vbo := g.VBO(VertexPosition)
+	posAttribName := g.attribNameMap[vPosition]
+	vbo := g.VBO(posAttribName)
 	if vbo == nil {
 		return
 	}
-	vbo.OperateOnVectors3(VertexPosition, cb)
+	vbo.OperateOnVectors3(posAttribName, cb)
 }
 
 // ReadVertices iterates over all the vertices and calls
@@ -220,11 +255,12 @@ func (g *Geometry) OperateOnVertices(cb func(vertex *math32.Vector3) bool) {
 func (g *Geometry) ReadVertices(cb func(vertex math32.Vector3) bool) {
 
 	// Get buffer with position vertices
-	vbo := g.VBO(VertexPosition)
+	posAttribName := g.attribNameMap[vPosition]
+	vbo := g.VBO(posAttribName)
 	if vbo == nil {
 		return
 	}
-	vbo.ReadVectors3(VertexPosition, cb)
+	vbo.ReadVectors3(posAttribName, cb)
 }
 
 // OperateOnVertexNormals iterates over all the vertex normals
@@ -235,11 +271,12 @@ func (g *Geometry) ReadVertices(cb func(vertex math32.Vector3) bool) {
 func (g *Geometry) OperateOnVertexNormals(cb func(normal *math32.Vector3) bool) {
 
 	// Get buffer with position vertices
-	vbo := g.VBO(VertexNormal)
+	normAttribName := g.attribNameMap[vNormal]
+	vbo := g.VBO(normAttribName)
 	if vbo == nil {
 		return
 	}
-	vbo.OperateOnVectors3(VertexNormal, cb)
+	vbo.OperateOnVectors3(normAttribName, cb)
 }
 
 // ReadVertexNormals iterates over all the vertex normals and calls
@@ -248,11 +285,12 @@ func (g *Geometry) OperateOnVertexNormals(cb func(normal *math32.Vector3) bool) 
 func (g *Geometry) ReadVertexNormals(cb func(vertex math32.Vector3) bool) {
 
 	// Get buffer with position vertices
-	vbo := g.VBO(VertexNormal)
+	normAttribName := g.attribNameMap[vNormal]
+	vbo := g.VBO(normAttribName)
 	if vbo == nil {
 		return
 	}
-	vbo.ReadVectors3(VertexNormal, cb)
+	vbo.ReadVectors3(normAttribName, cb)
 }
 
 // ReadFaces iterates over all the vertices and calls
@@ -261,7 +299,8 @@ func (g *Geometry) ReadVertexNormals(cb func(vertex math32.Vector3) bool) {
 func (g *Geometry) ReadFaces(cb func(vA, vB, vC math32.Vector3) bool) {
 
 	// Get buffer with position vertices
-	vbo := g.VBO(VertexPosition)
+	posAttribName := g.attribNameMap[vPosition]
+	vbo := g.VBO(posAttribName)
 	if vbo == nil {
 		return
 	}
@@ -283,7 +322,7 @@ func (g *Geometry) ReadFaces(cb func(vA, vB, vC math32.Vector3) bool) {
 		}
 	} else {
 		// Geometry does NOT have indexed vertices - can read vertices in sequence
-		vbo.ReadTripleVectors3(VertexPosition, cb)
+		vbo.ReadTripleVectors3(posAttribName, cb)
 	}
 }
 
