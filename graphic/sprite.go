@@ -43,10 +43,9 @@ func NewSprite(width, height float32, imat material.IMaterial) *Sprite {
 	// Set geometry buffers
 	geom.SetIndices(indices)
 	geom.AddVBO(
-		gls.NewVBO().
+		gls.NewVBO(positions).
 			AddAttrib(geometry.VertexPosition, 3).
-			AddAttrib(geometry.VertexTexcoord, 2).
-			SetBuffer(positions),
+			AddAttrib(geometry.VertexTexcoord, 2),
 	)
 
 	s.Graphic.Init(geom, gls.TRIANGLES)

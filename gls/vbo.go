@@ -26,10 +26,11 @@ type VBOattrib struct {
 }
 
 // NewVBO creates and returns a pointer to a new OpenGL Vertex Buffer Object.
-func NewVBO() *VBO {
+func NewVBO(buffer math32.ArrayF32) *VBO {
 
 	vbo := new(VBO)
 	vbo.init()
+	vbo.SetBuffer(buffer)
 	return vbo
 }
 
