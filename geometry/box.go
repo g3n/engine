@@ -135,9 +135,9 @@ func NewSegmentedBox(width, height, length float32, widthSegments, heightSegment
 	buildPlane("x", "y", -1, -1, box.Width, box.Height, -lHalf, 5) // nz
 
 	box.SetIndices(indices)
-	box.AddVBO(gls.NewVBO().AddAttrib(VertexPosition, 3).SetBuffer(positions))
-	box.AddVBO(gls.NewVBO().AddAttrib(VertexNormal, 3).SetBuffer(normals))
-	box.AddVBO(gls.NewVBO().AddAttrib(VertexTexcoord, 2).SetBuffer(uvs))
+	box.AddVBO(gls.NewVBO(positions).AddAttrib(VertexPosition, 3))
+	box.AddVBO(gls.NewVBO(normals).AddAttrib(VertexNormal, 3))
+	box.AddVBO(gls.NewVBO(uvs).AddAttrib(VertexTexcoord, 2))
 
 	// Update bounding box
 	box.boundingBox.Min = math32.Vector3{-wHalf, -hHalf, -lHalf}

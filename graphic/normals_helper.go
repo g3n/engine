@@ -41,7 +41,7 @@ func NewNormalsHelper(ig IGraphic, size float32, color *math32.Color, lineWidth 
 	// Creates this helper geometry
 	geom := geometry.NewGeometry()
 	positions := math32.NewArrayF32(n, n)
-	geom.AddVBO(gls.NewVBO().AddAttrib(geometry.VertexPosition, 3).SetBuffer(positions))
+	geom.AddVBO(gls.NewVBO(positions).AddAttrib(geometry.VertexPosition, 3))
 
 	// Creates this helper material
 	mat := material.NewStandard(color)
