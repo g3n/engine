@@ -57,28 +57,28 @@ type IMaterial interface {
 // Base Material
 //
 type Material struct {
-	refcount         int                  // Current number of references
-	shader           string               // Shader name
-	shaderUnique     bool                 // shader has only one instance (does not depend on lights or textures)
-	uselights        UseLights            // consider lights for shader selection
-	sidevis          Side                 // sides visible
-	transparent      bool                 // whether at all transparent
-	wireframe        bool                 // show as wirefrme
-	depthMask        bool                 // Enable writing into the depth buffer
-	depthTest        bool                 // Enable depth buffer test
-	depthFunc        uint32               // Active depth test function
-	blending         Blending             // blending mode
-	blendRGB         uint32               // separate blend equation for RGB
-	blendAlpha       uint32               // separate blend equation for Alpha
-	blendSrcRGB      uint32               // separate blend func source RGB
-	blendDstRGB      uint32               // separate blend func dest RGB
-	blendSrcAlpha    uint32               // separate blend func source Alpha
-	blendDstAlpha    uint32               // separate blend func dest Alpha
-	lineWidth        float32              // line width for lines and mesh wireframe
-	polyOffsetFactor float32              // polygon offset factor
-	polyOffsetUnits  float32              // polygon offset units
-	defines          map[string]string    // shader defines
-	textures         []*texture.Texture2D // List of textures
+	refcount         int                    // Current number of references
+	shader           string                 // Shader name
+	shaderUnique     bool                   // shader has only one instance (does not depend on lights or textures)
+	uselights        UseLights              // consider lights for shader selection
+	sidevis          Side                   // sides visible
+	transparent      bool                   // whether at all transparent
+	wireframe        bool                   // show as wirefrme
+	depthMask        bool                   // Enable writing into the depth buffer
+	depthTest        bool                   // Enable depth buffer test
+	depthFunc        uint32                 // Active depth test function
+	blending         Blending               // blending mode
+	blendRGB         uint32                 // separate blend equation for RGB
+	blendAlpha       uint32                 // separate blend equation for Alpha
+	blendSrcRGB      uint32                 // separate blend func source RGB
+	blendDstRGB      uint32                 // separate blend func dest RGB
+	blendSrcAlpha    uint32                 // separate blend func source Alpha
+	blendDstAlpha    uint32                 // separate blend func dest Alpha
+	lineWidth        float32                // line width for lines and mesh wireframe
+	polyOffsetFactor float32                // polygon offset factor
+	polyOffsetUnits  float32                // polygon offset units
+	ShaderDefines    gls.ShaderDefines      // shader defines
+	textures         []*texture.Texture2D   // List of textures
 }
 
 // NewMaterial returns a pointer to a new material
@@ -103,6 +103,7 @@ func (mat *Material) Init() *Material {
 	mat.polyOffsetFactor = 0
 	mat.polyOffsetUnits = 0
 	mat.textures = make([]*texture.Texture2D, 0)
+	mat.ShaderDefines = *gls.NewShaderDefines()
 
 	return mat
 }
@@ -231,32 +232,6 @@ func (mat *Material) SetPolygonOffset(factor, units float32) {
 
 	mat.polyOffsetFactor = factor
 	mat.polyOffsetUnits = units
-}
-
-// SetShaderDefine defines a name with the specified value which are
-// passed to this material shader.
-func (mat *Material) SetShaderDefine(name, value string) {
-
-	if mat.defines == nil {
-		mat.defines = make(map[string]string)
-	}
-	mat.defines[name] = value
-}
-
-// UnsetShaderDefines removes the specified name from the defines which
-// are passed to this material shader.
-func (mat *Material) UnsetShaderDefine(name string) {
-
-	if mat.defines == nil {
-		return
-	}
-	delete(mat.defines, name)
-}
-
-// ShaderDefines returns this material map of shader defines.
-func (mat *Material) ShaderDefines() map[string]string {
-
-	return mat.defines
 }
 
 func (mat *Material) RenderSetup(gs *gls.GLS) {
