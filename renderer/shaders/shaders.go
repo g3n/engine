@@ -12,7 +12,7 @@ package shaders
 type ProgramInfo struct {
 	Vertex   string // Vertex shader name
 	Fragment string // Fragment shader name
-	Geometry string // Geometry shader name (maybe an empty string)
+	Geometry string // Geometry shader name (optional)
 }
 
 // AddInclude adds a chunk of shader code to the default shaders registry
