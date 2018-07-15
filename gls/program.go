@@ -13,31 +13,32 @@ import (
 	"strings"
 )
 
-// Program represents a shader program.
+// Program represents an OpenGL program.
+// It must have Vertex and Fragment shaders.
+// It can also have a Geometry shader.
 type Program struct {
-	// Shows source code in error messages
-	ShowSource bool
-	gs         *GLS
-	handle     uint32
-	shaders    []shaderInfo
-	uniforms   map[string]int32
-	Specs      interface{}
+	gs         *GLS             // OpenGL state
+	ShowSource bool             // Show source code in error messages
+	handle     uint32           // OpenGL program handle
+	shaders    []shaderInfo     // List of shaders for this program
+	uniforms   map[string]int32 // List of uniforms
 }
 
+// shaderInfo contains OpenGL-related shader information.
 type shaderInfo struct {
-	stype   uint32
-	source  string
-	defines map[string]interface{}
-	handle  uint32
+	stype  uint32 // OpenGL shader type (VERTEX_SHADER, FRAGMENT_SHADER, or GEOMETRY_SHADER)
+	source string // Shader source code
+	handle uint32 // OpenGL shader handle
 }
 
-// Map shader types to names
+// Map from shader types to names.
 var shaderNames = map[uint32]string{
 	VERTEX_SHADER:   "Vertex Shader",
 	FRAGMENT_SHADER: "Fragment Shader",
+	GEOMETRY_SHADER: "Geometry Shader",
 }
 
-// NewProgram creates a new empty shader program object.
+// NewProgram creates and returns a new empty shader program object.
 // Use this type methods to add shaders and build the final program.
 func (gs *GLS) NewProgram() *Program {
 
@@ -50,74 +51,65 @@ func (gs *GLS) NewProgram() *Program {
 	return prog
 }
 
+// Handle returns the OpenGL handle of this program.
+func (prog *Program) Handle() uint32 {
+
+	return prog.handle
+}
+
 // AddShader adds a shader to this program.
 // This must be done before the program is built.
-func (prog *Program) AddShader(stype uint32, source string, defines map[string]interface{}) {
+func (prog *Program) AddShader(stype uint32, source string) {
 
+	// Check if program already built
 	if prog.handle != 0 {
 		log.Fatal("Program already built")
 	}
-	prog.shaders = append(prog.shaders, shaderInfo{stype, source, defines, 0})
+	prog.shaders = append(prog.shaders, shaderInfo{stype, source, 0})
 }
 
-// Build builds the program compiling and linking the previously supplied shaders.
+// DeleteShaders deletes all of this program's shaders from OpenGL.
+func (prog *Program) DeleteShaders() {
+
+	for _, shaderInfo := range prog.shaders {
+		if shaderInfo.handle != 0 {
+			prog.gs.DeleteShader(shaderInfo.handle)
+			shaderInfo.handle = 0
+		}
+	}
+}
+
+// Build builds the program, compiling and linking the previously supplied shaders.
 func (prog *Program) Build() error {
 
+	// Check if program already built
 	if prog.handle != 0 {
-		return fmt.Errorf("Program already built")
+		return fmt.Errorf("program already built")
 	}
 
-	// Checks if shaders were provided
+	// Check if shaders were provided
 	if len(prog.shaders) == 0 {
-		return fmt.Errorf("No shaders supplied")
+		return fmt.Errorf("no shaders supplied")
 	}
 
 	// Create program
 	prog.handle = prog.gs.CreateProgram()
 	if prog.handle == 0 {
-		return fmt.Errorf("Error creating program")
+		return fmt.Errorf("error creating program")
 	}
 
 	// Clean unused GL allocated resources
-	defer func() {
-		for _, sinfo := range prog.shaders {
-			if sinfo.handle != 0 {
-				prog.gs.DeleteShader(sinfo.handle)
-				sinfo.handle = 0
-			}
-		}
-	}()
+	defer prog.DeleteShaders()
 
-	// Compiles and attach each shader
+	// Compile and attach shaders
 	for _, sinfo := range prog.shaders {
-		// Creates string with defines from specified parameters
-		deflines := make([]string, 0)
-		if sinfo.defines != nil {
-			for pname, pval := range sinfo.defines {
-				line := "#define " + pname + " "
-				switch val := pval.(type) {
-				case bool:
-					if val {
-						deflines = append(deflines, line)
-					}
-				case float32:
-					line += strconv.FormatFloat(float64(val), 'f', -1, 32)
-					deflines = append(deflines, line)
-				default:
-					panic("Parameter type not supported")
-				}
-			}
-		}
-		deftext := strings.Join(deflines, "\n")
-		// Compile shader
-		shader, err := prog.CompileShader(sinfo.stype, sinfo.source+deftext)
+		shader, err := prog.CompileShader(sinfo.stype, sinfo.source)
 		if err != nil {
 			prog.gs.DeleteProgram(prog.handle)
 			prog.handle = 0
-			msg := fmt.Sprintf("Error compiling %s: %s", shaderNames[sinfo.stype], err)
+			msg := fmt.Sprintf("error compiling %s: %s", shaderNames[sinfo.stype], err)
 			if prog.ShowSource {
-				source := FormatSource(sinfo.source + deftext)
-				msg += source
+				msg += FormatSource(sinfo.source)
 			}
 			return errors.New(msg)
 		}
@@ -125,23 +117,17 @@ func (prog *Program) Build() error {
 		prog.gs.AttachShader(prog.handle, shader)
 	}
 
-	// Link program and checks for errors
+	// Link program and check for errors
 	prog.gs.LinkProgram(prog.handle)
 	var status int32
 	prog.gs.GetProgramiv(prog.handle, LINK_STATUS, &status)
 	if status == FALSE {
 		log := prog.gs.GetProgramInfoLog(prog.handle)
 		prog.handle = 0
-		return fmt.Errorf("Error linking program: %v", log)
+		return fmt.Errorf("error linking program: %v", log)
 	}
 
 	return nil
-}
-
-// Handle returns the handle of this program
-func (prog *Program) Handle() uint32 {
-
-	return prog.handle
 }
 
 // GetAttribLocation returns the location of the specified attribute
@@ -161,26 +147,28 @@ func (prog *Program) GetUniformLocation(name string) int32 {
 		prog.gs.stats.UnilocHits++
 		return loc
 	}
-	// Get location from GL
+
+	// Get location from OpenGL
 	loc = prog.gs.GetUniformLocation(prog.handle, name)
+	prog.gs.stats.UnilocMiss++
+
 	// Cache result
 	prog.uniforms[name] = loc
 	if loc < 0 {
-		log.Warn("GetUniformLocation(%s) NOT FOUND", name)
+		log.Warn("Program.GetUniformLocation(%s): NOT FOUND", name)
 	}
-	prog.gs.stats.UnilocMiss++
+
 	return loc
 }
 
-// CompileShader creates and compiles a shader of the specified type and with
-// the specified source code and returns a non-zero value by which
-// it can be referenced.
+// CompileShader creates and compiles an OpenGL shader of the specified type, with
+// the specified source code, and returns a non-zero value by which it can be referenced.
 func (prog *Program) CompileShader(stype uint32, source string) (uint32, error) {
 
-	// Creates shader object
+	// Create shader object
 	shader := prog.gs.CreateShader(stype)
 	if shader == 0 {
-		return 0, fmt.Errorf("Error creating shader")
+		return 0, fmt.Errorf("error creating shader")
 	}
 
 	// Set shader source and compile it
@@ -198,10 +186,11 @@ func (prog *Program) CompileShader(stype uint32, source string) (uint32, error) 
 	}
 
 	// If the shader compiled OK but the log has data,
-	// logs this data instead of returning error
+	// log this data instead of returning error
 	if len(slog) > 2 {
 		log.Warn("%s", slog)
 	}
+
 	return shader, nil
 }
 
