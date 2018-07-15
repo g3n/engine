@@ -21,21 +21,21 @@ const include_lights_source = `//
 // Lights uniforms
 //
 
-// Ambient lights uniforms
 #if AMB_LIGHTS>0
+    // Ambient lights color uniform
     uniform vec3 AmbientLightColor[AMB_LIGHTS];
 #endif
 
-// Directional lights uniform array. Each directional light uses 2 elements
 #if DIR_LIGHTS>0
+    // Directional lights uniform array. Each directional light uses 2 elements
     uniform vec3 DirLight[2*DIR_LIGHTS];
     // Macros to access elements inside the DirectionalLight uniform array
     #define DirLightColor(a)		DirLight[2*a]
     #define DirLightPosition(a)		DirLight[2*a+1]
 #endif
 
-// Point lights uniform array. Each point light uses 3 elements
 #if POINT_LIGHTS>0
+    // Point lights uniform array. Each point light uses 3 elements
     uniform vec3 PointLight[3*POINT_LIGHTS];
     // Macros to access elements inside the PointLight uniform array
     #define PointLightColor(a)			PointLight[3*a]
@@ -47,7 +47,6 @@ const include_lights_source = `//
 #if SPOT_LIGHTS>0
     // Spot lights uniforms. Each spot light uses 5 elements
     uniform vec3  SpotLight[5*SPOT_LIGHTS];
-    
     // Macros to access elements inside the PointLight uniform array
     #define SpotLightColor(a)			SpotLight[5*a]
     #define SpotLightPosition(a)		SpotLight[5*a+1]
@@ -110,6 +109,40 @@ uniform vec3 Material[6];
             //currTexPre.rgb *= currTexPre.a;                                                  \
             //texMixed = currTexPre + prevTexPre * (1 - currTexPre.a);                         \
             //texMixed.rgb /= texMixed.a;                                                      \
+`
+
+const include_morphtarget_vertex_source = `#ifdef MORPHTARGETS
+	uniform float morphTargetInfluences[NUM_MORPH_INFLUENCERS];
+#endif
+
+#ifdef MORPHTARGETS
+	attribute vec3 MorphPosition{X};
+
+	#ifdef MORPHTARGETS_NORMAL
+	attribute vec3 MorphNormal{X};
+	#endif
+#endif
+
+#ifdef MORPHTARGETS
+	positionUpdated += (MorphPosition{X} - VertexPosition) * morphTargetInfluences[{X}];
+
+	#ifdef MORPHTARGETS_NORMAL
+	normalUpdated += (MorphNormal{X} - VertexNormal) * morphTargetInfluences[{X}];
+	#endif
+#endif
+
+
+//
+// Vertex attributes
+//
+layout(location = 0) in  vec3  VertexPosition;
+layout(location = 1) in  vec3  VertexNormal;
+layout(location = 2) in  vec3  VertexColor;
+layout(location = 3) in  vec2  VertexTexcoord;
+layout(location = 4) in  float VertexDistance;
+layout(location = 5) in  vec4  VertexTexoffsets;
+
+
 `
 
 const include_phong_model_source = `/***
@@ -1222,10 +1255,11 @@ void main() {
 // Maps include name with its source code
 var includeMap = map[string]string{
 
-	"attributes":  include_attributes_source,
-	"lights":      include_lights_source,
-	"material":    include_material_source,
-	"phong_model": include_phong_model_source,
+	"attributes":         include_attributes_source,
+	"lights":             include_lights_source,
+	"material":           include_material_source,
+	"morphtarget_vertex": include_morphtarget_vertex_source,
+	"phong_model":        include_phong_model_source,
 }
 
 // Maps shader name with its source code
