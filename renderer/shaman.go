@@ -7,12 +7,12 @@ package renderer
 import (
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/renderer/shaders"
+	"strconv"
 )
 
 // Regular expression to parse #include <name> directive
@@ -20,7 +20,7 @@ var rexInclude *regexp.Regexp
 
 func init() {
 
-	rexInclude = regexp.MustCompile(`#include\s+<(.*)>`)
+	rexInclude = regexp.MustCompile(`#include\s+<(.*)>`) // TODO indexParameter
 }
 
 // ShaderSpecs describes the specification of a compiled shader program
@@ -178,11 +178,12 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 	// Sets the defines map
 	defines := map[string]string{}
 	defines["GLSL_VERSION"] = "330 core"
-	defines["AMB_LIGHTS"] = strconv.FormatUint(uint64(specs.AmbientLightsMax), 10)
-	defines["DIR_LIGHTS"] = strconv.FormatUint(uint64(specs.DirLightsMax), 10)
-	defines["POINT_LIGHTS"] = strconv.FormatUint(uint64(specs.PointLightsMax), 10)
-	defines["SPOT_LIGHTS"] = strconv.FormatUint(uint64(specs.SpotLightsMax), 10)
-	defines["MAT_TEXTURES"] = strconv.FormatUint(uint64(specs.MatTexturesMax), 10)
+	defines["AMB_LIGHTS"] = strconv.Itoa(specs.AmbientLightsMax)
+	defines["DIR_LIGHTS"] = strconv.Itoa(specs.DirLightsMax)
+	defines["POINT_LIGHTS"] = strconv.Itoa(specs.PointLightsMax)
+	defines["SPOT_LIGHTS"] = strconv.Itoa(specs.SpotLightsMax)
+	defines["MAT_TEXTURES"] = strconv.Itoa(specs.MatTexturesMax)
+
 	// Adds additional material defines from the specs parameter
 	for name, value := range specs.Defines {
 		defines[name] = value
@@ -229,10 +230,10 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 
 	// Creates shader program
 	prog := sm.gs.NewProgram()
-	prog.AddShader(gls.VERTEX_SHADER, vertexSource, nil)
-	prog.AddShader(gls.FRAGMENT_SHADER, fragSource, nil)
+	prog.AddShader(gls.VERTEX_SHADER, vertexSource)
+	prog.AddShader(gls.FRAGMENT_SHADER, fragSource)
 	if progInfo.Geometry != "" {
-		prog.AddShader(gls.GEOMETRY_SHADER, geomSource, nil)
+		prog.AddShader(gls.GEOMETRY_SHADER, geomSource)
 	}
 	err = prog.Build()
 	if err != nil {
