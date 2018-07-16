@@ -11,7 +11,7 @@ uniform mat4 MVP;
 #include <lights>
 #include <material>
 #include <phong_model>
-
+#include <morphtarget_vertex_declaration>
 
 // Outputs for the fragment shader.
 out vec3 ColorFrontAmbdiff;
@@ -23,19 +23,19 @@ out vec2 FragTexcoord;
 void main() {
 
     // Transform this vertex normal to camera coordinates.
-    vec3 normal = normalize(NormalMatrix * VertexNormal);
+    vec3 Normal = normalize(NormalMatrix * VertexNormal);
 
     // Calculate this vertex position in camera coordinates
-    vec4 position = ModelViewMatrix * vec4(VertexPosition, 1.0);
+    vec4 Position = ModelViewMatrix * vec4(VertexPosition, 1.0);
 
     // Calculate the direction vector from the vertex to the camera
     // The camera is at 0,0,0
-    vec3 camDir = normalize(-position.xyz);
+    vec3 camDir = normalize(-Position.xyz);
 
     // Calculates the vertex Ambient+Diffuse and Specular colors using the Phong model
     // for the front and back
-    phongModel(position,  normal, camDir, MatAmbientColor, MatDiffuseColor, ColorFrontAmbdiff, ColorFrontSpec);
-    phongModel(position, -normal, camDir, MatAmbientColor, MatDiffuseColor, ColorBackAmbdiff, ColorBackSpec);
+    phongModel(Position,  Normal, camDir, MatAmbientColor, MatDiffuseColor, ColorFrontAmbdiff, ColorFrontSpec);
+    phongModel(Position, -Normal, camDir, MatAmbientColor, MatDiffuseColor, ColorBackAmbdiff, ColorBackSpec);
 
     vec2 texcoord = VertexTexcoord;
 #if MAT_TEXTURES > 0
@@ -45,7 +45,9 @@ void main() {
     }
 #endif
     FragTexcoord = texcoord;
+    vec3 vPosition = VertexPosition;
+    #include <morphtarget_vertex> [MORPHTARGETS]
 
-    gl_Position = MVP * vec4(VertexPosition, 1.0);
+    gl_Position = MVP * vec4(vPosition, 1.0);
 }
 
