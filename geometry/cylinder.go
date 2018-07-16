@@ -253,9 +253,9 @@ func NewCylinder(radiusTop, radiusBottom, height float64,
 	}
 
 	c.SetIndices(indices)
-	c.AddVBO(gls.NewVBO(positions).AddAttrib(VertexPosition, 3))
-	c.AddVBO(gls.NewVBO(normals).AddAttrib(VertexNormal, 3))
-	c.AddVBO(gls.NewVBO(uvs).AddAttrib(VertexTexcoord, 2))
+	c.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition, 3))
+	c.AddVBO(gls.NewVBO(normals).AddAttrib(gls.VertexNormal, 3))
+	c.AddVBO(gls.NewVBO(uvs).AddAttrib(gls.VertexTexcoord, 2))
 
 	return c
 }
