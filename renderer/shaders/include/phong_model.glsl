@@ -112,5 +112,3 @@ void phongModel(vec4 position, vec3 normal, vec3 camDir, vec3 matAmbient, vec3 m
     ambdiff = ambientTotal + MatEmissiveColor + diffuseTotal;
     spec = specularTotal;
 }
-
-
