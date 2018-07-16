@@ -15,12 +15,15 @@ import (
 	"strconv"
 )
 
-// Regular expression to parse #include <name> directive
+const GLSL_VERSION = "330 core"
+
+// Regular expression to parse #include <name> [quantity] directive
 var rexInclude *regexp.Regexp
+const indexParameter = "{i}"
 
 func init() {
 
-	rexInclude = regexp.MustCompile(`#include\s+<(.*)>`) // TODO indexParameter
+	rexInclude = regexp.MustCompile(`#include\s+<(.*)>\s*(?:\[(.*)]|)`)
 }
 
 // ShaderSpecs describes the specification of a compiled shader program
@@ -115,7 +118,7 @@ func (sm *Shaman) AddProgram(name, vertexName, fragName string, others ...string
 	}
 }
 
-// SetProgram set the shader program to satisfy the specified specs.
+// SetProgram sets the shader program to satisfy the specified specs.
 // Returns an indication if the current shader has changed and a possible error
 // when creating a new shader program.
 // Receives a copy of the specs because it changes the fields which specify the
@@ -177,14 +180,13 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 
 	// Sets the defines map
 	defines := map[string]string{}
-	defines["GLSL_VERSION"] = "330 core"
 	defines["AMB_LIGHTS"] = strconv.Itoa(specs.AmbientLightsMax)
 	defines["DIR_LIGHTS"] = strconv.Itoa(specs.DirLightsMax)
 	defines["POINT_LIGHTS"] = strconv.Itoa(specs.PointLightsMax)
 	defines["SPOT_LIGHTS"] = strconv.Itoa(specs.SpotLightsMax)
 	defines["MAT_TEXTURES"] = strconv.Itoa(specs.MatTexturesMax)
 
-	// Adds additional material defines from the specs parameter
+	// Adds additional material and geometry defines from the specs parameter
 	for name, value := range specs.Defines {
 		defines[name] = value
 	}
@@ -194,7 +196,7 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 	if !ok {
 		return nil, fmt.Errorf("Vertex shader:%s not found", progInfo.Vertex)
 	}
-	// Preprocess vertex shader source
+	// Pre-process vertex shader source
 	vertexSource, err := sm.preprocess(vertexSource, defines)
 	if err != nil {
 		return nil, err
@@ -206,7 +208,7 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Fragment shader:%s not found", progInfo.Fragment)
 	}
-	// Preprocess fragment shader source
+	// Pre-process fragment shader source
 	fragSource, err = sm.preprocess(fragSource, defines)
 	if err != nil {
 		return nil, err
@@ -221,7 +223,7 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 		if !ok {
 			return nil, fmt.Errorf("Geometry shader:%s not found", progInfo.Geometry)
 		}
-		// Preprocess geometry shader source
+		// Pre-process geometry shader source
 		geomSource, err = sm.preprocess(geomSource, defines)
 		if err != nil {
 			return nil, err
@@ -243,48 +245,83 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 	return prog, nil
 }
 
-// preprocess preprocesses the specified source prefixing it with optional defines directives
-// contained in "defines" parameter and replaces '#include <name>' directives
-// by the respective source code of include chunk of the specified name.
-// The included "files" are also processed recursively.
+
 func (sm *Shaman) preprocess(source string, defines map[string]string) (string, error) {
 
-	// If defines map supplied, generates prefix with glsl version directive first,
-	// followed by "#define directives"
+	// If defines map supplied, generate prefix with glsl version directive first,
+	// followed by "#define" directives
 	var prefix = ""
-	if defines != nil {
-		prefix = fmt.Sprintf("#version %s\n", defines["GLSL_VERSION"])
+	if defines != nil { // This is only true for the outer call
+		prefix = fmt.Sprintf("#version %s\n", GLSL_VERSION)
 		for name, value := range defines {
-			if name == "GLSL_VERSION" {
-				continue
-			}
 			prefix = prefix + fmt.Sprintf("#define %s %s\n", name, value)
 		}
 	}
 
+	return sm.processIncludes(prefix + source, defines)
+}
+
+
+// preprocess preprocesses the specified source prefixing it with optional defines directives
+// contained in "defines" parameter and replaces '#include <name>' directives
+// by the respective source code of include chunk of the specified name.
+// The included "files" are also processed recursively.
+func (sm *Shaman) processIncludes(source string, defines map[string]string) (string, error) {
+
 	// Find all string submatches for the "#include <name>" directive
 	matches := rexInclude.FindAllStringSubmatch(source, 100)
 	if len(matches) == 0 {
-		return prefix + source, nil
+		return source, nil
 	}
 
 	// For each directive found, replace the name by the respective include chunk source code
-	var newSource = source
+	//var newSource = source
 	for _, m := range matches {
+		incFullMatch := m[0]
+		incName := m[1]
+		incQuantityVariable := m[2]
+
 		// Get the source of the include chunk with the match <name>
-		incSource := sm.includes[m[1]]
+		incSource := sm.includes[incName]
 		if len(incSource) == 0 {
-			return "", fmt.Errorf("Include:[%s] not found", m[1])
+			return "", fmt.Errorf("Include:[%s] not found", incName)
 		}
+
 		// Preprocess the include chunk source code
-		incSource, err := sm.preprocess(incSource, nil)
+		incSource, err := sm.processIncludes(incSource, defines)
 		if err != nil {
 			return "", err
 		}
+
+		// Skip line
+		incSource = "\n" + incSource
+
+		// Process include quantity variable if provided
+		if incQuantityVariable != "" {
+			incQuantityString, defined := defines[incQuantityVariable]
+			if defined { // Only process #include if quantity variable is defined
+				incQuantity, err := strconv.Atoi(incQuantityString)
+				if err != nil {
+					return "", err
+				}
+				// Check for iterated includes and populate index parameter
+				if incQuantity > 0 {
+					repeatedIncludeSource := ""
+					for i := 0; i < incQuantity; i++ {
+						// Replace all occurrences of the index parameter with the current index i.
+						repeatedIncludeSource += strings.Replace(incSource, indexParameter, strconv.Itoa(i), -1)
+					}
+					incSource = repeatedIncludeSource
+				}
+			} else {
+				incSource = ""
+			}
+		}
+
 		// Replace all occurrences of the include directive with its processed source code
-		newSource = strings.Replace(newSource, m[0], incSource, -1)
+		source = strings.Replace(source, incFullMatch, incSource, -1)
 	}
-	return prefix + newSource, nil
+	return source, nil
 }
 
 // copy copies other spec into this

@@ -9,6 +9,8 @@ uniform mat4 ModelViewMatrix;
 uniform mat3 NormalMatrix;
 uniform mat4 MVP;
 
+#include <morphtarget_vertex_declaration>
+
 // Output variables for Fragment shader
 out vec3 Position;
 out vec3 Normal;
@@ -36,7 +38,10 @@ void main() {
     // #endif
     FragTexcoord = texcoord;
 
-    gl_Position = MVP * vec4(VertexPosition, 1.0);
+    vec3 vPosition = VertexPosition;
+    #include <morphtarget_vertex> [MORPHTARGETS]
+
+    gl_Position = MVP * vec4(vPosition, 1.0);
 }
 
 
