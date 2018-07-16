@@ -35,13 +35,13 @@ func NewNormalsHelper(ig IGraphic, size float32, color *math32.Color, lineWidth 
 	nh.targetGeometry = ig.GetGeometry()
 
 	// Get the number of target vertex positions
-	vertices := nh.targetGeometry.VBO(geometry.VertexPosition)
+	vertices := nh.targetGeometry.VBO(gls.VertexPosition)
 	n := vertices.Buffer().Size() * 2
 
 	// Creates this helper geometry
 	geom := geometry.NewGeometry()
 	positions := math32.NewArrayF32(n, n)
-	geom.AddVBO(gls.NewVBO(positions).AddAttrib(geometry.VertexPosition, 3))
+	geom.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition, 3))
 
 	// Creates this helper material
 	mat := material.NewStandard(color)
@@ -67,14 +67,14 @@ func (nh *NormalsHelper) Update() {
 	normalMatrix.GetNormalMatrix(&matrixWorld)
 
 	// Get the target positions and normals buffers
-	tPosVBO := nh.targetGeometry.VBO(geometry.VertexPosition)
+	tPosVBO := nh.targetGeometry.VBO(gls.VertexPosition)
 	tPositions := tPosVBO.Buffer()
-	tNormVBO := nh.targetGeometry.VBO(geometry.VertexNormal)
+	tNormVBO := nh.targetGeometry.VBO(gls.VertexNormal)
 	tNormals := tNormVBO.Buffer()
 
 	// Get this object positions buffer
 	geom := nh.GetGeometry()
-	posVBO := geom.VBO(geometry.VertexPosition)
+	posVBO := geom.VBO(gls.VertexPosition)
 	positions := posVBO.Buffer()
 
 	// For each target object vertex position:

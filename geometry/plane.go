@@ -71,9 +71,9 @@ func NewPlane(width, height float32, widthSegments, heightSegments int) *Plane {
 	}
 
 	plane.SetIndices(indices)
-	plane.AddVBO(gls.NewVBO(positions).AddAttrib(VertexPosition, 3))
-	plane.AddVBO(gls.NewVBO(normals).AddAttrib(VertexNormal, 3))
-	plane.AddVBO(gls.NewVBO(uvs).AddAttrib(VertexTexcoord, 2))
+	plane.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition, 3))
+	plane.AddVBO(gls.NewVBO(normals).AddAttrib(gls.VertexNormal, 3))
+	plane.AddVBO(gls.NewVBO(uvs).AddAttrib(gls.VertexTexcoord, 2))
 
 	// Update area
 	plane.area = width*height
