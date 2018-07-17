@@ -374,7 +374,7 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 				if err != nil {
 					return nil, err
 				}
-				vbo := gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(ppos)
+				vbo := gls.NewVBO(ppos).AddAttrib(gls.VertexPosition, 3)
 				geom.AddVBO(vbo)
 				continue
 			}
@@ -383,7 +383,7 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 				if err != nil {
 					return nil, err
 				}
-				vbo := gls.NewVBO().AddAttrib("VertexNormal", 3).SetBuffer(pnorms)
+				vbo := gls.NewVBO(pnorms).AddAttrib(gls.VertexNormal, 3)
 				geom.AddVBO(vbo)
 				continue
 			}
@@ -402,7 +402,7 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 				if err != nil {
 					return nil, err
 				}
-				vbo := gls.NewVBO().AddAttrib("VertexTexcoord", 2).SetBuffer(puvs)
+				vbo := gls.NewVBO(puvs).AddAttrib(gls.VertexTexcoord, 2)
 				geom.AddVBO(vbo)
 				continue
 			}
