@@ -259,9 +259,9 @@ func (dec *Decoder) NewGeometry(obj *Object) (*geometry.Geometry, error) {
 	}
 
 	geom.SetIndices(indices)
-	geom.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition, 3))
-	geom.AddVBO(gls.NewVBO(normals).AddAttrib(gls.VertexNormal, 3))
-	geom.AddVBO(gls.NewVBO(uvs).AddAttrib(gls.VertexTexcoord, 2))
+	geom.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition))
+	geom.AddVBO(gls.NewVBO(normals).AddAttrib(gls.VertexNormal))
+	geom.AddVBO(gls.NewVBO(uvs).AddAttrib(gls.VertexTexcoord))
 
 	return geom, nil
 }

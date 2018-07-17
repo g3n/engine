@@ -36,8 +36,8 @@ func NewAxisHelper(size float32) *AxisHelper {
 		0, 1, 0, 0.6, 1, 0,
 		0, 0, 1, 0, 0.6, 1,
 	)
-	geom.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition, 3))
-	geom.AddVBO(gls.NewVBO(colors).AddAttrib(gls.VertexColor, 3))
+	geom.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition))
+	geom.AddVBO(gls.NewVBO(colors).AddAttrib(gls.VertexColor))
 
 	// Creates line material
 	mat := material.NewBasic()
