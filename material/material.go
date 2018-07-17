@@ -46,48 +46,54 @@ const (
 	UseLightAll         UseLights = 0xFF
 )
 
-// Interface for all materials
+// IMaterial is the interface for all materials.
 type IMaterial interface {
 	GetMaterial() *Material
 	RenderSetup(gs *gls.GLS)
 	Dispose()
 }
 
-//
-// Base Material
-//
+// Material is the base material.
 type Material struct {
 	refcount         int                    // Current number of references
+
+	// Shader specification // TODO Move ShaderSpecs into Material ?
 	shader           string                 // Shader name
 	shaderUnique     bool                   // shader has only one instance (does not depend on lights or textures)
-	uselights        UseLights              // consider lights for shader selection
-	sidevis          Side                   // sides visible
-	transparent      bool                   // whether at all transparent
-	wireframe        bool                   // show as wirefrme
+	ShaderDefines    gls.ShaderDefines      // shader defines
+
+	uselights        UseLights              // Which light types to consider
+	sidevis          Side                   // Face side(s) visibility
+	blending         Blending               // Blending mode
+	transparent      bool                   // Whether at all transparent
+	wireframe        bool                   // Whether to render only the wireframe
+	lineWidth        float32                // Line width for lines and mesh wireframe
+	textures         []*texture.Texture2D   // List of textures
+
+	polyOffsetFactor float32                // polygon offset factor
+	polyOffsetUnits  float32                // polygon offset units
+
 	depthMask        bool                   // Enable writing into the depth buffer
 	depthTest        bool                   // Enable depth buffer test
 	depthFunc        uint32                 // Active depth test function
-	blending         Blending               // blending mode
+
+	// Equations used for custom blending (when blending=BlendingCustom) // TODO implement methods
 	blendRGB         uint32                 // separate blend equation for RGB
 	blendAlpha       uint32                 // separate blend equation for Alpha
 	blendSrcRGB      uint32                 // separate blend func source RGB
 	blendDstRGB      uint32                 // separate blend func dest RGB
 	blendSrcAlpha    uint32                 // separate blend func source Alpha
 	blendDstAlpha    uint32                 // separate blend func dest Alpha
-	lineWidth        float32                // line width for lines and mesh wireframe
-	polyOffsetFactor float32                // polygon offset factor
-	polyOffsetUnits  float32                // polygon offset units
-	ShaderDefines    gls.ShaderDefines      // shader defines
-	textures         []*texture.Texture2D   // List of textures
 }
 
-// NewMaterial returns a pointer to a new material
+// NewMaterial creates and returns a pointer to a new Material.
 func NewMaterial() *Material {
 
 	mat := new(Material)
 	return mat.Init()
 }
 
+// Init initializes the material.
 func (mat *Material) Init() *Material {
 
 	mat.refcount = 1
@@ -103,12 +109,15 @@ func (mat *Material) Init() *Material {
 	mat.polyOffsetFactor = 0
 	mat.polyOffsetUnits = 0
 	mat.textures = make([]*texture.Texture2D, 0)
+
+	// Setup shader defines and add default values
 	mat.ShaderDefines = *gls.NewShaderDefines()
+
 
 	return mat
 }
 
-// GetMaterial satisfies the IMaterial interface
+// GetMaterial satisfies the IMaterial interface.
 func (mat *Material) GetMaterial() *Material {
 
 	return mat
@@ -179,7 +188,7 @@ func (mat *Material) UseLights() UseLights {
 	return mat.uselights
 }
 
-// Sets the visible side(s) (SideFront | SideBack | SideDouble)
+// SetSide sets the visible side(s) (SideFront | SideBack | SideDouble)
 func (mat *Material) SetSide(side Side) {
 
 	mat.sidevis = side
@@ -191,21 +200,28 @@ func (mat *Material) Side() Side {
 	return mat.sidevis
 }
 
-// SetTransparent sets whether this material is transparent
+// SetTransparent sets whether this material is transparent.
 func (mat *Material) SetTransparent(state bool) {
 
 	mat.transparent = state
 }
 
-// Transparent returns whether this material is transparent
+// Transparent returns whether this material is transparent.
 func (mat *Material) Transparent() bool {
 
 	return mat.transparent
 }
 
+// SetWireframe sets whether only the wireframe is rendered.
 func (mat *Material) SetWireframe(state bool) {
 
 	mat.wireframe = state
+}
+
+// Wireframe returns whether only the wireframe is rendered.
+func (mat *Material) Wireframe() bool {
+
+	return mat.wireframe
 }
 
 func (mat *Material) SetDepthMask(state bool) {
@@ -234,6 +250,7 @@ func (mat *Material) SetPolygonOffset(factor, units float32) {
 	mat.polyOffsetUnits = units
 }
 
+// RenderSetup is called by the renderer before drawing objects with this material.
 func (mat *Material) RenderSetup(gs *gls.GLS) {
 
 	// Sets triangle side view mode
@@ -275,7 +292,7 @@ func (mat *Material) RenderSetup(gs *gls.GLS) {
 		gs.Disable(gls.BLEND)
 	case BlendingNormal:
 		gs.Enable(gls.BLEND)
-		gs.BlendEquationSeparate(gls.FUNC_ADD, gls.FUNC_ADD)
+		gs.BlendEquation(gls.FUNC_ADD)
 		gs.BlendFunc(gls.SRC_ALPHA, gls.ONE_MINUS_SRC_ALPHA)
 	case BlendingAdditive:
 		gs.Enable(gls.BLEND)
