@@ -81,7 +81,7 @@ func lineRaycast(igr IGraphic, rc *core.Raycaster, intersects *[]core.Intersect,
 	var interRay math32.Vector3
 
 	// Get geometry positions and indices buffers
-	vboPos := geom.VBO("VertexPosition")
+	vboPos := geom.VBO(gls.VertexPosition)
 	if vboPos == nil {
 		return
 	}

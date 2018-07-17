@@ -64,9 +64,9 @@ func Glfw() (IWindowManager, error) {
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.Samples, 8)
 	// Sets OpenGL forward compatible context only for OSX because it is required for OSX.
-	// When this is set glLineWidth(width) only accepts width=1.0 and generates error
-	// for any other values although the spec says it should ignore non supported widths
-	// and generate error only when width <= 0.
+	// When this is set, glLineWidth(width) only accepts width=1.0 and generates an  error
+	// for any other values although the spec says it should ignore unsupported widths
+	// and generate an error only when width <= 0.
 	if runtime.GOOS == "darwin" {
 		glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 	}

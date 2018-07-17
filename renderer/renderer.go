@@ -358,19 +358,26 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		// For each *GraphicMaterial
 		for _, grmat := range grmats {
 			mat := grmat.GetMaterial().GetMaterial()
+			geom := grmat.GetGraphic().GetGeometry()
+
+			// Add defines from material and geometry
+			r.specs.Defines = *gls.NewShaderDefines()
+			r.specs.Defines.Add(&mat.ShaderDefines)
+			r.specs.Defines.Add(&geom.ShaderDefines)
 
 			// Sets the shader specs for this material and sets shader program
 			r.specs.Name = mat.Shader()
 			r.specs.ShaderUnique = mat.ShaderUnique()
 			r.specs.UseLights = mat.UseLights()
 			r.specs.MatTexturesMax = mat.TextureCount()
-			r.specs.Defines = mat.ShaderDefines()
+
+			// Set active program and apply shader specs
 			_, err = r.shaman.SetProgram(&r.specs)
 			if err != nil {
 				return
 			}
 
-			// Setup lights (transfer lights uniforms)
+			// Setup lights (transfer lights' uniforms)
 			for idx, l := range r.ambLights {
 				l.RenderSetup(r.gs, &r.rinfo, idx)
 				r.stats.Lights++
@@ -394,8 +401,8 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		}
 	}
 
-	renderGraphicMaterials(r.grmatsOpaque) // Render opaque objects front to back
-	renderGraphicMaterials(r.grmatsTransp) // Render transparent objects back to front
+	renderGraphicMaterials(r.grmatsOpaque) // Render opaque objects (front to back)
+	renderGraphicMaterials(r.grmatsTransp) // Render transparent objects (back to front)
 
 	return err
 }

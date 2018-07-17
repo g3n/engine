@@ -152,10 +152,9 @@ func (p *Panel) Initialize(width, height float32) {
 		// Creates geometry
 		geom := geometry.NewGeometry()
 		geom.SetIndices(indices)
-		geom.AddVBO(gls.NewVBO().
-			AddAttrib("VertexPosition", 3).
-			AddAttrib("VertexTexcoord", 2).
-			SetBuffer(positions),
+		geom.AddVBO(gls.NewVBO(positions).
+			AddAttrib(gls.VertexPosition, 3).
+			AddAttrib(gls.VertexTexcoord, 2),
 		)
 		panelQuadGeometry = geom
 	}
