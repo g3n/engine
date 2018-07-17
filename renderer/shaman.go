@@ -7,20 +7,23 @@ package renderer
 import (
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/renderer/shaders"
+	"strconv"
 )
 
-// Regular expression to parse #include <name> directive
+const GLSL_VERSION = "330 core"
+
+// Regular expression to parse #include <name> [quantity] directive
 var rexInclude *regexp.Regexp
+const indexParameter = "{i}"
 
 func init() {
 
-	rexInclude = regexp.MustCompile(`#include\s+<(.*)>`)
+	rexInclude = regexp.MustCompile(`#include\s+<(.*)>\s*(?:\[(.*)]|)`)
 }
 
 // ShaderSpecs describes the specification of a compiled shader program
@@ -34,7 +37,7 @@ type ShaderSpecs struct {
 	PointLightsMax   int                // Current Number of point lights
 	SpotLightsMax    int                // Current Number of spot lights
 	MatTexturesMax   int                // Current Number of material textures
-	Defines          map[string]string  // Additional shader defines
+	Defines          gls.ShaderDefines  // Additional shader defines
 }
 
 // ProgSpecs represents a compiled shader program along with its specs
@@ -115,7 +118,7 @@ func (sm *Shaman) AddProgram(name, vertexName, fragName string, others ...string
 	}
 }
 
-// SetProgram set the shader program to satisfy the specified specs.
+// SetProgram sets the shader program to satisfy the specified specs.
 // Returns an indication if the current shader has changed and a possible error
 // when creating a new shader program.
 // Receives a copy of the specs because it changes the fields which specify the
@@ -139,13 +142,13 @@ func (sm *Shaman) SetProgram(s *ShaderSpecs) (bool, error) {
 	}
 
 	// If current shader specs are the same as the specified specs, nothing to do.
-	if sm.specs.compare(&specs) {
+	if sm.specs.equals(&specs) {
 		return false, nil
 	}
 
 	// Search for compiled program with the specified specs
 	for _, pinfo := range sm.programs {
-		if pinfo.specs.compare(&specs) {
+		if pinfo.specs.equals(&specs) {
 			sm.gs.UseProgram(pinfo.program)
 			sm.specs = specs
 			return true, nil
@@ -177,13 +180,13 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 
 	// Sets the defines map
 	defines := map[string]string{}
-	defines["GLSL_VERSION"] = "330 core"
-	defines["AMB_LIGHTS"] = strconv.FormatUint(uint64(specs.AmbientLightsMax), 10)
-	defines["DIR_LIGHTS"] = strconv.FormatUint(uint64(specs.DirLightsMax), 10)
-	defines["POINT_LIGHTS"] = strconv.FormatUint(uint64(specs.PointLightsMax), 10)
-	defines["SPOT_LIGHTS"] = strconv.FormatUint(uint64(specs.SpotLightsMax), 10)
-	defines["MAT_TEXTURES"] = strconv.FormatUint(uint64(specs.MatTexturesMax), 10)
-	// Adds additional material defines from the specs parameter
+	defines["AMB_LIGHTS"] = strconv.Itoa(specs.AmbientLightsMax)
+	defines["DIR_LIGHTS"] = strconv.Itoa(specs.DirLightsMax)
+	defines["POINT_LIGHTS"] = strconv.Itoa(specs.PointLightsMax)
+	defines["SPOT_LIGHTS"] = strconv.Itoa(specs.SpotLightsMax)
+	defines["MAT_TEXTURES"] = strconv.Itoa(specs.MatTexturesMax)
+
+	// Adds additional material and geometry defines from the specs parameter
 	for name, value := range specs.Defines {
 		defines[name] = value
 	}
@@ -193,7 +196,7 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 	if !ok {
 		return nil, fmt.Errorf("Vertex shader:%s not found", progInfo.Vertex)
 	}
-	// Preprocess vertex shader source
+	// Pre-process vertex shader source
 	vertexSource, err := sm.preprocess(vertexSource, defines)
 	if err != nil {
 		return nil, err
@@ -205,7 +208,7 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Fragment shader:%s not found", progInfo.Fragment)
 	}
-	// Preprocess fragment shader source
+	// Pre-process fragment shader source
 	fragSource, err = sm.preprocess(fragSource, defines)
 	if err != nil {
 		return nil, err
@@ -220,7 +223,7 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 		if !ok {
 			return nil, fmt.Errorf("Geometry shader:%s not found", progInfo.Geometry)
 		}
-		// Preprocess geometry shader source
+		// Pre-process geometry shader source
 		geomSource, err = sm.preprocess(geomSource, defines)
 		if err != nil {
 			return nil, err
@@ -229,10 +232,10 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 
 	// Creates shader program
 	prog := sm.gs.NewProgram()
-	prog.AddShader(gls.VERTEX_SHADER, vertexSource, nil)
-	prog.AddShader(gls.FRAGMENT_SHADER, fragSource, nil)
+	prog.AddShader(gls.VERTEX_SHADER, vertexSource)
+	prog.AddShader(gls.FRAGMENT_SHADER, fragSource)
 	if progInfo.Geometry != "" {
-		prog.AddShader(gls.GEOMETRY_SHADER, geomSource, nil)
+		prog.AddShader(gls.GEOMETRY_SHADER, geomSource)
 	}
 	err = prog.Build()
 	if err != nil {
@@ -242,48 +245,83 @@ func (sm *Shaman) GenProgram(specs *ShaderSpecs) (*gls.Program, error) {
 	return prog, nil
 }
 
-// preprocess preprocesses the specified source prefixing it with optional defines directives
-// contained in "defines" parameter and replaces '#include <name>' directives
-// by the respective source code of include chunk of the specified name.
-// The included "files" are also processed recursively.
+
 func (sm *Shaman) preprocess(source string, defines map[string]string) (string, error) {
 
-	// If defines map supplied, generates prefix with glsl version directive first,
-	// followed by "#define directives"
+	// If defines map supplied, generate prefix with glsl version directive first,
+	// followed by "#define" directives
 	var prefix = ""
-	if defines != nil {
-		prefix = fmt.Sprintf("#version %s\n", defines["GLSL_VERSION"])
+	if defines != nil { // This is only true for the outer call
+		prefix = fmt.Sprintf("#version %s\n", GLSL_VERSION)
 		for name, value := range defines {
-			if name == "GLSL_VERSION" {
-				continue
-			}
 			prefix = prefix + fmt.Sprintf("#define %s %s\n", name, value)
 		}
 	}
 
+	return sm.processIncludes(prefix + source, defines)
+}
+
+
+// preprocess preprocesses the specified source prefixing it with optional defines directives
+// contained in "defines" parameter and replaces '#include <name>' directives
+// by the respective source code of include chunk of the specified name.
+// The included "files" are also processed recursively.
+func (sm *Shaman) processIncludes(source string, defines map[string]string) (string, error) {
+
 	// Find all string submatches for the "#include <name>" directive
 	matches := rexInclude.FindAllStringSubmatch(source, 100)
 	if len(matches) == 0 {
-		return prefix + source, nil
+		return source, nil
 	}
 
 	// For each directive found, replace the name by the respective include chunk source code
-	var newSource = source
+	//var newSource = source
 	for _, m := range matches {
+		incFullMatch := m[0]
+		incName := m[1]
+		incQuantityVariable := m[2]
+
 		// Get the source of the include chunk with the match <name>
-		incSource := sm.includes[m[1]]
+		incSource := sm.includes[incName]
 		if len(incSource) == 0 {
-			return "", fmt.Errorf("Include:[%s] not found", m[1])
+			return "", fmt.Errorf("Include:[%s] not found", incName)
 		}
+
 		// Preprocess the include chunk source code
-		incSource, err := sm.preprocess(incSource, nil)
+		incSource, err := sm.processIncludes(incSource, defines)
 		if err != nil {
 			return "", err
 		}
+
+		// Skip line
+		incSource = "\n" + incSource
+
+		// Process include quantity variable if provided
+		if incQuantityVariable != "" {
+			incQuantityString, defined := defines[incQuantityVariable]
+			if defined { // Only process #include if quantity variable is defined
+				incQuantity, err := strconv.Atoi(incQuantityString)
+				if err != nil {
+					return "", err
+				}
+				// Check for iterated includes and populate index parameter
+				if incQuantity > 0 {
+					repeatedIncludeSource := ""
+					for i := 0; i < incQuantity; i++ {
+						// Replace all occurrences of the index parameter with the current index i.
+						repeatedIncludeSource += strings.Replace(incSource, indexParameter, strconv.Itoa(i), -1)
+					}
+					incSource = repeatedIncludeSource
+				}
+			} else {
+				incSource = ""
+			}
+		}
+
 		// Replace all occurrences of the include directive with its processed source code
-		newSource = strings.Replace(newSource, m[0], incSource, -1)
+		source = strings.Replace(source, incFullMatch, incSource, -1)
 	}
-	return prefix + newSource, nil
+	return source, nil
 }
 
 // copy copies other spec into this
@@ -291,15 +329,13 @@ func (ss *ShaderSpecs) copy(other *ShaderSpecs) {
 
 	*ss = *other
 	if other.Defines != nil {
-		ss.Defines = make(map[string]string)
-		for k, v := range other.Defines {
-			ss.Defines[k] = v
-		}
+		ss.Defines = *gls.NewShaderDefines()
+		ss.Defines.Add(&other.Defines)
 	}
 }
 
-// Compare compares two shaders specifications structures
-func (ss *ShaderSpecs) compare(other *ShaderSpecs) bool {
+// equals compares two ShaderSpecs and returns true if they are effectively equal.
+func (ss *ShaderSpecs) equals(other *ShaderSpecs) bool {
 
 	if ss.Name != other.Name {
 		return false
@@ -312,31 +348,8 @@ func (ss *ShaderSpecs) compare(other *ShaderSpecs) bool {
 		ss.PointLightsMax == other.PointLightsMax &&
 		ss.SpotLightsMax == other.SpotLightsMax &&
 		ss.MatTexturesMax == other.MatTexturesMax &&
-		ss.compareDefines(other) {
+		ss.Defines.Equals(&other.Defines) {
 		return true
 	}
-	return false
-}
-
-// compareDefines compares two shaders specification define maps.
-func (ss *ShaderSpecs) compareDefines(other *ShaderSpecs) bool {
-
-	if ss.Defines == nil && other.Defines == nil {
-		return true
-	}
-	if ss.Defines != nil && other.Defines != nil {
-		if len(ss.Defines) != len(other.Defines) {
-			return false
-		}
-		for k := range ss.Defines {
-			v1, ok1 := ss.Defines[k]
-			v2, ok2 := other.Defines[k]
-			if v1 != v2 || ok1 != ok2 {
-				return false
-			}
-		}
-		return true
-	}
-	// One is nil and the other is not nil
 	return false
 }

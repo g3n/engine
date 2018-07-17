@@ -12,6 +12,7 @@ import (
 
 // INode is the interface for all node types.
 type INode interface {
+	IDispatcher
 	GetNode() *Node
 	UpdateMatrixWorld()
 	Raycast(*Raycaster, *[]Intersect)
@@ -411,6 +412,14 @@ func (n *Node) SetRotationVec(vrot *math32.Vector3) {
 
 	n.rotation = *vrot
 	n.quaternion.SetFromEuler(&n.rotation)
+	n.changed = true
+}
+
+// SetRotationQuat sets the rotation based on the specified quaternion pointer.
+// The stored quaternion is updated accordingly.
+func (n *Node) SetRotationQuat(quat *math32.Quaternion) {
+
+	n.quaternion = *quat
 	n.changed = true
 }
 

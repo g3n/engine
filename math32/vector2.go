@@ -17,6 +17,12 @@ func NewVector2(x, y float32) *Vector2 {
 	return &Vector2{X: x, Y: y}
 }
 
+// NewVec2 creates and returns a pointer to a new zero-ed Vector2.
+func NewVec2() *Vector2 {
+
+	return &Vector2{X: 0, Y: 0}
+}
+
 // Set sets this vector X and Y components.
 // Returns the pointer to this updated vector.
 func (v *Vector2) Set(x, y float32) *Vector2 {
@@ -68,6 +74,28 @@ func (v *Vector2) Component(index int) float32 {
 	default:
 		panic("index is out of range")
 	}
+}
+
+// SetByName sets this vector component value by its case insensitive name: "x" or "y".
+func (v *Vector2) SetByName(name string, value float32) {
+
+	switch name {
+	case "x", "X":
+		v.X = value
+	case "y", "Y":
+		v.Y = value
+	default:
+		panic("Invalid Vector2 component name: " + name)
+	}
+}
+
+// Zero sets this vector X and Y components to be zero.
+// Returns the pointer to this updated vector.
+func (v *Vector2) Zero() *Vector2 {
+
+	v.X = 0
+	v.Y = 0
+	return v
 }
 
 // Copy copies other vector to this one.

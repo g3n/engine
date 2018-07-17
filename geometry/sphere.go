@@ -83,13 +83,17 @@ func NewSphere(radius float64, widthSegments, heightSegments int, phiStart, phiL
 	}
 
 	s.SetIndices(indices)
-	s.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(positions))
-	s.AddVBO(gls.NewVBO().AddAttrib("VertexNormal", 3).SetBuffer(normals))
-	s.AddVBO(gls.NewVBO().AddAttrib("VertexTexcoord", 2).SetBuffer(uvs))
+	s.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition, 3))
+	s.AddVBO(gls.NewVBO(normals).AddAttrib(gls.VertexNormal, 3))
+	s.AddVBO(gls.NewVBO(uvs).AddAttrib(gls.VertexTexcoord, 2))
 
-	r := float32(s.Radius)
-	s.boundingSphere = math32.Sphere{math32.Vector3{0, 0, 0}, r}
+	r := float32(radius)
+
+	// Update bounding sphere
+	s.boundingSphere.Radius = 3
 	s.boundingSphereValid = true
+
+	// Update bounding box
 	s.boundingBox = math32.Box3{math32.Vector3{-r, -r, -r}, math32.Vector3{r, r, r}}
 	s.boundingBoxValid = true
 

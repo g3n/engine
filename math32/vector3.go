@@ -18,6 +18,12 @@ func NewVector3(x, y, z float32) *Vector3 {
 	return &Vector3{X: x, Y: y, Z: z}
 }
 
+// NewVec3 creates and returns a pointer to a new zero-ed Vector3.
+func NewVec3() *Vector3 {
+
+	return &Vector3{X: 0, Y: 0, Z: 0}
+}
+
 // Set sets this vector X, Y and Z components.
 // Returns the pointer to this updated vector.
 func (v *Vector3) Set(x, y, z float32) *Vector3 {
@@ -96,6 +102,16 @@ func (v *Vector3) SetByName(name string, value float32) {
 	default:
 		panic("Invalid Vector3 component name: " + name)
 	}
+}
+
+// Zero sets this vector X, Y and Z components to be zero.
+// Returns the pointer to this updated vector.
+func (v *Vector3) Zero() *Vector3 {
+
+	v.X = 0
+	v.Y = 0
+	v.Z = 0
+	return v
 }
 
 // Copy copies other vector to this one.
@@ -621,4 +637,44 @@ func (v *Vector3) SetFromQuaternion(q *Quaternion) *Vector3 {
 	matrix.MakeRotationFromQuaternion(q)
 	v.SetFromRotationMatrix(matrix)
 	return v
+}
+
+// RandomTangents computes and returns two arbitrary tangents to the vector.
+func (v *Vector3) RandomTangents() (*Vector3, *Vector3) {
+
+	t1 := NewVector3(0,0,0)
+	t2 := NewVector3(0,0,0)
+	length := v.Length()
+	if length > 0 {
+		n := NewVector3(v.X/length, v.Y/length, v.Z/length)
+		randVec := NewVector3(0,0,0)
+		if Abs(n.X) < 0.9 {
+			randVec.SetX(1)
+			t1.CrossVectors(n, randVec)
+		} else if Abs(n.Y) < 0.9 {
+			randVec.SetY(1)
+			t1.CrossVectors(n, randVec)
+		} else {
+			randVec.SetZ(1)
+			t1.CrossVectors(n, randVec)
+		}
+		t2.CrossVectors(n, t1)
+	} else {
+		t1.SetX(1)
+		t2.SetY(1)
+	}
+
+	return t1, t2
+}
+
+// TODO: implement similar methods for Vector2 and Vector4
+// AlmostEquals returns whether the vector is almost equal to another vector within the specified tolerance.
+func (v *Vector3) AlmostEquals(other *Vector3, tolerance float32) bool {
+
+	if (v.X - other.X < tolerance) &&
+		(v.Y - other.Y < tolerance) &&
+		(v.Z - other.Z < tolerance) {
+			return true
+	}
+	return false
 }
