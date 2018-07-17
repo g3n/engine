@@ -285,16 +285,16 @@ func newMeshPolylist(m *Mesh, pels []interface{}) (*geometry.Geometry, uint32, e
 	geom := geometry.NewGeometry()
 
 	// Creates VBO with vertex positions
-	geom.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition, 3))
+	geom.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition))
 
 	// Creates VBO with vertex normals
 	if normals.Size() > 0 {
-		geom.AddVBO(gls.NewVBO(normals).AddAttrib(gls.VertexNormal, 3))
+		geom.AddVBO(gls.NewVBO(normals).AddAttrib(gls.VertexNormal))
 	}
 
 	// Creates VBO with uv coordinates
 	if uvs.Size() > 0 {
-		geom.AddVBO(gls.NewVBO(uvs).AddAttrib(gls.VertexTexcoord, 2))
+		geom.AddVBO(gls.NewVBO(uvs).AddAttrib(gls.VertexTexcoord))
 	}
 
 	// Sets the geometry indices buffer
@@ -383,7 +383,7 @@ func newMeshLines(m *Mesh, ln *Lines) (*geometry.Geometry, uint32, error) {
 	geom := geometry.NewGeometry()
 
 	// Creates VBO with vertex positions
-	geom.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition, 3))
+	geom.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition))
 
 	// Sets the geometry indices buffer
 	geom.SetIndices(indices)
@@ -436,7 +436,7 @@ func newMeshPoints(m *Mesh) (*geometry.Geometry, uint32, error) {
 
 	// Creates geometry and add VBO with vertex positions
 	geom := geometry.NewGeometry()
-	geom.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition, 3))
+	geom.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition))
 	return geom, gls.POINTS, nil
 }
 
