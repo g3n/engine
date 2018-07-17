@@ -21,10 +21,11 @@ type VBO struct {
 
 // VBOattrib describes one attribute of an OpenGL Vertex Buffer Object.
 type VBOattrib struct {
-	Type       AttribType // Type of the attribute
-	Name       string     // Name of the attribute
-	ItemSize   int32      // Number of components
-	ByteOffset uint32     // Byte offset from the start of the VBO
+	Type        AttribType // Type of the attribute
+	Name        string     // Name of the attribute
+	ByteOffset  uint32     // Byte offset from the start of the VBO
+	NumElements int32      // Number of elements
+	ElementType uint32     // Type of the element (e.g. FLOAT, INT, UNSIGNED_SHORT, etc...)
 }
 
 // AttribType is the functional type of a vbo attribute.
@@ -80,10 +81,11 @@ func (vbo *VBO) init() {
 func (vbo *VBO) AddAttrib(atype AttribType) *VBO {
 
 	vbo.attribs = append(vbo.attribs, VBOattrib{
-		Type:       atype,
-		Name:       attribTypeNameMap[atype],
-		ItemSize:   attribTypeSizeMap[atype],
-		ByteOffset: uint32(vbo.StrideSize()),
+		Type:        atype,
+		Name:        attribTypeNameMap[atype],
+		ByteOffset:  uint32(vbo.StrideSize()),
+		NumElements: attribTypeSizeMap[atype],
+		ElementType: FLOAT,
 	})
 	return vbo
 }
@@ -92,10 +94,11 @@ func (vbo *VBO) AddAttrib(atype AttribType) *VBO {
 func (vbo *VBO) AddAttribOffset(atype AttribType, byteOffset uint32) *VBO {
 
 	vbo.attribs = append(vbo.attribs, VBOattrib{
-		Type:       atype,
-		Name:       attribTypeNameMap[atype],
-		ItemSize:   attribTypeSizeMap[atype],
-		ByteOffset: byteOffset,
+		Type:        atype,
+		Name:        attribTypeNameMap[atype],
+		ByteOffset:  byteOffset,
+		NumElements: attribTypeSizeMap[atype],
+		ElementType: FLOAT,
 	})
 	return vbo
 }
@@ -104,10 +107,11 @@ func (vbo *VBO) AddAttribOffset(atype AttribType, byteOffset uint32) *VBO {
 func (vbo *VBO) AddCustomAttrib(name string, itemSize int32) *VBO {
 
 	vbo.attribs = append(vbo.attribs, VBOattrib{
-		Type:       Undefined,
-		Name:       name,
-		ItemSize:   itemSize,
-		ByteOffset: uint32(vbo.StrideSize()),
+		Type:        Undefined,
+		Name:        name,
+		ByteOffset:  uint32(vbo.StrideSize()),
+		NumElements: itemSize,
+		ElementType: FLOAT,
 	})
 	return vbo
 }
@@ -116,10 +120,11 @@ func (vbo *VBO) AddCustomAttrib(name string, itemSize int32) *VBO {
 func (vbo *VBO) AddCustomAttribOffset(name string, itemSize int32, byteOffset uint32) *VBO {
 
 	vbo.attribs = append(vbo.attribs, VBOattrib{
-		Type:       Undefined,
-		Name:       name,
-		ItemSize:   itemSize,
-		ByteOffset: byteOffset,
+		Type:        Undefined,
+		Name:        name,
+		ByteOffset:  byteOffset,
+		NumElements: itemSize,
+		ElementType: FLOAT,
 	})
 	return vbo
 }
@@ -213,7 +218,7 @@ func (vbo *VBO) AttribOffset(attribType AttribType) int {
 		if attr.Type == attribType {
 			return elementCount
 		}
-		elementCount += int(attr.ItemSize)
+		elementCount += int(attr.NumElements)
 	}
 	return elementCount
 }
@@ -227,7 +232,7 @@ func (vbo *VBO) AttribOffsetName(name string) int {
 		if attr.Name == name {
 			return elementCount
 		}
-		elementCount += int(attr.ItemSize)
+		elementCount += int(attr.NumElements)
 	}
 	return elementCount
 }
@@ -240,7 +245,7 @@ func (vbo *VBO) Stride() int {
 
 	stride := 0
 	for _, attrib := range vbo.attribs {
-		stride += int(attrib.ItemSize)
+		stride += int(attrib.NumElements)
 	}
 	return stride
 }
@@ -281,7 +286,7 @@ func (vbo *VBO) Transfer(gs *GLS) {
 			}
 			// Enables attribute and sets its stride and offset in the buffer
 			gs.EnableVertexAttribArray(uint32(loc))
-			gs.VertexAttribPointer(uint32(loc), attrib.ItemSize, FLOAT, false, int32(strideSize), attrib.ByteOffset)
+			gs.VertexAttribPointer(uint32(loc), attrib.NumElements, attrib.ElementType, false, int32(strideSize), attrib.ByteOffset)
 		}
 		vbo.gs = gs // this indicates that the vbo was initialized
 	}
