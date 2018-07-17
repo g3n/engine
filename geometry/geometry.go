@@ -7,6 +7,7 @@ package geometry
 import (
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/math32"
+	"strconv"
 )
 
 // IGeometry is the interface for all geometries.
@@ -159,7 +160,10 @@ func (g *Geometry) AddVBO(vbo *gls.VBO) {
 	for _, existingVbo := range g.vbos {
 		for _, attrib := range vbo.Attributes() {
 			if existingVbo.AttribName(attrib.Name) != nil {
-				panic("Geometry.AddVBO: geometry already has a VBO with attribute named:" + attrib.Name)
+				panic("Geometry.AddVBO: geometry already has a VBO with attribute name:" + attrib.Name)
+			}
+			if existingVbo.Attrib(attrib.Type) != nil {
+				panic("Geometry.AddVBO: geometry already has a VBO with attribute type:" + strconv.Itoa(int(attrib.Type)))
 			}
 		}
 	}

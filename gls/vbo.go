@@ -21,9 +21,10 @@ type VBO struct {
 
 // VBOattrib describes one attribute of an OpenGL Vertex Buffer Object.
 type VBOattrib struct {
-	Type     AttribType // Type of the attribute
-	Name     string     // Name of the attribute
-	ItemSize int32      // Number of elements
+	Type       AttribType // Type of the attribute
+	Name       string     // Name of the attribute
+	ItemSize   int32      // Number of components
+	ByteOffset uint32     // Byte offset from the start of the VBO
 }
 
 // AttribType is the functional type of a vbo attribute.
@@ -38,12 +39,22 @@ const (
 )
 
 // Map from attribute type to default attribute name.
-var attribTypeMap = map[AttribType]string{
+var attribTypeNameMap = map[AttribType]string{
 	VertexPosition: "VertexPosition",
 	VertexNormal:   "VertexNormal",
 	VertexColor:    "VertexColor",
 	VertexTexcoord: "VertexTexcoord",
 }
+
+// Map from attribute type to default attribute size.
+var attribTypeSizeMap = map[AttribType]int32{
+	VertexPosition: 3,
+	VertexNormal:   3,
+	VertexColor:    3,
+	VertexTexcoord: 2,
+}
+
+const floatSize = uint32(unsafe.Sizeof(float32(0)))
 
 // NewVBO creates and returns a pointer to a new OpenGL Vertex Buffer Object.
 func NewVBO(buffer math32.ArrayF32) *VBO {
@@ -64,24 +75,51 @@ func (vbo *VBO) init() {
 	vbo.attribs = make([]VBOattrib, 0)
 }
 
-// AddAttrib adds a new attribute to the VBO by attribute type.
-func (vbo *VBO) AddAttrib(atype AttribType, itemSize int32) *VBO {
+// AddAttrib adds a new attribute to the VBO with the specified type.
+// The attribute's ByteOffset is computed automatically based on the existing attributes.
+func (vbo *VBO) AddAttrib(atype AttribType) *VBO {
 
 	vbo.attribs = append(vbo.attribs, VBOattrib{
-		Type:     atype,
-		Name:     attribTypeMap[atype],
-		ItemSize: itemSize,
+		Type:       atype,
+		Name:       attribTypeNameMap[atype],
+		ItemSize:   attribTypeSizeMap[atype],
+		ByteOffset: uint32(vbo.StrideSize()),
 	})
 	return vbo
 }
 
-// AddAttribName adds a new attribute to the VBO by name.
-func (vbo *VBO) AddAttribName(name string, itemSize int32) *VBO {
+// AddAttribOffset adds a new attribute to the VBO with the specified type and byteOffset.
+func (vbo *VBO) AddAttribOffset(atype AttribType, byteOffset uint32) *VBO {
 
 	vbo.attribs = append(vbo.attribs, VBOattrib{
-		Type:     Undefined,
-		Name:     name,
-		ItemSize: itemSize,
+		Type:       atype,
+		Name:       attribTypeNameMap[atype],
+		ItemSize:   attribTypeSizeMap[atype],
+		ByteOffset: byteOffset,
+	})
+	return vbo
+}
+
+// AddCustomAttrib adds a new attribute to the VBO with the specified name and itemSize.
+func (vbo *VBO) AddCustomAttrib(name string, itemSize int32) *VBO {
+
+	vbo.attribs = append(vbo.attribs, VBOattrib{
+		Type:       Undefined,
+		Name:       name,
+		ItemSize:   itemSize,
+		ByteOffset: uint32(vbo.StrideSize()),
+	})
+	return vbo
+}
+
+// AddCustomAttribOffset adds a new attribute to the VBO with the specified name, itemSize and byteOffset.
+func (vbo *VBO) AddCustomAttribOffset(name string, itemSize int32, byteOffset uint32) *VBO {
+
+	vbo.attribs = append(vbo.attribs, VBOattrib{
+		Type:       Undefined,
+		Name:       name,
+		ItemSize:   itemSize,
+		ByteOffset: byteOffset,
 	})
 	return vbo
 }
@@ -234,9 +272,6 @@ func (vbo *VBO) Transfer(gs *GLS) {
 		// Calculates stride size
 		strideSize := vbo.StrideSize()
 		// For each attribute
-		var items uint32
-		var offset uint32
-		elsize := int32(unsafe.Sizeof(float32(0)))
 		for _, attrib := range vbo.attribs {
 			// Get attribute location in the current program
 			loc := gs.prog.GetAttribLocation(attrib.Name)
@@ -246,9 +281,7 @@ func (vbo *VBO) Transfer(gs *GLS) {
 			}
 			// Enables attribute and sets its stride and offset in the buffer
 			gs.EnableVertexAttribArray(uint32(loc))
-			gs.VertexAttribPointer(uint32(loc), attrib.ItemSize, FLOAT, false, int32(strideSize), offset)
-			items += uint32(attrib.ItemSize)
-			offset = uint32(elsize) * items
+			gs.VertexAttribPointer(uint32(loc), attrib.ItemSize, FLOAT, false, int32(strideSize), attrib.ByteOffset)
 		}
 		vbo.gs = gs // this indicates that the vbo was initialized
 	}
@@ -306,7 +339,6 @@ func (vbo *VBO) ReadVectors3(attribType AttribType, cb func(vec math32.Vector3) 
 		}
 	}
 }
-
 
 // Read3Vectors3 iterates over all 3-float32 items (3 items at a time) for the specified attribute
 // and calls the specified callback function with the value of each of the 3 items as Vector3.
