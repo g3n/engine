@@ -7,6 +7,7 @@ package animation
 import (
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/geometry"
 )
 
 // A Channel associates an animation parameter channel to an interpolation sampler
@@ -103,6 +104,7 @@ func (c *Channel) Update(time float32) {
 // IChannel is the interface for all channel types.
 type IChannel interface {
 	Update(time float32)
+	SetBuffers(keyframes, values math32.ArrayF32)
 	Keyframes() math32.ArrayF32
 	Values() math32.ArrayF32
 	SetInterpolationType(it InterpolationType)
@@ -140,6 +142,14 @@ func NewPositionChannel(node core.INode) *PositionChannel {
 				v1.Lerp(&v2, k)
 				node.SetPositionVec(&v1)
 			}
+		case CUBICSPLINE: // TODO
+			pc.interpAction = func(idx int, k float32) {
+				var v1, v2 math32.Vector3
+				pc.values.GetVector3(idx*3, &v1)
+				pc.values.GetVector3((idx+1)*3, &v2)
+				v1.Lerp(&v2, k)
+				node.SetPositionVec(&v1)
+			}
 		}
 	}
 	pc.SetInterpolationType(LINEAR)
@@ -169,9 +179,23 @@ func NewRotationChannel(node core.INode) *RotationChannel {
 				var q1, q2 math32.Vector4
 				rc.values.GetVector4(idx*4, &q1)
 				rc.values.GetVector4((idx+1)*4, &q2)
+				q1.Lerp(&q2, k)
 				quat1 := math32.NewQuaternion(q1.X, q1.Y, q1.Z, q1.W)
-				quat2 := math32.NewQuaternion(q2.X, q2.Y, q2.Z, q2.W)
-				quat1.Slerp(quat2, k)
+				// TODO spherical linear interpolation (slerp) not working as expected for some reason (doing a lerp for now)
+				//quat2 := math32.NewQuaternion(q2.X, q2.Y, q2.Z, q2.W)
+				//quat1.Slerp(quat2, k)
+				node.SetQuaternionQuat(quat1)
+			}
+		case CUBICSPLINE: // TODO
+			rc.interpAction = func(idx int, k float32) {
+				var q1, q2 math32.Vector4
+				rc.values.GetVector4(idx*4, &q1)
+				rc.values.GetVector4((idx+1)*4, &q2)
+				q1.Lerp(&q2, k)
+				quat1 := math32.NewQuaternion(q1.X, q1.Y, q1.Z, q1.W)
+				// TODO spherical linear interpolation (slerp) not working for some reason
+				//quat2 := math32.NewQuaternion(q2.X, q2.Y, q2.Z, q2.W)
+				//quat1.Slerp(quat2, k)
 				node.SetQuaternionQuat(quat1)
 			}
 		}
@@ -206,18 +230,74 @@ func NewScaleChannel(node core.INode) *ScaleChannel {
 				v1.Lerp(&v2, k)
 				node.SetScaleVec(&v1)
 			}
+		case CUBICSPLINE: // TODO
+			sc.interpAction = func(idx int, k float32) {
+				var v1, v2 math32.Vector3
+				sc.values.GetVector3(idx*3, &v1)
+				sc.values.GetVector3((idx+1)*3, &v2)
+				v1.Lerp(&v2, k)
+				node.SetScaleVec(&v1)
+			}
 		}
 	}
 	sc.SetInterpolationType(LINEAR)
 	return sc
 }
 
+// MorphChannel is the IChannel for morph geometries.
+type MorphChannel struct {
+	Channel
+	target *geometry.MorphGeometry
+}
+
+func NewMorphChannel(mg *geometry.MorphGeometry) *MorphChannel {
+
+	mc := new(MorphChannel)
+	mc.target = mg
+	numWeights := len(mg.Weights())
+	mc.updateInterpAction = func() {
+		// Update interpolation function
+		switch mc.interpType {
+		case STEP:
+			mc.interpAction = func(idx int, k float32) {
+				start := idx*numWeights
+				weights := mc.values[start:start+numWeights]
+				mg.SetWeights(weights)
+			}
+		case LINEAR:
+			mc.interpAction = func(idx int, k float32) {
+				start1 := idx*numWeights
+				start2 := (idx+1)*numWeights
+				weights1 := mc.values[start1:start1+numWeights]
+				weights2 := mc.values[start2:start2+numWeights]
+				for i := range weights1 {
+					weights1[i] = weights1[i] + (weights2[i]-weights1[i])*k
+				}
+				mg.SetWeights(weights1)
+			}
+		case CUBICSPLINE: // TODO
+			mc.interpAction = func(idx int, k float32) {
+				start1 := idx*numWeights
+				start2 := (idx+1)*numWeights
+				weights1 := mc.values[start1:start1+numWeights]
+				weights2 := mc.values[start2:start2+numWeights]
+				for i := range weights1 {
+					weights1[i] = weights1[i] + (weights2[i]-weights1[i])*k
+				}
+				mg.SetWeights(weights1)
+			}
+		}
+	}
+	mc.SetInterpolationType(LINEAR)
+	return mc
+}
+
 // InterpolationType specifies the interpolation type.
-type InterpolationType int
+type InterpolationType string
 
 // The various interpolation types.
 const (
-	STEP        = InterpolationType(iota) // The animated values remain constant to the output of the first keyframe, until the next keyframe.
-	LINEAR                                // The animated values are linearly interpolated between keyframes. Spherical linear interpolation (slerp) is used to interpolate quaternions.
-	CUBICSPLINE                           // TODO
+	STEP        = InterpolationType("STEP")          // The animated values remain constant to the output of the first keyframe, until the next keyframe.
+	LINEAR      = InterpolationType("LINEAR")        // The animated values are linearly interpolated between keyframes. Spherical linear interpolation (slerp) is used to interpolate quaternions.
+	CUBICSPLINE = InterpolationType("CUBICSPLINE")   // TODO
 )
