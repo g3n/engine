@@ -339,6 +339,15 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 			pos := r.panel3D.GetPanel().Pospix()
 			width, height := r.panel3D.GetPanel().Size()
 			_, _, _, viewheight := r.gs.GetViewport()
+
+			sX := float32(1.3)
+			sY := float32(1.3)
+
+			width *= sX
+			height *= sY
+			pos.X *= sX
+			pos.Y *= sY
+
 			r.gs.Enable(gls.SCISSOR_TEST)
 			r.gs.Scissor(int32(pos.X), viewheight-int32(pos.Y)-int32(height), uint32(width), uint32(height))
 		} else {

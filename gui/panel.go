@@ -904,35 +904,26 @@ func (p *Panel) resize(width, height float32, dispatch bool) {
 	p.width = p.marginSizes.Left + border.Width + p.marginSizes.Right
 	p.height = p.marginSizes.Top + border.Height + p.marginSizes.Bottom
 
-	// TODO DO THIS IN RENDER SETUP
-	sX := float32(1)
-	sY := float32(1)
-	if p.root != nil {
-		sXo, sYo := p.root.Window().Scale()
-		sX = float32(sXo)
-		sY = float32(sYo)
-	}
-
 	// Updates border uniform in texture coordinates (0,0 -> 1,1)
 	p.udata.borders = math32.Vector4{
-		sX * float32(border.X) / float32(p.width),
-		sY * float32(border.Y) / float32(p.height),
-		sX * float32(border.Width) / float32(p.width),
-		sY * float32(border.Height) / float32(p.height),
+		float32(border.X) / float32(p.width),
+		float32(border.Y) / float32(p.height),
+		float32(border.Width) / float32(p.width),
+		float32(border.Height) / float32(p.height),
 	}
 	// Updates padding uniform in texture coordinates (0,0 -> 1,1)
 	p.udata.paddings = math32.Vector4{
-		sX * float32(padding.X) / float32(p.width),
-		sY * float32(padding.Y) / float32(p.height),
-		sX * float32(padding.Width) / float32(p.width),
-		sY * float32(padding.Height) / float32(p.height),
+		float32(padding.X) / float32(p.width),
+		float32(padding.Y) / float32(p.height),
+		float32(padding.Width) / float32(p.width),
+		float32(padding.Height) / float32(p.height),
 	}
 	// Updates content uniform in texture coordinates (0,0 -> 1,1)
 	p.udata.content = math32.Vector4{
-		sX * float32(p.content.X) / float32(p.width),
-		sY * float32(p.content.Y) / float32(p.height),
-		sX * float32(p.content.Width) / float32(p.width),
-		sY * float32(p.content.Height) / float32(p.height),
+		float32(p.content.X) / float32(p.width),
+		float32(p.content.Y) / float32(p.height),
+		float32(p.content.Width) / float32(p.width),
+		float32(p.content.Height) / float32(p.height),
 	}
 	p.SetChanged(true)
 
@@ -965,8 +956,6 @@ func (p *Panel) RenderSetup(gl *gls.GLS, rinfo *core.RenderInfo) {
 	location := p.uniMatrix.Location(gl)
 	gl.UniformMatrix4fv(location, 1, false, &mm[0])
 
-	// TODO HERE APPLY SCALING (FOR HiDPI)
-
 	// Transfer panel parameters combined uniform
 	location = p.uniPanel.Location(gl)
 	const vec4count = 8
@@ -976,10 +965,13 @@ func (p *Panel) RenderSetup(gl *gls.GLS, rinfo *core.RenderInfo) {
 // SetModelMatrix calculates and sets the specified matrix with the model matrix for this panel
 func (p *Panel) SetModelMatrix(gl *gls.GLS, mm *math32.Matrix4) {
 
+	sX := float32(1.3)
+	sY := float32(1.3)
+
 	// Get the current viewport width and height
 	_, _, width, height := gl.GetViewport()
-	fwidth := float32(width)
-	fheight := float32(height)
+	fwidth := float32(width) / sX
+	fheight := float32(height) / sY
 
 	// Scale the quad for the viewport so it has fixed dimensions in pixels.
 	p.wclip = 2 * float32(p.width) / fwidth
