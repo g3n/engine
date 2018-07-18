@@ -265,7 +265,15 @@ func (g *GLTF) NewAnimation(i int) (*animation.Animation, error) {
 			ch = animation.NewRotationChannel(node)
 		} else if target.Path == "scale" {
 			ch = animation.NewScaleChannel(node)
-		}
+		} //else if target.Path == "weights" {
+		//	for _, child := range node.GetNode().Children() {
+		//		gr, ok := child.(graphic.Graphic)
+		//		if ok {
+		//			gr.geom
+		//		}
+		//	}
+		//	ch = animation.NewMorphChannel(TODO) // TODO
+		//}
 
 		keyframes, err := g.loadAccessorF32(sampler.Input, []string{}, []int{})
 		if err != nil {
@@ -322,15 +330,15 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 	log.Debug("Loading Mesh %d", mi)
 
 	var err error
-	m := g.Meshes[mi]
+	meshData := g.Meshes[mi]
 
 	// Create container node
 	meshNode := core.NewNode()
 
-	for i := 0; i < len(m.Primitives); i++ {
+	for i := 0; i < len(meshData.Primitives); i++ {
 
 		// Get primitive information
-		p := m.Primitives[i]
+		p := meshData.Primitives[i]
 
 		// Indexed Geometry
 		indices := math32.NewArrayU32(0, 0)
@@ -359,61 +367,42 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 		// Create geometry
 		geom := geometry.NewGeometry()
 
+		// Indices of buffer views
+		interleavedVBOs := make(map[int]*gls.VBO, 0)
+
 		// Load primitive attributes
 		for name, aci := range p.Attributes {
-			// TODO
-			//interleaved := g.isInterleaved(aci)
-			//if interleaved {
-			//	buf, err := g.loadBufferView(*g.Accessors[aci].BufferView)
-			//	if err != nil {
-			//		return nil, err
-			//	}
-			//}
-			if name == "POSITION" {
-				ppos, err := g.loadPositions(aci)
+			accessor := g.Accessors[aci]
+			g.validateAccessorAttribute(accessor, name)
+			if g.isInterleaved(accessor) {
+				bvIdx := *accessor.BufferView
+				// Check if we already loaded this buffer view
+				vbo, ok := interleavedVBOs[bvIdx]
+				if ok {
+					// Already created VBO for buffer view
+					// Add attribute with correct byteOffset
+					g.addAttributeToVBO(vbo, name, uint32(*accessor.ByteOffset))
+				} else {
+					// Load data and create vbo
+					buf, err := g.loadBufferView(g.BufferViews[bvIdx])
+					if err != nil {
+						return nil, err
+					}
+					data := g.bytesToArrayF32(buf, g.BufferViews[bvIdx].ByteLength)
+					vbo := gls.NewVBO(data)
+					g.addAttributeToVBO(vbo, name, uint32(vbo.StrideSize()))
+					interleavedVBOs[bvIdx] = vbo // Save reference to VBO keyed by index of the buffer view
+					geom.AddVBO(vbo)
+				}
+			} else {
+				bytes, err := g.loadAccessorBytes(accessor)
 				if err != nil {
 					return nil, err
 				}
-				vbo := gls.NewVBO(ppos).AddAttrib(gls.VertexPosition, 3)
+				data := g.bytesToArrayF32(bytes, accessor.Count*TypeSizes[accessor.Type])
+				vbo := gls.NewVBO(data)
+				g.addAttributeToVBO(vbo, name, uint32(vbo.StrideSize()))
 				geom.AddVBO(vbo)
-				continue
-			}
-			if name == "NORMAL" {
-				pnorms, err := g.loadNormals(aci)
-				if err != nil {
-					return nil, err
-				}
-				vbo := gls.NewVBO(pnorms).AddAttrib(gls.VertexNormal, 3)
-				geom.AddVBO(vbo)
-				continue
-			}
-			if name == "TANGENT" {
-				// TODO
-				log.Error("TANGENT attribute not supported yet.")
-				continue
-			}
-
-			attrib := strings.Split(name, "_")
-			semantic := attrib[0]
-			//set := attrib[1] TODO
-
-			if semantic == "TEXCOORD" {
-				puvs, err := g.loadTexcoords(aci)
-				if err != nil {
-					return nil, err
-				}
-				vbo := gls.NewVBO(puvs).AddAttrib(gls.VertexTexcoord, 2)
-				geom.AddVBO(vbo)
-				continue
-			}
-			if semantic == "COLOR" {
-				// TODO
-			}
-			if semantic == "JOINTS" {
-				// TODO
-			}
-			if semantic == "WEIGHTS" {
-				// TODO
 			}
 		}
 
@@ -421,12 +410,6 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 		if len(indices) > 0 {
 			geom.SetIndices(indices)
 		}
-
-		//log.Debug("positions:%v", positions)
-		//log.Debug("indices..:%v", indices)
-		//log.Debug("normals..:%v", normals)
-		//log.Debug("uvs0.....:%v", uvs0)
-		//log.Debug("VBUF size in number of floats:%v", len(vbuf))
 
 		// Default mode is 4 (TRIANGLES)
 		mode := TRIANGLES
@@ -439,27 +422,87 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 			primitiveMesh := graphic.NewMesh(geom, nil)
 			primitiveMesh.AddMaterial(grMat, 0, 0)
 			meshNode.Add(primitiveMesh)
+		} else if mode == LINES {
+			meshNode.Add(graphic.NewLines(geom, grMat))
+		} else if mode == LINE_STRIP {
+			meshNode.Add(graphic.NewLineStrip(geom, grMat))
+		} else if mode == POINTS {
+			meshNode.Add(graphic.NewPoints(geom, grMat))
+		} else {
+			return nil, fmt.Errorf("Unsupported primitive:%v", mode)
 		}
-		// Create Lines
-		if mode == LINES {
-			primitiveMesh := graphic.NewLines(geom, grMat)
-			meshNode.Add(primitiveMesh)
-		}
-		// Create LineStrip
-		if mode == LINE_STRIP {
-			primitiveMesh := graphic.NewLineStrip(geom, grMat)
-			meshNode.Add(primitiveMesh)
-		}
-		// Create Points
-		if mode == POINTS {
-			primitiveMesh := graphic.NewPoints(geom, grMat)
-			meshNode.Add(primitiveMesh)
-		}
-		// TODO error when primitive is unsupported
-		// fmt.Errorf("Unsupported primitive:%v", mode)
 	}
 
 	return meshNode, nil
+}
+
+// addAttributeToVBO adds the appropriate attribute to the provided vbo based on the glTF attribute name.
+func (g *GLTF) addAttributeToVBO(vbo *gls.VBO, attribName string, byteOffset uint32) {
+
+	parts := strings.Split(attribName, "_")
+	semantic := parts[0]
+	//set := parts[1] TODO e.g. TEXCOORD_0, TEXCOORD_1
+
+	if attribName == "POSITION" {
+		vbo.AddAttribOffset(gls.VertexPosition, byteOffset)
+	} else if attribName == "NORMAL" {
+		vbo.AddAttribOffset(gls.VertexNormal, byteOffset)
+	} else if attribName == "TANGENT" {
+		vbo.AddAttribOffset(gls.VertexTangent, byteOffset)
+	} else if semantic == "TEXCOORD" {
+		vbo.AddAttribOffset(gls.VertexTexcoord, byteOffset)
+	} else if semantic == "COLOR" {	// TODO glTF spec says COLOR can be VEC3 or VEC4
+		vbo.AddAttribOffset(gls.VertexColor, byteOffset)
+	} else if semantic == "JOINTS" {
+		// TODO
+	} else if semantic == "WEIGHTS" {
+		// TODO
+	}
+}
+
+// addAttributeToVBO adds the appropriate attribute to the provided vbo based on the glTF attribute name.
+func (g *GLTF) validateAccessorAttribute(ac Accessor, attribName string) {
+
+	parts := strings.Split(attribName, "_")
+	semantic := parts[0]
+	//set := parts[1] TODO e.g. TEXCOORD_0, TEXCOORD_1
+
+	if attribName == "POSITION" {
+		g.validateAccessor(ac, []string{VEC3}, []int{FLOAT})
+	} else if attribName == "NORMAL" {
+		g.validateAccessor(ac, []string{VEC3}, []int{FLOAT})
+	} else if attribName == "TANGENT" {
+		g.validateAccessor(ac, []string{VEC4}, []int{FLOAT})
+	} else if semantic == "TEXCOORD" {
+		g.validateAccessor(ac, []string{VEC2}, []int{FLOAT, UNSIGNED_BYTE, UNSIGNED_SHORT})
+	} else if semantic == "COLOR" {
+		g.validateAccessor(ac, []string{VEC3, VEC4}, []int{FLOAT, UNSIGNED_BYTE, UNSIGNED_SHORT})
+	} else if semantic == "JOINTS" {
+		g.validateAccessor(ac, []string{VEC4}, []int{UNSIGNED_BYTE, UNSIGNED_SHORT})
+	} else if semantic == "WEIGHTS" {
+		g.validateAccessor(ac, []string{VEC4}, []int{FLOAT, UNSIGNED_BYTE, UNSIGNED_SHORT})
+	}
+}
+
+// TODO
+func (g *GLTF) validateAccessor(ac Accessor, validTypes []string, validComponentTypes []int) error {
+
+	// Check if points to a valid buffer view
+	//if ac.BufferView == nil {
+	//	return fmt.Errorf("Accessor.BufferView == nil NOT SUPPORTED")
+	//}
+	//
+	//// Check accessor ComponentType
+	//if ac.ComponentType != FLOAT {
+	//	return fmt.Errorf("Accessor.ComponentType != FLOAT NOT SUPPORTED")
+	//}
+	//
+	//// Check accessor Type
+	//if ac.Type != VEC3 {
+	//	return fmt.Errorf("Accessor.ComponentType != VEC3 NOT SUPPORTED")
+	//}
+
+	return nil
 }
 
 func (g *GLTF) newDefaultMaterial() material.IMaterial {
@@ -601,6 +644,40 @@ func (g *GLTF) loadImage(ii int) (*image.RGBA, error) {
 }
 
 
+func (g *GLTF) bytesToArrayU32(data []byte, componentType, count int) (math32.ArrayU32, error) {
+
+	// If component is UNSIGNED_INT nothing to do
+	if componentType == UNSIGNED_INT {
+		arr := (*[1 << 30]uint32)(unsafe.Pointer(&data[0]))[:count]
+		return math32.ArrayU32(arr), nil
+	}
+
+	// Converts UNSIGNED_SHORT to UNSIGNED_INT
+	if componentType == UNSIGNED_SHORT {
+		out := math32.NewArrayU32(count, count)
+		for i := 0; i < count; i++ {
+			out[i] = uint32(data[i*2]) + uint32(data[i*2+1])*256
+		}
+		return out, nil
+	}
+
+	// Converts UNSIGNED_BYTE indices to UNSIGNED_INT
+	if componentType == UNSIGNED_BYTE {
+		out := math32.NewArrayU32(count, count)
+		for i := 0; i < count; i++ {
+			out[i] = uint32(data[i])
+		}
+		return out, nil
+	}
+
+	return nil, fmt.Errorf("Unsupported Accessor ComponentType:%v", componentType)
+}
+
+func (g *GLTF) bytesToArrayF32(data []byte, size int) math32.ArrayF32 {
+
+	return (*[1 << 30]float32)(unsafe.Pointer(&data[0]))[:size]
+}
+
 // loadAccessorData loads the indices array specified by the Accessor index.
 func (g *GLTF) loadAccessorU32(ai int, validTypes []string, validComponentTypes []int) (math32.ArrayU32, error) {
 
@@ -622,34 +699,10 @@ func (g *GLTF) loadAccessorU32(ai int, validTypes []string, validComponentTypes 
 		return nil, err
 	}
 
-	// If component is UNSIGNED_INT nothing to do
-	if ac.ComponentType == UNSIGNED_INT {
-		arr := (*[1 << 30]uint32)(unsafe.Pointer(&data[0]))[:ac.Count]
-		return math32.ArrayU32(arr), nil
-	}
-
-	// Converts UNSIGNED_SHORT to UNSIGNED_INT
-	if ac.ComponentType == UNSIGNED_SHORT {
-		out := math32.NewArrayU32(ac.Count, ac.Count)
-		for i := 0; i < ac.Count; i++ {
-			out[i] = uint32(data[i*2]) + uint32(data[i*2+1])*256
-		}
-		return out, nil
-	}
-
-	// Converts UNSIGNED_BYTE indices to UNSIGNED_INT
-	if ac.ComponentType == UNSIGNED_BYTE {
-		out := math32.NewArrayU32(ac.Count, ac.Count)
-		for i := 0; i < ac.Count; i++ {
-			out[i] = uint32(data[i])
-		}
-		return out, nil
-	}
-
-	return nil, fmt.Errorf("Unsupported Accessor ComponentType:%v", ac.ComponentType)
+	return g.bytesToArrayU32(data, ac.ComponentType, ac.Count)
 }
 
-
+// TODO - change ai -> accessor
 func (g *GLTF) loadAccessorF32(ai int, validTypes []string, validComponentTypes []int) (math32.ArrayF32, error) {
 
 	// Get Accessor for the specified index
@@ -670,29 +723,7 @@ func (g *GLTF) loadAccessorF32(ai int, validTypes []string, validComponentTypes 
 		return nil, err
 	}
 
-	arr := (*[1 << 30]float32)(unsafe.Pointer(&data[0]))[:ac.Count*TypeSizes[ac.Type]]
-	return math32.ArrayF32(arr), nil
-}
-
-// TODO
-func (g *GLTF) validateAccessor(ac Accessor, validTypes []string, validComponentTypes []int) error {
-
-	// Check if points to a valid buffer view
-	//if ac.BufferView == nil {
-	//	return fmt.Errorf("Accessor.BufferView == nil NOT SUPPORTED")
-	//}
-	//
-	//// Check accessor ComponentType
-	//if ac.ComponentType != FLOAT {
-	//	return fmt.Errorf("Accessor.ComponentType != FLOAT NOT SUPPORTED")
-	//}
-	//
-	//// Check accessor Type
-	//if ac.Type != VEC3 {
-	//	return fmt.Errorf("Accessor.ComponentType != VEC3 NOT SUPPORTED")
-	//}
-
-	return nil
+	return g.bytesToArrayF32(data, ac.Count*TypeSizes[ac.Type]), nil
 }
 
 // loadAccessorBytes
@@ -727,7 +758,7 @@ func (g *GLTF) loadAccessorBytes(ac Accessor) ([]byte, error) {
 	if (bv.ByteStride != nil) && (*bv.ByteStride != itemBytes) {
 		// BufferView data is interleaved, de-interleave
 		// TODO
-		log.Error("DATA IS INTERLEAVED - NOT SUPPORTED YET!")
+		log.Error("DATA IS INTERLEAVED - NOT SUPPORTED YET IN SOME CASES SUCH AS THIS!")
 	}
 
 	return data, nil
@@ -735,10 +766,9 @@ func (g *GLTF) loadAccessorBytes(ac Accessor) ([]byte, error) {
 
 // isInterleaves checks if the BufferView used by the specified Accessor index is
 // interleaved or not
-func (g *GLTF) isInterleaved(aci int) bool {
+func (g *GLTF) isInterleaved(accessor Accessor) bool {
 
 	// Get the Accessor's BufferView
-	accessor := g.Accessors[aci]
 	if accessor.BufferView == nil {
 		return false
 	}
@@ -758,48 +788,6 @@ func (g *GLTF) isInterleaved(aci int) bool {
 	return true
 }
 
-// loadPosition load array of float32 values from the specified accessor index.
-// The acesssor must have type of VEC3 and component type of FLOAT
-func (g *GLTF) loadPositions(ai int) (math32.ArrayF32, error) {
-
-	return g.loadAccessorF32(ai, []string{VEC3}, []int{FLOAT})
-}
-
-//
-func (g *GLTF) loadNormals(ai int) (math32.ArrayF32, error) {
-
-	return g.loadAccessorF32(ai, []string{VEC3}, []int{FLOAT})
-}
-
-//
-func (g *GLTF) loadTangents(ai int) (math32.ArrayF32, error) {
-
-	return g.loadAccessorF32(ai, []string{VEC4}, []int{FLOAT})
-}
-
-//
-func (g *GLTF) loadTexcoords(ai int) (math32.ArrayF32, error) {
-
-	return g.loadAccessorF32(ai, []string{VEC3}, []int{FLOAT, UNSIGNED_BYTE, UNSIGNED_SHORT})
-}
-
-//
-func (g *GLTF) loadColors(ai int) (math32.ArrayF32, error) {
-
-	return g.loadAccessorF32(ai, []string{VEC3, VEC4}, []int{FLOAT, UNSIGNED_BYTE, UNSIGNED_SHORT})
-}
-
-//
-func (g *GLTF) loadJoints(ai int) (math32.ArrayF32, error) {
-
-	return g.loadAccessorF32(ai, []string{VEC4}, []int{UNSIGNED_BYTE, UNSIGNED_SHORT})
-}
-
-//
-func (g *GLTF) loadWeights(ai int) (math32.ArrayF32, error) {
-
-	return g.loadAccessorF32(ai, []string{VEC4}, []int{FLOAT, UNSIGNED_BYTE, UNSIGNED_SHORT})
-}
 
 //
 func (g *GLTF) loadIndices(ai int) (math32.ArrayU32, error) {
