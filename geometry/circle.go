@@ -82,11 +82,13 @@ func NewCircleSector(radius float64, segments int, thetaStart, thetaLength float
 	}
 
 	circ.SetIndices(indices)
-	circ.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(positions))
-	circ.AddVBO(gls.NewVBO().AddAttrib("VertexNormal", 3).SetBuffer(normals))
-	circ.AddVBO(gls.NewVBO().AddAttrib("VertexTexcoord", 2).SetBuffer(uvs))
+	circ.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition))
+	circ.AddVBO(gls.NewVBO(normals).AddAttrib(gls.VertexNormal))
+	circ.AddVBO(gls.NewVBO(uvs).AddAttrib(gls.VertexTexcoord))
 
-	//circ.BoundingSphere = math32.NewSphere(math32.NewVector3(0,0,0), float32(radius))
+	// Update volume
+	circ.volume = 0
+	circ.volumeValid = true
 
 	return circ
 }

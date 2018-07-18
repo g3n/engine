@@ -205,6 +205,7 @@ func (oc *OrbitControl) updateRotate() {
 	position = target
 	position.Add(&vdir)
 	oc.cam.SetPositionVec(&position)
+	oc.cam.LookAt(&target)
 
 	// Reset deltas
 	oc.thetaDelta = 0
@@ -251,6 +252,7 @@ func (oc *OrbitControl) updateRotate2() {
 	position.Add(&vdir)
 	log.Debug("orbit set position")
 	oc.cam.SetPositionVec(&position)
+	oc.cam.LookAt(&target)
 
 	// Reset deltas
 	oc.thetaDelta = 0

@@ -12,6 +12,7 @@ import (
 
 // INode is the interface for all node types.
 type INode interface {
+	IDispatcher
 	GetNode() *Node
 	UpdateMatrixWorld()
 	Raycast(*Raycaster, *[]Intersect)
@@ -414,6 +415,14 @@ func (n *Node) SetRotationVec(vrot *math32.Vector3) {
 	n.changed = true
 }
 
+// SetRotationQuat sets the rotation based on the specified quaternion pointer.
+// The stored quaternion is updated accordingly.
+func (n *Node) SetRotationQuat(quat *math32.Quaternion) {
+
+	n.quaternion = *quat
+	n.changed = true
+}
+
 // SetRotationX sets the X rotation to the specified angle in radians.
 // The stored quaternion is updated accordingly.
 func (n *Node) SetRotationX(x float32) {
@@ -478,6 +487,13 @@ func (n *Node) Rotation() math32.Vector3 {
 func (n *Node) SetQuaternion(x, y, z, w float32) {
 
 	n.quaternion.Set(x, y, z, w)
+	n.changed = true
+}
+
+// SetQuaternionVec sets the quaternion based on the specified quaternion unit multiples vector.
+func (n *Node) SetQuaternionVec(q *math32.Vector4) {
+
+	n.quaternion.Set(q.X, q.Y, q.Z, q.W)
 	n.changed = true
 }
 
@@ -640,53 +656,18 @@ func (n *Node) UpdateMatrix() bool {
 	return true
 }
 
-// UpdateMatrixWorld updates the world transform matrix for this node and for all of its children.
+// UpdateMatrixWorld updates this node world transform matrix and of all its children
 func (n *Node) UpdateMatrixWorld() {
 
+	n.UpdateMatrix()
 	if n.parent == nil {
-		n.updateMatrixWorld(&n.matrix)
+		n.matrixWorld = n.matrix
 	} else {
 		parent := n.parent.GetNode()
-		n.updateMatrixWorld(&parent.matrixWorld)
+		n.matrixWorld.MultiplyMatrices(&parent.matrixWorld, &n.matrix)
 	}
-}
-
-// updateMatrixWorld is used internally by UpdateMatrixWorld.
-// If the local transform matrix has changed, this method updates it and also the world matrix of this node.
-// Children are updated recursively. If any node has changed, then we update the world matrix
-// of all of its descendants regardless if their local matrices have changed.
-func (n *Node) updateMatrixWorld(parentMatrixWorld *math32.Matrix4) {
-
-	// If the local transform matrix for this node has changed then we need to update the local
-	// matrix for this node and also the world matrix for this and all subsequent nodes.
-	if n.UpdateMatrix() {
-		n.matrixWorld.MultiplyMatrices(parentMatrixWorld, &n.matrix)
-
-		// Update matrices of children recursively, always updating the world matrix
-		for _, ichild := range n.children {
-			ichild.GetNode().updateMatrixWorldNoCheck(&n.matrixWorld)
-		}
-	} else {
-		// Update matrices of children recursively, continuing to check for changes
-		for _, ichild := range n.children {
-			ichild.GetNode().updateMatrixWorld(&n.matrixWorld)
-		}
-	}
-}
-
-// updateMatrixWorldNoCheck is used internally by updateMatrixWorld.
-// This method should be called when a node has changed since it always updates the matrix world.
-func (n *Node) updateMatrixWorldNoCheck(parentMatrixWorld *math32.Matrix4) {
-
-	// Update the local transform matrix (if necessary)
-	n.UpdateMatrix()
-
-	// Always update the matrix world since an ancestor of this node has changed
-	// (i.e. and ancestor had its local transform matrix modified)
-	n.matrixWorld.MultiplyMatrices(parentMatrixWorld, &n.matrix)
-
-	// Update matrices of children recursively
+	// Update this Node children matrices
 	for _, ichild := range n.children {
-		ichild.GetNode().updateMatrixWorldNoCheck(&n.matrixWorld)
+		ichild.UpdateMatrixWorld()
 	}
 }

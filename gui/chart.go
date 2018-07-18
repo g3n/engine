@@ -476,7 +476,7 @@ func newChartScaleX(chart *Chart, lines int, color *math32.Color) *chartScaleX {
 
 	// Creates geometry and adds VBO
 	geom := geometry.NewGeometry()
-	geom.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(positions))
+	geom.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition))
 
 	// Initializes the panel graphic
 	gr := graphic.NewGraphic(geom, gls.LINES)
@@ -561,7 +561,7 @@ func newChartScaleY(chart *Chart, lines int, color *math32.Color) *chartScaleY {
 
 	// Creates geometry and adds VBO
 	geom := geometry.NewGeometry()
-	geom.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(positions))
+	geom.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition))
 
 	// Initializes the panel with this graphic
 	gr := graphic.NewGraphic(geom, gls.LINES)
@@ -629,9 +629,8 @@ func newGraph(chart *Chart, color *math32.Color, data []float32) *Graph {
 
 	// Creates geometry and adds VBO with positions
 	geom := geometry.NewGeometry()
-	lg.vbo = gls.NewVBO().AddAttrib("VertexPosition", 3)
 	lg.positions = math32.NewArrayF32(0, 0)
-	lg.vbo.SetBuffer(lg.positions)
+	lg.vbo = gls.NewVBO(lg.positions).AddAttrib(gls.VertexPosition)
 	geom.AddVBO(lg.vbo)
 
 	// Initializes the panel with this graphic

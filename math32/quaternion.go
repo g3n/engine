@@ -245,23 +245,37 @@ func (q *Quaternion) Length() float32 {
 func (q *Quaternion) Normalize() *Quaternion {
 
 	l := q.Length()
-
 	if l == 0 {
-
 		q.X = 0
 		q.Y = 0
 		q.Z = 0
 		q.W = 1
-
 	} else {
-
 		l = 1 / l
+		q.X *= l
+		q.Y *= l
+		q.Z *= l
+		q.W *= l
+	}
+	return q
+}
 
-		q.X = q.X * l
-		q.Y = q.Y * l
-		q.Z = q.Z * l
-		q.W = q.W * l
+// NormalizeFast approximates normalizing this quaternion.
+// Works best when the quaternion is already almost-normalized.
+// Returns pointer to this updated quaternion.
+func (q *Quaternion) NormalizeFast() *Quaternion {
 
+	f := (3.0-(q.X*q.X + q.Y*q.Y + q.Z*q.Z + q.W*q.W))/2.0
+	if f == 0 {
+		q.X = 0
+		q.Y = 0
+		q.Z = 0
+		q.W = 1
+	} else {
+		q.X *= f
+		q.Y *= f
+		q.Z *= f
+		q.W *= f
 	}
 	return q
 }
@@ -390,4 +404,10 @@ func (q *Quaternion) ToArray(array []float32, offset int) []float32 {
 	array[offset+3] = q.W
 
 	return array
+}
+
+// Clone returns a copy of this quaternion
+func (q *Quaternion) Clone() *Quaternion {
+
+	return NewQuaternion(q.X, q.Y, q.Z, q.W)
 }

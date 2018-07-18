@@ -21,21 +21,21 @@ const include_lights_source = `//
 // Lights uniforms
 //
 
-// Ambient lights uniforms
 #if AMB_LIGHTS>0
+    // Ambient lights color uniform
     uniform vec3 AmbientLightColor[AMB_LIGHTS];
 #endif
 
-// Directional lights uniform array. Each directional light uses 2 elements
 #if DIR_LIGHTS>0
+    // Directional lights uniform array. Each directional light uses 2 elements
     uniform vec3 DirLight[2*DIR_LIGHTS];
     // Macros to access elements inside the DirectionalLight uniform array
     #define DirLightColor(a)		DirLight[2*a]
     #define DirLightPosition(a)		DirLight[2*a+1]
 #endif
 
-// Point lights uniform array. Each point light uses 3 elements
 #if POINT_LIGHTS>0
+    // Point lights uniform array. Each point light uses 3 elements
     uniform vec3 PointLight[3*POINT_LIGHTS];
     // Macros to access elements inside the PointLight uniform array
     #define PointLightColor(a)			PointLight[3*a]
@@ -47,7 +47,6 @@ const include_lights_source = `//
 #if SPOT_LIGHTS>0
     // Spot lights uniforms. Each spot light uses 5 elements
     uniform vec3  SpotLight[5*SPOT_LIGHTS];
-    
     // Macros to access elements inside the PointLight uniform array
     #define SpotLightColor(a)			SpotLight[5*a]
     #define SpotLightPosition(a)		SpotLight[5*a+1]
@@ -110,6 +109,27 @@ uniform vec3 Material[6];
             //currTexPre.rgb *= currTexPre.a;                                                  \
             //texMixed = currTexPre + prevTexPre * (1 - currTexPre.a);                         \
             //texMixed.rgb /= texMixed.a;                                                      \
+`
+
+const include_morphtarget_vertex_source = `#ifdef MORPHTARGETS
+	vPosition += (MorphPosition{i} - VertexPosition) * morphTargetInfluences[{i}];
+//    vPosition = MorphPosition1;
+  #ifdef MORPHTARGETS_NORMAL
+	vNormal += (MorphNormal{i} - VertexNormal) * morphTargetInfluences[{i}];
+  #endif
+#endif
+`
+
+const include_morphtarget_vertex_declaration_source = `#ifdef MORPHTARGETS
+	uniform float morphTargetInfluences[MORPHTARGETS];
+	#include <morphtarget_vertex_declaration2> [MORPHTARGETS]
+#endif
+`
+
+const include_morphtarget_vertex_declaration2_source = `	in vec3 MorphPosition{i};
+  #ifdef MORPHTARGETS_NORMAL
+	in vec3 MorphNormal{i};
+  #endif
 `
 
 const include_phong_model_source = `/***
@@ -226,8 +246,6 @@ void phongModel(vec4 position, vec3 normal, vec3 camDir, vec3 matAmbient, vec3 m
     ambdiff = ambientTotal + MatEmissiveColor + diffuseTotal;
     spec = specularTotal;
 }
-
-
 `
 
 const basic_fragment_source = `//
@@ -481,6 +499,7 @@ uniform mat3 NormalMatrix;
 uniform mat4 MVP;
 
 #include <material>
+#include <morphtarget_vertex_declaration>
 
 // Output variables for Fragment shader
 out vec4 Position;
@@ -508,8 +527,10 @@ void main() {
     }
 #endif
     FragTexcoord = texcoord;
+    vec3 vPosition = VertexPosition;
+    #include <morphtarget_vertex> [MORPHTARGETS]
 
-    gl_Position = MVP * vec4(VertexPosition, 1.0);
+    gl_Position = MVP * vec4(vPosition, 1.0);
 }
 
 `
@@ -942,6 +963,8 @@ uniform mat4 ModelViewMatrix;
 uniform mat3 NormalMatrix;
 uniform mat4 MVP;
 
+#include <morphtarget_vertex_declaration>
+
 // Output variables for Fragment shader
 out vec3 Position;
 out vec3 Normal;
@@ -969,7 +992,10 @@ void main() {
     // #endif
     FragTexcoord = texcoord;
 
-    gl_Position = MVP * vec4(VertexPosition, 1.0);
+    vec3 vPosition = VertexPosition;
+    #include <morphtarget_vertex> [MORPHTARGETS]
+
+    gl_Position = MVP * vec4(vPosition, 1.0);
 }
 
 
@@ -1179,7 +1205,7 @@ uniform mat4 MVP;
 #include <lights>
 #include <material>
 #include <phong_model>
-
+#include <morphtarget_vertex_declaration>
 
 // Outputs for the fragment shader.
 out vec3 ColorFrontAmbdiff;
@@ -1191,19 +1217,19 @@ out vec2 FragTexcoord;
 void main() {
 
     // Transform this vertex normal to camera coordinates.
-    vec3 normal = normalize(NormalMatrix * VertexNormal);
+    vec3 Normal = normalize(NormalMatrix * VertexNormal);
 
     // Calculate this vertex position in camera coordinates
-    vec4 position = ModelViewMatrix * vec4(VertexPosition, 1.0);
+    vec4 Position = ModelViewMatrix * vec4(VertexPosition, 1.0);
 
     // Calculate the direction vector from the vertex to the camera
     // The camera is at 0,0,0
-    vec3 camDir = normalize(-position.xyz);
+    vec3 camDir = normalize(-Position.xyz);
 
     // Calculates the vertex Ambient+Diffuse and Specular colors using the Phong model
     // for the front and back
-    phongModel(position,  normal, camDir, MatAmbientColor, MatDiffuseColor, ColorFrontAmbdiff, ColorFrontSpec);
-    phongModel(position, -normal, camDir, MatAmbientColor, MatDiffuseColor, ColorBackAmbdiff, ColorBackSpec);
+    phongModel(Position,  Normal, camDir, MatAmbientColor, MatDiffuseColor, ColorFrontAmbdiff, ColorFrontSpec);
+    phongModel(Position, -Normal, camDir, MatAmbientColor, MatDiffuseColor, ColorBackAmbdiff, ColorBackSpec);
 
     vec2 texcoord = VertexTexcoord;
 #if MAT_TEXTURES > 0
@@ -1213,8 +1239,10 @@ void main() {
     }
 #endif
     FragTexcoord = texcoord;
+    vec3 vPosition = VertexPosition;
+    #include <morphtarget_vertex> [MORPHTARGETS]
 
-    gl_Position = MVP * vec4(VertexPosition, 1.0);
+    gl_Position = MVP * vec4(vPosition, 1.0);
 }
 
 `
@@ -1222,10 +1250,13 @@ void main() {
 // Maps include name with its source code
 var includeMap = map[string]string{
 
-	"attributes":  include_attributes_source,
-	"lights":      include_lights_source,
-	"material":    include_material_source,
-	"phong_model": include_phong_model_source,
+	"attributes":                      include_attributes_source,
+	"lights":                          include_lights_source,
+	"material":                        include_material_source,
+	"morphtarget_vertex":              include_morphtarget_vertex_source,
+	"morphtarget_vertex_declaration":  include_morphtarget_vertex_declaration_source,
+	"morphtarget_vertex_declaration2": include_morphtarget_vertex_declaration2_source,
+	"phong_model":                     include_phong_model_source,
 }
 
 // Maps shader name with its source code

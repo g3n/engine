@@ -135,12 +135,26 @@ func NewSegmentedBox(width, height, length float32, widthSegments, heightSegment
 	buildPlane("x", "y", -1, -1, box.Width, box.Height, -lHalf, 5) // nz
 
 	box.SetIndices(indices)
-	box.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(positions))
-	box.AddVBO(gls.NewVBO().AddAttrib("VertexNormal", 3).SetBuffer(normals))
-	box.AddVBO(gls.NewVBO().AddAttrib("VertexTexcoord", 2).SetBuffer(uvs))
+	box.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition))
+	box.AddVBO(gls.NewVBO(normals).AddAttrib(gls.VertexNormal))
+	box.AddVBO(gls.NewVBO(uvs).AddAttrib(gls.VertexTexcoord))
 
-	box.boundingBox = math32.Box3{math32.Vector3{-wHalf, -hHalf, -lHalf}, math32.Vector3{wHalf, hHalf, lHalf}}
+	// Update bounding box
+	box.boundingBox.Min = math32.Vector3{-wHalf, -hHalf, -lHalf}
+	box.boundingBox.Max = math32.Vector3{wHalf, hHalf, lHalf}
 	box.boundingBoxValid = true
+
+	// Update bounding sphere
+	box.boundingSphere.Radius = math32.Sqrt(math32.Pow(width/2,2) + math32.Pow(height/2,2) + math32.Pow(length/2,2))
+	box.boundingSphereValid = true
+
+	// Update area
+	box.area = 2*width + 2*height + 2*length
+	box.areaValid = true
+
+	// Update volume
+	box.volume = width * height * length
+	box.volumeValid = true
 
 	return box
 }

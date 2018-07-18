@@ -36,10 +36,9 @@ func NewGridHelper(size, step float32, color *math32.Color) *GridHelper {
 	// Creates geometry
 	geom := geometry.NewGeometry()
 	geom.AddVBO(
-		gls.NewVBO().
-			AddAttrib("VertexPosition", 3).
-			AddAttrib("VertexColor", 3).
-			SetBuffer(positions),
+		gls.NewVBO(positions).
+			AddAttrib(gls.VertexPosition).
+			AddAttrib(gls.VertexColor),
 	)
 
 	// Creates material
