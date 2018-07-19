@@ -7,6 +7,7 @@ package animation
 import (
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/geometry"
 )
 
 // A Channel associates an animation parameter channel to an interpolation sampler
@@ -241,6 +242,54 @@ func NewScaleChannel(node core.INode) *ScaleChannel {
 	}
 	sc.SetInterpolationType(LINEAR)
 	return sc
+}
+
+// MorphChannel is the IChannel for morph geometries.
+type MorphChannel struct {
+	Channel
+	target *geometry.MorphGeometry
+}
+
+func NewMorphChannel(mg *geometry.MorphGeometry) *MorphChannel {
+
+	mc := new(MorphChannel)
+	mc.target = mg
+	numWeights := len(mg.Weights())
+	mc.updateInterpAction = func() {
+		// Update interpolation function
+		switch mc.interpType {
+		case STEP:
+			mc.interpAction = func(idx int, k float32) {
+				start := idx*numWeights
+				weights := mc.values[start:start+numWeights]
+				mg.SetWeights(weights)
+			}
+		case LINEAR:
+			mc.interpAction = func(idx int, k float32) {
+				start1 := idx*numWeights
+				start2 := (idx+1)*numWeights
+				weights1 := mc.values[start1:start1+numWeights]
+				weights2 := mc.values[start2:start2+numWeights]
+				for i := range weights1 {
+					weights1[i] = weights1[i] + (weights2[i]-weights1[i])*k
+				}
+				mg.SetWeights(weights1)
+			}
+		case CUBICSPLINE: // TODO
+			mc.interpAction = func(idx int, k float32) {
+				start1 := idx*numWeights
+				start2 := (idx+1)*numWeights
+				weights1 := mc.values[start1:start1+numWeights]
+				weights2 := mc.values[start2:start2+numWeights]
+				for i := range weights1 {
+					weights1[i] = weights1[i] + (weights2[i]-weights1[i])*k
+				}
+				mg.SetWeights(weights1)
+			}
+		}
+	}
+	mc.SetInterpolationType(LINEAR)
+	return mc
 }
 
 // InterpolationType specifies the interpolation type.
