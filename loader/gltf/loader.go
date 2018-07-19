@@ -88,7 +88,7 @@ func ParseBinReader(r io.Reader, path string) (*GLTF, error) {
 
 	// Check magic and version
 	if header.Magic != GLBMagic {
-		return nil, fmt.Errorf("Invalid GLB Magic field")
+		return nil, fmt.Errorf("invalid GLB Magic field")
 	}
 	if header.Version < 2 {
 		return nil, fmt.Errorf("GLB version:%v not supported", header.Version)
@@ -133,7 +133,7 @@ func readChunk(r io.Reader, chunkType uint32) ([]byte, error) {
 
 	// Check chunk type
 	if chunk.Type != chunkType {
-		return nil, fmt.Errorf("expected GLB chunk type [%v] but obtained chunk type [%v]", chunkType, chunk.Type)
+		return nil, fmt.Errorf("expected GLB chunk type [%v] but found [%v]", chunkType, chunk.Type)
 	}
 
 	// Read chunk data
@@ -147,10 +147,10 @@ func readChunk(r io.Reader, chunkType uint32) ([]byte, error) {
 }
 
 // NewScene creates a parent Node which contains all nodes contained by
-// the specified scene index from the GLTF Scenes array
+// the specified scene index from the GLTF Scenes array.
 func (g *GLTF) NewScene(si int) (core.INode, error) {
 
-	log.Debug("Creating Scene %d", si)
+	log.Debug("Loading Scene %d", si)
 
 	// Check if provided scene index is valid
 	if si < 0 || si >= len(g.Scenes) {
@@ -174,7 +174,7 @@ func (g *GLTF) NewScene(si int) (core.INode, error) {
 // in the decoded GLTF Nodes array.
 func (g *GLTF) NewNode(i int) (core.INode, error) {
 
-	log.Debug("Creating Node %d", i)
+	log.Debug("Loading Node %d", i)
 
 	var in core.INode
 	var err error
@@ -182,13 +182,13 @@ func (g *GLTF) NewNode(i int) (core.INode, error) {
 
 	// Check if the node is a Mesh (triangles, lines, etc...)
 	if nodeData.Mesh != nil {
-		in, err = g.loadMesh(*nodeData.Mesh)
+		in, err = g.NewMesh(*nodeData.Mesh)
 		if err != nil {
 			return nil, err
 		}
 		// Check if the node is Camera
 	} else if nodeData.Camera != nil {
-		in, err = g.loadCamera(*nodeData.Camera)
+		in, err = g.NewCamera(*nodeData.Camera)
 		if err != nil {
 			return nil, err
 		}
@@ -236,11 +236,11 @@ func (g *GLTF) NewNode(i int) (core.INode, error) {
 	return in, nil
 }
 
-// NewAnimation creates a parent Node which contains all nodes contained by
-// the specified scene index from the GLTF Scenes array
+// NewAnimation creates an Animation for the specified
+// the animation index from the GLTF Animations array.
 func (g *GLTF) NewAnimation(i int) (*animation.Animation, error) {
 
-	log.Debug("Creating Animation %d", i)
+	log.Debug("Loading Animation %d", i)
 
 	// Check if provided scene index is valid
 	if i < 0 || i >= len(g.Animations) {
@@ -258,42 +258,56 @@ func (g *GLTF) NewAnimation(i int) (*animation.Animation, error) {
 		node := g.Nodes[target.Node].node
 		// TODO Instantiate node if not exists ?
 
+		var validTypes []string
+		var validComponentTypes []int
+
 		var ch animation.IChannel
 		if target.Path == "translation" {
 			ch = animation.NewPositionChannel(node)
+			validTypes = []string{VEC3}
+			validComponentTypes = []int{FLOAT}
 		} else if target.Path == "rotation" {
 			ch = animation.NewRotationChannel(node)
+			validTypes = []string{VEC4}
+			validComponentTypes = []int{FLOAT, BYTE, UNSIGNED_BYTE, SHORT, UNSIGNED_SHORT}
 		} else if target.Path == "scale" {
 			ch = animation.NewScaleChannel(node)
-		} //else if target.Path == "weights" {
-		//	for _, child := range node.GetNode().Children() {
-		//		gr, ok := child.(graphic.Graphic)
-		//		if ok {
-		//			gr.geom
-		//		}
-		//	}
-		//	ch = animation.NewMorphChannel(TODO) // TODO
-		//}
+			validTypes = []string{VEC3}
+			validComponentTypes = []int{FLOAT}
+		} else if target.Path == "weights" {
+			validTypes = []string{SCALAR}
+			validComponentTypes = []int{FLOAT, BYTE, UNSIGNED_BYTE, SHORT, UNSIGNED_SHORT}
+			return nil, fmt.Errorf("morph animation (with 'weights' path) not supported yet")
+			// TODO
+			//	for _, child := range node.GetNode().Children() {
+			//		gr, ok := child.(graphic.Graphic)
+			//		if ok {
+			//			gr.geom
+			//		}
+			//	}
+			//	ch = animation.NewMorphChannel(TODO)
+		}
 
-		keyframes, err := g.loadAccessorF32(sampler.Input, []string{}, []int{})
+		// TODO what if Input and Output accessors are interleaved? probably de-interleave in these 2 cases
+
+		keyframes, err := g.loadAccessorF32(sampler.Input, "Input", []string{SCALAR}, []int{FLOAT})
 		if err != nil {
 			return nil, err
 		}
-		values, err := g.loadAccessorF32(sampler.Output, []string{}, []int{})
+		values, err := g.loadAccessorF32(sampler.Output, "Output", validTypes, validComponentTypes)
 		if err != nil {
 			return nil, err
 		}
 		ch.SetBuffers(keyframes, values)
 		ch.SetInterpolationType(animation.InterpolationType(sampler.Interpolation))
-		//ch.SetInterpolationType(animation.STEP)//animation.InterpolationType(sampler.Interpolation))
 		anim.AddChannel(ch)
 	}
 	return anim, nil
 }
 
-// loadCamera creates and returns a Camera Node
-// from the specified GLTF.Cameras index
-func (g *GLTF) loadCamera(ci int) (core.INode, error) {
+// NewCamera creates and returns a Camera Node
+// from the specified GLTF.Cameras index.
+func (g *GLTF) NewCamera(ci int) (core.INode, error) {
 
 	log.Debug("Loading Camera %d", ci)
 
@@ -323,9 +337,9 @@ func (g *GLTF) loadCamera(ci int) (core.INode, error) {
 	return nil, fmt.Errorf("unsupported camera type: %s", camDesc.Type)
 }
 
-// loadMesh creates and returns a Graphic Node (graphic.Mesh, graphic.Lines, graphic.Points, etc)
-// from the specified GLTF Mesh index
-func (g *GLTF) loadMesh(mi int) (core.INode, error) {
+// NewMesh creates and returns a Graphic Node (graphic.Mesh, graphic.Lines, graphic.Points, etc)
+// from the specified GLTF.Meshes index.
+func (g *GLTF) NewMesh(mi int) (core.INode, error) {
 
 	log.Debug("Loading Mesh %d", mi)
 
@@ -356,7 +370,7 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 		// Load primitive material
 		var grMat material.IMaterial
 		if p.Material != nil {
-			grMat, err = g.loadMaterial(*p.Material)
+			grMat, err = g.NewMaterial(*p.Material)
 			if err != nil {
 				return nil, err
 			}
@@ -373,13 +387,20 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 		// Load primitive attributes
 		for name, aci := range p.Attributes {
 			accessor := g.Accessors[aci]
-			g.validateAccessorAttribute(accessor, name)
+
+			// Validate that accessor is compatible with attribute
+			err = g.validateAccessorAttribute(accessor, name)
+			if err != nil {
+				return nil, err
+			}
+
+			// Load data and add it to geometry's VBO
 			if g.isInterleaved(accessor) {
 				bvIdx := *accessor.BufferView
 				// Check if we already loaded this buffer view
 				vbo, ok := interleavedVBOs[bvIdx]
 				if ok {
-					// Already created VBO for buffer view
+					// Already created VBO for this buffer view
 					// Add attribute with correct byteOffset
 					g.addAttributeToVBO(vbo, name, uint32(*accessor.ByteOffset))
 				} else {
@@ -390,18 +411,21 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 					}
 					data := g.bytesToArrayF32(buf, g.BufferViews[bvIdx].ByteLength)
 					vbo := gls.NewVBO(data)
-					g.addAttributeToVBO(vbo, name, uint32(vbo.StrideSize()))
-					interleavedVBOs[bvIdx] = vbo // Save reference to VBO keyed by index of the buffer view
+					g.addAttributeToVBO(vbo, name, 0)
+					// Save reference to VBO keyed by index of the buffer view
+					interleavedVBOs[bvIdx] = vbo
+					// Add VBO to geometry
 					geom.AddVBO(vbo)
 				}
 			} else {
-				bytes, err := g.loadAccessorBytes(accessor)
+				buf, err := g.loadAccessorBytes(accessor)
 				if err != nil {
 					return nil, err
 				}
-				data := g.bytesToArrayF32(bytes, accessor.Count*TypeSizes[accessor.Type])
+				data := g.bytesToArrayF32(buf, accessor.Count*TypeSizes[accessor.Type])
 				vbo := gls.NewVBO(data)
-				g.addAttributeToVBO(vbo, name, uint32(vbo.StrideSize()))
+				g.addAttributeToVBO(vbo, name, 0)
+				// Add VBO to geometry
 				geom.AddVBO(vbo)
 			}
 		}
@@ -436,12 +460,14 @@ func (g *GLTF) loadMesh(mi int) (core.INode, error) {
 	return meshNode, nil
 }
 
+// loadIndices loads the indices stored in the specified accessor.
+func (g *GLTF) loadIndices(ai int) (math32.ArrayU32, error) {
+
+	return g.loadAccessorU32(ai, "indices", []string{SCALAR}, []int{UNSIGNED_BYTE, UNSIGNED_SHORT, UNSIGNED_INT}) // TODO check that it's ELEMENT_ARRAY_BUFFER
+}
+
 // addAttributeToVBO adds the appropriate attribute to the provided vbo based on the glTF attribute name.
 func (g *GLTF) addAttributeToVBO(vbo *gls.VBO, attribName string, byteOffset uint32) {
-
-	parts := strings.Split(attribName, "_")
-	semantic := parts[0]
-	//set := parts[1] TODO e.g. TEXCOORD_0, TEXCOORD_1
 
 	if attribName == "POSITION" {
 		vbo.AddAttribOffset(gls.VertexPosition, byteOffset)
@@ -449,99 +475,112 @@ func (g *GLTF) addAttributeToVBO(vbo *gls.VBO, attribName string, byteOffset uin
 		vbo.AddAttribOffset(gls.VertexNormal, byteOffset)
 	} else if attribName == "TANGENT" {
 		vbo.AddAttribOffset(gls.VertexTangent, byteOffset)
-	} else if semantic == "TEXCOORD" {
+	} else if attribName == "TEXCOORD_0" {
 		vbo.AddAttribOffset(gls.VertexTexcoord, byteOffset)
-	} else if semantic == "COLOR" {	// TODO glTF spec says COLOR can be VEC3 or VEC4
+	} else if attribName == "COLOR_0" {	// TODO glTF spec says COLOR can be VEC3 or VEC4
 		vbo.AddAttribOffset(gls.VertexColor, byteOffset)
-	} else if semantic == "JOINTS" {
+	} else if attribName == "JOINTS_0" {
 		// TODO
-	} else if semantic == "WEIGHTS" {
+	} else if attribName == "WEIGHTS_0" {
 		// TODO
+	} else {
+		panic(fmt.Sprintf("Attribute %v is not supported!", attribName))
 	}
 }
 
-// addAttributeToVBO adds the appropriate attribute to the provided vbo based on the glTF attribute name.
-func (g *GLTF) validateAccessorAttribute(ac Accessor, attribName string) {
+// validateAccessorAttribute validates the specified accessor for the given attribute name.
+func (g *GLTF) validateAccessorAttribute(ac Accessor, attribName string) error {
 
 	parts := strings.Split(attribName, "_")
 	semantic := parts[0]
-	//set := parts[1] TODO e.g. TEXCOORD_0, TEXCOORD_1
+
+	usage := "attribute " + attribName
 
 	if attribName == "POSITION" {
-		g.validateAccessor(ac, []string{VEC3}, []int{FLOAT})
+		return g.validateAccessor(ac, usage, []string{VEC3}, []int{FLOAT})
 	} else if attribName == "NORMAL" {
-		g.validateAccessor(ac, []string{VEC3}, []int{FLOAT})
+		return g.validateAccessor(ac, usage, []string{VEC3}, []int{FLOAT})
 	} else if attribName == "TANGENT" {
-		g.validateAccessor(ac, []string{VEC4}, []int{FLOAT})
+		return g.validateAccessor(ac, usage, []string{VEC4}, []int{FLOAT})
 	} else if semantic == "TEXCOORD" {
-		g.validateAccessor(ac, []string{VEC2}, []int{FLOAT, UNSIGNED_BYTE, UNSIGNED_SHORT})
+		return g.validateAccessor(ac, usage, []string{VEC2}, []int{FLOAT, UNSIGNED_BYTE, UNSIGNED_SHORT})
 	} else if semantic == "COLOR" {
-		g.validateAccessor(ac, []string{VEC3, VEC4}, []int{FLOAT, UNSIGNED_BYTE, UNSIGNED_SHORT})
+		return g.validateAccessor(ac, usage, []string{VEC3, VEC4}, []int{FLOAT, UNSIGNED_BYTE, UNSIGNED_SHORT})
 	} else if semantic == "JOINTS" {
-		g.validateAccessor(ac, []string{VEC4}, []int{UNSIGNED_BYTE, UNSIGNED_SHORT})
+		return g.validateAccessor(ac, usage, []string{VEC4}, []int{UNSIGNED_BYTE, UNSIGNED_SHORT})
 	} else if semantic == "WEIGHTS" {
-		g.validateAccessor(ac, []string{VEC4}, []int{FLOAT, UNSIGNED_BYTE, UNSIGNED_SHORT})
+		return g.validateAccessor(ac, usage, []string{VEC4}, []int{FLOAT, UNSIGNED_BYTE, UNSIGNED_SHORT})
+	} else {
+		return fmt.Errorf("attribute %v is not supported", attribName)
 	}
 }
 
-// TODO
-func (g *GLTF) validateAccessor(ac Accessor, validTypes []string, validComponentTypes []int) error {
+// validateAccessor validates the specified attribute accessor with the specified allowed types and component types.
+func (g *GLTF) validateAccessor(ac Accessor, usage string, validTypes []string, validComponentTypes []int) error {
 
-	// Check if points to a valid buffer view
-	//if ac.BufferView == nil {
-	//	return fmt.Errorf("Accessor.BufferView == nil NOT SUPPORTED")
-	//}
-	//
-	//// Check accessor ComponentType
-	//if ac.ComponentType != FLOAT {
-	//	return fmt.Errorf("Accessor.ComponentType != FLOAT NOT SUPPORTED")
-	//}
-	//
-	//// Check accessor Type
-	//if ac.Type != VEC3 {
-	//	return fmt.Errorf("Accessor.ComponentType != VEC3 NOT SUPPORTED")
-	//}
+	// Validate accessor type
+	validType := false
+	for _, vType := range validTypes {
+		if ac.Type == vType {
+			validType = true
+			break
+		}
+	}
+	if !validType {
+		return fmt.Errorf("invalid Accessor.Type %v for %s", ac.Type, usage)
+	}
+
+	// Validate accessor component type
+	validComponentType := false
+	for _, vComponentType := range validComponentTypes {
+		if ac.ComponentType == vComponentType {
+			validComponentType = true
+			break
+		}
+	}
+	if !validComponentType {
+		return fmt.Errorf("invalid Accessor.ComponentType %v for %s", ac.ComponentType, usage)
+	}
 
 	return nil
 }
 
+// newDefaultMaterial creates and returns the default material.
 func (g *GLTF) newDefaultMaterial() material.IMaterial {
 
 	return material.NewStandard(&math32.Color{0.5, 0.5, 0.5})
 }
 
-// loadMaterials loads the material specified by the material index
-func (g *GLTF) loadMaterial(mi int) (material.IMaterial, error) {
+// NewMaterial creates and returns a new material based on the material data with the specified index.
+func (g *GLTF) NewMaterial(mi int) (material.IMaterial, error) {
+
+	log.Debug("Loading Material %d", mi)
 
 	matData := g.Materials[mi]
-	// Checks for material extensions
+	// Check for material extensions
 	if matData.Extensions != nil {
 		for ext, v := range matData.Extensions {
 			if ext == "KHR_materials_common" {
 				return g.loadMaterialCommon(v)
 			} else {
-				return nil, fmt.Errorf("Unsupported extension:%s", ext)
+				return nil, fmt.Errorf("unsupported extension:%s", ext)
 			}
 		}
-		return nil, fmt.Errorf("Empty material extensions")
-		// Material should be PBR
+		return nil, fmt.Errorf("empty material extensions")
 	} else {
+		// Material is normally PBR
 		return g.loadMaterialPBR(&matData)
 	}
 }
 
-// loadTextureInfo loads the texture specified by the TextureInfo pointer
-func (g *GLTF) loadTextureInfo(ti *TextureInfo) (*texture.Texture2D, error) {
+// NewTexture loads the texture specified by its index.
+func (g *GLTF) NewTexture(texi int) (*texture.Texture2D, error) {
 
-	return g.loadTexture(ti.Index)
-}
-
-// loadTexture loads the texture specified by its index
-func (g *GLTF) loadTexture(texi int) (*texture.Texture2D, error) {
+	log.Debug("Loading Texture %d", texi)
 
 	// loads texture image
 	texDesc := g.Textures[texi]
-	img, err := g.loadImage(texDesc.Source)
+	img, err := g.NewImage(texDesc.Source)
 	if err != nil {
 		return nil, err
 	}
@@ -556,17 +595,18 @@ func (g *GLTF) loadTexture(texi int) (*texture.Texture2D, error) {
 	return tex, nil
 }
 
+// applySamplers applies the specified Sampler to the provided texture.
 func (g *GLTF) applySampler(sampler Sampler, tex *texture.Texture2D) {
 
 	// Magnification filter
-	magFilter := gls.NEAREST
+	magFilter := gls.LINEAR
 	if sampler.MagFilter != nil {
 		magFilter = *sampler.MagFilter
 	}
 	tex.SetMagFilter(uint32(magFilter))
 
 	// Minification filter
-	minFilter := gls.NEAREST
+	minFilter := gls.LINEAR_MIPMAP_LINEAR
 	if sampler.MinFilter != nil {
 		minFilter = *sampler.MinFilter
 	}
@@ -587,11 +627,12 @@ func (g *GLTF) applySampler(sampler Sampler, tex *texture.Texture2D) {
 	tex.SetWrapT(uint32(wrapT))
 }
 
-// loadImage loads the image specified by the index of GLTF.Images
-// Image can be loaded from binary chunk file or data URI or external file.
-func (g *GLTF) loadImage(ii int) (*image.RGBA, error) {
+// NewImage loads the image specified by the index of GLTF.Images.
+// Image can be loaded from binary chunk file or data URI or external file..
+func (g *GLTF) NewImage(ii int) (*image.RGBA, error) {
 
-	log.Error("loadImage:%v", ii)
+	log.Debug("Loading Image %d", ii)
+
 	imgDesc := g.Images[ii]
 	var data []byte
 	var err error
@@ -599,7 +640,7 @@ func (g *GLTF) loadImage(ii int) (*image.RGBA, error) {
 	if imgDesc.Uri == "" {
 		bvi := imgDesc.BufferView
 		if bvi == nil {
-			return nil, fmt.Errorf("Image has empty URI and no BufferView")
+			return nil, fmt.Errorf("image has empty URI and no BufferView")
 		}
 		bv := g.BufferViews[*bvi]
 		offset := 0
@@ -643,7 +684,7 @@ func (g *GLTF) loadImage(ii int) (*image.RGBA, error) {
 	return rgba, nil
 }
 
-
+// bytesToArrayU32 converts a byte array to ArrayU32.
 func (g *GLTF) bytesToArrayU32(data []byte, componentType, count int) (math32.ArrayU32, error) {
 
 	// If component is UNSIGNED_INT nothing to do
@@ -673,13 +714,14 @@ func (g *GLTF) bytesToArrayU32(data []byte, componentType, count int) (math32.Ar
 	return nil, fmt.Errorf("Unsupported Accessor ComponentType:%v", componentType)
 }
 
+// bytesToArrayF32 converts a byte array to ArrayF32.
 func (g *GLTF) bytesToArrayF32(data []byte, size int) math32.ArrayF32 {
 
 	return (*[1 << 30]float32)(unsafe.Pointer(&data[0]))[:size]
 }
 
-// loadAccessorData loads the indices array specified by the Accessor index.
-func (g *GLTF) loadAccessorU32(ai int, validTypes []string, validComponentTypes []int) (math32.ArrayU32, error) {
+// loadAccessorU32 loads data from the specified accessor and performs validation of the Type and ComponentType.
+func (g *GLTF) loadAccessorU32(ai int, usage string, validTypes []string, validComponentTypes []int) (math32.ArrayU32, error) {
 
 	// Get Accessor for the specified index
 	ac := g.Accessors[ai]
@@ -688,7 +730,7 @@ func (g *GLTF) loadAccessorU32(ai int, validTypes []string, validComponentTypes 
 	}
 
 	// Validate type and component type
-	err := g.validateAccessor(ac, validTypes, validComponentTypes)
+	err := g.validateAccessor(ac, usage, validTypes, validComponentTypes)
 	if err != nil {
 		return nil, err
 	}
@@ -702,8 +744,8 @@ func (g *GLTF) loadAccessorU32(ai int, validTypes []string, validComponentTypes 
 	return g.bytesToArrayU32(data, ac.ComponentType, ac.Count)
 }
 
-// TODO - change ai -> accessor
-func (g *GLTF) loadAccessorF32(ai int, validTypes []string, validComponentTypes []int) (math32.ArrayF32, error) {
+// loadAccessorF32 loads data from the specified accessor and performs validation of the Type and ComponentType.
+func (g *GLTF) loadAccessorF32(ai int, usage string, validTypes []string, validComponentTypes []int) (math32.ArrayF32, error) {
 
 	// Get Accessor for the specified index
 	ac := g.Accessors[ai]
@@ -712,7 +754,7 @@ func (g *GLTF) loadAccessorF32(ai int, validTypes []string, validComponentTypes 
 	}
 
 	// Validate type and component type
-	err := g.validateAccessor(ac, validTypes, validComponentTypes)
+	err := g.validateAccessor(ac, usage, validTypes, validComponentTypes)
 	if err != nil {
 		return nil, err
 	}
@@ -726,7 +768,7 @@ func (g *GLTF) loadAccessorF32(ai int, validTypes []string, validComponentTypes 
 	return g.bytesToArrayF32(data, ac.Count*TypeSizes[ac.Type]), nil
 }
 
-// loadAccessorBytes
+// loadAccessorBytes returns the base byte array used by an accessor.
 func (g *GLTF) loadAccessorBytes(ac Accessor) ([]byte, error) {
 
 	// Get the Accessor's BufferView
@@ -748,7 +790,7 @@ func (g *GLTF) loadAccessorBytes(ac Accessor) ([]byte, error) {
 	}
 	data = data[offset:]
 
-	// Check if interleaved and de-interleave if necessary
+	// Check if interleaved and de-interleave if necessary ? TODO
 
 	// Calculate the size in bytes of a complete attribute
 	itemSize := TypeSizes[ac.Type]
@@ -758,14 +800,13 @@ func (g *GLTF) loadAccessorBytes(ac Accessor) ([]byte, error) {
 	if (bv.ByteStride != nil) && (*bv.ByteStride != itemBytes) {
 		// BufferView data is interleaved, de-interleave
 		// TODO
-		log.Error("DATA IS INTERLEAVED - NOT SUPPORTED YET IN SOME CASES SUCH AS THIS!")
+		return nil, fmt.Errorf("data is interleaved - not supported for animation yet")
 	}
 
 	return data, nil
 }
 
-// isInterleaves checks if the BufferView used by the specified Accessor index is
-// interleaved or not
+// isInterleaves returns whether the BufferView used by the provided accessor is interleaved.
 func (g *GLTF) isInterleaved(accessor Accessor) bool {
 
 	// Get the Accessor's BufferView
@@ -788,14 +829,7 @@ func (g *GLTF) isInterleaved(accessor Accessor) bool {
 	return true
 }
 
-
-//
-func (g *GLTF) loadIndices(ai int) (math32.ArrayU32, error) {
-
-	return g.loadAccessorU32(ai, []string{SCALAR}, []int{UNSIGNED_BYTE, UNSIGNED_SHORT, UNSIGNED_INT}) // TODO check that it's ELEMENT_ARRAY_BUFFER
-}
-
-// loadBufferView loads and returns a byte slice with data from the specified BufferView index
+// loadBufferView loads and returns a byte slice with data from the specified BufferView.
 func (g *GLTF) loadBufferView(bv BufferView) ([]byte, error) {
 
 	// Load buffer view buffer
@@ -862,7 +896,7 @@ func (g *GLTF) loadBuffer(bi int) ([]byte, error) {
 	return data, nil
 }
 
-// dataURL describes a decoded data url string
+// dataURL describes a decoded data url string.
 type dataURL struct {
 	MediaType string
 	Encoding  string
@@ -878,7 +912,7 @@ const (
 
 var validMediaTypes = []string{mimeBIN, mimePNG, mimeJPEG}
 
-// isDataURL checks if the specified string has the prefix of data URL
+// isDataURL checks if the specified string has the prefix of data URL.
 func isDataURL(url string) bool {
 
 	if strings.HasPrefix(url, dataURLprefix) {
@@ -887,7 +921,7 @@ func isDataURL(url string) bool {
 	return false
 }
 
-// loadDataURL decodes the specified data URI string (base64)
+// loadDataURL decodes the specified data URI string (base64).
 func loadDataURL(url string) ([]byte, error) {
 
 	var du dataURL
@@ -905,12 +939,12 @@ func loadDataURL(url string) ([]byte, error) {
 		}
 	}
 	if !found {
-		return nil, fmt.Errorf("Data URI media type:%s not supported", du.MediaType)
+		return nil, fmt.Errorf("data URI media type:%s not supported", du.MediaType)
 	}
 
 	// Checks encoding
 	if du.Encoding != "base64" {
-		return nil, fmt.Errorf("Data URI encoding:%s not supported", du.Encoding)
+		return nil, fmt.Errorf("data URI encoding:%s not supported", du.Encoding)
 	}
 
 	// Decodes data from BASE64
@@ -926,20 +960,20 @@ func loadDataURL(url string) ([]byte, error) {
 // and if successfull returns true and updates the specified pointer with the parsed fields.
 func parseDataURL(url string, du *dataURL) error {
 
-	// Checks prefix
+	// Check prefix
 	if !isDataURL(url) {
-		return fmt.Errorf("Specified string is not a data URL")
+		return fmt.Errorf("specified string is not a data URL")
 	}
 
-	// Separates header from data
+	// Separate header from data
 	body := url[len(dataURLprefix):]
 	parts := strings.Split(body, ",")
 	if len(parts) != 2 {
-		return fmt.Errorf("Data URI contains more than one ','")
+		return fmt.Errorf("data URI contains more than one ','")
 	}
 	du.Data = parts[1]
 
-	// Separates media type from optional encoding
+	// Separate media type from optional encoding
 	res := strings.Split(parts[0], ";")
 	du.MediaType = res[0]
 	if len(res) < 2 {
