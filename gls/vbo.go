@@ -6,7 +6,6 @@ package gls
 
 import (
 	"github.com/g3n/engine/math32"
-	"unsafe"
 )
 
 // VBO abstracts an OpenGL Vertex Buffer Object.
@@ -35,6 +34,7 @@ const (
 	Undefined = AttribType(iota)
 	VertexPosition
 	VertexNormal
+	VertexTangent
 	VertexColor
 	VertexTexcoord
 )
@@ -43,6 +43,7 @@ const (
 var attribTypeNameMap = map[AttribType]string{
 	VertexPosition: "VertexPosition",
 	VertexNormal:   "VertexNormal",
+	VertexTangent:  "VertexTangent",
 	VertexColor:    "VertexColor",
 	VertexTexcoord: "VertexTexcoord",
 }
@@ -55,7 +56,16 @@ var attribTypeSizeMap = map[AttribType]int32{
 	VertexTexcoord: 2,
 }
 
-const floatSize = uint32(unsafe.Sizeof(float32(0)))
+// Map from element type to element size (in bytes).
+var elementTypeSizeMap = map[uint32]int{
+	BYTE:           1,
+	UNSIGNED_BYTE:  1,
+	SHORT:          2,
+	UNSIGNED_SHORT: 2,
+	INT:            4,
+	UNSIGNED_INT:   4,
+	FLOAT:          4,
+}
 
 // NewVBO creates and returns a pointer to a new OpenGL Vertex Buffer Object.
 func NewVBO(buffer math32.ArrayF32) *VBO {
@@ -257,9 +267,11 @@ func (vbo *VBO) Stride() int {
 // and the stride size would be: sizeof(float)*stride = 4*5 = 20
 func (vbo *VBO) StrideSize() int {
 
-	stride := vbo.Stride()
-	elsize := int(unsafe.Sizeof(float32(0)))
-	return stride * elsize
+	strideSize := 0
+	for _, attrib := range vbo.attribs {
+		strideSize += int(attrib.NumElements) * elementTypeSizeMap[attrib.ElementType]
+	}
+	return strideSize
 }
 
 // Transfer (called internally) transfers the data from the VBO buffer to OpenGL if necessary.

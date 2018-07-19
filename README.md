@@ -75,7 +75,7 @@ install the packages. Make sure your GOPATH is set correctly.
 * Users' applications can use their own vertex and fragment shaders.
 
 <p align="center">
-  <img style="float: right;" src="https://github.com/g3n/g3n.github.io/blob/master/g3n_banner_small.png" alt="G3N Banner"/>
+  <img style="float: right;" src="https://github.com/g3n/g3n.github.io/raw/master/img/g3n_banner_small.png" alt="G3N Banner"/>
 </p>
 
 ## Basic application
