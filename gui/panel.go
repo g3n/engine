@@ -44,6 +44,7 @@ type IPanel interface {
 	graphic.IGraphic
 	GetPanel() *Panel
 	SetRoot(*Root)
+	Root() *Root
 	LostKeyFocus()
 	TotalHeight() float32
 	TotalWidth() float32
@@ -204,8 +205,8 @@ func (p *Panel) GetPanel() *Panel {
 	return p
 }
 
-// SetRoot satisfies the IPanel interface
-// Sets the pointer to the root panel for this panel and all its children
+// SetRoot satisfies the IPanel interface.
+// Sets the pointer to the root panel for this panel and all its children.
 func (p *Panel) SetRoot(root *Root) {
 
 	p.root = root
@@ -213,6 +214,13 @@ func (p *Panel) SetRoot(root *Root) {
 		cpan := p.Children()[i].(IPanel).GetPanel()
 		cpan.SetRoot(root)
 	}
+}
+
+// Root satisfies the IPanel interface
+// Returns the pointer to the root panel for this panel's root.
+func (p *Panel) Root() *Root {
+
+	return p.root
 }
 
 // LostKeyFocus satisfies the IPanel interface and is called by gui root
@@ -239,12 +247,6 @@ func (p *Panel) TotalWidth() float32 {
 func (p *Panel) Material() *material.Material {
 
 	return p.mat
-}
-
-// Root returns the pointer for this panel root panel
-func (p *Panel) Root() *Root {
-
-	return p.root
 }
 
 // SetTopChild sets the Z coordinate of the specified panel to
@@ -965,10 +967,15 @@ func (p *Panel) RenderSetup(gl *gls.GLS, rinfo *core.RenderInfo) {
 // SetModelMatrix calculates and sets the specified matrix with the model matrix for this panel
 func (p *Panel) SetModelMatrix(gl *gls.GLS, mm *math32.Matrix4) {
 
+	// Get scale of window (for HiDPI support)
+	sX64, sY64 := p.Root().Window().Scale()
+	sX := float32(sX64)
+	sY := float32(sY64)
+
 	// Get the current viewport width and height
 	_, _, width, height := gl.GetViewport()
-	fwidth := float32(width)
-	fheight := float32(height)
+	fwidth := float32(width) / sX
+	fheight := float32(height) / sY
 
 	// Scale the quad for the viewport so it has fixed dimensions in pixels.
 	p.wclip = 2 * float32(p.width) / fwidth
