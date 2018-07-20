@@ -284,14 +284,15 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		// Append all graphic materials of this graphic to list of graphic materials to be rendered
 		materials := gr.Materials()
 		for i := 0; i < len(materials); i++ {
-			mat := materials[i].GetMaterial().GetMaterial()
-			if mat.Transparent() {
+			if materials[i].GetMaterial().GetMaterial().Transparent() {
 				r.grmatsTransp = append(r.grmatsTransp, &materials[i])
 			} else {
 				r.grmatsOpaque = append(r.grmatsOpaque, &materials[i])
 			}
 		}
 	}
+
+	// TODO: If both GraphicMaterials belong to same Graphic we might want to keep their relative order...
 
 	// Z-sort graphic materials (opaque front-to-back and transparent back-to-front)
 	if r.sortObjects {
