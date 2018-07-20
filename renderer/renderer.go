@@ -136,14 +136,14 @@ func (r *Renderer) Stats() Stats {
 	return r.stats
 }
 
-// SetSortObjects sets whether objects will be Z-sorted before rendering.
-func (r *Renderer) SetSortObjects(sort bool) {
+// SetObjectSorting sets whether objects will be sorted before rendering.
+func (r *Renderer) SetObjectSorting(sort bool) {
 
 	r.sortObjects = sort
 }
 
-// SortObjects returns whether objects will be Z-sorted before rendering.
-func (r *Renderer) SortObjects() bool {
+// ObjectSorting returns whether objects will be sorted before rendering.
+func (r *Renderer) ObjectSorting() bool {
 
 	return r.sortObjects
 }
@@ -301,6 +301,14 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 			sort.Slice(grmats, func(i, j int) bool {
 				gr1 := grmats[i].GetGraphic().GetGraphic()
 				gr2 := grmats[j].GetGraphic().GetGraphic()
+
+				// Check for user-supplied render order
+				rO1 := gr1.RenderOrder()
+				rO2 := gr2.RenderOrder()
+				if rO1 != rO2 {
+					return  rO1 < rO2
+				}
+
 				mvm1 := gr1.ModelViewMatrix()
 				mvm2 := gr2.ModelViewMatrix()
 				g1pos := gr1.Position()

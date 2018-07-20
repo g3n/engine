@@ -17,12 +17,13 @@ import (
 // It is the base type used by other graphics such as lines, line_strip,
 // points and meshes.
 type Graphic struct {
-	core.Node                     // Embedded Node
-	igeom      geometry.IGeometry // Associated IGeometry
-	materials  []GraphicMaterial  // Materials
-	mode       uint32             // OpenGL primitive
-	renderable bool               // Renderable flag
-	cullable   bool               // Cullable flag
+	core.Node                      // Embedded Node
+	igeom       geometry.IGeometry // Associated IGeometry
+	materials   []GraphicMaterial  // Materials
+	mode        uint32             // OpenGL primitive
+	renderable  bool               // Renderable flag
+	cullable    bool               // Cullable flag
+	renderOrder int                // Render order
 
 	mvm  math32.Matrix4 // Cached ModelView matrix
 	mvpm math32.Matrix4 // Cached ModelViewProjection matrix
@@ -83,7 +84,7 @@ func (gr *Graphic) GetGraphic() *Graphic {
 // a pointer to the geometry associated with this graphic.
 func (gr *Graphic) GetGeometry() *geometry.Geometry {
 
-	return gr.igeom.GetGeometry()
+	return gr.igeom.GetGeometry() // TODO return igeom
 }
 
 // Dispose overrides the embedded Node Dispose method.
@@ -121,6 +122,21 @@ func (gr *Graphic) SetCullable(state bool) {
 func (gr *Graphic) Cullable() bool {
 
 	return gr.cullable
+}
+
+// SetRenderOrder sets the render order of the object.
+// All objects have renderOrder of 0 by default.
+// To render before renderOrder 0 set a lower renderOrder e.g. -1.
+// To render after renderOrder 0 set a higher renderOrder e.g. 1
+func (gr *Graphic) SetRenderOrder(order int) {
+
+	gr.renderOrder = order
+}
+
+// RenderOrder returns the render order of the object.
+func (gr *Graphic) RenderOrder() int {
+
+	return gr.renderOrder
 }
 
 // AddMaterial adds a material for the specified subset of vertices.
