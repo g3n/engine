@@ -338,6 +338,18 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		if r.panel3D != nil {
 			pos := r.panel3D.GetPanel().Pospix()
 			width, height := r.panel3D.GetPanel().Size()
+
+			// Get scale of window (for HiDPI support)
+			sX64, sY64 := r.panel3D.Root().Window().Scale()
+			sX := float32(sX64)
+			sY := float32(sY64)
+
+			// Modify position and height of scissor according to window scale (for HiDPI support)
+			width *= sX
+			height *= sY
+			pos.X *= sX
+			pos.Y *= sY
+
 			_, _, _, viewheight := r.gs.GetViewport()
 			r.gs.Enable(gls.SCISSOR_TEST)
 			r.gs.Scissor(int32(pos.X), viewheight-int32(pos.Y)-int32(height), uint32(width), uint32(height))

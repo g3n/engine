@@ -287,12 +287,6 @@ func (w *glfwWindow) SwapBuffers() {
 	w.win.SwapBuffers()
 }
 
-// Size returns this window size in screen coordinates
-func (w *glfwWindow) Size() (width int, height int) {
-
-	return w.win.GetSize()
-}
-
 // FramebufferSize returns framebuffer size of this window
 func (w *glfwWindow) FramebufferSize() (width int, height int) {
 
@@ -303,6 +297,12 @@ func (w *glfwWindow) FramebufferSize() (width int, height int) {
 func (w *glfwWindow) Scale() (x float64, y float64) {
 
 	return w.scaleX, w.scaleY
+}
+
+// Size returns this window's size in screen coordinates
+func (w *glfwWindow) Size() (width int, height int) {
+
+	return w.win.GetSize()
 }
 
 // SetSize sets the size, in screen coordinates, of the client area of this window

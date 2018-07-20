@@ -25,8 +25,8 @@ type IWindow interface {
 	core.IDispatcher
 	MakeContextCurrent()
 	FramebufferSize() (width int, height int)
-	Size() (width int, height int)
 	Scale() (x float64, y float64)
+	Size() (width int, height int)
 	SetSize(width int, height int)
 	Pos() (xpos, ypos int)
 	SetPos(xpos, ypos int)

@@ -77,6 +77,12 @@ func (r *Root) Add(ipan IPanel) {
 	r.Panel.Add(ipan)
 }
 
+// Window returns the associated IWindow.
+func (r *Root) Window() window.IWindow {
+
+	return r.win
+}
+
 // SetModal sets the modal panel.
 // If there is a modal panel, only events for this panel are dispatched
 // To remove the modal panel call this function with a nil panel.
@@ -248,6 +254,11 @@ func (r *Root) onCursor(evname string, ev interface{}) {
 // sendPanel sends a mouse or cursor event to focused panel or panels
 // which contain the specified screen position
 func (r *Root) sendPanels(x, y float32, evname string, ev interface{}) {
+
+	// Apply scale of window (for HiDPI support)
+	sX64, sY64 := r.Window().Scale()
+	x /= float32(sX64)
+	y /= float32(sY64)
 
 	// If there is panel with MouseFocus send only to this panel
 	if r.mouseFocus != nil {
