@@ -22,14 +22,15 @@ type INode interface {
 
 // Node represents an object in 3D space existing within a hierarchy.
 type Node struct {
-	Dispatcher             // Embedded event dispatcher
-	parent     INode       // Parent node
-	children   []INode     // Children nodes
-	name       string      // Optional node name
-	loaderID   string      // ID used by loader
-	visible    bool        // Whether the node is visible
-	changed    bool        // Whether the position/orientation/scale changed
-	userData   interface{} // Generic user data
+	Dispatcher                 // Embedded event dispatcher
+	parent         INode       // Parent node
+	children       []INode     // Children nodes
+	name           string      // Optional node name
+	loaderID       string      // ID used by loader
+	visible        bool        // Whether the node is visible
+	matNeedsUpdate bool        // Whether the the local matrix needs to be updated because position or scale has changed
+	rotNeedsUpdate bool        // Whether the euler rotation and local matrix need to be updated because the quaternion has changed
+	userData       interface{} // Generic user data
 
 	// Spatial properties
 	position    math32.Vector3    // Node position in 3D space (relative to parent)
@@ -57,7 +58,6 @@ func (n *Node) Init() {
 
 	n.children = make([]INode, 0)
 	n.visible = true
-	n.changed = true
 
 	// Initialize spatial properties
 	n.position.Set(0, 0, 0)
@@ -132,7 +132,7 @@ func (n *Node) LoaderID() string {
 func (n *Node) SetVisible(state bool) {
 
 	n.visible = state
-	n.changed = true
+	n.matNeedsUpdate = true
 }
 
 // Visible returns the visibility of the node.
@@ -141,16 +141,16 @@ func (n *Node) Visible() bool {
 	return n.visible
 }
 
-// SetChanged sets the changed flag of the node.
+// SetChanged sets the matNeedsUpdate flag of the node.
 func (n *Node) SetChanged(changed bool) {
 
-	n.changed = changed
+	n.matNeedsUpdate = changed
 }
 
-// Changed returns the changed flag of the node.
+// Changed returns the matNeedsUpdate flag of the node.
 func (n *Node) Changed() bool {
 
-	return n.changed
+	return n.matNeedsUpdate
 }
 
 // SetUserData sets the generic user data associated to the node.
@@ -360,35 +360,35 @@ func (n *Node) DisposeChildren(recurs bool) {
 func (n *Node) SetPosition(x, y, z float32) {
 
 	n.position.Set(x, y, z)
-	n.changed = true
+	n.matNeedsUpdate = true
 }
 
 // SetPositionVec sets the position based on the specified vector pointer.
 func (n *Node) SetPositionVec(vpos *math32.Vector3) {
 
 	n.position = *vpos
-	n.changed = true
+	n.matNeedsUpdate = true
 }
 
 // SetPositionX sets the X coordinate of the position.
 func (n *Node) SetPositionX(x float32) {
 
 	n.position.X = x
-	n.changed = true
+	n.matNeedsUpdate = true
 }
 
 // SetPositionY sets the Y coordinate of the position.
 func (n *Node) SetPositionY(y float32) {
 
 	n.position.Y = y
-	n.changed = true
+	n.matNeedsUpdate = true
 }
 
 // SetPositionZ sets the Z coordinate of the position.
 func (n *Node) SetPositionZ(z float32) {
 
 	n.position.Z = z
-	n.changed = true
+	n.matNeedsUpdate = true
 }
 
 // Position returns the position as a vector.
@@ -397,118 +397,127 @@ func (n *Node) Position() math32.Vector3 {
 	return n.position
 }
 
-// SetRotation sets the rotation in radians.
-// The stored quaternion is updated accordingly.
+// SetRotation sets the global rotation in Euler angles (radians).
 func (n *Node) SetRotation(x, y, z float32) {
 
 	n.rotation.Set(x, y, z)
 	n.quaternion.SetFromEuler(&n.rotation)
-	n.changed = true
+	n.matNeedsUpdate = true
 }
 
-// SetRotationVec sets the rotation in radians based on the specified vector pointer.
-// The stored quaternion is updated accordingly.
+// SetRotationVec sets the global rotation in Euler angles (radians) based on the specified vector pointer.
 func (n *Node) SetRotationVec(vrot *math32.Vector3) {
 
 	n.rotation = *vrot
 	n.quaternion.SetFromEuler(&n.rotation)
-	n.changed = true
+	n.matNeedsUpdate = true
 }
 
-// SetRotationQuat sets the rotation based on the specified quaternion pointer.
-// The stored quaternion is updated accordingly.
+// SetRotationQuat sets the global rotation based on the specified quaternion pointer.
 func (n *Node) SetRotationQuat(quat *math32.Quaternion) {
 
 	n.quaternion = *quat
-	n.changed = true
+	n.rotNeedsUpdate = true
 }
 
-// SetRotationX sets the X rotation to the specified angle in radians.
-// The stored quaternion is updated accordingly.
+// SetRotationX sets the global X rotation to the specified angle in radians.
 func (n *Node) SetRotationX(x float32) {
 
+	if n.rotNeedsUpdate {
+		n.rotation.SetFromQuaternion(&n.quaternion)
+		n.rotNeedsUpdate = false
+	}
 	n.rotation.X = x
 	n.quaternion.SetFromEuler(&n.rotation)
-	n.changed = true
+	n.matNeedsUpdate = true
 }
 
-// SetRotationY sets the Y rotation to the specified angle in radians.
-// The stored quaternion is updated accordingly.
+// SetRotationY sets the global Y rotation to the specified angle in radians.
 func (n *Node) SetRotationY(y float32) {
 
+	if n.rotNeedsUpdate {
+		n.rotation.SetFromQuaternion(&n.quaternion)
+		n.rotNeedsUpdate = false
+	}
 	n.rotation.Y = y
 	n.quaternion.SetFromEuler(&n.rotation)
-	n.changed = true
+	n.matNeedsUpdate = true
 }
 
-// SetRotationZ sets the Z rotation to the specified angle in radians.
-// The stored quaternion is updated accordingly.
+// SetRotationZ sets the global Z rotation to the specified angle in radians.
 func (n *Node) SetRotationZ(z float32) {
 
+	if n.rotNeedsUpdate {
+		n.rotation.SetFromQuaternion(&n.quaternion)
+		n.rotNeedsUpdate = false
+	}
 	n.rotation.Z = z
 	n.quaternion.SetFromEuler(&n.rotation)
-	n.changed = true
+	n.matNeedsUpdate = true
 }
 
-// AddRotationX adds to the current X rotation the specified angle in radians.
-// The stored quaternion is updated accordingly.
-func (n *Node) AddRotationX(x float32) {
-
-	n.rotation.X += x
-	n.quaternion.SetFromEuler(&n.rotation)
-	n.changed = true
-}
-
-// AddRotationY adds to the current Y rotation the specified angle in radians.
-// The stored quaternion is updated accordingly.
-func (n *Node) AddRotationY(y float32) {
-
-	n.rotation.Y += y
-	n.quaternion.SetFromEuler(&n.rotation)
-	n.changed = true
-}
-
-// AddRotationZ adds to the current Z rotation the specified angle in radians.
-// The stored quaternion is updated accordingly.
-func (n *Node) AddRotationZ(z float32) {
-
-	n.rotation.Z += z
-	n.quaternion.SetFromEuler(&n.rotation)
-	n.changed = true
-}
-
-// Rotation returns the current rotation.
+// Rotation returns the current global rotation in Euler angles (radians).
 func (n *Node) Rotation() math32.Vector3 {
 
+	if n.rotNeedsUpdate {
+		n.rotation.SetFromQuaternion(&n.quaternion)
+		n.rotNeedsUpdate = false
+	}
 	return n.rotation
+}
+
+// RotateOnAxis rotates around the specified local axis the specified angle in radians.
+func (n *Node) RotateOnAxis(axis *math32.Vector3, angle float32) {
+
+	var rotQuat math32.Quaternion
+	rotQuat.SetFromAxisAngle(axis, angle)
+	n.QuaternionMult(&rotQuat)
+}
+
+// RotateX rotates around the local X axis the specified angle in radians.
+func (n *Node) RotateX(x float32) {
+
+	n.RotateOnAxis(&math32.Vector3{1,0,0}, x)
+}
+
+// RotateY rotates around the local Y axis the specified angle in radians.
+func (n *Node) RotateY(y float32) {
+
+	n.RotateOnAxis(&math32.Vector3{0,1,0}, y)
+}
+
+// RotateZ rotates around the local Z axis the specified angle in radians.
+func (n *Node) RotateZ(z float32) {
+
+	n.RotateOnAxis(&math32.Vector3{0,0,1}, z)
 }
 
 // SetQuaternion sets the quaternion based on the specified quaternion unit multiples.
 func (n *Node) SetQuaternion(x, y, z, w float32) {
 
 	n.quaternion.Set(x, y, z, w)
-	n.changed = true
+	n.rotNeedsUpdate = true
 }
 
 // SetQuaternionVec sets the quaternion based on the specified quaternion unit multiples vector.
 func (n *Node) SetQuaternionVec(q *math32.Vector4) {
 
 	n.quaternion.Set(q.X, q.Y, q.Z, q.W)
-	n.changed = true
+	n.rotNeedsUpdate = true
 }
 
 // SetQuaternionQuat sets the quaternion based on the specified quaternion pointer.
 func (n *Node) SetQuaternionQuat(q *math32.Quaternion) {
 
 	n.quaternion = *q
-	n.changed = true
+	n.rotNeedsUpdate = true
 }
 
 // QuaternionMult multiplies the current quaternion by the specified quaternion.
 func (n *Node) QuaternionMult(q *math32.Quaternion) {
 
 	n.quaternion.Multiply(q)
-	n.changed = true
+	n.rotNeedsUpdate = true
 }
 
 // Quaternion returns the current quaternion.
@@ -521,35 +530,35 @@ func (n *Node) Quaternion() math32.Quaternion {
 func (n *Node) SetScale(x, y, z float32) {
 
 	n.scale.Set(x, y, z)
-	n.changed = true
+	n.matNeedsUpdate = true
 }
 
 // SetScaleVec sets the scale based on the specified vector pointer.
 func (n *Node) SetScaleVec(scale *math32.Vector3) {
 
 	n.scale = *scale
-	n.changed = true
+	n.matNeedsUpdate = true
 }
 
 // SetScaleX sets the X scale.
 func (n *Node) SetScaleX(sx float32) {
 
 	n.scale.X = sx
-	n.changed = true
+	n.matNeedsUpdate = true
 }
 
 // SetScaleY sets the Y scale.
 func (n *Node) SetScaleY(sy float32) {
 
 	n.scale.Y = sy
-	n.changed = true
+	n.matNeedsUpdate = true
 }
 
 // SetScaleZ sets the Z scale.
 func (n *Node) SetScaleZ(sz float32) {
 
 	n.scale.Z = sz
-	n.changed = true
+	n.matNeedsUpdate = true
 }
 
 // Scale returns the current scale.
@@ -562,14 +571,14 @@ func (n *Node) Scale() math32.Vector3 {
 func (n *Node) SetDirection(x, y, z float32) {
 
 	n.direction.Set(x, y, z)
-	n.changed = true
+	n.matNeedsUpdate = true
 }
 
 // SetDirectionVec sets the direction based on a vector pointer.
 func (n *Node) SetDirectionVec(vdir *math32.Vector3) {
 
 	n.direction = *vdir
-	n.changed = true
+	n.matNeedsUpdate = true
 }
 
 // Direction returns the direction.
@@ -648,11 +657,11 @@ func (n *Node) MatrixWorld() math32.Matrix4 {
 // of this node based on its position, quaternion, and scale.
 func (n *Node) UpdateMatrix() bool {
 
-	if !n.changed {
+	if !n.matNeedsUpdate && !n.rotNeedsUpdate {
 		return false
 	}
 	n.matrix.Compose(&n.position, &n.quaternion, &n.scale)
-	n.changed = false
+	n.matNeedsUpdate = false
 	return true
 }
 
