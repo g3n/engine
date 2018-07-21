@@ -43,7 +43,7 @@ func NewConvexHull(geom *geometry.Geometry) *ConvexHull {
 // Compute and store face normals and unique edges
 func (ch *ConvexHull) computeFaceNormalsAndUniqueEdges() {
 
-	ch.GetGeometry().ReadFaces(func(vA, vB, vC math32.Vector3) bool {
+	ch.Geometry.ReadFaces(func(vA, vB, vC math32.Vector3) bool {
 
 		// Store face vertices
 		var face [3]math32.Vector3
@@ -235,7 +235,7 @@ func (ch *ConvexHull) ProjectOntoWorldAxis(worldAxis, pos *math32.Vector3, quat 
 	localAxis := worldAxis.Clone().ApplyQuaternion(quatConj)
 
 	// Project onto the local axis
-	max, min := ch.GetGeometry().ProjectOntoAxis(localAxis)
+	max, min := ch.Geometry.ProjectOntoAxis(localAxis)
 
 	// Offset to obtain values relative to world origin
 	localOrigin := math32.NewVec3().Sub(pos).ApplyQuaternion(quatConj)
