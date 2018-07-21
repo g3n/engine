@@ -15,7 +15,6 @@ import (
 type MorphGeometry struct {
 	baseGeometry  *Geometry   // The base geometry
 	targets       []*Geometry // The morph target geometries
-	activeTargets []*Geometry // The morph target geometries
 	weights       []float32   // The weights for each morph target
 	uniWeights    gls.Uniform // Texture unit uniform location cache
 	morphGeom     *Geometry   // Cache of the last CPU-morphed geometry
@@ -31,8 +30,7 @@ func NewMorphGeometry(baseGeometry *Geometry) *MorphGeometry {
 	mg.baseGeometry = baseGeometry
 
 	mg.targets = make([]*Geometry, 0)
-	mg.activeTargets = make([]*Geometry, 0)
-	mg.weights = make([]float32, NumMorphTargets)
+	mg.weights = make([]float32, 0)
 
 	mg.baseGeometry.ShaderDefines.Set("MORPHTARGETS", strconv.Itoa(NumMorphTargets))
 	mg.uniWeights.Init("morphTargetInfluences")
@@ -48,6 +46,9 @@ func (mg *MorphGeometry) GetGeometry() *Geometry {
 // SetWeights sets the morph target weights.
 func (mg *MorphGeometry) SetWeights(weights []float32) {
 
+	if len(weights) != len(mg.weights) {
+		panic("weights have invalid length")
+	}
 	mg.weights = weights
 }
 
@@ -60,16 +61,18 @@ func (mg *MorphGeometry) Weights() []float32 {
 // Weights returns the morph target weights.
 func (mg *MorphGeometry) AddMorphTargets(morphTargets ...*Geometry) {
 
-	log.Error("ADD morph targets")
 	mg.targets = append(mg.targets, morphTargets...)
+	for range morphTargets {
+		mg.weights = append(mg.weights, 0)
+	}
 }
 
 // ActiveMorphTargets sorts the morph targets by weight and returns the top n morph targets with largest weight.
-func (mg *MorphGeometry) ActiveMorphTargets() []*Geometry {
+func (mg *MorphGeometry) ActiveMorphTargets() ([]*Geometry, []float32) {
 
 	numTargets := len(mg.targets)
 	if numTargets == 0 {
-		return nil
+		return nil, nil
 	}
 
 	sortedMorphTargets := make([]*Geometry, numTargets)
@@ -78,10 +81,17 @@ func (mg *MorphGeometry) ActiveMorphTargets() []*Geometry {
 		return mg.weights[i] > mg.weights[j]
 	})
 
+	sortedWeights := make([]float32, numTargets)
+	copy(sortedWeights, mg.weights)
+	sort.Slice(sortedWeights, func(i, j int) bool {
+		return mg.weights[i] > mg.weights[j]
+	})
+
+
 	// TODO check current 0 weights
 
 	//if len(mg.targets) < NumMorphTargets-1 {
-		return sortedMorphTargets
+		return sortedMorphTargets, sortedWeights
 	//} else {
 	//	return sortedMorphTargets[:NumMorphTargets-1]
 	//}
@@ -124,7 +134,7 @@ func (mg *MorphGeometry) RenderSetup(gs *gls.GLS) {
 	mg.baseGeometry.RenderSetup(gs)
 
 	// Sort weights and find top 8 morph targets with largest current weight (8 is the max sent to shader)
-	activeMorphTargets := mg.ActiveMorphTargets()
+	activeMorphTargets, activeWeights := mg.ActiveMorphTargets()
 
 	for i, mt := range activeMorphTargets {
 
@@ -140,5 +150,5 @@ func (mg *MorphGeometry) RenderSetup(gs *gls.GLS) {
 
 	// Transfer texture info combined uniform
 	location := mg.uniWeights.Location(gs)
-	gs.Uniform1fv(location, int32(len(activeMorphTargets)), mg.weights)
+	gs.Uniform1fv(location, int32(len(activeWeights)), activeWeights)
 }
