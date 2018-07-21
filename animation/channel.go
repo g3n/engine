@@ -271,7 +271,7 @@ func NewMorphChannel(mg *geometry.MorphGeometry) *MorphChannel {
 				weights1 := mc.values[start1:start1+numWeights]
 				weights2 := mc.values[start2:start2+numWeights]
 				for i := range weights1 {
-					weights1[i] = weights1[i] + (weights2[i]-weights1[i])*k
+					weights1[i] += (weights2[i]-weights1[i])*k
 				}
 				mg.SetWeights(weights1)
 			}
@@ -282,7 +282,7 @@ func NewMorphChannel(mg *geometry.MorphGeometry) *MorphChannel {
 				weights1 := mc.values[start1:start1+numWeights]
 				weights2 := mc.values[start2:start2+numWeights]
 				for i := range weights1 {
-					weights1[i] = weights1[i] + (weights2[i]-weights1[i])*k
+					weights1[i] += (weights2[i]-weights1[i])*k
 				}
 				mg.SetWeights(weights1)
 			}

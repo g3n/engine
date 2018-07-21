@@ -263,29 +263,26 @@ func (g *GLTF) NewAnimation(i int) (*animation.Animation, error) {
 
 		var ch animation.IChannel
 		if target.Path == "translation" {
-			ch = animation.NewPositionChannel(node)
 			validTypes = []string{VEC3}
 			validComponentTypes = []int{FLOAT}
+			ch = animation.NewPositionChannel(node)
 		} else if target.Path == "rotation" {
-			ch = animation.NewRotationChannel(node)
 			validTypes = []string{VEC4}
 			validComponentTypes = []int{FLOAT, BYTE, UNSIGNED_BYTE, SHORT, UNSIGNED_SHORT}
+			ch = animation.NewRotationChannel(node)
 		} else if target.Path == "scale" {
-			ch = animation.NewScaleChannel(node)
 			validTypes = []string{VEC3}
 			validComponentTypes = []int{FLOAT}
+			ch = animation.NewScaleChannel(node)
 		} else if target.Path == "weights" {
 			validTypes = []string{SCALAR}
 			validComponentTypes = []int{FLOAT, BYTE, UNSIGNED_BYTE, SHORT, UNSIGNED_SHORT}
-			return nil, fmt.Errorf("morph animation (with 'weights' path) not supported yet")
-			// TODO
-			//	for _, child := range node.GetNode().Children() {
-			//		gr, ok := child.(graphic.Graphic)
-			//		if ok {
-			//			gr.geom
-			//		}
-			//	}
-			//	ch = animation.NewMorphChannel(TODO)
+			children := node.GetNode().Children()
+			if len(children) > 1 {
+				return nil, fmt.Errorf("animating meshes with more than a single primitive is not supported")
+			}
+			morphGeom := children[0].(graphic.IGraphic).IGeometry().(*geometry.MorphGeometry)
+			ch = animation.NewMorphChannel(morphGeom)
 		}
 
 		// TODO what if Input and Output accessors are interleaved? probably de-interleave in these 2 cases
@@ -379,60 +376,31 @@ func (g *GLTF) NewMesh(mi int) (core.INode, error) {
 		}
 
 		// Create geometry
-		geom := geometry.NewGeometry()
+		var igeom geometry.IGeometry
+		igeom = geometry.NewGeometry()
+		geom := igeom.GetGeometry()
 
-		// Indices of buffer views
-		interleavedVBOs := make(map[int]*gls.VBO, 0)
+		err = g.loadAttributes(geom, p.Attributes, indices)
+		if err != nil {
+			return nil, err
+		}
 
-		// Load primitive attributes
-		for name, aci := range p.Attributes {
-			accessor := g.Accessors[aci]
+		// If primitive has targets then the geometry should be a morph geometry
+		if len(p.Targets) > 0 {
+			morphGeom := geometry.NewMorphGeometry(geom)
 
-			// Validate that accessor is compatible with attribute
-			err = g.validateAccessorAttribute(accessor, name)
-			if err != nil {
-				return nil, err
-			}
-
-			// Load data and add it to geometry's VBO
-			if g.isInterleaved(accessor) {
-				bvIdx := *accessor.BufferView
-				// Check if we already loaded this buffer view
-				vbo, ok := interleavedVBOs[bvIdx]
-				if ok {
-					// Already created VBO for this buffer view
-					// Add attribute with correct byteOffset
-					g.addAttributeToVBO(vbo, name, uint32(*accessor.ByteOffset))
-				} else {
-					// Load data and create vbo
-					buf, err := g.loadBufferView(g.BufferViews[bvIdx])
-					if err != nil {
-						return nil, err
-					}
-					data := g.bytesToArrayF32(buf, g.BufferViews[bvIdx].ByteLength)
-					vbo := gls.NewVBO(data)
-					g.addAttributeToVBO(vbo, name, 0)
-					// Save reference to VBO keyed by index of the buffer view
-					interleavedVBOs[bvIdx] = vbo
-					// Add VBO to geometry
-					geom.AddVBO(vbo)
-				}
-			} else {
-				buf, err := g.loadAccessorBytes(accessor)
+			// Load targets
+			for i := range p.Targets {
+				tGeom := geometry.NewGeometry()
+				attributes := p.Targets[i]
+				err = g.loadAttributes(tGeom, attributes, indices)
 				if err != nil {
 					return nil, err
 				}
-				data := g.bytesToArrayF32(buf, accessor.Count*TypeSizes[accessor.Type])
-				vbo := gls.NewVBO(data)
-				g.addAttributeToVBO(vbo, name, 0)
-				// Add VBO to geometry
-				geom.AddVBO(vbo)
+				morphGeom.AddMorphTargets(tGeom)
 			}
-		}
 
-		// Creates Geometry and add attribute VBO
-		if len(indices) > 0 {
-			geom.SetIndices(indices)
+			igeom = morphGeom
 		}
 
 		// Default mode is 4 (TRIANGLES)
@@ -443,21 +411,81 @@ func (g *GLTF) NewMesh(mi int) (core.INode, error) {
 
 		// Create Mesh
 		if mode == TRIANGLES {
-			primitiveMesh := graphic.NewMesh(geom, nil)
+			primitiveMesh := graphic.NewMesh(igeom, nil)
 			primitiveMesh.AddMaterial(grMat, 0, 0)
 			meshNode.Add(primitiveMesh)
 		} else if mode == LINES {
-			meshNode.Add(graphic.NewLines(geom, grMat))
+			meshNode.Add(graphic.NewLines(igeom, grMat))
 		} else if mode == LINE_STRIP {
-			meshNode.Add(graphic.NewLineStrip(geom, grMat))
+			meshNode.Add(graphic.NewLineStrip(igeom, grMat))
 		} else if mode == POINTS {
-			meshNode.Add(graphic.NewPoints(geom, grMat))
+			meshNode.Add(graphic.NewPoints(igeom, grMat))
 		} else {
 			return nil, fmt.Errorf("Unsupported primitive:%v", mode)
 		}
 	}
 
 	return meshNode, nil
+}
+
+// loadAttributes loads the provided list of vertex attributes as VBO(s) into the specified geometry.
+func (g *GLTF) loadAttributes(geom *geometry.Geometry, attributes map[string]int, indices math32.ArrayU32) error {
+
+	// Indices of buffer views
+	interleavedVBOs := make(map[int]*gls.VBO, 0)
+
+	// Load primitive attributes
+	for name, aci := range attributes {
+		accessor := g.Accessors[aci]
+
+		// Validate that accessor is compatible with attribute
+		err := g.validateAccessorAttribute(accessor, name)
+		if err != nil {
+			return err
+		}
+
+		// Load data and add it to geometry's VBO
+		if g.isInterleaved(accessor) {
+			bvIdx := *accessor.BufferView
+			// Check if we already loaded this buffer view
+			vbo, ok := interleavedVBOs[bvIdx]
+			if ok {
+				// Already created VBO for this buffer view
+				// Add attribute with correct byteOffset
+				g.addAttributeToVBO(vbo, name, uint32(*accessor.ByteOffset))
+			} else {
+				// Load data and create vbo
+				buf, err := g.loadBufferView(g.BufferViews[bvIdx])
+				if err != nil {
+					return err
+				}
+				data := g.bytesToArrayF32(buf, g.BufferViews[bvIdx].ByteLength)
+				vbo := gls.NewVBO(data)
+				g.addAttributeToVBO(vbo, name, 0)
+				// Save reference to VBO keyed by index of the buffer view
+				interleavedVBOs[bvIdx] = vbo
+				// Add VBO to geometry
+				geom.AddVBO(vbo)
+			}
+		} else {
+			buf, err := g.loadAccessorBytes(accessor)
+			if err != nil {
+				return err
+			}
+			data := g.bytesToArrayF32(buf, accessor.Count*TypeSizes[accessor.Type])
+			vbo := gls.NewVBO(data)
+			g.addAttributeToVBO(vbo, name, 0)
+			// Add VBO to geometry
+			geom.AddVBO(vbo)
+		}
+	}
+
+	// Set indices
+	if len(indices) > 0 {
+		geom.SetIndices(indices)
+	}
+
+	return nil
 }
 
 // loadIndices loads the indices stored in the specified accessor.
@@ -501,7 +529,8 @@ func (g *GLTF) validateAccessorAttribute(ac Accessor, attribName string) error {
 	} else if attribName == "NORMAL" {
 		return g.validateAccessor(ac, usage, []string{VEC3}, []int{FLOAT})
 	} else if attribName == "TANGENT" {
-		return g.validateAccessor(ac, usage, []string{VEC4}, []int{FLOAT})
+		// Note that morph targets only support VEC3 whereas normal attributes only support VEC4.
+		return g.validateAccessor(ac, usage, []string{VEC3, VEC4}, []int{FLOAT})
 	} else if semantic == "TEXCOORD" {
 		return g.validateAccessor(ac, usage, []string{VEC2}, []int{FLOAT, UNSIGNED_BYTE, UNSIGNED_SHORT})
 	} else if semantic == "COLOR" {
