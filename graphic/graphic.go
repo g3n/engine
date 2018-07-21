@@ -44,10 +44,11 @@ type IGraphic interface {
 	core.INode
 	GetGraphic() *Graphic
 	GetGeometry() *geometry.Geometry
-	Renderable() bool
+	IGeometry() geometry.IGeometry
 	SetRenderable(bool)
-	Cullable() bool
+	Renderable() bool
 	SetCullable(bool)
+	Cullable() bool
 	RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo)
 }
 
@@ -84,7 +85,14 @@ func (gr *Graphic) GetGraphic() *Graphic {
 // a pointer to the geometry associated with this graphic.
 func (gr *Graphic) GetGeometry() *geometry.Geometry {
 
-	return gr.igeom.GetGeometry() // TODO return igeom
+	return gr.igeom.GetGeometry()
+}
+
+// IGeometry satisfies the IGraphic interface and returns
+// a pointer to the IGeometry associated with this graphic.
+func (gr *Graphic) IGeometry() geometry.IGeometry {
+
+	return gr.igeom
 }
 
 // Dispose overrides the embedded Node Dispose method.
@@ -205,14 +213,14 @@ func (gr *Graphic) ModelViewProjectionMatrix() *math32.Matrix4 {
 	return &gr.mvpm
 }
 
-// GetMaterial returns the material associated with the GraphicMaterial.
-func (grmat *GraphicMaterial) GetMaterial() material.IMaterial {
+// IMaterial returns the material associated with the GraphicMaterial.
+func (grmat *GraphicMaterial) IMaterial() material.IMaterial {
 
 	return grmat.imat
 }
 
-// GetGraphic returns the graphic associated with the GraphicMaterial.
-func (grmat *GraphicMaterial) GetGraphic() IGraphic {
+// IGraphic returns the graphic associated with the GraphicMaterial.
+func (grmat *GraphicMaterial) IGraphic() IGraphic {
 
 	return grmat.igraphic
 }

@@ -299,7 +299,7 @@ func (n *Narrowphase) SphereConvex(bodyA, bodyB *object.Body, sphereA *shape.Sph
 
 	// First check if any vertex of the convex hull is inside the sphere
 	done := false
-	convexB.GetGeometry().ReadVertices(func(vertex math32.Vector3) bool {
+	convexB.Geometry.ReadVertices(func(vertex math32.Vector3) bool {
 		worldVertex := vertex.ApplyQuaternion(quatA).Add(posB)
 		sphereToCorner := math32.NewVec3().SubVectors(worldVertex, posA)
 		if sphereToCorner.LengthSq() < sphereRadius * sphereRadius {

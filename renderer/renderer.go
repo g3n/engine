@@ -284,7 +284,7 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		// Append all graphic materials of this graphic to list of graphic materials to be rendered
 		materials := gr.Materials()
 		for i := 0; i < len(materials); i++ {
-			if materials[i].GetMaterial().GetMaterial().Transparent() {
+			if materials[i].IMaterial().GetMaterial().Transparent() {
 				r.grmatsTransp = append(r.grmatsTransp, &materials[i])
 			} else {
 				r.grmatsOpaque = append(r.grmatsOpaque, &materials[i])
@@ -300,8 +300,8 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		var zSortGraphicMaterials func(grmats []*graphic.GraphicMaterial, backToFront bool)
 		zSortGraphicMaterials = func(grmats []*graphic.GraphicMaterial, backToFront bool) {
 			sort.Slice(grmats, func(i, j int) bool {
-				gr1 := grmats[i].GetGraphic().GetGraphic()
-				gr2 := grmats[j].GetGraphic().GetGraphic()
+				gr1 := grmats[i].IGraphic().GetGraphic()
+				gr2 := grmats[j].IGraphic().GetGraphic()
 
 				// Check for user-supplied render order
 				rO1 := gr1.RenderOrder()
@@ -378,8 +378,8 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 	renderGraphicMaterials = func(grmats []*graphic.GraphicMaterial) {
 		// For each *GraphicMaterial
 		for _, grmat := range grmats {
-			mat := grmat.GetMaterial().GetMaterial()
-			geom := grmat.GetGraphic().GetGeometry()
+			mat := grmat.IMaterial().GetMaterial()
+			geom := grmat.IGraphic().GetGeometry()
 
 			// Add defines from material and geometry
 			r.specs.Defines = *gls.NewShaderDefines()
@@ -539,7 +539,7 @@ func (r *Renderer) renderPanel(ipan gui.IPanel) error {
 	if pan.Renderable() {
 		// Sets shader program for the panel's material
 		grmat := pan.GetGraphic().Materials()[0]
-		mat := grmat.GetMaterial().GetMaterial()
+		mat := grmat.IMaterial().GetMaterial()
 		r.specs.Name = mat.Shader()
 		r.specs.ShaderUnique = mat.ShaderUnique()
 		_, err := r.shaman.SetProgram(&r.specs)
