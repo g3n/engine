@@ -5,8 +5,8 @@
 package camera
 
 import (
-	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/core"
+	"github.com/g3n/engine/math32"
 )
 
 // Orthographic is an orthographic camera.
@@ -37,6 +37,17 @@ func NewOrthographic(left, right, top, bottom, near, far float32) *Orthographic 
 	cam.zoom = 1.0
 	cam.projChanged = true
 	return cam
+}
+
+// SetAspect sets the camera aspect ratio (width/height).
+func (cam *Orthographic) SetAspect(aspect float32) {
+
+	height := cam.top - cam.bottom
+	halfwidth := height * aspect * 0.5
+	center := (cam.left + cam.right) * 0.5
+	cam.left = center - halfwidth
+	cam.right = center + halfwidth
+	cam.projChanged = true
 }
 
 // SetZoom sets the zoom factor of the camera.
