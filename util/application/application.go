@@ -37,6 +37,7 @@ type Application struct {
 	camera            camera.ICamera        // Current camera
 	orbit             *control.OrbitControl // Camera orbit controller
 	frameRater        *FrameRater           // Render loop frame rater
+	keyState          *KeyState             // State of keys
 	audioDev          *al.Device            // Default audio device
 	scene             *core.Node            // Node container for 3D tests
 	guiroot           *gui.Root             // Gui root panel
@@ -179,6 +180,9 @@ func Create(ops Options) (*Application, error) {
 	app.gl.ClearColor(cc.R, cc.G, cc.B, 1)
 	app.gl.Clear(gls.DEPTH_BUFFER_BIT | gls.STENCIL_BUFFER_BIT | gls.COLOR_BUFFER_BIT)
 
+	// Creates KeyState
+	app.keyState = NewKeyState(win)
+
 	// Creates perspective camera
 	width, height := app.win.Size()
 	aspect := float32(width) / float32(height)
@@ -243,6 +247,12 @@ func (app *Application) Log() *logger.Logger {
 func (app *Application) Window() window.IWindow {
 
 	return app.win
+}
+
+// KeyState returns the application KeyState
+func (app *Application) KeyState() *KeyState {
+
+	return app.keyState
 }
 
 // Gl returns the OpenGL state
