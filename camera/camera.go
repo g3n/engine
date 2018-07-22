@@ -16,6 +16,7 @@ type ICamera interface {
 	ViewMatrix(*math32.Matrix4)
 	ProjMatrix(*math32.Matrix4)
 	Project(*math32.Vector3) (*math32.Vector3, error)
+	SetAspect(float32)
 	Unproject(*math32.Vector3) (*math32.Vector3, error)
 	SetRaycaster(rc *core.Raycaster, x, y float32) error
 }
