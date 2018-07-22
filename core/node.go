@@ -397,6 +397,34 @@ func (n *Node) Position() math32.Vector3 {
 	return n.position
 }
 
+// TranslateOnAxis translates the specified distance on the specified local axis.
+func (n *Node) TranslateOnAxis(axis *math32.Vector3, dist float32) {
+
+	v := math32.NewVec3().Copy(axis)
+	v.ApplyQuaternion(&n.quaternion)
+	v.MultiplyScalar(dist)
+	n.position.Add(v)
+	n.matNeedsUpdate = true
+}
+
+// TranslateX translates the specified distance on the local X axis.
+func (n *Node) TranslateX(dist float32) {
+
+	n.TranslateOnAxis(&math32.Vector3{1,0,0}, dist)
+}
+
+// TranslateY translates the specified distance on the local Y axis.
+func (n *Node) TranslateY(dist float32) {
+
+	n.TranslateOnAxis(&math32.Vector3{0,1,0}, dist)
+}
+
+// TranslateZ translates the specified distance on the local Z axis.
+func (n *Node) TranslateZ(dist float32) {
+
+	n.TranslateOnAxis(&math32.Vector3{0,0,1}, dist)
+}
+
 // SetRotation sets the global rotation in Euler angles (radians).
 func (n *Node) SetRotation(x, y, z float32) {
 
