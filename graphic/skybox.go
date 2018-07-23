@@ -45,7 +45,8 @@ func NewSkybox(data SkyboxData) (*Skybox, error) {
 		matFace := material.NewStandard(math32.NewColor("white"))
 		matFace.AddTexture(tex)
 		matFace.SetSide(material.SideBack)
-		matFace.SetUseLights(material.UseLightAmbient)
+		matFace.SetUseLights(material.UseLightNone)
+		matFace.SetEmissiveColor(&math32.Color{1, 1, 1})
 
 		// Disable writes to the depth buffer (call glDepthMask(GL_FALSE)).
 		// This will cause every other object to draw over the skybox, making it always appear behind everything else.
@@ -60,6 +61,9 @@ func NewSkybox(data SkyboxData) (*Skybox, error) {
 	skybox.uniMVPm.Init("MVP")
 	skybox.uniNm.Init("NormalMatrix")
 
+	// The skybox should always be rendered first
+	skybox.SetRenderOrder(-1)
+
 	return skybox, nil
 }
 
@@ -67,9 +71,8 @@ func NewSkybox(data SkyboxData) (*Skybox, error) {
 // It is responsible to updating the current shader uniforms with
 // the model matrices.
 func (skybox *Skybox) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
-
-	var mvm math32.Matrix4
-	mvm.Copy(&rinfo.ViewMatrix)
+	
+	mvm := *skybox.ModelViewMatrix()
 
 	// Clear translation
 	mvm[12] = 0
