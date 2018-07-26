@@ -564,7 +564,7 @@ func (app *Application) OnWindowResize() {
 
 	// Sets perspective camera aspect ratio
 	aspect := float32(width) / float32(height)
-	app.camPersp.SetAspect(aspect)
+	app.Camera().SetAspect(aspect)
 
 	// Sets the GUI root panel size to the size of the framebuffer
 	if app.guiroot != nil {
