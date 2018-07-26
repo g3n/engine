@@ -13,6 +13,7 @@ import (
 // ICamera is interface for all camera types.
 type ICamera interface {
 	GetCamera() *Camera
+	SetAspect(float32)
 	ViewMatrix(*math32.Matrix4)
 	ProjMatrix(*math32.Matrix4)
 	Project(*math32.Vector3) (*math32.Vector3, error)
