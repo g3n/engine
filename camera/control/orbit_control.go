@@ -19,7 +19,7 @@ type OrbitControl struct {
 	EnableZoom      bool    // Zoom enabled state
 	EnablePan       bool    // Pan enabled state
 	EnableKeys      bool    // Enable keys state
-	ZoomSpeed       float32 // Zoom speed factor. Default is 0.1
+	ZoomSpeed       float32 // Zoom speed factor. Default is 1.0
 	RotateSpeed     float32 // Rotate speed factor. Default is 1.0
 	MinDistance     float32 // Minimum distance from target. Default is 0.01
 	MaxDistance     float32 // Maximum distance from target. Default is infinity
