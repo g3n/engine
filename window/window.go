@@ -23,6 +23,7 @@ type IWindowManager interface {
 // IWindow is the interface for all windows
 type IWindow interface {
 	core.IDispatcher
+	Window() interface{}
 	MakeContextCurrent()
 	FramebufferSize() (width int, height int)
 	Scale() (x float64, y float64)
