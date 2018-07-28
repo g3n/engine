@@ -75,6 +75,12 @@ func Glfw() (IWindowManager, error) {
 	return manager, nil
 }
 
+// Window returns the window pointer
+func (m *glfwManager) Window() interface{} {
+
+	return m.win
+}
+
 // ScreenResolution returns the screen resolution
 func (m *glfwManager) ScreenResolution(p interface{}) (width, height int) {
 
