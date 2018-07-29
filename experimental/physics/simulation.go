@@ -8,11 +8,11 @@ import (
 	"github.com/g3n/engine/experimental/physics/equation"
 	"github.com/g3n/engine/experimental/physics/solver"
 	"github.com/g3n/engine/experimental/physics/constraint"
-	"github.com/g3n/engine/experimental/physics/collision"
+	"github.com/g3n/engine/experimental/collision"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/experimental/physics/object"
 	"github.com/g3n/engine/core"
-	"github.com/g3n/engine/experimental/physics/shape"
+	"github.com/g3n/engine/experimental/collision/shape"
 )
 
 // Simulation represents a physics simulation.
