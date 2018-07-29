@@ -15,6 +15,9 @@ import (
 type IWindowManager interface {
 	ScreenResolution(interface{}) (width, height int)
 	CreateWindow(width, height int, title string, full bool) (IWindow, error)
+	CreateCursor(imgFile string, xhot, yhot int) (int, error)
+	DisposeCursor(key int)
+	DisposeAllCursors()
 	SetSwapInterval(interval int)
 	PollEvents()
 	Terminate()
@@ -23,7 +26,7 @@ type IWindowManager interface {
 // IWindow is the interface for all windows
 type IWindow interface {
 	core.IDispatcher
-	Window() interface{}
+	Manager() IWindowManager
 	MakeContextCurrent()
 	FramebufferSize() (width int, height int)
 	Scale() (x float64, y float64)
@@ -33,6 +36,7 @@ type IWindow interface {
 	SetPos(xpos, ypos int)
 	SetTitle(title string)
 	SetStandardCursor(cursor StandardCursor)
+	SetCustomCursor(int)
 	SetInputMode(mode InputMode, state int)
 	SetCursorPos(xpos, ypos float64)
 	ShouldClose() bool
@@ -202,17 +206,19 @@ const (
 	MouseButtonMiddle = MouseButton(glfw.MouseButtonMiddle)
 )
 
-// StandardCursor corresponds to a standard cursor icon.
+// StandardCursor corresponds to a g3n standard cursor icon.
 type StandardCursor int
 
-// Standard cursors
+// Standard cursors for g3n. The diagonal cursors are not standard for GLFW.
 const (
-	ArrowCursor     = StandardCursor(glfw.ArrowCursor)
-	IBeamCursor     = StandardCursor(glfw.IBeamCursor)
-	CrosshairCursor = StandardCursor(glfw.CrosshairCursor)
-	HandCursor      = StandardCursor(glfw.HandCursor)
-	HResizeCursor   = StandardCursor(glfw.HResizeCursor)
-	VResizeCursor   = StandardCursor(glfw.VResizeCursor)
+	ArrowCursor       = StandardCursor(glfw.ArrowCursor)
+	IBeamCursor       = StandardCursor(glfw.IBeamCursor)
+	CrosshairCursor   = StandardCursor(glfw.CrosshairCursor)
+	HandCursor        = StandardCursor(glfw.HandCursor)
+	HResizeCursor     = StandardCursor(glfw.HResizeCursor)
+	VResizeCursor     = StandardCursor(glfw.VResizeCursor)
+	DiagResize1Cursor = StandardCursor(VResizeCursor + 1)
+	DiagResize2Cursor = StandardCursor(VResizeCursor + 2)
 )
 
 // Action corresponds to a key or button action.
