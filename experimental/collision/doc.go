@@ -2,6 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package physics implements a basic physics engine.
+// Package collision implements collision related algorithms and data structures.
 // WARNING: This package is experimental and incomplete!
-package physics
+package collision
