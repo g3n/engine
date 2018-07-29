@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package collision implements collision related algorithms and data structures.
 package collision
 
 import "github.com/g3n/engine/math32"
