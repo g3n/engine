@@ -233,6 +233,12 @@ func (m *glfwManager) CreateWindow(width, height int, title string, fullscreen b
 	return w, nil
 }
 
+// Window returns the window pointer and satisfies the IWindow interface
+func (m *glfwWindow) Window() interface{} {
+
+	return m.win
+}
+
 // MakeContextCurrent makes the OpenGL context of this window current on the calling thread
 func (w *glfwWindow) MakeContextCurrent() {
 
