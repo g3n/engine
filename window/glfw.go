@@ -9,6 +9,10 @@ import (
 
 	"github.com/g3n/engine/core"
 	"github.com/go-gl/glfw/v3.2/glfw"
+	"os"
+	"image"
+	"bytes"
+	"github.com/g3n/engine/gui/assets"
 )
 
 // glfwManager contains data shared by all windows
@@ -19,6 +23,14 @@ type glfwManager struct {
 	handCursor      *glfw.Cursor // Preallocated standard hand cursor
 	hresizeCursor   *glfw.Cursor // Preallocated standard horizontal resize cursor
 	vresizeCursor   *glfw.Cursor // Preallocated standard vertical resize cursor
+
+	// Non GLFW standard cursors (but g3n standard)
+	diag1Cursor     *glfw.Cursor // Preallocated diagonal resize cursor (/)
+	diag2Cursor     *glfw.Cursor // Preallocated diagonal resize cursor (\)
+
+	// User-created custom cursors
+	customCursors map[int]*glfw.Cursor
+	lastCursorKey int
 }
 
 // glfwWindow describes one glfw window
@@ -26,13 +38,6 @@ type glfwWindow struct {
 	core.Dispatcher              // Embedded event dispatcher
 	win             *glfw.Window // Pointer to native glfw window
 	mgr             *glfwManager // Pointer to window manager
-	keyEv           KeyEvent
-	charEv          CharEvent
-	mouseEv         MouseEvent
-	posEv           PosEvent
-	sizeEv          SizeEvent
-	cursorEv        CursorEvent
-	scrollEv        ScrollEvent
 	fullScreen      bool
 	lastX           int
 	lastY           int
@@ -40,6 +45,15 @@ type glfwWindow struct {
 	lastHeight      int
 	scaleX          float64
 	scaleY          float64
+
+	// Events
+	keyEv           KeyEvent
+	charEv          CharEvent
+	mouseEv         MouseEvent
+	posEv           PosEvent
+	sizeEv          SizeEvent
+	cursorEv        CursorEvent
+	scrollEv        ScrollEvent
 }
 
 // glfw manager singleton
@@ -72,6 +86,32 @@ func Glfw() (IWindowManager, error) {
 	}
 
 	manager = new(glfwManager)
+
+	// Preallocate GLFW standard cursors
+	manager.arrowCursor = glfw.CreateStandardCursor(glfw.ArrowCursor)
+	manager.ibeamCursor = glfw.CreateStandardCursor(glfw.IBeamCursor)
+	manager.crosshairCursor = glfw.CreateStandardCursor(glfw.CrosshairCursor)
+	manager.handCursor = glfw.CreateStandardCursor(glfw.HandCursor)
+	manager.hresizeCursor = glfw.CreateStandardCursor(glfw.HResizeCursor)
+	manager.vresizeCursor = glfw.CreateStandardCursor(glfw.VResizeCursor)
+
+	// Preallocate g3n cursors (diagonal cursors)
+	cursorDiag1Png, err := assets.Asset("cursors/diag1.png")
+	cursorDiag2Png, err := assets.Asset("cursors/diag2.png")
+	if err != nil {
+		return nil, err
+	}
+	diag1Img, _, err := image.Decode(bytes.NewReader(cursorDiag1Png))
+	diag2Img, _, err := image.Decode(bytes.NewReader(cursorDiag2Png))
+	if err != nil {
+		return nil, err
+	}
+	manager.diag1Cursor = glfw.CreateCursor(diag1Img, 8, 8)
+	manager.diag2Cursor = glfw.CreateCursor(diag2Img, 8, 8)
+
+	// Create map for custom cursors
+	manager.customCursors = make(map[int]*glfw.Cursor)
+
 	return manager, nil
 }
 
@@ -101,6 +141,45 @@ func (m *glfwManager) Terminate() {
 
 	glfw.Terminate()
 	manager = nil
+}
+
+// CreateCursor creates a new custom cursor and returns an int handle.
+func (m *glfwManager) CreateCursor(imgFile string, xhot, yhot int) (int, error) {
+
+	// Open image file
+	file, err := os.Open(imgFile)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	// Decodes image
+	img, _, err := image.Decode(file)
+	if err != nil {
+		return 0, err
+	}
+
+	cursor := glfw.CreateCursor(img, xhot, yhot)
+	if err != nil {
+		return 0, err
+	}
+	m.lastCursorKey += 1
+	m.customCursors[m.lastCursorKey] = cursor
+
+	return m.lastCursorKey, nil
+}
+
+// DisposeCursor deletes the existing custom cursor with the provided int handle.
+func (m *glfwManager) DisposeCursor(key int) {
+
+	delete(m.customCursors, key)
+}
+
+// DisposeAllCursors deletes all existing custom cursors.
+func (m *glfwManager) DisposeAllCursors() {
+
+	m.customCursors = make(map[int]*glfw.Cursor)
+	m.lastCursorKey = 0
 }
 
 // CreateWindow creates and returns a new window with the specified width and height in screen coordinates
@@ -218,14 +297,6 @@ func (m *glfwManager) CreateWindow(width, height int, title string, fullscreen b
 		w.Dispatch(OnScroll, &w.scrollEv)
 	})
 
-	// Preallocate standard cursors
-	w.mgr.arrowCursor = glfw.CreateStandardCursor(glfw.ArrowCursor)
-	w.mgr.ibeamCursor = glfw.CreateStandardCursor(glfw.IBeamCursor)
-	w.mgr.crosshairCursor = glfw.CreateStandardCursor(glfw.CrosshairCursor)
-	w.mgr.handCursor = glfw.CreateStandardCursor(glfw.HandCursor)
-	w.mgr.hresizeCursor = glfw.CreateStandardCursor(glfw.HResizeCursor)
-	w.mgr.vresizeCursor = glfw.CreateStandardCursor(glfw.VResizeCursor)
-
 	// Sets full screen if requested
 	if fullscreen {
 		w.SetFullScreen(true)
@@ -233,10 +304,10 @@ func (m *glfwManager) CreateWindow(width, height int, title string, fullscreen b
 	return w, nil
 }
 
-// Window returns the window pointer and satisfies the IWindow interface
-func (m *glfwWindow) Window() interface{} {
+// Manager returns the window manager and satisfies the IWindow interface
+func (w *glfwWindow) Manager() IWindowManager {
 
-	return m.win
+	return w.mgr
 }
 
 // MakeContextCurrent makes the OpenGL context of this window current on the calling thread
@@ -348,7 +419,7 @@ func (w *glfwWindow) SetShouldClose(v bool) {
 	w.win.SetShouldClose(v)
 }
 
-// SetStandardCursor sets this window standard cursor type
+// SetStandardCursor sets the window's cursor to a standard one
 func (w *glfwWindow) SetStandardCursor(cursor StandardCursor) {
 
 	switch cursor {
@@ -364,9 +435,20 @@ func (w *glfwWindow) SetStandardCursor(cursor StandardCursor) {
 		w.win.SetCursor(w.mgr.hresizeCursor)
 	case VResizeCursor:
 		w.win.SetCursor(w.mgr.vresizeCursor)
+	// Non-GLFW cursors (but standard cursors for g3n)
+	case DiagResize1Cursor:
+		w.win.SetCursor(w.mgr.diag1Cursor)
+	case DiagResize2Cursor:
+		w.win.SetCursor(w.mgr.diag2Cursor)
 	default:
 		panic("Invalid cursor")
 	}
+}
+
+// SetStandardCursor sets this window's cursor to a custom, user-created one
+func (w *glfwWindow) SetCustomCursor(key int) {
+
+	w.win.SetCursor(w.mgr.customCursors[key])
 }
 
 // SetInputMode changes specified input to specified state

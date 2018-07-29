@@ -195,6 +195,18 @@ func (r *Root) SetCursorVResize() {
 	r.win.SetStandardCursor(window.VResizeCursor)
 }
 
+// SetCursorDiag1 sets the cursor over the associated window to the diagonal (/) resize type.
+func (r *Root) SetCursorDiagResize1() {
+
+	r.win.SetStandardCursor(window.DiagResize1Cursor)
+}
+
+// SetCursorDiag2 sets the cursor over the associated window to the diagonal (\) resize type.
+func (r *Root) SetCursorDiagResize2() {
+
+	r.win.SetStandardCursor(window.DiagResize2Cursor)
+}
+
 // TODO allow setting a custom cursor
 
 // onKey is called when key events are received
