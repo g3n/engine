@@ -51,8 +51,6 @@ type Window struct {
 	maxSize math32.Vector2
 }
 
-// TODO: Fix window builder examples
-
 // WindowStyle contains the styling of a Window
 type WindowStyle struct {
 	PanelStyle
