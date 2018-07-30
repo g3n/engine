@@ -47,4 +47,4 @@ uniform vec3 Material[6];
             //vec4 currTexPre = texColor;                                                      \
             //currTexPre.rgb *= currTexPre.a;                                                  \
             //texMixed = currTexPre + prevTexPre * (1 - currTexPre.a);                         \
-            //texMixed.rgb /= texMixed.a;                                                      \
+            //texMixed.rgb /= texMixed.a;
