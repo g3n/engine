@@ -93,14 +93,15 @@ func newSlider(horiz bool, width, height float32) *Slider {
 }
 
 // SetStyles set the slider styles overriding the default style
-func (s *Slider) SetStyles(ss *SliderStyles) {
+func (s *Slider) SetStyles(ss *SliderStyles) *Slider {
 
 	s.styles = ss
 	s.update()
+	return s
 }
 
 // SetText sets the text of the slider optional label
-func (s *Slider) SetText(text string) {
+func (s *Slider) SetText(text string) *Slider {
 
 	if s.label == nil {
 		s.label = NewLabel(text)
@@ -110,14 +111,16 @@ func (s *Slider) SetText(text string) {
 	}
 	s.update()
 	s.recalc()
+	return s
 }
 
 // SetValue sets the value of the slider considering the current scale factor
 // and updates its visual appearance.
-func (s *Slider) SetValue(value float32) {
+func (s *Slider) SetValue(value float32) *Slider {
 
 	pos := value / s.scaleFactor
 	s.setPos(pos)
+	return s
 }
 
 // Value returns the current value of the slider considering the current scale factor
@@ -127,9 +130,10 @@ func (s *Slider) Value() float32 {
 }
 
 // SetScaleFactor set the slider scale factor (default = 1.0)
-func (s *Slider) SetScaleFactor(factor float32) {
+func (s *Slider) SetScaleFactor(factor float32) *Slider {
 
 	s.scaleFactor = factor
+	return s
 }
 
 // ScaleFactor returns  the slider current scale factor (default = 1.0)
