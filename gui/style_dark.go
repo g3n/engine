@@ -154,15 +154,15 @@ func NewDarkStyle() *Style {
 
 	// Window styles
 	s.Window = WindowStyles{}
-	s.Window.Normal = WindowStyle{
-		Border:           RectBounds{2, 2, 2, 2},
-		Paddings:         zeroBounds,
-		BorderColor:      s.Color.BgDark,
-		TitleBorders:     RectBounds{0, 0, 1, 0},
-		TitleBorderColor: math32.Color4{0, 0, 0, 1},
-		TitleBgColor:     s.Color.Select,
-		TitleFgColor:     s.Color.Text,
-	}
+	s.Window.Normal = WindowStyle{}
+	s.Window.Normal.Border = RectBounds{2, 2, 2, 2}
+	s.Window.Normal.Padding = zeroBounds
+	s.Window.Normal.BorderColor = s.Color.BgDark
+	s.Window.Normal.TitleStyle = WindowTitleStyle{}
+	s.Window.Normal.TitleStyle.Border = RectBounds{0, 0, 1, 0}
+	s.Window.Normal.TitleStyle.BorderColor = math32.Color4{0, 0, 0, 1}
+	s.Window.Normal.TitleStyle.BgColor = s.Color.Select
+	s.Window.Normal.TitleStyle.FgColor = s.Color.Text
 	s.Window.Over = s.Window.Normal
 	s.Window.Focus = s.Window.Normal
 	s.Window.Disabled = s.Window.Normal
