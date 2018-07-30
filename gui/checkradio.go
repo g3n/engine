@@ -123,9 +123,10 @@ func (cb *CheckRadio) Group() string {
 }
 
 // SetGroup sets the name of the radio group
-func (cb *CheckRadio) SetGroup(group string) {
+func (cb *CheckRadio) SetGroup(group string) *CheckRadio {
 
 	cb.group = group
+	return cb
 }
 
 // SetStyles set the button styles overriding the default style
