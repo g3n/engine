@@ -151,15 +151,15 @@ func NewLightStyle() *Style {
 
 	// Window styles
 	s.Window = WindowStyles{}
-	s.Window.Normal = WindowStyle{
-		Border:           RectBounds{4, 4, 4, 4},
-		Paddings:         zeroBounds,
-		BorderColor:      math32.Color4{0.2, 0.2, 0.2, 1},
-		TitleBorders:     RectBounds{0, 0, 1, 0},
-		TitleBorderColor: math32.Color4{0, 0, 0, 1},
-		TitleBgColor:     math32.Color4{0, 1, 0, 1},
-		TitleFgColor:     math32.Color4{0, 0, 0, 1},
-	}
+	s.Window.Normal = WindowStyle{}
+	s.Window.Normal.Border = RectBounds{4, 4, 4, 4}
+	s.Window.Normal.Padding = zeroBounds
+	s.Window.Normal.BorderColor = math32.Color4{0.2, 0.2, 0.2, 1}
+	s.Window.Normal.TitleStyle = WindowTitleStyle{}
+	s.Window.Normal.TitleStyle.Border = RectBounds{0, 0, 1, 0}
+	s.Window.Normal.TitleStyle.BorderColor = math32.Color4{0, 0, 0, 1}
+	s.Window.Normal.TitleStyle.BgColor = math32.Color4{0, 1, 0, 1} // s.Color.Select
+	s.Window.Normal.TitleStyle.FgColor = math32.Color4{0, 0, 0, 1} // s.Color.Text
 	s.Window.Over = s.Window.Normal
 	s.Window.Focus = s.Window.Normal
 	s.Window.Disabled = s.Window.Normal

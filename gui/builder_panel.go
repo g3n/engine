@@ -609,7 +609,7 @@ func buildWindow(b *Builder, am map[string]interface{}) (IPanel, error) {
 
 	// Set optional resizable borders
 	if resiz := am[AttribResizeBorders]; resiz != nil {
-		win.SetResizable(resiz.(ResizeBorders))
+		win.SetResizable(resiz.(bool))
 	}
 
 	// Builds window children

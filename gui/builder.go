@@ -177,15 +177,6 @@ var mapEdgeName = map[string]int{
 	"center": DockCenter,
 }
 
-// maps resize border name (window) with parameter value
-var mapResizable = map[string]ResizeBorders{
-	"top":    ResizeTop,
-	"right":  ResizeRight,
-	"bottom": ResizeBottom,
-	"left":   ResizeLeft,
-	"all":    ResizeAll,
-}
-
 // maps table sort type to value
 var mapTableSortType = map[string]TableSortType{
 	"none":   TableSortNone,
@@ -698,22 +689,12 @@ func AttribCheckResizeBorders(b *Builder, am map[string]interface{}, fname strin
 	}
 
 	// Attribute must be string
-	vs, ok := v.(string)
+	vs, ok := v.(bool)
 	if !ok {
 		return b.err(am, fname, "Invalid resizable attribute")
 	}
 
-	// Each string field must be a valid resizable name
-	parts := strings.Fields(vs)
-	var res ResizeBorders
-	for _, name := range parts {
-		v, ok := mapResizable[name]
-		if !ok {
-			return b.err(am, fname, "Invalid resizable name:"+name)
-		}
-		res |= v
-	}
-	am[fname] = res
+	am[fname] = vs
 	return nil
 }
 
