@@ -397,7 +397,7 @@ func (g *GLTF) NewMesh(mi int) (core.INode, error) {
 				if err != nil {
 					return nil, err
 				}
-				morphGeom.AddMorphTargets(tGeom)
+				morphGeom.AddMorphTargetDeltas(tGeom)
 			}
 
 			igeom = morphGeom

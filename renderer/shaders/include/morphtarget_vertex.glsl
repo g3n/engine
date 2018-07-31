@@ -1,6 +1,6 @@
 #ifdef MORPHTARGETS
-	vPosition += (MorphPosition{i} - VertexPosition) * morphTargetInfluences[{i}];
+	vPosition += MorphPosition{i} * morphTargetInfluences[{i}];
   #ifdef MORPHTARGETS_NORMAL
-	vNormal += (MorphNormal{i} - VertexNormal) * morphTargetInfluences[{i}];
+	vNormal += MorphNormal{i} * morphTargetInfluences[{i}];
   #endif
 #endif

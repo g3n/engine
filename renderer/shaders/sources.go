@@ -108,14 +108,13 @@ uniform vec3 Material[6];
             //vec4 currTexPre = texColor;                                                      \
             //currTexPre.rgb *= currTexPre.a;                                                  \
             //texMixed = currTexPre + prevTexPre * (1 - currTexPre.a);                         \
-            //texMixed.rgb /= texMixed.a;                                                      \
+            //texMixed.rgb /= texMixed.a;
 `
 
 const include_morphtarget_vertex_source = `#ifdef MORPHTARGETS
-	vPosition += (MorphPosition{i} - VertexPosition) * morphTargetInfluences[{i}];
-//    vPosition = MorphPosition1;
+	vPosition += MorphPosition{i} * morphTargetInfluences[{i}];
   #ifdef MORPHTARGETS_NORMAL
-	vNormal += (MorphNormal{i} - VertexNormal) * morphTargetInfluences[{i}];
+	vNormal += MorphNormal{i} * morphTargetInfluences[{i}];
   #endif
 #endif
 `
