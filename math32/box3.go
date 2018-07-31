@@ -237,21 +237,33 @@ func (b *Box3) Union(other *Box3) *Box3 {
 
 // ApplyMatrix4 applies the specified matrix to the vertices of this bounding box.
 // Returns pointer to this updated bounding box.
-func (b *Box3) ApplyMatrix4(matrix *Matrix4) *Box3 {
+func (b *Box3) ApplyMatrix4(m *Matrix4) *Box3 {
 
-	points := make([]Vector3, 8)
+	xax := m[0] * b.Min.X
+	xay := m[1] * b.Min.X
+	xaz := m[2] * b.Min.X
+	xbx := m[0] * b.Max.X
+	xby := m[1] * b.Max.X
+	xbz := m[2] * b.Max.X
+	yax := m[4] * b.Min.Y
+	yay := m[5] * b.Min.Y
+	yaz := m[6] * b.Min.Y
+	ybx := m[4] * b.Max.Y
+	yby := m[5] * b.Max.Y
+	ybz := m[6] * b.Max.Y
+	zax := m[8] * b.Min.Z
+	zay := m[9] * b.Min.Z
+	zaz := m[10] * b.Min.Z
+	zbx := m[8] * b.Max.Z
+	zby := m[9] * b.Max.Z
+	zbz := m[10] * b.Max.Z
 
-	points[0].Set(b.Min.X, b.Min.Y, b.Min.Z).ApplyMatrix4(matrix) // 000
-	points[1].Set(b.Min.X, b.Min.Y, b.Max.Z).ApplyMatrix4(matrix) // 001
-	points[2].Set(b.Min.X, b.Max.Y, b.Min.Z).ApplyMatrix4(matrix) // 010
-	points[3].Set(b.Min.X, b.Max.Y, b.Max.Z).ApplyMatrix4(matrix) // 011
-	points[4].Set(b.Max.X, b.Min.Y, b.Min.Z).ApplyMatrix4(matrix) // 100
-	points[5].Set(b.Max.X, b.Min.Y, b.Max.Z).ApplyMatrix4(matrix) // 101
-	points[6].Set(b.Max.X, b.Max.Y, b.Min.Z).ApplyMatrix4(matrix) // 110
-	points[7].Set(b.Max.X, b.Max.Y, b.Max.Z).ApplyMatrix4(matrix) // 111
-
-	b.MakeEmpty()
-	b.SetFromPoints(points)
+	b.Min.X = Min(xax, xbx) + Min(yax, ybx) + Min(zax, zbx) + m[12]
+	b.Min.Y = Min(xay, xby) + Min(yay, yby) + Min(zay, zby) + m[13]
+	b.Min.Z = Min(xaz, xbz) + Min(yaz, ybz) + Min(zaz, zbz) + m[14]
+	b.Max.X = Max(xax, xbx) + Max(yax, ybx) + Max(zax, zbx) + m[12]
+	b.Max.Y = Max(xay, xby) + Max(yay, yby) + Max(zay, zby) + m[13]
+	b.Max.Z = Max(xaz, xbz) + Max(yaz, ybz) + Max(zaz, zbz) + m[14]
 
 	return b
 }
