@@ -96,11 +96,9 @@ func Glfw() (IWindowManager, error) {
 	manager.vresizeCursor = glfw.CreateStandardCursor(glfw.VResizeCursor)
 
 	// Preallocate g3n cursors (diagonal cursors)
-	cursorDiag1Png, err := assets.Asset("cursors/diag1.png")
-	cursorDiag2Png, err := assets.Asset("cursors/diag2.png")
-	if err != nil {
-		return nil, err
-	}
+	cursorDiag1Png := assets.MustAsset("cursors/diag1.png")
+	cursorDiag2Png := assets.MustAsset("cursors/diag2.png")
+
 	diag1Img, _, err := image.Decode(bytes.NewReader(cursorDiag1Png))
 	diag2Img, _, err := image.Decode(bytes.NewReader(cursorDiag2Png))
 	if err != nil {
