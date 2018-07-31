@@ -14,7 +14,7 @@ import (
 // MorphGeometry represents a base geometry and its morph targets.
 type MorphGeometry struct {
 	baseGeometry  *Geometry   // The base geometry
-	targets       []*Geometry // The morph target geometries
+	targets       []*Geometry // The morph target geometries (containing deltas)
 	weights       []float32   // The weights for each morph target
 	uniWeights    gls.Uniform // Texture unit uniform location cache
 	morphGeom     *Geometry   // Cache of the last CPU-morphed geometry
@@ -58,13 +58,49 @@ func (mg *MorphGeometry) Weights() []float32 {
 	return mg.weights
 }
 
-// Weights returns the morph target weights.
+// AddMorphTargets add multiple morph targets to the morph geometry.
+// Morph target deltas are calculated internally and the morph target geometries are altered to hold the deltas instead.
 func (mg *MorphGeometry) AddMorphTargets(morphTargets ...*Geometry) {
 
+	for i := range morphTargets {
+		mg.weights = append(mg.weights, 0)
+		// Calculate deltas for VertexPosition
+		vertexIdx := 0
+		baseVertices := mg.baseGeometry.VBO(gls.VertexPosition).Buffer()
+		morphTargets[i].OperateOnVertices(func(vertex *math32.Vector3) bool {
+			var baseVertex math32.Vector3
+			baseVertices.GetVector3(vertexIdx*3, &baseVertex)
+			vertex.Sub(&baseVertex)
+			vertexIdx++
+			return false
+		})
+		// Calculate deltas for VertexNormal if attribute is present in target geometry
+		// It is assumed that if VertexNormals are present in a target geometry then they are also present in the base geometry
+		normalIdx := 0
+		baseNormalsVBO := mg.baseGeometry.VBO(gls.VertexNormal)
+		if baseNormalsVBO != nil {
+			baseNormals := baseNormalsVBO.Buffer()
+			morphTargets[i].OperateOnVertexNormals(func(normal *math32.Vector3) bool {
+				var baseNormal math32.Vector3
+				baseNormals.GetVector3(normalIdx*3, &baseNormal)
+				normal.Sub(&baseNormal)
+				normalIdx++
+				return false
+			})
+		}
+		// TODO Calculate deltas for VertexTangents
+	}
 	mg.targets = append(mg.targets, morphTargets...)
-	for range morphTargets {
+
+}
+
+// AddMorphTargetDeltas add multiple morph target deltas to the morph geometry.
+func (mg *MorphGeometry) AddMorphTargetDeltas(morphTargetDeltas ...*Geometry) {
+
+	for range morphTargetDeltas {
 		mg.weights = append(mg.weights, 0)
 	}
+	mg.targets = append(mg.targets, morphTargetDeltas...)
 }
 
 // ActiveMorphTargets sorts the morph targets by weight and returns the top n morph targets with largest weight.
