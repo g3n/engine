@@ -270,10 +270,11 @@ func NewMorphChannel(mg *geometry.MorphGeometry) *MorphChannel {
 				start2 := (idx+1)*numWeights
 				weights1 := mc.values[start1:start1+numWeights]
 				weights2 := mc.values[start2:start2+numWeights]
+				weightsNew := make([]float32, numWeights)
 				for i := range weights1 {
-					weights1[i] += (weights2[i]-weights1[i])*k
+					weightsNew[i] = weights1[i] + (weights2[i]-weights1[i])*k
 				}
-				mg.SetWeights(weights1)
+				mg.SetWeights(weightsNew)
 			}
 		case CUBICSPLINE: // TODO
 			mc.interpAction = func(idx int, k float32) {
@@ -281,10 +282,11 @@ func NewMorphChannel(mg *geometry.MorphGeometry) *MorphChannel {
 				start2 := (idx+1)*numWeights
 				weights1 := mc.values[start1:start1+numWeights]
 				weights2 := mc.values[start2:start2+numWeights]
+				weightsNew := make([]float32, numWeights)
 				for i := range weights1 {
-					weights1[i] += (weights2[i]-weights1[i])*k
+					weightsNew[i] = weights1[i] + (weights2[i]-weights1[i])*k
 				}
-				mg.SetWeights(weights1)
+				mg.SetWeights(weightsNew)
 			}
 		}
 	}

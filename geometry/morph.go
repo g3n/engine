@@ -92,6 +92,12 @@ func (mg *MorphGeometry) AddMorphTargets(morphTargets ...*Geometry) {
 	}
 	mg.targets = append(mg.targets, morphTargets...)
 
+	// Update all target attributes if we have few enough that we are able to send them
+	// all to the shader without sorting and choosing the ones with highest current weight
+	if len(mg.targets) <= NumMorphTargets {
+		mg.UpdateTargetAttributes(mg.targets)
+	}
+
 }
 
 // AddMorphTargetDeltas add multiple morph target deltas to the morph geometry.
@@ -101,6 +107,12 @@ func (mg *MorphGeometry) AddMorphTargetDeltas(morphTargetDeltas ...*Geometry) {
 		mg.weights = append(mg.weights, 0)
 	}
 	mg.targets = append(mg.targets, morphTargetDeltas...)
+
+	// Update all target attributes if we have few enough that we are able to send them
+	// all to the shader without sorting and choosing the ones with highest current weight
+	if len(mg.targets) <= NumMorphTargets {
+		mg.UpdateTargetAttributes(mg.targets)
+	}
 }
 
 // ActiveMorphTargets sorts the morph targets by weight and returns the top n morph targets with largest weight.
@@ -111,27 +123,25 @@ func (mg *MorphGeometry) ActiveMorphTargets() ([]*Geometry, []float32) {
 		return nil, nil
 	}
 
-	sortedMorphTargets := make([]*Geometry, numTargets)
-	copy(sortedMorphTargets, mg.targets)
-	sort.Slice(sortedMorphTargets, func(i, j int) bool {
-		return mg.weights[i] > mg.weights[j]
-	})
+	if numTargets <= NumMorphTargets {
+		// No need to sort - just return the targets and weights directly
+		return mg.targets, mg.weights
+	} else {
+		// Need to sort them by weight and only return the top N morph targets with largest weight (N = NumMorphTargets)
+		// TODO test this (more than [NumMorphTargets] morph targets)
+		sortedMorphTargets := make([]*Geometry, numTargets)
+		copy(sortedMorphTargets, mg.targets)
+		sort.Slice(sortedMorphTargets, func(i, j int) bool {
+			return mg.weights[i] > mg.weights[j]
+		})
 
-	sortedWeights := make([]float32, numTargets)
-	copy(sortedWeights, mg.weights)
-	sort.Slice(sortedWeights, func(i, j int) bool {
-		return mg.weights[i] > mg.weights[j]
-	})
-
-
-	// TODO check current 0 weights
-
-	//if len(mg.targets) < NumMorphTargets-1 {
+		sortedWeights := make([]float32, numTargets)
+		copy(sortedWeights, mg.weights)
+		sort.Slice(sortedWeights, func(i, j int) bool {
+			return mg.weights[i] > mg.weights[j]
+		})
 		return sortedMorphTargets, sortedWeights
-	//} else {
-	//	return sortedMorphTargets[:NumMorphTargets-1]
-	//}
-
+	}
 }
 
 // SetIndices sets the indices array for this geometry.
@@ -164,6 +174,16 @@ func (mg *MorphGeometry) Dispose() {
 	}
 }
 
+// UpdateTargetAttributes updates the attribute names of the specified morph targets in order.
+func (mg *MorphGeometry) UpdateTargetAttributes(morphTargets []*Geometry) {
+
+	for i, mt := range morphTargets {
+		mt.SetAttributeName(gls.VertexPosition, "MorphPosition"+strconv.Itoa(i))
+		mt.SetAttributeName(gls.VertexNormal, "MorphNormal"+strconv.Itoa(i))
+		mt.SetAttributeName(gls.VertexTangent, "MorphTangent"+strconv.Itoa(i))
+	}
+}
+
 // RenderSetup is called by the renderer before drawing the geometry.
 func (mg *MorphGeometry) RenderSetup(gs *gls.GLS) {
 
@@ -172,13 +192,14 @@ func (mg *MorphGeometry) RenderSetup(gs *gls.GLS) {
 	// Sort weights and find top 8 morph targets with largest current weight (8 is the max sent to shader)
 	activeMorphTargets, activeWeights := mg.ActiveMorphTargets()
 
-	for i, mt := range activeMorphTargets {
+	// If the morph geometry has more targets than the shader supports we need to update attribute names
+	// as weights change - we only send the top morph targets with highest weight
+	if len(mg.targets) > NumMorphTargets {
+		mg.UpdateTargetAttributes(activeMorphTargets)
+	}
 
-		mt.SetAttributeName(gls.VertexPosition, "MorphPosition"+strconv.Itoa(i))
-		mt.SetAttributeName(gls.VertexNormal, "MorphNormal"+strconv.Itoa(i))
-		//mt.SetAttributeName(vTangent, fmt.Sprintf("MorphTangent[%d]", i))
-
-		// Transfer morphed geometry VBOs
+	// Transfer morphed geometry VBOs
+	for _, mt := range activeMorphTargets {
 		for _, vbo := range mt.VBOs() {
 			vbo.Transfer(gs)
 		}
