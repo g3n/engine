@@ -17,6 +17,14 @@ func (g *GLTF) loadMaterialPBR(m *Material) (material.IMaterial, error) {
 
 	// Create new physically based material
 	pm := material.NewPhysical()
+	pm.SetTransparent(true) // TODO when to set this to true?
+
+	// Double sided
+	if m.DoubleSided {
+		pm.SetSide(material.SideDouble)
+	} else {
+		pm.SetSide(material.SideFront)
+	}
 
 	// BaseColorFactor
 	var baseColorFactor math32.Color4
