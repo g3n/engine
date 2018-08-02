@@ -20,8 +20,8 @@ type MorphGeometry struct {
 	morphGeom     *Geometry   // Cache of the last CPU-morphed geometry
 }
 
-// NumMorphInfluencers is the maximum number of active morph targets.
-const NumMorphTargets = 8
+// MaxActiveMorphTargets is the maximum number of active morph targets.
+const MaxActiveMorphTargets = 8
 
 // NewMorphGeometry creates and returns a pointer to a new MorphGeometry.
 func NewMorphGeometry(baseGeometry *Geometry) *MorphGeometry {
@@ -32,7 +32,7 @@ func NewMorphGeometry(baseGeometry *Geometry) *MorphGeometry {
 	mg.targets = make([]*Geometry, 0)
 	mg.weights = make([]float32, 0)
 
-	mg.baseGeometry.ShaderDefines.Set("MORPHTARGETS", strconv.Itoa(NumMorphTargets))
+	mg.baseGeometry.ShaderDefines.Set("MORPHTARGETS", strconv.Itoa(MaxActiveMorphTargets))
 	mg.uniWeights.Init("morphTargetInfluences")
 	return mg
 }
@@ -94,7 +94,7 @@ func (mg *MorphGeometry) AddMorphTargets(morphTargets ...*Geometry) {
 
 	// Update all target attributes if we have few enough that we are able to send them
 	// all to the shader without sorting and choosing the ones with highest current weight
-	if len(mg.targets) <= NumMorphTargets {
+	if len(mg.targets) <= MaxActiveMorphTargets {
 		mg.UpdateTargetAttributes(mg.targets)
 	}
 
@@ -110,7 +110,7 @@ func (mg *MorphGeometry) AddMorphTargetDeltas(morphTargetDeltas ...*Geometry) {
 
 	// Update all target attributes if we have few enough that we are able to send them
 	// all to the shader without sorting and choosing the ones with highest current weight
-	if len(mg.targets) <= NumMorphTargets {
+	if len(mg.targets) <= MaxActiveMorphTargets {
 		mg.UpdateTargetAttributes(mg.targets)
 	}
 }
@@ -123,12 +123,12 @@ func (mg *MorphGeometry) ActiveMorphTargets() ([]*Geometry, []float32) {
 		return nil, nil
 	}
 
-	if numTargets <= NumMorphTargets {
+	if numTargets <= MaxActiveMorphTargets {
 		// No need to sort - just return the targets and weights directly
 		return mg.targets, mg.weights
 	} else {
-		// Need to sort them by weight and only return the top N morph targets with largest weight (N = NumMorphTargets)
-		// TODO test this (more than [NumMorphTargets] morph targets)
+		// Need to sort them by weight and only return the top N morph targets with largest weight (N = MaxActiveMorphTargets)
+		// TODO test this (more than [MaxActiveMorphTargets] morph targets)
 		sortedMorphTargets := make([]*Geometry, numTargets)
 		copy(sortedMorphTargets, mg.targets)
 		sort.Slice(sortedMorphTargets, func(i, j int) bool {
@@ -194,7 +194,7 @@ func (mg *MorphGeometry) RenderSetup(gs *gls.GLS) {
 
 	// If the morph geometry has more targets than the shader supports we need to update attribute names
 	// as weights change - we only send the top morph targets with highest weight
-	if len(mg.targets) > NumMorphTargets {
+	if len(mg.targets) > MaxActiveMorphTargets {
 		mg.UpdateTargetAttributes(activeMorphTargets)
 	}
 
@@ -205,7 +205,7 @@ func (mg *MorphGeometry) RenderSetup(gs *gls.GLS) {
 		}
 	}
 
-	// Transfer texture info combined uniform
+	// Transfer active weights uniform
 	location := mg.uniWeights.Location(gs)
 	gs.Uniform1fv(location, int32(len(activeWeights)), activeWeights)
 }
