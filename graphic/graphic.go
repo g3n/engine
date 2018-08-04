@@ -25,6 +25,8 @@ type Graphic struct {
 	cullable    bool               // Cullable flag
 	renderOrder int                // Render order
 
+	ShaderDefines gls.ShaderDefines // Graphic-specific shader defines
+
 	mvm  math32.Matrix4 // Cached ModelView matrix
 	mvpm math32.Matrix4 // Cached ModelViewProjection matrix
 }
@@ -71,6 +73,7 @@ func (gr *Graphic) Init(igeom geometry.IGeometry, mode uint32) *Graphic {
 	gr.materials = make([]GraphicMaterial, 0)
 	gr.renderable = true
 	gr.cullable = true
+	gr.ShaderDefines = *gls.NewShaderDefines()
 	return gr
 }
 
@@ -190,6 +193,14 @@ func (gr *Graphic) GetMaterial(vpos int) material.IMaterial {
 		}
 	}
 	return nil
+}
+
+// SetIGraphic sets the IGraphic on all this Graphic's GraphicMaterials.
+func (gr *Graphic) SetIGraphic(ig IGraphic) {
+
+	for i := range gr.materials {
+		gr.materials[i].igraphic = ig
+	}
 }
 
 // CalculateMatrices calculates the model view and model view projection matrices.

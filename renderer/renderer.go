@@ -380,11 +380,13 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 		for _, grmat := range grmats {
 			mat := grmat.IMaterial().GetMaterial()
 			geom := grmat.IGraphic().GetGeometry()
+			gr := grmat.IGraphic().GetGraphic()
 
 			// Add defines from material and geometry
 			r.specs.Defines = *gls.NewShaderDefines()
 			r.specs.Defines.Add(&mat.ShaderDefines)
 			r.specs.Defines.Add(&geom.ShaderDefines)
+			r.specs.Defines.Add(&gr.ShaderDefines)
 
 			// Sets the shader specs for this material and sets shader program
 			r.specs.Name = mat.Shader()
