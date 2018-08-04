@@ -179,11 +179,9 @@ func NewRotationChannel(node core.INode) *RotationChannel {
 				var q1, q2 math32.Vector4
 				rc.values.GetVector4(idx*4, &q1)
 				rc.values.GetVector4((idx+1)*4, &q2)
-				q1.Lerp(&q2, k)
 				quat1 := math32.NewQuaternion(q1.X, q1.Y, q1.Z, q1.W)
-				// TODO spherical linear interpolation (slerp) not working as expected for some reason (doing a lerp for now)
-				//quat2 := math32.NewQuaternion(q2.X, q2.Y, q2.Z, q2.W)
-				//quat1.Slerp(quat2, k)
+				quat2 := math32.NewQuaternion(q2.X, q2.Y, q2.Z, q2.W)
+				quat1.Slerp(quat2, k)
 				node.SetQuaternionQuat(quat1)
 			}
 		case CUBICSPLINE: // TODO
@@ -191,11 +189,9 @@ func NewRotationChannel(node core.INode) *RotationChannel {
 				var q1, q2 math32.Vector4
 				rc.values.GetVector4(idx*4, &q1)
 				rc.values.GetVector4((idx+1)*4, &q2)
-				q1.Lerp(&q2, k)
 				quat1 := math32.NewQuaternion(q1.X, q1.Y, q1.Z, q1.W)
-				// TODO spherical linear interpolation (slerp) not working for some reason
-				//quat2 := math32.NewQuaternion(q2.X, q2.Y, q2.Z, q2.W)
-				//quat1.Slerp(quat2, k)
+				quat2 := math32.NewQuaternion(q2.X, q2.Y, q2.Z, q2.W)
+				quat1.Slerp(quat2, k)
 				node.SetQuaternionQuat(quat1)
 			}
 		}
