@@ -329,50 +329,42 @@ func (q *Quaternion) Slerp(other *Quaternion, t float32) *Quaternion {
 	cosHalfTheta := w*other.W + x*other.X + y*other.Y + z*other.Z
 
 	if cosHalfTheta < 0 {
-
 		q.W = -other.W
 		q.X = -other.X
 		q.Y = -other.Y
 		q.Z = -other.Z
-
 		cosHalfTheta = -cosHalfTheta
-
 	} else {
-
 		q.Copy(other)
 	}
 
 	if cosHalfTheta >= 1.0 {
-
 		q.W = w
 		q.X = x
 		q.Y = y
 		q.Z = z
-
-		return q
-
-	}
-
-	halfTheta := Acos(cosHalfTheta)
-	sinHalfTheta := Sqrt(1.0 - cosHalfTheta + cosHalfTheta)
-
-	if Abs(sinHalfTheta) < 0.001 {
-
-		q.W = 0.5 * (w + q.W)
-		q.X = 0.5 * (x + q.X)
-		q.Y = 0.5 * (y + q.Y)
-		q.Z = 0.5 * (z + q.Z)
-
 		return q
 	}
 
+	sqrSinHalfTheta := 1.0 - cosHalfTheta * cosHalfTheta
+	if sqrSinHalfTheta < 0.001 {
+		s := 1-t
+		q.W = s*w + t*q.W
+		q.X = s*x + t*q.X
+		q.Y = s*y + t*q.Y
+		q.Z = s*z + t*q.Z
+		return q.Normalize()
+	}
+
+	sinHalfTheta := Sqrt( sqrSinHalfTheta )
+	halfTheta := Atan2( sinHalfTheta, cosHalfTheta )
 	ratioA := Sin((1-t)*halfTheta) / sinHalfTheta
 	ratioB := Sin(t*halfTheta) / sinHalfTheta
 
-	q.W = (w*ratioA + q.W*ratioB)
-	q.X = (x*ratioA + q.X*ratioB)
-	q.Y = (y*ratioA + q.Y*ratioB)
-	q.Z = (z*ratioA + q.Z*ratioB)
+	q.W = w*ratioA + q.W*ratioB
+	q.X = x*ratioA + q.X*ratioB
+	q.Y = y*ratioA + q.Y*ratioB
+	q.Z = z*ratioA + q.Z*ratioB
 
 	return q
 }
