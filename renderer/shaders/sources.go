@@ -17,6 +17,47 @@ layout(location = 5) in  vec4  VertexTexoffsets;
 
 `
 
+const include_bones_vertex_source = `#if BONE_INFLUENCERS > 0
+
+    mat4 influence = mBones[int(matricesIndices[0])] * matricesWeights[0];
+    #if BONE_INFLUENCERS > 1
+        influence += mBones[int(matricesIndices[1])] * matricesWeights[1];
+        #if BONE_INFLUENCERS > 2
+            influence += mBones[int(matricesIndices[2])] * matricesWeights[2];
+            #if BONE_INFLUENCERS > 3
+                influence += mBones[int(matricesIndices[3])] * matricesWeights[3];
+//                #if BONE_INFLUENCERS > 4
+//                    influence += mBones[int(matricesIndicesExtra[0])] * matricesWeightsExtra[0];
+//                    #if BONE_INFLUENCERS > 5
+//                        influence += mBones[int(matricesIndicesExtra[1])] * matricesWeightsExtra[1];
+//                        #if BONE_INFLUENCERS > 6
+//                            influence += mBones[int(matricesIndicesExtra[2])] * matricesWeightsExtra[2];
+//                            #if BONE_INFLUENCERS > 7
+//                                influence += mBones[int(matricesIndicesExtra[3])] * matricesWeightsExtra[3];
+//                            #endif
+//                        #endif
+//                    #endif
+//                #endif
+            #endif
+        #endif
+    #endif
+
+    finalWorld = finalWorld * influence;
+
+#endif
+`
+
+const include_bones_vertex_declaration_source = `#if BONE_INFLUENCERS > 0
+	uniform mat4 mBones[TOTAL_BONES];
+    in vec4 matricesIndices;
+    in vec4 matricesWeights;
+//    #if BONE_INFLUENCERS > 4
+//        in vec4 matricesIndicesExtra;
+//        in vec4 matricesWeightsExtra;
+//    #endif
+#endif
+`
+
 const include_lights_source = `//
 // Lights uniforms
 //
@@ -112,12 +153,16 @@ uniform vec3 Material[6];
 `
 
 const include_morphtarget_vertex_source = `#ifdef MORPHTARGETS
-	vPosition += MorphPosition{i} * morphTargetInfluences[{i}];
-  #ifdef MORPHTARGETS_NORMAL
-	vNormal += MorphNormal{i} * morphTargetInfluences[{i}];
-  #endif
+
+    #include <morphtarget_vertex2> [MORPHTARGETS]
+
 #endif
 `
+
+const include_morphtarget_vertex2_source = `	vPosition += MorphPosition{i} * morphTargetInfluences[{i}];
+  #ifdef MORPHTARGETS_NORMAL
+	vNormal += MorphNormal{i} * morphTargetInfluences[{i}];
+  #endif`
 
 const include_morphtarget_vertex_declaration_source = `#ifdef MORPHTARGETS
 	uniform float morphTargetInfluences[MORPHTARGETS];
@@ -499,6 +544,7 @@ uniform mat4 MVP;
 
 #include <material>
 #include <morphtarget_vertex_declaration>
+#include <bones_vertex_declaration>
 
 // Output variables for Fragment shader
 out vec4 Position;
@@ -527,9 +573,11 @@ void main() {
 #endif
     FragTexcoord = texcoord;
     vec3 vPosition = VertexPosition;
-    #include <morphtarget_vertex> [MORPHTARGETS]
+    mat4 finalWorld = mat4(1.0);
+    #include <morphtarget_vertex>
+    #include <bones_vertex>
 
-    gl_Position = MVP * vec4(vPosition, 1.0);
+    gl_Position = MVP * finalWorld * vec4(vPosition, 1.0);
 }
 
 `
@@ -963,6 +1011,7 @@ uniform mat3 NormalMatrix;
 uniform mat4 MVP;
 
 #include <morphtarget_vertex_declaration>
+#include <bones_vertex_declaration>
 
 // Output variables for Fragment shader
 out vec3 Position;
@@ -992,9 +1041,12 @@ void main() {
     FragTexcoord = texcoord;
 
     vec3 vPosition = VertexPosition;
-    #include <morphtarget_vertex> [MORPHTARGETS]
+    mat4 finalWorld = mat4(1.0);
+    #include <morphtarget_vertex>
+    #include <bones_vertex>
 
-    gl_Position = MVP * vec4(vPosition, 1.0);
+    gl_Position = MVP * finalWorld * vec4(vPosition, 1.0);
+
 }
 
 
@@ -1205,6 +1257,7 @@ uniform mat4 MVP;
 #include <material>
 #include <phong_model>
 #include <morphtarget_vertex_declaration>
+#include <bones_vertex_declaration>
 
 // Outputs for the fragment shader.
 out vec3 ColorFrontAmbdiff;
@@ -1239,9 +1292,11 @@ void main() {
 #endif
     FragTexcoord = texcoord;
     vec3 vPosition = VertexPosition;
-    #include <morphtarget_vertex> [MORPHTARGETS]
+    mat4 finalWorld = mat4(1.0);
+    #include <morphtarget_vertex>
+    #include <bones_vertex>
 
-    gl_Position = MVP * vec4(vPosition, 1.0);
+    gl_Position = MVP * finalWorld * vec4(vPosition, 1.0);
 }
 
 `
@@ -1250,9 +1305,12 @@ void main() {
 var includeMap = map[string]string{
 
 	"attributes":                      include_attributes_source,
+	"bones_vertex":                    include_bones_vertex_source,
+	"bones_vertex_declaration":        include_bones_vertex_declaration_source,
 	"lights":                          include_lights_source,
 	"material":                        include_material_source,
 	"morphtarget_vertex":              include_morphtarget_vertex_source,
+	"morphtarget_vertex2":             include_morphtarget_vertex2_source,
 	"morphtarget_vertex_declaration":  include_morphtarget_vertex_declaration_source,
 	"morphtarget_vertex_declaration2": include_morphtarget_vertex_declaration2_source,
 	"phong_model":                     include_phong_model_source,

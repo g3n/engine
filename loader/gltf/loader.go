@@ -186,6 +186,52 @@ func (g *GLTF) NewNode(i int) (core.INode, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		if nodeData.Skin != nil {
+			children := in.GetNode().Children()
+			if len(children) > 1 {
+				//log.Error("skinning/rigging meshes with more than a single primitive is not supported")
+				return nil, fmt.Errorf("skinning/rigging meshes with more than a single primitive is not supported")
+			}
+			mesh := children[0].(*graphic.Mesh)
+			// Create RiggedMesh
+			rm := graphic.NewRiggedMesh(mesh)
+			// Create Skeleton and set it on Rigged mesh
+			skinData := g.Skins[*nodeData.Skin]
+			var topNode core.INode
+			if skinData.Skeleton != nil {
+				topNode = g.Nodes[*skinData.Skeleton].node
+				topNode.UpdateMatrixWorld()
+			}  else {
+				return nil, fmt.Errorf("skinning/rigging meshes with nil skeleton is not supported (yet)")
+				//defaultSceneIdx := 0
+				//if g.Scene != nil {
+				//	defaultSceneIdx = *g.Scene
+				//}
+				//topNode = g.Scenes[defaultSceneIdx]
+			}
+			skeleton := graphic.NewSkeleton(mesh) // TODO SPEC SAYS IT SHOULD BE TOP SKELETON NODE HERE
+
+			// Load inverseBindMatrices
+			// TODO
+			ibmData, err := g.loadAccessorF32(skinData.InverseBindMatrices, "ibm", []string{MAT4}, []int{FLOAT})
+			if err != nil {
+				return nil, err
+			}
+
+			fmt.Println("ibmData", ibmData)
+
+			for i := range skinData.Joints {
+				jointNode := g.Nodes[skinData.Joints[i]].node
+				var ibm math32.Matrix4
+				ibmData.GetMatrix4(16 * i, &ibm)
+				skeleton.AddBone(jointNode.GetNode(), &ibm)
+			}
+
+			rm.SetSkeleton(skeleton)
+			in = rm
+		}
+
 		// Check if the node is Camera
 	} else if nodeData.Camera != nil {
 		in, err = g.NewCamera(*nodeData.Camera)
@@ -459,7 +505,10 @@ func (g *GLTF) loadAttributes(geom *geometry.Geometry, attributes map[string]int
 				if err != nil {
 					return err
 				}
-				data := g.bytesToArrayF32(buf, g.BufferViews[bvIdx].ByteLength)
+				data, err := g.bytesToArrayF32(buf, accessor.ComponentType, accessor.Count*TypeSizes[accessor.Type])
+				if err != nil {
+					return err
+				}
 				vbo := gls.NewVBO(data)
 				g.addAttributeToVBO(vbo, name, 0)
 				// Save reference to VBO keyed by index of the buffer view
@@ -472,7 +521,10 @@ func (g *GLTF) loadAttributes(geom *geometry.Geometry, attributes map[string]int
 			if err != nil {
 				return err
 			}
-			data := g.bytesToArrayF32(buf, accessor.Count*TypeSizes[accessor.Type])
+			data, err := g.bytesToArrayF32(buf, accessor.ComponentType, accessor.Count*TypeSizes[accessor.Type])
+			if err != nil {
+				return err
+			}
 			vbo := gls.NewVBO(data)
 			g.addAttributeToVBO(vbo, name, 0)
 			// Add VBO to geometry
@@ -508,9 +560,11 @@ func (g *GLTF) addAttributeToVBO(vbo *gls.VBO, attribName string, byteOffset uin
 	} else if attribName == "COLOR_0" {	// TODO glTF spec says COLOR can be VEC3 or VEC4
 		vbo.AddAttribOffset(gls.VertexColor, byteOffset)
 	} else if attribName == "JOINTS_0" {
-		// TODO
+		vbo.AddCustomAttribOffset("matricesIndices", 4, byteOffset)
+		fmt.Println("matricesIndices", vbo.Buffer())
 	} else if attribName == "WEIGHTS_0" {
-		// TODO
+		vbo.AddCustomAttribOffset("matricesWeights", 4, byteOffset)
+		fmt.Println("matricesWeights", vbo.Buffer())
 	} else {
 		panic(fmt.Sprintf("Attribute %v is not supported!", attribName))
 	}
@@ -740,13 +794,37 @@ func (g *GLTF) bytesToArrayU32(data []byte, componentType, count int) (math32.Ar
 		return out, nil
 	}
 
-	return nil, fmt.Errorf("Unsupported Accessor ComponentType:%v", componentType)
+	return nil, fmt.Errorf("unsupported Accessor ComponentType:%v", componentType)
 }
 
 // bytesToArrayF32 converts a byte array to ArrayF32.
-func (g *GLTF) bytesToArrayF32(data []byte, size int) math32.ArrayF32 {
+func (g *GLTF) bytesToArrayF32(data []byte, componentType, count int) (math32.ArrayF32, error) {
 
-	return (*[1 << 30]float32)(unsafe.Pointer(&data[0]))[:size]
+	// If component is UNSIGNED_INT nothing to do
+	if componentType == UNSIGNED_INT {
+		arr := (*[1 << 30]float32)(unsafe.Pointer(&data[0]))[:count]
+		return math32.ArrayF32(arr), nil
+	}
+
+	// Converts UNSIGNED_SHORT to UNSIGNED_INT
+	if componentType == UNSIGNED_SHORT {
+		out := math32.NewArrayF32(count, count)
+		for i := 0; i < count; i++ {
+			out[i] = float32(data[i*2]) + float32(data[i*2+1])*256
+		}
+		return out, nil
+	}
+
+	// Converts UNSIGNED_BYTE indices to UNSIGNED_INT
+	if componentType == UNSIGNED_BYTE {
+		out := math32.NewArrayF32(count, count)
+		for i := 0; i < count; i++ {
+			out[i] = float32(data[i])
+		}
+		return out, nil
+	}
+
+	return (*[1 << 30]float32)(unsafe.Pointer(&data[0]))[:count], nil
 }
 
 // loadAccessorU32 loads data from the specified accessor and performs validation of the Type and ComponentType.
@@ -755,7 +833,7 @@ func (g *GLTF) loadAccessorU32(ai int, usage string, validTypes []string, validC
 	// Get Accessor for the specified index
 	ac := g.Accessors[ai]
 	if ac.BufferView == nil {
-		return nil, fmt.Errorf("Accessor.BufferView == nil NOT SUPPORTED YET") // TODO
+		return nil, fmt.Errorf("accessor.BufferView == nil NOT SUPPORTED YET") // TODO
 	}
 
 	// Validate type and component type
@@ -770,7 +848,7 @@ func (g *GLTF) loadAccessorU32(ai int, usage string, validTypes []string, validC
 		return nil, err
 	}
 
-	return g.bytesToArrayU32(data, ac.ComponentType, ac.Count)
+	return g.bytesToArrayU32(data, ac.ComponentType, ac.Count*TypeSizes[ac.Type])
 }
 
 // loadAccessorF32 loads data from the specified accessor and performs validation of the Type and ComponentType.
@@ -779,7 +857,7 @@ func (g *GLTF) loadAccessorF32(ai int, usage string, validTypes []string, validC
 	// Get Accessor for the specified index
 	ac := g.Accessors[ai]
 	if ac.BufferView == nil {
-		return nil, fmt.Errorf("Accessor.BufferView == nil NOT SUPPORTED")
+		return nil, fmt.Errorf("accessor.BufferView == nil NOT SUPPORTED YET") // TODO
 	}
 
 	// Validate type and component type
@@ -794,7 +872,7 @@ func (g *GLTF) loadAccessorF32(ai int, usage string, validTypes []string, validC
 		return nil, err
 	}
 
-	return g.bytesToArrayF32(data, ac.Count*TypeSizes[ac.Type]), nil
+	return g.bytesToArrayF32(data, ac.ComponentType, ac.Count*TypeSizes[ac.Type])
 }
 
 // loadAccessorBytes returns the base byte array used by an accessor.
@@ -802,7 +880,7 @@ func (g *GLTF) loadAccessorBytes(ac Accessor) ([]byte, error) {
 
 	// Get the Accessor's BufferView
 	if ac.BufferView == nil {
-		return nil, fmt.Errorf("Accessor has nil BufferView") // TODO
+		return nil, fmt.Errorf("accessor has nil BufferView") // TODO
 	}
 	bv := g.BufferViews[*ac.BufferView]
 

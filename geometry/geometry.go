@@ -162,7 +162,7 @@ func (g *Geometry) AddVBO(vbo *gls.VBO) {
 			if existingVbo.AttribName(attrib.Name) != nil {
 				panic("Geometry.AddVBO: geometry already has a VBO with attribute name:" + attrib.Name)
 			}
-			if existingVbo.Attrib(attrib.Type) != nil {
+			if attrib.Type != gls.Undefined && existingVbo.Attrib(attrib.Type) != nil {
 				panic("Geometry.AddVBO: geometry already has a VBO with attribute type:" + strconv.Itoa(int(attrib.Type)))
 			}
 		}

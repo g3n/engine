@@ -275,7 +275,7 @@ type Scene struct {
 // Joints and matrices defining a skin.
 type Skin struct {
 	InverseBindMatrices int                    // The index of the accessor containing the floating-point 4x4 inverse-bind matrices. The default is that each matrix is a 4x4 identity matrix, which implies that inverse-bind matrices were pre-applied. Not required.
-	Skeleton            int                    // The index of the node used as a skeleton root. When undefined, joints transforms resolve to scene root. Not required.
+	Skeleton            *int                   // The index of the node used as a skeleton root. When undefined, joints transforms resolve to scene root. Not required.
 	Joints              []int                  // Indices of skeleton nodes, used as joints in this skin. Required.
 	Name                string                 // The user-define named of this object. Not required.
 	Extensions          map[string]interface{} // Dictionary object with extension-specific objects. Not required.

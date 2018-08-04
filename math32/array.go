@@ -110,6 +110,28 @@ func (a ArrayF32) GetVector4(pos int, v *Vector4) {
 	v.W = a[pos+3]
 }
 
+// GetMatrix4 stores in the specified Matrix4 the
+// values from the array starting at the specified pos.
+func (a ArrayF32) GetMatrix4(pos int, m *Matrix4) {
+
+	m[0] = a[pos]
+	m[1] = a[pos+1]
+	m[2] = a[pos+2]
+	m[3] = a[pos+3]
+	m[4] = a[pos+4]
+	m[5] = a[pos+5]
+	m[6] = a[pos+6]
+	m[7] = a[pos+7]
+	m[8] = a[pos+8]
+	m[9] = a[pos+9]
+	m[10] = a[pos+10]
+	m[11] = a[pos+11]
+	m[12] = a[pos+12]
+	m[13] = a[pos+13]
+	m[14] = a[pos+14]
+	m[15] = a[pos+15]
+}
+
 // GetColor stores in the specified Color the
 // values from the array starting at the specified pos
 func (a ArrayF32) GetColor(pos int, v *Color) {

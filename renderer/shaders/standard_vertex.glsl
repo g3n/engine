@@ -12,6 +12,7 @@ uniform mat4 MVP;
 #include <material>
 #include <phong_model>
 #include <morphtarget_vertex_declaration>
+#include <bones_vertex_declaration>
 
 // Outputs for the fragment shader.
 out vec3 ColorFrontAmbdiff;
@@ -46,8 +47,10 @@ void main() {
 #endif
     FragTexcoord = texcoord;
     vec3 vPosition = VertexPosition;
-    #include <morphtarget_vertex> [MORPHTARGETS]
+    mat4 finalWorld = mat4(1.0);
+    #include <morphtarget_vertex>
+    #include <bones_vertex>
 
-    gl_Position = MVP * vec4(vPosition, 1.0);
+    gl_Position = MVP * finalWorld * vec4(vPosition, 1.0);
 }
 
