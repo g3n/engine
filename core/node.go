@@ -16,6 +16,7 @@ type INode interface {
 	GetNode() *Node
 	UpdateMatrixWorld()
 	Raycast(*Raycaster, *[]Intersect)
+	BoundingBox() math32.Box3
 	Render(gs *gls.GLS)
 	Dispose()
 }
@@ -78,6 +79,17 @@ func (n *Node) GetNode() *Node {
 
 // Raycast satisfies the INode interface.
 func (n *Node) Raycast(rc *Raycaster, intersects *[]Intersect) {
+}
+
+// BoundingBox satisfies the INode interface.
+func (n *Node) BoundingBox() math32.Box3 {
+
+	bbox := math32.Box3{n.position, n.position}
+	for _, inode := range n.Children() {
+		childBbox := inode.BoundingBox()
+		bbox.Union(&childBbox)
+	}
+	return bbox
 }
 
 // Render satisfies the INode interface.
