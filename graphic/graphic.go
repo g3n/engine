@@ -203,10 +203,25 @@ func (gr *Graphic) SetIGraphic(ig IGraphic) {
 	}
 }
 
+// BoundingBox recursively calculates and returns the bounding box
+// containing this node and all its children.
+func (gr *Graphic) BoundingBox() math32.Box3 {
+
+	geom := gr.igeom.GetGeometry()
+	bbox := geom.BoundingBox()
+	for _, inode := range gr.Children() {
+		childGraphic, ok := inode.(*Graphic)
+		if ok {
+			childBbox := childGraphic.BoundingBox()
+			bbox.Union(&childBbox)
+		}
+	}
+	return bbox
+}
+
 // CalculateMatrices calculates the model view and model view projection matrices.
 func (gr *Graphic) CalculateMatrices(gs *gls.GLS, rinfo *core.RenderInfo) {
 
-	// Calculate model view and model view projection matrices
 	mw := gr.MatrixWorld()
 	gr.mvm.MultiplyMatrices(&rinfo.ViewMatrix, &mw)
 	gr.mvpm.MultiplyMatrices(&rinfo.ProjMatrix, &gr.mvm)
