@@ -17,13 +17,29 @@ func (g *GLTF) loadMaterialPBR(m *Material) (material.IMaterial, error) {
 
 	// Create new physically based material
 	pm := material.NewPhysical()
-	pm.SetTransparent(true) // TODO when to set this to true?
 
 	// Double sided
 	if m.DoubleSided {
 		pm.SetSide(material.SideDouble)
 	} else {
 		pm.SetSide(material.SideFront)
+	}
+
+	var alphaMode string
+	if len(m.AlphaMode) > 0{
+		alphaMode = m.AlphaMode
+	} else {
+		alphaMode = "OPAQUE"
+	}
+
+	if alphaMode == "BLEND" {
+		pm.SetTransparent(true)
+	} else {
+		pm.SetTransparent(false)
+		if alphaMode == "MASK" {
+			// TODO m.AlphaCutoff
+			// pm.SetAlphaCutoff
+		}
 	}
 
 	// BaseColorFactor
