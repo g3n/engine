@@ -146,22 +146,23 @@ func readChunk(r io.Reader, chunkType uint32) ([]byte, error) {
 	return data, nil
 }
 
-// NewScene creates a parent Node which contains all nodes contained by
+// LoadScene creates a parent Node which contains all nodes contained by
 // the specified scene index from the GLTF Scenes array.
-func (g *GLTF) NewScene(si int) (core.INode, error) {
-
-	log.Debug("Loading Scene %d", si)
+func (g *GLTF) LoadScene(sceneIdx int) (core.INode, error) {
 
 	// Check if provided scene index is valid
-	if si < 0 || si >= len(g.Scenes) {
+	if sceneIdx < 0 || sceneIdx >= len(g.Scenes) {
 		return nil, fmt.Errorf("invalid scene index")
 	}
-	s := g.Scenes[si]
+	log.Debug("Loading Scene %d", sceneIdx)
+	sceneData := g.Scenes[sceneIdx]
 
 	scene := core.NewNode()
-	scene.SetName(s.Name)
-	for _, ni := range s.Nodes {
-		child, err := g.NewNode(ni)
+	scene.SetName(sceneData.Name)
+
+	// Load all nodes
+	for _, ni := range sceneData.Nodes {
+		child, err := g.LoadNode(ni)
 		if err != nil {
 			return nil, err
 		}
@@ -170,19 +171,27 @@ func (g *GLTF) NewScene(si int) (core.INode, error) {
 	return scene, nil
 }
 
-// NewNode creates and returns a new Node described by the specified index
+// LoadNode creates and returns a new Node described by the specified index
 // in the decoded GLTF Nodes array.
-func (g *GLTF) NewNode(i int) (core.INode, error) {
+func (g *GLTF) LoadNode(nodeIdx int) (core.INode, error) {
 
-	log.Debug("Loading Node %d", i)
+	// Check if provided node index is valid
+	if nodeIdx < 0 || nodeIdx >= len(g.Nodes) {
+		return nil, fmt.Errorf("invalid node index")
+	}
+	nodeData := g.Nodes[nodeIdx]
+	// Return cached if available
+	if nodeData.cache != nil {
+		log.Debug("Fetching Node %d (cached)", nodeIdx)
+		return nodeData.cache, nil
+	}
+	log.Debug("Loading Node %d", nodeIdx)
 
 	var in core.INode
 	var err error
-	nodeData := g.Nodes[i]
-
 	// Check if the node is a Mesh (triangles, lines, etc...)
 	if nodeData.Mesh != nil {
-		in, err = g.NewMesh(*nodeData.Mesh)
+		in, err = g.LoadMesh(*nodeData.Mesh)
 		if err != nil {
 			return nil, err
 		}
@@ -200,7 +209,10 @@ func (g *GLTF) NewNode(i int) (core.INode, error) {
 			skinData := g.Skins[*nodeData.Skin]
 			var topNode core.INode
 			if skinData.Skeleton != nil {
-				topNode = g.Nodes[*skinData.Skeleton].node
+				topNode, err = g.LoadNode(*skinData.Skeleton)
+				if err != nil {
+					return nil, err
+				}
 				topNode.UpdateMatrixWorld()
 			}  else {
 				return nil, fmt.Errorf("skinning/rigging meshes with nil skeleton is not supported (yet)")
@@ -210,10 +222,9 @@ func (g *GLTF) NewNode(i int) (core.INode, error) {
 				//}
 				//topNode = g.Scenes[defaultSceneIdx]
 			}
-			skeleton := graphic.NewSkeleton(mesh) // TODO SPEC SAYS IT SHOULD BE TOP SKELETON NODE HERE
+			skeleton := graphic.NewSkeleton(mesh) // TODO spec says it should be top skeleton node here
 
 			// Load inverseBindMatrices
-			// TODO
 			ibmData, err := g.loadAccessorF32(skinData.InverseBindMatrices, "ibm", []string{MAT4}, []int{FLOAT})
 			if err != nil {
 				return nil, err
@@ -222,7 +233,10 @@ func (g *GLTF) NewNode(i int) (core.INode, error) {
 			fmt.Println("ibmData", ibmData)
 
 			for i := range skinData.Joints {
-				jointNode := g.Nodes[skinData.Joints[i]].node
+				jointNode, err := g.LoadNode(skinData.Joints[i])
+				if err != nil {
+					return nil, err
+				}
 				var ibm math32.Matrix4
 				ibmData.GetMatrix4(16 * i, &ibm)
 				skeleton.AddBone(jointNode.GetNode(), &ibm)
@@ -234,7 +248,7 @@ func (g *GLTF) NewNode(i int) (core.INode, error) {
 
 		// Check if the node is Camera
 	} else if nodeData.Camera != nil {
-		in, err = g.NewCamera(*nodeData.Camera)
+		in, err = g.LoadCamera(*nodeData.Camera)
 		if err != nil {
 			return nil, err
 		}
@@ -243,9 +257,6 @@ func (g *GLTF) NewNode(i int) (core.INode, error) {
 		log.Debug("Empty Node")
 		in = core.NewNode()
 	}
-
-	// Cache inode in nodeData
-	g.Nodes[i].node = in
 
 	// Get *core.Node from core.INode
 	node := in.GetNode()
@@ -270,9 +281,12 @@ func (g *GLTF) NewNode(i int) (core.INode, error) {
 		}
 	}
 
+	// Cache node
+	g.Nodes[nodeIdx].cache = in
+
 	// Recursively load node children and add them to the parent
 	for _, ci := range nodeData.Children {
-		child, err := g.NewNode(ci)
+		child, err := g.LoadNode(ci)
 		if err != nil {
 			return nil, err
 		}
@@ -282,27 +296,28 @@ func (g *GLTF) NewNode(i int) (core.INode, error) {
 	return in, nil
 }
 
-// NewAnimation creates an Animation for the specified
+// LoadAnimation creates an Animation for the specified
 // the animation index from the GLTF Animations array.
-func (g *GLTF) NewAnimation(i int) (*animation.Animation, error) {
+func (g *GLTF) LoadAnimation(animIdx int) (*animation.Animation, error) {
 
-	log.Debug("Loading Animation %d", i)
-
-	// Check if provided scene index is valid
-	if i < 0 || i >= len(g.Animations) {
+	// Check if provided animation index is valid
+	if animIdx < 0 || animIdx >= len(g.Nodes) {
 		return nil, fmt.Errorf("invalid animation index")
 	}
-	a := g.Animations[i]
+	log.Debug("Loading Animation %d", animIdx)
+	animData := g.Animations[animIdx]
 
 	anim := animation.NewAnimation()
-	anim.SetName(a.Name)
-	for i := 0; i < len(a.Channels); i++ {
+	anim.SetName(animData.Name)
+	for i := 0; i < len(animData.Channels); i++ {
 
-		chData := a.Channels[i]
+		chData := animData.Channels[i]
 		target := chData.Target
-		sampler := a.Samplers[chData.Sampler]
-		node := g.Nodes[target.Node].node
-		// TODO Instantiate node if not exists ?
+		sampler := animData.Samplers[chData.Sampler]
+		node, err := g.LoadNode(target.Node)
+		if err != nil {
+			return nil, err
+		}
 
 		var validTypes []string
 		var validComponentTypes []int
@@ -348,15 +363,19 @@ func (g *GLTF) NewAnimation(i int) (*animation.Animation, error) {
 	return anim, nil
 }
 
-// NewCamera creates and returns a Camera Node
+// LoadCamera creates and returns a Camera Node
 // from the specified GLTF.Cameras index.
-func (g *GLTF) NewCamera(ci int) (core.INode, error) {
+func (g *GLTF) LoadCamera(camIdx int) (core.INode, error) {
 
-	log.Debug("Loading Camera %d", ci)
+	// Check if provided camera index is valid
+	if camIdx < 0 || camIdx >= len(g.Cameras) {
+		return nil, fmt.Errorf("invalid camera index")
+	}
+	log.Debug("Loading Camera %d", camIdx)
+	camData := g.Cameras[camIdx]
 
-	camDesc := g.Cameras[ci]
-	if camDesc.Type == "perspective" {
-		desc := camDesc.Perspective
+	if camData.Type == "perspective" {
+		desc := camData.Perspective
 		fov := 360 * (desc.Yfov) / 2 * math32.Pi
 		aspect := float32(2) // TODO how to get the current aspect ratio of the viewport from here ?
 		if desc.AspectRatio != nil {
@@ -370,24 +389,34 @@ func (g *GLTF) NewCamera(ci int) (core.INode, error) {
 		return cam, nil
 	}
 
-	if camDesc.Type == "orthographic" {
-		desc := camDesc.Orthographic
+	if camData.Type == "orthographic" {
+		desc := camData.Orthographic
 		cam := camera.NewOrthographic(desc.Xmag/-2, desc.Xmag/2, desc.Ymag/2, desc.Ymag/-2, desc.Znear, desc.Zfar)
 		return cam, nil
 
 	}
 
-	return nil, fmt.Errorf("unsupported camera type: %s", camDesc.Type)
+	return nil, fmt.Errorf("unsupported camera type: %s", camData.Type)
 }
 
-// NewMesh creates and returns a Graphic Node (graphic.Mesh, graphic.Lines, graphic.Points, etc)
+// LoadMesh creates and returns a Graphic Node (graphic.Mesh, graphic.Lines, graphic.Points, etc)
 // from the specified GLTF.Meshes index.
-func (g *GLTF) NewMesh(mi int) (core.INode, error) {
+func (g *GLTF) LoadMesh(meshIdx int) (core.INode, error) {
 
-	log.Debug("Loading Mesh %d", mi)
+	// Check if provided mesh index is valid
+	if meshIdx < 0 || meshIdx >= len(g.Meshes) {
+		return nil, fmt.Errorf("invalid mesh index")
+	}
+	meshData := g.Meshes[meshIdx]
+	// Return cached if available
+	if meshData.cache != nil {
+		// TODO CLONE/REINSTANCE INSTEAD
+		//log.Debug("Instancing Mesh %d (from cached)", meshIdx)
+		//return meshData.cache, nil
+	}
+	log.Debug("Loading Mesh %d", meshIdx)
 
 	var err error
-	meshData := g.Meshes[mi]
 
 	// Create container node
 	meshNode := core.NewNode()
@@ -413,7 +442,7 @@ func (g *GLTF) NewMesh(mi int) (core.INode, error) {
 		// Load primitive material
 		var grMat material.IMaterial
 		if p.Material != nil {
-			grMat, err = g.NewMaterial(*p.Material)
+			grMat, err = g.LoadMaterial(*p.Material)
 			if err != nil {
 				return nil, err
 			}
@@ -434,6 +463,9 @@ func (g *GLTF) NewMesh(mi int) (core.INode, error) {
 		// If primitive has targets then the geometry should be a morph geometry
 		if len(p.Targets) > 0 {
 			morphGeom := geometry.NewMorphGeometry(geom)
+
+			// TODO Load morph target names if present in extras under "targetNames"
+			// TODO Update morph target weights if present in Mesh.Weights
 
 			// Load targets
 			for i := range p.Targets {
@@ -456,10 +488,9 @@ func (g *GLTF) NewMesh(mi int) (core.INode, error) {
 		}
 
 		// Create Mesh
+		// TODO materials for LINES, etc need to be different...
 		if mode == TRIANGLES {
-			primitiveMesh := graphic.NewMesh(igeom, nil)
-			primitiveMesh.AddMaterial(grMat, 0, 0)
-			meshNode.Add(primitiveMesh)
+			meshNode.Add(graphic.NewMesh(igeom, grMat))
 		} else if mode == LINES {
 			meshNode.Add(graphic.NewLines(igeom, grMat))
 		} else if mode == LINE_STRIP {
@@ -467,9 +498,12 @@ func (g *GLTF) NewMesh(mi int) (core.INode, error) {
 		} else if mode == POINTS {
 			meshNode.Add(graphic.NewPoints(igeom, grMat))
 		} else {
-			return nil, fmt.Errorf("Unsupported primitive:%v", mode)
+			return nil, fmt.Errorf("unsupported primitive:%v", mode)
 		}
 	}
+
+	// Cache mesh
+	g.Meshes[meshIdx].cache = meshNode
 
 	return meshNode, nil
 }
@@ -501,7 +535,7 @@ func (g *GLTF) loadAttributes(geom *geometry.Geometry, attributes map[string]int
 				g.addAttributeToVBO(vbo, name, uint32(*accessor.ByteOffset))
 			} else {
 				// Load data and create vbo
-				buf, err := g.loadBufferView(g.BufferViews[bvIdx])
+				buf, err := g.loadBufferView(bvIdx)
 				if err != nil {
 					return err
 				}
@@ -549,25 +583,12 @@ func (g *GLTF) loadIndices(ai int) (math32.ArrayU32, error) {
 // addAttributeToVBO adds the appropriate attribute to the provided vbo based on the glTF attribute name.
 func (g *GLTF) addAttributeToVBO(vbo *gls.VBO, attribName string, byteOffset uint32) {
 
-	if attribName == "POSITION" {
-		vbo.AddAttribOffset(gls.VertexPosition, byteOffset)
-	} else if attribName == "NORMAL" {
-		vbo.AddAttribOffset(gls.VertexNormal, byteOffset)
-	} else if attribName == "TANGENT" {
-		vbo.AddAttribOffset(gls.VertexTangent, byteOffset)
-	} else if attribName == "TEXCOORD_0" {
-		vbo.AddAttribOffset(gls.VertexTexcoord, byteOffset)
-	} else if attribName == "COLOR_0" {	// TODO glTF spec says COLOR can be VEC3 or VEC4
-		vbo.AddAttribOffset(gls.VertexColor, byteOffset)
-	} else if attribName == "JOINTS_0" {
-		vbo.AddCustomAttribOffset("matricesIndices", 4, byteOffset)
-		fmt.Println("matricesIndices", vbo.Buffer())
-	} else if attribName == "WEIGHTS_0" {
-		vbo.AddCustomAttribOffset("matricesWeights", 4, byteOffset)
-		fmt.Println("matricesWeights", vbo.Buffer())
-	} else {
-		panic(fmt.Sprintf("Attribute %v is not supported!", attribName))
+	aType, ok := AttributeName[attribName]
+	if !ok {
+		log.Warn(fmt.Sprintf("Attribute %v is not supported!", attribName))
+		return
 	}
+	vbo.AddAttribOffset(aType, byteOffset)
 }
 
 // validateAccessorAttribute validates the specified accessor for the given attribute name.
@@ -634,17 +655,29 @@ func (g *GLTF) newDefaultMaterial() material.IMaterial {
 	return material.NewStandard(&math32.Color{0.5, 0.5, 0.5})
 }
 
-// NewMaterial creates and returns a new material based on the material data with the specified index.
-func (g *GLTF) NewMaterial(mi int) (material.IMaterial, error) {
+// LoadMaterial creates and returns a new material based on the material data with the specified index.
+func (g *GLTF) LoadMaterial(matIdx int) (material.IMaterial, error) {
 
-	log.Debug("Loading Material %d", mi)
+	// Check if provided material index is valid
+	if matIdx < 0 || matIdx >= len(g.Materials) {
+		return nil, fmt.Errorf("invalid material index")
+	}
+	matData := g.Materials[matIdx]
+	// Return cached if available
+	if matData.cache != nil {
+		log.Debug("Fetching Material %d (cached)", matIdx)
+		return matData.cache, nil
+	}
+	log.Debug("Loading Material %d", matIdx)
 
-	matData := g.Materials[mi]
+	var err error
+	var imat material.IMaterial
+
 	// Check for material extensions
 	if matData.Extensions != nil {
 		for ext, v := range matData.Extensions {
 			if ext == "KHR_materials_common" {
-				return g.loadMaterialCommon(v)
+				imat, err = g.loadMaterialCommon(v)
 			} else {
 				return nil, fmt.Errorf("unsupported extension:%s", ext)
 			}
@@ -652,34 +685,53 @@ func (g *GLTF) NewMaterial(mi int) (material.IMaterial, error) {
 		return nil, fmt.Errorf("empty material extensions")
 	} else {
 		// Material is normally PBR
-		return g.loadMaterialPBR(&matData)
+		imat, err = g.loadMaterialPBR(&matData)
 	}
+
+	// Cache material
+	g.Materials[matIdx].cache = imat
+
+	return imat, err
 }
 
-// NewTexture loads the texture specified by its index.
-func (g *GLTF) NewTexture(texi int) (*texture.Texture2D, error) {
+// LoadTexture loads the texture specified by its index.
+func (g *GLTF) LoadTexture(texIdx int) (*texture.Texture2D, error) {
 
-	log.Debug("Loading Texture %d", texi)
+	// Check if provided texture index is valid
+	if texIdx < 0 || texIdx >= len(g.Textures) {
+		return nil, fmt.Errorf("invalid texture index")
+	}
+	texData := g.Textures[texIdx]
+	// NOTE: Textures can't be cached because they have their own uniforms
+	log.Debug("Loading Texture %d", texIdx)
 
-	// loads texture image
-	texDesc := g.Textures[texi]
-	img, err := g.NewImage(texDesc.Source)
+	// Load texture image
+	img, err := g.LoadImage(texData.Source)
 	if err != nil {
 		return nil, err
 	}
 	tex := texture.NewTexture2DFromRGBA(img)
 
 	// Get sampler and apply texture parameters
-	if texDesc.Sampler != nil {
-		sampler := g.Samplers[*texDesc.Sampler]
-		g.applySampler(sampler, tex)
+	if texData.Sampler != nil {
+		err = g.applySampler(*texData.Sampler, tex)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return tex, nil
 }
 
 // applySamplers applies the specified Sampler to the provided texture.
-func (g *GLTF) applySampler(sampler Sampler, tex *texture.Texture2D) {
+func (g *GLTF) applySampler(samplerIdx int, tex *texture.Texture2D) error {
+
+	log.Debug("Applying Sampler %d", samplerIdx)
+	// Check if provided sampler index is valid
+	if samplerIdx < 0 || samplerIdx >= len(g.Samplers) {
+		return fmt.Errorf("invalid sampler index")
+	}
+	sampler := g.Samplers[samplerIdx]
 
 	// Magnification filter
 	magFilter := gls.LINEAR
@@ -708,47 +760,45 @@ func (g *GLTF) applySampler(sampler Sampler, tex *texture.Texture2D) {
 		wrapT = *sampler.WrapT
 	}
 	tex.SetWrapT(uint32(wrapT))
+
+	return nil
 }
 
-// NewImage loads the image specified by the index of GLTF.Images.
+// LoadImage loads the image specified by the index of GLTF.Images.
 // Image can be loaded from binary chunk file or data URI or external file..
-func (g *GLTF) NewImage(ii int) (*image.RGBA, error) {
+func (g *GLTF) LoadImage(imgIdx int) (*image.RGBA, error) {
 
-	log.Debug("Loading Image %d", ii)
+	// Check if provided image index is valid
+	if imgIdx < 0 || imgIdx >= len(g.Images) {
+		return nil, fmt.Errorf("invalid image index")
+	}
+	imgData := g.Images[imgIdx]
+	// Return cached if available
+	if imgData.cache != nil {
+		log.Debug("Fetching Image %d (cached)", imgIdx)
+		return imgData.cache, nil
+	}
+	log.Debug("Loading Image %d", imgIdx)
 
-	imgDesc := g.Images[ii]
+
 	var data []byte
 	var err error
 	// If Uri is empty, load image from GLB binary chunk
-	if imgDesc.Uri == "" {
-		bvi := imgDesc.BufferView
-		if bvi == nil {
+	if imgData.Uri == "" {
+		if imgData.BufferView == nil {
 			return nil, fmt.Errorf("image has empty URI and no BufferView")
 		}
-		bv := g.BufferViews[*bvi]
-		offset := 0
-		if bv.ByteOffset != nil {
-			offset = *bv.ByteOffset
-		}
-		data = g.data[offset : offset+bv.ByteLength]
+		data, err = g.loadBufferView(*imgData.BufferView)
+	} else if isDataURL(imgData.Uri) {
 		// Checks if image URI is data URL
-	} else if isDataURL(imgDesc.Uri) {
-		data, err = loadDataURL(imgDesc.Uri)
-		if err != nil {
-			return nil, err
-		}
-		// Load image data from file
+		data, err = loadDataURL(imgData.Uri)
 	} else {
-		fpath := filepath.Join(g.path, imgDesc.Uri)
-		f, err := os.Open(fpath)
-		if err != nil {
-			return nil, err
-		}
-		defer f.Close()
-		data, err = ioutil.ReadAll(f)
-		if err != nil {
-			return nil, err
-		}
+		// Load image data from file
+		data, err = g.loadFileBytes(imgData.Uri)
+	}
+
+	if err != nil {
+		return nil, err
 	}
 
 	// Decodes image data
@@ -764,6 +814,10 @@ func (g *GLTF) NewImage(ii int) (*image.RGBA, error) {
 		return nil, fmt.Errorf("unsupported stride")
 	}
 	draw.Draw(rgba, rgba.Bounds(), img, image.Point{0, 0}, draw.Src)
+
+	// Cache image
+	g.Images[imgIdx].cache = rgba
+
 	return rgba, nil
 }
 
@@ -880,12 +934,12 @@ func (g *GLTF) loadAccessorBytes(ac Accessor) ([]byte, error) {
 
 	// Get the Accessor's BufferView
 	if ac.BufferView == nil {
-		return nil, fmt.Errorf("accessor has nil BufferView") // TODO
+		return nil, fmt.Errorf("accessor.BufferView == nil NOT SUPPORTED YET") // TODO
 	}
 	bv := g.BufferViews[*ac.BufferView]
 
 	// Loads data from associated BufferView
-	data, err := g.loadBufferView(bv)
+	data, err := g.loadBufferView(*ac.BufferView)
 	if err != nil {
 		return nil, err
 	}
@@ -897,7 +951,7 @@ func (g *GLTF) loadAccessorBytes(ac Accessor) ([]byte, error) {
 	}
 	data = data[offset:]
 
-	// Check if interleaved and de-interleave if necessary ? TODO
+	// TODO check if interleaved and de-interleave if necessary?
 
 	// Calculate the size in bytes of a complete attribute
 	itemSize := TypeSizes[ac.Type]
@@ -909,6 +963,8 @@ func (g *GLTF) loadAccessorBytes(ac Accessor) ([]byte, error) {
 		// TODO
 		return nil, fmt.Errorf("data is interleaved - not supported for animation yet")
 	}
+
+	// TODO Sparse accessor
 
 	return data, nil
 }
@@ -937,69 +993,99 @@ func (g *GLTF) isInterleaved(accessor Accessor) bool {
 }
 
 // loadBufferView loads and returns a byte slice with data from the specified BufferView.
-func (g *GLTF) loadBufferView(bv BufferView) ([]byte, error) {
+func (g *GLTF) loadBufferView(bvIdx int) ([]byte, error) {
+
+	// Check if provided buffer view index is valid
+	if bvIdx < 0 || bvIdx >= len(g.BufferViews) {
+		return nil, fmt.Errorf("invalid buffer view index")
+	}
+	bvData := g.BufferViews[bvIdx]
+	// Return cached if available
+	if bvData.cache != nil {
+		log.Debug("Fetching BufferView %d (cached)", bvIdx)
+		return bvData.cache, nil
+	}
+	log.Debug("Loading BufferView %d", bvIdx)
 
 	// Load buffer view buffer
-	buf, err := g.loadBuffer(bv.Buffer)
+	buf, err := g.loadBuffer(bvData.Buffer)
 	if err != nil {
 		return nil, err
 	}
 
 	// Establish offset
 	offset := 0
-	if bv.ByteOffset != nil {
-		offset = *bv.ByteOffset
+	if bvData.ByteOffset != nil {
+		offset = *bvData.ByteOffset
 	}
 
 	// Compute and return offset slice
-	return buf[offset : offset+bv.ByteLength], nil
+	bvBytes := buf[offset : offset+bvData.ByteLength]
+
+	// Cache buffer view
+	g.BufferViews[bvIdx].cache = bvBytes
+
+	return bvBytes, nil
 }
 
 // loadBuffer loads and returns the data from the specified GLTF Buffer index
-func (g *GLTF) loadBuffer(bi int) ([]byte, error) {
+func (g *GLTF) loadBuffer(bufIdx int) ([]byte, error) {
 
-	buf := &g.Buffers[bi]
-	// If Buffer URI use the chunk data field
-	if buf.Uri == "" {
-		return g.data, nil
+	// Check if provided buffer index is valid
+	if bufIdx < 0 || bufIdx >= len(g.Buffers) {
+		return nil, fmt.Errorf("invalid buffer index")
 	}
+	bufData := &g.Buffers[bufIdx]
+	// Return cached if available
+	if bufData.cache != nil {
+		log.Debug("Fetching Buffer %d (cached)", bufIdx)
+		return bufData.cache, nil
+	}
+	log.Debug("Loading Buffer %d", bufIdx)
 
-	// If buffer already loaded:
-	log.Debug("loadBuffer cache:%v", len(buf.data))
-	if len(buf.data) > 0 {
-		return buf.data, nil
+	// If buffer URI use the chunk data field
+	if bufData.Uri == "" {
+		return g.data, nil
 	}
 
 	// Checks if buffer URI is a data URI
 	var data []byte
 	var err error
-	if isDataURL(buf.Uri) {
-		data, err = loadDataURL(buf.Uri)
-		if err != nil {
-			return nil, err
-		}
-		// Loads external buffer file
+	if isDataURL(bufData.Uri) {
+		data, err = loadDataURL(bufData.Uri)
 	} else {
-		log.Debug("loadBuffer: loading file")
 		// Try to load buffer from file
-		fpath := filepath.Join(g.path, buf.Uri)
-		f, err := os.Open(fpath)
-		if err != nil {
-			return nil, err
-		}
-		defer f.Close()
-		data, err = ioutil.ReadAll(f)
-		if err != nil {
-			return nil, err
-		}
+		data, err = g.loadFileBytes(bufData.Uri)
 	}
+	if err != nil {
+		return nil, err
+	}
+
 	// Checks data length
-	if len(data) != buf.ByteLength {
-		return nil, fmt.Errorf("Buffer:%d read data length:%d expected:%d", bi, len(data), buf.ByteLength)
+	if len(data) != bufData.ByteLength {
+		return nil, fmt.Errorf("buffer:%d read data length:%d expected:%d", bufIdx, len(data), bufData.ByteLength)
 	}
 	// Cache buffer data
-	buf.data = data
-	log.Debug("cache data:%v", len(buf.data))
+	g.Buffers[bufIdx].cache = data
+	log.Debug("cache data:%v", len(bufData.cache))
+	return data, nil
+}
+
+
+func (g *GLTF) loadFileBytes(uri string) ([]byte, error) {
+
+	log.Debug("Loading File: %v", uri)
+
+	fpath := filepath.Join(g.path, uri)
+	f, err := os.Open(fpath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
 	return data, nil
 }
 

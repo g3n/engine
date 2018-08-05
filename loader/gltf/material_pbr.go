@@ -84,7 +84,7 @@ func (g *GLTF) loadMaterialPBR(m *Material) (material.IMaterial, error) {
 
 	// BaseColorTexture
 	if pbr.BaseColorTexture != nil {
-		tex, err := g.NewTexture(pbr.BaseColorTexture.Index)
+		tex, err := g.LoadTexture(pbr.BaseColorTexture.Index)
 		if err != nil {
 			return nil, err
 		}
@@ -93,7 +93,7 @@ func (g *GLTF) loadMaterialPBR(m *Material) (material.IMaterial, error) {
 
 	// MetallicRoughnessTexture
 	if pbr.MetallicRoughnessTexture != nil {
-		tex, err := g.NewTexture(pbr.MetallicRoughnessTexture.Index)
+		tex, err := g.LoadTexture(pbr.MetallicRoughnessTexture.Index)
 		if err != nil {
 			return nil, err
 		}
@@ -102,7 +102,7 @@ func (g *GLTF) loadMaterialPBR(m *Material) (material.IMaterial, error) {
 
 	// NormalTexture
 	if m.NormalTexture != nil {
-		tex, err := g.NewTexture(m.NormalTexture.Index)
+		tex, err := g.LoadTexture(m.NormalTexture.Index)
 		if err != nil {
 			return nil, err
 		}
@@ -111,7 +111,7 @@ func (g *GLTF) loadMaterialPBR(m *Material) (material.IMaterial, error) {
 
 	// OcclusionTexture
 	if m.OcclusionTexture != nil {
-		tex, err := g.NewTexture(m.OcclusionTexture.Index)
+		tex, err := g.LoadTexture(m.OcclusionTexture.Index)
 		if err != nil {
 			return nil, err
 		}
@@ -120,7 +120,7 @@ func (g *GLTF) loadMaterialPBR(m *Material) (material.IMaterial, error) {
 
 	// EmissiveTexture
 	if m.EmissiveTexture != nil {
-		tex, err := g.NewTexture(m.EmissiveTexture.Index)
+		tex, err := g.LoadTexture(m.EmissiveTexture.Index)
 		if err != nil {
 			return nil, err
 		}
