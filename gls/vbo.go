@@ -37,23 +37,33 @@ const (
 	VertexTangent
 	VertexColor
 	VertexTexcoord
+	VertexTexcoord2
+	SkinWeight
+	SkinIndex
 )
 
 // Map from attribute type to default attribute name.
 var attribTypeNameMap = map[AttribType]string{
-	VertexPosition: "VertexPosition",
-	VertexNormal:   "VertexNormal",
-	VertexTangent:  "VertexTangent",
-	VertexColor:    "VertexColor",
-	VertexTexcoord: "VertexTexcoord",
+	VertexPosition:  "VertexPosition",
+	VertexNormal:    "VertexNormal",
+	VertexTangent:   "VertexTangent",
+	VertexColor:     "VertexColor",
+	VertexTexcoord:  "VertexTexcoord",
+	VertexTexcoord2: "VertexTexcoord2",
+	SkinWeight:      "matricesWeights",
+	SkinIndex:       "matricesIndices",
 }
 
 // Map from attribute type to default attribute size.
 var attribTypeSizeMap = map[AttribType]int32{
-	VertexPosition: 3,
-	VertexNormal:   3,
-	VertexColor:    3,
-	VertexTexcoord: 2,
+	VertexPosition:  3,
+	VertexNormal:    3,
+	VertexTangent:   3, // TODO
+	VertexColor:     3,
+	VertexTexcoord:  2,
+	VertexTexcoord2: 2,
+	SkinWeight:      4,
+	SkinIndex:       4,
 }
 
 // Map from element type to element size (in bytes).
