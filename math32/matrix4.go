@@ -270,7 +270,7 @@ func (m *Matrix4) Multiply(other *Matrix4) *Matrix4 {
 	return m.MultiplyMatrices(m, other)
 }
 
-// MultiplyMatrices multiply matrix a by b storing the result in this matrix.
+// MultiplyMatrices multiply matrix a by b (i.e. b*a) storing the result in this matrix.
 // Returns pointer to this updated matrix.
 func (m *Matrix4) MultiplyMatrices(a, b *Matrix4) *Matrix4 {
 
@@ -471,7 +471,7 @@ func (m *Matrix4) GetInverse(src *Matrix4) error {
 
 	if det == 0 {
 		m.Identity()
-		return errors.New("Cannot inverse matrix")
+		return errors.New("cannot invert matrix")
 	}
 
 	detInv := 1 / det
