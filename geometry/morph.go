@@ -193,7 +193,7 @@ func (mg *MorphGeometry) RenderSetup(gs *gls.GLS) {
 	activeMorphTargets, activeWeights := mg.ActiveMorphTargets()
 
 	// If the morph geometry has more targets than the shader supports we need to update attribute names
-	// as weights change - we only send the top morph targets with highest weight
+	// as weights change - we only send the top morph targets with highest weights
 	if len(mg.targets) > MaxActiveMorphTargets {
 		mg.UpdateTargetAttributes(activeMorphTargets)
 	}
