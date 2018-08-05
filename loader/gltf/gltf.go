@@ -5,7 +5,15 @@
 // Package gltf
 package gltf
 
-import "github.com/g3n/engine/core"
+import (
+	"github.com/g3n/engine/animation"
+	"github.com/g3n/engine/camera"
+	"github.com/g3n/engine/core"
+	"github.com/g3n/engine/gls"
+	"github.com/g3n/engine/material"
+	"github.com/g3n/engine/math32"
+	"image"
+)
 
 // GLTF is the root object for a glTF asset.
 type GLTF struct {
@@ -35,21 +43,20 @@ type GLTF struct {
 
 // Accessor is a typed view into a BufferView.
 type Accessor struct {
-	BufferView *int // The index of the buffer view. Not required.
-	ByteOffset *int // The offset relative to the start of the BufferView in bytes. Not required. Default is 0.
+	BufferView    *int                   // The index of the buffer view. Not required.
+	ByteOffset    *int                   // The offset relative to the start of the BufferView in bytes. Not required. Default is 0.
+	ComponentType int                    // The data type of components in the attribute. Required.
+	Normalized    bool                   // Specifies whether integer data values should be normalized. Not required. Default is false.
+	Count         int                    // The number of attributes referenced by this accessor. Required.
+	Type          string                 // Specifies if the attribute is a scalar, vector or matrix. Required.
+	Max           []float32              // Maximum value of each component in this attribute. Not required.
+	Min           []float32              // Minimum value of each component in this attribute. Not required.
+	Sparse        *Sparse                // Sparse storage attribute that deviates from their initialization value. Not required.
+	Name          string                 // The user-defined name of this object. Not required.
+	Extensions    map[string]interface{} // Dictionary object with extension specific objects. Not required.
+	Extras        interface{}            // Application-specific data. Not required.
 
-	// TODO define ComponentType type ?
-	ComponentType int // The data type of components in the attribute. Required.
-
-	Normalized bool                   // Specifies whether integer data values should be normalized. Not required. Default is false.
-	Count      int                    // The number of attributes referenced by this accessor. Required.
-	Type       string                 // Specifies if the attribute is a scalar, vector or matrix. Required.
-	Max        []float32              // Maximum value of each component in this attribute. Not required.
-	Min        []float32              // Minimum value of each component in this attribute. Not required.
-	Sparse     *Sparse                // Sparse storage attribute that deviates from their initialization value. Not required.
-	Name       string                 // The user-defined name of this object. Not required.
-	Extensions map[string]interface{} // Dictionary object with extension specific objects. Not required.
-	Extras     interface{}            // Application-specific data. Not required.
+	cache math32.ArrayF32 // TODO implement caching
 }
 
 // Animation is a keyframe animation.
@@ -59,6 +66,8 @@ type Animation struct {
 	Name       string                 // The user-defined name of this object. Not required.
 	Extensions map[string]interface{} // Dictionary object with extension specific objects. Not required.
 	Extras     interface{}            // Application-specific data. Not required.
+
+	cache *animation.Animation // Cached Animation. // TODO
 }
 
 // AnimationSample combines input and output accessors with an interpolation algorithm to define a keyframe graph (but not its target).
@@ -88,7 +97,7 @@ type Buffer struct {
 	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required.
 	Extras     interface{}            // Application-specific data. Not required.
 
-	data []byte // Cached buffer data.
+	cache []byte // Cached buffer data.
 }
 
 // BufferView is a view into a buffer generally representing a subset of the buffer.
@@ -101,6 +110,8 @@ type BufferView struct {
 	Name       string                 // The user-defined name of this object. Not required.
 	Extensions map[string]interface{} // Dictionary object with extension specific objects. Not required.
 	Extras     interface{}            // Application-specific data. Not required.
+
+	cache []byte // Cached buffer view data.
 }
 
 // Camera is a camera's projection.
@@ -112,6 +123,8 @@ type Camera struct {
 	Name         string                 // The user-defined name of this object. Not required.
 	Extensions   map[string]interface{} // Dictionary object with extension-specific objects. Not required.
 	Extras       interface{}            // Application-specific data. Not required.
+
+	cache camera.ICamera // Cached ICamera. // TODO
 }
 
 // Channel targets an animation's sampler at a node's property.
@@ -131,6 +144,8 @@ type Image struct {
 	Name       string                 // The user-defined name of this object. Not required.
 	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required.
 	Extras     interface{}            // Application-specific data. Not required.
+
+	cache *image.RGBA // Cached image.
 }
 
 // Indices of those attributes that deviate from their initialization value.
@@ -155,6 +170,8 @@ type Material struct {
 	DoubleSided          bool                   // Specifies whether the material is double sided. Not required. Default is false.
 	Extensions           map[string]interface{} // Dictionary object with extension-specific objects. Not required.
 	Extras               interface{}            // Application-specific data. Not required.
+
+	cache material.IMaterial // Cached IMaterial.
 }
 
 // Mesh is a set of primitives to be rendered.
@@ -165,6 +182,8 @@ type Mesh struct {
 	Name       string                 // The user-defined name of this object. Not required.
 	Extensions map[string]interface{} // Dictionary object with extension-specific objects. Not required.
 	Extras     interface{}            // Application-specific data. Not required.
+
+	cache core.INode // Cached INode. We don't cache an IGraphic here because a glTFL mesh can contain multiple primitive IGraphics.
 }
 
 // Node is a node in the node hierarchy.
@@ -187,7 +206,7 @@ type Node struct {
 	Extensions  map[string]interface{} // Dictionary object with extension-specific objects. Not required.
 	Extras      interface{}            // Application-specific data. Not required.
 
-	node        core.INode             // Cached node
+	cache core.INode // Cached INode.
 }
 
 // TODO Why not combine NormalTextureInfo and OcclusionTextureInfo ? Or simply add Scale to TextureInfo and use only TextureInfo?
@@ -223,10 +242,10 @@ type Orthographic struct {
 
 // PbrMetallicRoughness is a set of parameter values that are used to define the metallic-roughness material model from Physically-Based Rendering (PBR) methodology.
 type PbrMetallicRoughness struct {
-	BaseColorFactor          *[4]float32             // The material's base color factor. Not required. Default is [1,1,1,1]
+	BaseColorFactor          *[4]float32            // The material's base color factor. Not required. Default is [1,1,1,1]
 	BaseColorTexture         *TextureInfo           // The base color texture. Not required.
-	MetallicFactor           *float32                // The metalness of the material. Not required. Default is 1.
-	RoughnessFactor          *float32                // The roughness of the material. Not required. Default is 1.
+	MetallicFactor           *float32               // The metalness of the material. Not required. Default is 1.
+	RoughnessFactor          *float32               // The roughness of the material. Not required. Default is 1.
 	MetallicRoughnessTexture *TextureInfo           // The metallic-roughness texture. Not required.
 	Extensions               map[string]interface{} // Dictionary object with extension-specific objects. Not required.
 	Extras                   interface{}            // Application-specific data. Not required.
@@ -338,11 +357,13 @@ const (
 	TRIANGLE_FAN   = 6
 )
 
+// OpenGL array types.
 const (
-	ARRAY_BUFFER         = 34962
-	ELEMENT_ARRAY_BUFFER = 34963
+	ARRAY_BUFFER         = 34962 // For vertex attributes
+	ELEMENT_ARRAY_BUFFER = 34963 // For indices
 )
 
+// Texture filtering modes.
 const (
 	NEAREST                = 9728
 	LINEAR                 = 9729
@@ -352,13 +373,14 @@ const (
 	LINEAR_MIPMAP_LINEAR   = 9987
 )
 
+// Texture sampling modes.
 const (
 	CLAMP_TO_EDGE   = 33071
 	MIRRORED_REPEAT = 33648
 	REPEAT          = 10497
 )
 
-// Possible componentType values. TODO maybe create ComponentType type
+// Possible componentType values.
 const (
 	BYTE           = 5120
 	UNSIGNED_BYTE  = 5121
@@ -368,30 +390,18 @@ const (
 	FLOAT          = 5126
 )
 
-// TODO Create table mapping componentType to size in bytes?
-
+// Attribute element types.
 const (
-	POSITION   = "POSITION"
-	NORMAL     = "NORMAL"
-	TANGENT    = "TANGENT"
-	TEXCOORD_0 = "TEXCOORD_0"
-	TEXCOORD_1 = "TEXCOORD_1"
-	COLOR_0    = "COLOR_0"
-	JOINTS_0   = "JOINTS_0"
-	WEIGHTS_0  = "WEIGHTS_0"
+	SCALAR = "SCALAR"
+	VEC2   = "VEC2"
+	VEC3   = "VEC3"
+	VEC4   = "VEC4"
+	MAT2   = "MAT2"
+	MAT3   = "MAT3"
+	MAT4   = "MAT4"
 )
 
-const (
-	SCALAR     = "SCALAR"
-	VEC2       = "VEC2"
-	VEC3       = "VEC3"
-	VEC4       = "VEC4"
-	MAT2       = "MAT2"
-	MAT3       = "MAT3"
-	MAT4       = "MAT4"
-)
-
-// TypeSizes maps the attribute type to the number of its elements
+// TypeSizes maps an attribute element type to the number of components it contains.
 var TypeSizes = map[string]int{
 	SCALAR: 1,
 	VEC2:   2,
@@ -400,6 +410,18 @@ var TypeSizes = map[string]int{
 	MAT2:   4,
 	MAT3:   9,
 	MAT4:   16,
+}
+
+// AttributeName maps the glTF attribute name to the internal g3n attribute type.
+var AttributeName = map[string]gls.AttribType{
+	"POSITION":   gls.VertexPosition,
+	"NORMAL":     gls.VertexNormal,
+	"TANGENT":    gls.VertexTangent,
+	"TEXCOORD_0": gls.VertexTexcoord,
+	"TEXCOORD_1": gls.VertexTexcoord2,
+	"COLOR_0":    gls.VertexColor,
+	"JOINTS_0":   gls.SkinIndex,
+	"WEIGHTS_0":  gls.SkinWeight,
 }
 
 type GLB struct {

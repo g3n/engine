@@ -74,7 +74,7 @@ func (g *GLTF) loadMaterialCommon(ext interface{}) (material.IMaterial, error) {
 			// Checks for texture index
 			if len(v) == 1 {
 				var err error
-				texDiffuse, err = g.NewTexture(int(v[0]))
+				texDiffuse, err = g.LoadTexture(int(v[0]))
 				if err != nil {
 					return nil, err
 				}
