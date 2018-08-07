@@ -440,6 +440,7 @@ func (li *List) setSelection(litem *ListItem, state bool, force bool, dispatch b
 		for _, curr := range li.items {
 			if curr.(*ListItem) != litem {
 				curr.(*ListItem).SetSelected(false)
+				curr.(*ListItem).SetHighlighted(false)
 			}
 		}
 	}

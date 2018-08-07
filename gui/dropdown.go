@@ -113,10 +113,17 @@ func (dd *DropDown) Selected() *ImageLabel {
 	return dd.selItem
 }
 
+// SelectedPos returns the currently selected position or -1 if no item was selected
+func (dd *DropDown) SelectedPos() int {
+	return dd.list.selected()
+}
+
 // SetSelected sets the selected item
 func (dd *DropDown) SetSelected(item *ImageLabel) {
-
+	dd.list.SetSelected(dd.selItem, false)
 	dd.list.SetSelected(item, true)
+	dd.copySelected()
+	dd.update()
 }
 
 // SelectPos selects the item at the specified position
