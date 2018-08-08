@@ -60,6 +60,14 @@ func NewGeometry() *Geometry {
 	return g
 }
 
+// NewGeometryWithVAO creates and returns a pointer to a new Geometry with the specified VAO.
+func NewGeometryWithVAO(handleVAO uint32) *Geometry {
+
+	g := new(Geometry)
+	g.InitWithVAO(handleVAO)
+	return g
+}
+
 // Init initializes the geometry.
 func (g *Geometry) Init() {
 
@@ -71,6 +79,13 @@ func (g *Geometry) Init() {
 	g.handleIndices = 0
 	g.updateIndices = true
 	g.ShaderDefines = *gls.NewShaderDefines()
+}
+
+// InitWithVAO initializes the geometry with the specified VAO.
+func (g *Geometry) InitWithVAO(handleVAO uint32) {
+
+	g.Init()
+	g.handleVAO = handleVAO
 }
 
 // Incref increments the reference count for this geometry
@@ -491,8 +506,10 @@ func (g *Geometry) RenderSetup(gs *gls.GLS) {
 
 	// First time initialization
 	if g.gs == nil {
-		// Generate VAO and binds it
-		g.handleVAO = gs.GenVertexArray()
+		if g.handleVAO == 0 {
+			// Generate VAO and binds it
+			g.handleVAO = gs.GenVertexArray()
+		}
 		gs.BindVertexArray(g.handleVAO)
 		// Generate VBO for indices
 		g.handleIndices = gs.GenBuffer()
