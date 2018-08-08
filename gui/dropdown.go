@@ -128,8 +128,9 @@ func (dd *DropDown) SetSelected(item *ImageLabel) {
 
 // SelectPos selects the item at the specified position
 func (dd *DropDown) SelectPos(pos int) {
-
+    dd.list.SetSelected(dd.selItem, false)
 	dd.list.SelectPos(pos, true)
+    dd.Dispatch(OnChange, nil)
 }
 
 // onKeyEvent is called when key event is received when this dropdown has the key focus.
@@ -225,12 +226,16 @@ func (dd *DropDown) onListMouse(evname string, ev interface{}) {
 // copySelected copy to the dropdown panel the selected item
 // from the list.
 func (dd *DropDown) copySelected() {
-
-	dd.selItem = dd.list.Selected()[0].(*ImageLabel)
-	dd.litem.CopyFields(dd.selItem)
-	dd.litem.SetWidth(dd.selItem.Width())
-	dd.recalc()
-	dd.Dispatch(OnChange, nil)
+    selected := dd.list.Selected()
+    if len(selected) > 0 {
+        dd.selItem = selected[0].(*ImageLabel)
+        dd.litem.CopyFields(dd.selItem)
+        dd.litem.SetWidth(dd.selItem.Width())
+        dd.recalc()
+        dd.Dispatch(OnChange, nil)
+    } else {
+        return
+    }
 }
 
 // onListChangeEvent is called when an item in the list is selected
