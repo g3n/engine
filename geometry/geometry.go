@@ -19,15 +19,15 @@ type IGeometry interface {
 
 // Geometry encapsulates a three-dimensional vertex-based geometry.
 type Geometry struct {
+	gs            *gls.GLS          // Pointer to gl context. Valid after first render setup
+	groups        []Group           // Array geometry groups
 	refcount      int               // Current number of references
 	vbos          []*gls.VBO        // Array of VBOs
-	groups        []Group           // Array geometry groups
-	indices       math32.ArrayU32   // Buffer with indices
-	gs            *gls.GLS          // Pointer to gl context. Valid after first render setup
-	ShaderDefines gls.ShaderDefines // Geometry-specific shader defines
 	handleVAO     uint32            // Handle to OpenGL VAO
+	indices       math32.ArrayU32   // Buffer with indices
 	handleIndices uint32            // Handle to OpenGL buffer for indices
 	updateIndices bool              // Flag to indicate that indices must be transferred
+	ShaderDefines gls.ShaderDefines // Geometry-specific shader defines
 
 	// Geometric properties
 	boundingBox    math32.Box3    // Last calculated bounding box
@@ -147,10 +147,22 @@ func (g *Geometry) SetIndices(indices math32.ArrayU32) {
 	g.boundingSphereValid = false
 }
 
-// Indices returns this geometry indices array.
+// Indices returns the indices array for this geometry.
 func (g *Geometry) Indices() math32.ArrayU32 {
 
 	return g.indices
+}
+
+// SetVAO sets the Vertex Array Object handle associated with this geometry.
+func (g *Geometry) SetVAO(handle uint32) {
+
+	g.handleVAO = handle
+}
+
+// VAO returns the Vertex Array Object handle associated with this geometry.
+func (g *Geometry) VAO() uint32 {
+
+	return g.handleVAO
 }
 
 // AddVBO adds a Vertex Buffer Object for this geometry.
@@ -232,6 +244,13 @@ func (g *Geometry) OperateOnVertices(cb func(vertex *math32.Vector3) bool) {
 		return
 	}
 	vbo.OperateOnVectors3(gls.VertexPosition, cb)
+
+	// Geometric properties may have changed
+	g.boundingBoxValid = false
+	g.boundingSphereValid = false
+	g.areaValid = false
+	g.volumeValid = false
+	g.rotInertiaValid = false
 }
 
 // ReadVertices iterates over all the vertices and calls
@@ -491,12 +510,13 @@ func (g *Geometry) RenderSetup(gs *gls.GLS) {
 
 	// First time initialization
 	if g.gs == nil {
-		// Generate VAO and binds it
-		g.handleVAO = gs.GenVertexArray()
-		gs.BindVertexArray(g.handleVAO)
+		if g.handleVAO == 0 {
+			// Generate VAO and bind it
+			g.handleVAO = gs.GenVertexArray()
+		}
 		// Generate VBO for indices
 		g.handleIndices = gs.GenBuffer()
-		// Saves pointer to gs indicating initialization was done.
+		// Save pointer to gs indicating initialization was done
 		g.gs = gs
 	}
 
@@ -506,7 +526,7 @@ func (g *Geometry) RenderSetup(gs *gls.GLS) {
 		vbo.Transfer(gs)
 	}
 
-	// Updates Indices buffer if necessary
+	// Update Indices buffer if necessary
 	if g.indices.Size() > 0 && g.updateIndices {
 		gs.BindBuffer(gls.ELEMENT_ARRAY_BUFFER, g.handleIndices)
 		gs.BufferData(gls.ELEMENT_ARRAY_BUFFER, g.indices.Bytes(), g.indices, gls.STATIC_DRAW)
