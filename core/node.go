@@ -632,6 +632,7 @@ func (n *Node) SetMatrix(m *math32.Matrix4) {
 
 	n.matrix = *m
 	n.matrix.Decompose(&n.position, &n.quaternion, &n.scale)
+	n.rotNeedsUpdate = true
 }
 
 // Matrix returns a copy of the local transformation matrix.
