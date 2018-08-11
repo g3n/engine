@@ -54,7 +54,6 @@ func (sk *Skeleton) BoneMatrices() []math32.Matrix4 {
 	// Obtain inverse matrix world
 	var invMat math32.Matrix4
 	node := sk.GetNode()
-	node.UpdateMatrixWorld()
 	nMW := node.MatrixWorld()
 	err := invMat.GetInverse(&nMW)
 	if err != nil {
@@ -63,7 +62,6 @@ func (sk *Skeleton) BoneMatrices() []math32.Matrix4 {
 
 	// Update bone matrices
 	for i := range sk.bones {
-		sk.bones[i].UpdateMatrixWorld()
 		bMat := sk.bones[i].MatrixWorld()
 		bMat.MultiplyMatrices(&bMat, &sk.inverseBindMatrices[i])
 		sk.boneMatrices[i].MultiplyMatrices(&invMat, &bMat)
