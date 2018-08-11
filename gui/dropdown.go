@@ -133,6 +133,13 @@ func (dd *DropDown) SelectPos(pos int) {
     dd.Dispatch(OnChange, nil)
 }
 
+// SetStyles sets the drop down styles overriding the default style
+func (dd *DropDown) SetStyles(dds *DropDownStyles) {
+
+	dd.styles = dds
+	dd.update()
+}
+
 // onKeyEvent is called when key event is received when this dropdown has the key focus.
 func (dd *DropDown) onKeyEvent(evname string, ev interface{}) {
 
