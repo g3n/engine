@@ -632,6 +632,7 @@ func (n *Node) SetMatrix(m *math32.Matrix4) {
 
 	n.matrix = *m
 	n.matrix.Decompose(&n.position, &n.quaternion, &n.scale)
+	n.matNeedsUpdate = true
 }
 
 // Matrix returns a copy of the local transformation matrix.
@@ -697,7 +698,7 @@ func (n *Node) MatrixWorld() math32.Matrix4 {
 // of this node based on its position, quaternion, and scale.
 func (n *Node) UpdateMatrix() bool {
 
-	if !n.matNeedsUpdate && !n.rotNeedsUpdate {
+	if !n.matNeedsUpdate {
 		return false
 	}
 	n.matrix.Compose(&n.position, &n.quaternion, &n.scale)
