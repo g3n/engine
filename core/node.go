@@ -698,7 +698,7 @@ func (n *Node) MatrixWorld() math32.Matrix4 {
 // of this node based on its position, quaternion, and scale.
 func (n *Node) UpdateMatrix() bool {
 
-	if !n.matNeedsUpdate {
+	if !n.matNeedsUpdate && !n.rotNeedsUpdate {
 		return false
 	}
 	n.matrix.Compose(&n.position, &n.quaternion, &n.scale)
