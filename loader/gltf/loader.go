@@ -57,6 +57,9 @@ func ParseJSONReader(r io.Reader, path string) (*GLTF, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO Check for extensions used and extensions required
+
 	return g, nil
 }
 
@@ -205,43 +208,10 @@ func (g *GLTF) LoadNode(nodeIdx int) (core.INode, error) {
 			mesh := children[0].(*graphic.Mesh)
 			// Create RiggedMesh
 			rm := graphic.NewRiggedMesh(mesh)
-			// Create Skeleton and set it on Rigged mesh
-			skinData := g.Skins[*nodeData.Skin]
-			var topNode core.INode
-			if skinData.Skeleton != nil {
-				topNode, err = g.LoadNode(*skinData.Skeleton)
-				if err != nil {
-					return nil, err
-				}
-				topNode.UpdateMatrixWorld()
-			}  else {
-				return nil, fmt.Errorf("skinning/rigging meshes with nil skeleton is not supported (yet)")
-				//defaultSceneIdx := 0
-				//if g.Scene != nil {
-				//	defaultSceneIdx = *g.Scene
-				//}
-				//topNode = g.Scenes[defaultSceneIdx]
-			}
-			skeleton := graphic.NewSkeleton(mesh) // TODO spec says it should be top skeleton node here
-
-			// Load inverseBindMatrices
-			ibmData, err := g.loadAccessorF32(skinData.InverseBindMatrices, "ibm", []string{MAT4}, []int{FLOAT})
+			skeleton, err := g.LoadSkin(*nodeData.Skin)
 			if err != nil {
 				return nil, err
 			}
-
-			fmt.Println("ibmData", ibmData)
-
-			for i := range skinData.Joints {
-				jointNode, err := g.LoadNode(skinData.Joints[i])
-				if err != nil {
-					return nil, err
-				}
-				var ibm math32.Matrix4
-				ibmData.GetMatrix4(16 * i, &ibm)
-				skeleton.AddBone(jointNode.GetNode(), &ibm)
-			}
-
 			rm.SetSkeleton(skeleton)
 			in = rm
 		}
@@ -296,12 +266,57 @@ func (g *GLTF) LoadNode(nodeIdx int) (core.INode, error) {
 	return in, nil
 }
 
+// LoadSkin loads the skin with specified index.
+func (g *GLTF) LoadSkin(skinIdx int) (*graphic.Skeleton, error) {
+
+	// Check if provided skin index is valid
+	if skinIdx < 0 || skinIdx >= len(g.Skins) {
+		return nil, fmt.Errorf("invalid skin index")
+	}
+	log.Debug("Loading Skin %d", skinIdx)
+	skinData := g.Skins[skinIdx]
+
+	// Create Skeleton and set it on Rigged mesh
+	skeleton := graphic.NewSkeleton()
+
+	// Load inverseBindMatrices
+	ibmData, err := g.loadAccessorF32(skinData.InverseBindMatrices, "ibm", []string{MAT4}, []int{FLOAT})
+	if err != nil {
+		return nil, err
+	}
+
+	// Add bones
+	for i := range skinData.Joints {
+		jointNode, err := g.LoadNode(skinData.Joints[i])
+		if err != nil {
+			return nil, err
+		}
+		var ibm math32.Matrix4
+		ibmData.GetMatrix4(16 * i, &ibm)
+		skeleton.AddBone(jointNode.GetNode(), &ibm)
+	}
+
+	return skeleton, nil
+}
+
+// LoadAnimationByName loads the animations with specified name.
+// If there are multiple animations with the same name it loads the first occurrence.
+func (g *GLTF) LoadAnimationByName(animName string) (*animation.Animation, error) {
+
+	for i := range g.Animations {
+		if g.Animations[i].Name == animName {
+			return g.LoadAnimation(i)
+		}
+	}
+	return nil, fmt.Errorf("could not find animation named %v", animName)
+}
+
 // LoadAnimation creates an Animation for the specified
-// the animation index from the GLTF Animations array.
+// animation index from the GLTF Animations array.
 func (g *GLTF) LoadAnimation(animIdx int) (*animation.Animation, error) {
 
 	// Check if provided animation index is valid
-	if animIdx < 0 || animIdx >= len(g.Nodes) {
+	if animIdx < 0 || animIdx >= len(g.Animations) {
 		return nil, fmt.Errorf("invalid animation index")
 	}
 	log.Debug("Loading Animation %d", animIdx)
@@ -577,7 +592,7 @@ func (g *GLTF) loadAttributes(geom *geometry.Geometry, attributes map[string]int
 // loadIndices loads the indices stored in the specified accessor.
 func (g *GLTF) loadIndices(ai int) (math32.ArrayU32, error) {
 
-	return g.loadAccessorU32(ai, "indices", []string{SCALAR}, []int{UNSIGNED_BYTE, UNSIGNED_SHORT, UNSIGNED_INT}) // TODO check that it's ELEMENT_ARRAY_BUFFER
+	return g.loadAccessorU32(ai, "indices", []string{SCALAR}, []int{UNSIGNED_BYTE, UNSIGNED_SHORT, UNSIGNED_INT}) // TODO verify that it's ELEMENT_ARRAY_BUFFER
 }
 
 // addAttributeToVBO adds the appropriate attribute to the provided vbo based on the glTF attribute name.
@@ -675,14 +690,16 @@ func (g *GLTF) LoadMaterial(matIdx int) (material.IMaterial, error) {
 
 	// Check for material extensions
 	if matData.Extensions != nil {
-		for ext, v := range matData.Extensions {
-			if ext == "KHR_materials_common" {
-				imat, err = g.loadMaterialCommon(v)
+		for ext, extData := range matData.Extensions {
+			if ext == KhrMaterialsCommon {
+				imat, err = g.loadMaterialCommon(extData)
+			} else if ext == KhrMaterialsUnlit {
+				//imat, err = g.loadMaterialUnlit(matData, extData)
+			//} else if ext == KhrMaterialsPbrSpecularGlossiness {
 			} else {
 				return nil, fmt.Errorf("unsupported extension:%s", ext)
 			}
 		}
-		return nil, fmt.Errorf("empty material extensions")
 	} else {
 		// Material is normally PBR
 		imat, err = g.loadMaterialPBR(&matData)
@@ -779,7 +796,6 @@ func (g *GLTF) LoadImage(imgIdx int) (*image.RGBA, error) {
 		return imgData.cache, nil
 	}
 	log.Debug("Loading Image %d", imgIdx)
-
 
 	var data []byte
 	var err error
@@ -1071,7 +1087,7 @@ func (g *GLTF) loadBuffer(bufIdx int) ([]byte, error) {
 	return data, nil
 }
 
-
+// loadFileBytes loads the file with specified path as a byte array.
 func (g *GLTF) loadFileBytes(uri string) ([]byte, error) {
 
 	log.Debug("Loading File: %v", uri)

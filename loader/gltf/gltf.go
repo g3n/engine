@@ -15,6 +15,14 @@ import (
 	"image"
 )
 
+// glTF Extensions.
+const (
+	KhrDracoMeshCompression           = "KHR_draco_mesh_compression"
+	KhrMaterialsUnlit                 = "KHR_materials_unlit"
+	KhrMaterialsCommon                = "KHR_materials_common" // TODO this is officially part of glTF 1.0 (remove?)
+	KhrMaterialsPbrSpecularGlossiness = "KHR_materials_pbrSpecularGlossiness"
+)
+
 // GLTF is the root object for a glTF asset.
 type GLTF struct {
 	ExtensionsUsed     []string               // Names of glTF extensions used somewhere in this asset. Not required.
