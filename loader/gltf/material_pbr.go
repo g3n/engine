@@ -56,7 +56,11 @@ func (g *GLTF) loadMaterialPBR(m *Material) (material.IMaterial, error) {
 	if pbr.MetallicFactor != nil {
 		metallicFactor = *pbr.MetallicFactor
 	} else {
-		metallicFactor = 1
+		if pbr.MetallicRoughnessTexture != nil {
+			metallicFactor = 1
+		} else {
+			metallicFactor = 0
+		}
 	}
 	pm.SetMetallicFactor(metallicFactor)
 
