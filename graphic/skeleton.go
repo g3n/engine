@@ -11,17 +11,15 @@ import (
 
 // Skeleton contains armature information.
 type Skeleton struct {
-	core.INode
 	inverseBindMatrices []math32.Matrix4
 	boneMatrices        []math32.Matrix4
 	bones               []*core.Node
 }
 
 // NewSkeleton creates and returns a pointer to a new Skeleton.
-func NewSkeleton(node core.INode) *Skeleton {
+func NewSkeleton() *Skeleton {
 
 	sk := new(Skeleton)
-	sk.INode = node
 	sk.boneMatrices = make([]math32.Matrix4, 0)
 	sk.bones = make([]*core.Node, 0)
 	return sk
@@ -49,22 +47,13 @@ func (sk *Skeleton) Bones() []*core.Node {
 }
 
 // BoneMatrices calculates and returns the bone world matrices to be sent to the shader.
-func (sk *Skeleton) BoneMatrices() []math32.Matrix4 {
+func (sk *Skeleton) BoneMatrices(invMat *math32.Matrix4) []math32.Matrix4 {
 
-	// Obtain inverse matrix world
-	var invMat math32.Matrix4
-	node := sk.GetNode()
-	nMW := node.MatrixWorld()
-	err := invMat.GetInverse(&nMW)
-	if err != nil {
-		log.Error("Skeleton.BoneMatrices: inverting matrix failed!")
-	}
-
-	// Update bone matrices
+	// Update bone matrices based on inverseBindMatrices and the provided invMat
 	for i := range sk.bones {
 		bMat := sk.bones[i].MatrixWorld()
 		bMat.MultiplyMatrices(&bMat, &sk.inverseBindMatrices[i])
-		sk.boneMatrices[i].MultiplyMatrices(&invMat, &bMat)
+		sk.boneMatrices[i].MultiplyMatrices(invMat, &bMat)
 	}
 
 	return sk.boneMatrices
