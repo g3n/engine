@@ -1,4 +1,5 @@
-#if BONE_INFLUENCERS > 0
+#ifdef BONE_INFLUENCERS
+    #if BONE_INFLUENCERS > 0
 	uniform mat4 mBones[TOTAL_BONES];
     in vec4 matricesIndices;
     in vec4 matricesWeights;
@@ -6,4 +7,5 @@
 //        in vec4 matricesIndicesExtra;
 //        in vec4 matricesWeightsExtra;
 //    #endif
+    #endif
 #endif
