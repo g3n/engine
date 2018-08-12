@@ -273,8 +273,13 @@ func (g *GLTF) LoadSkin(skinIdx int) (*graphic.Skeleton, error) {
 	if skinIdx < 0 || skinIdx >= len(g.Skins) {
 		return nil, fmt.Errorf("invalid skin index")
 	}
-	log.Debug("Loading Skin %d", skinIdx)
 	skinData := g.Skins[skinIdx]
+	// Return cached if available
+	if skinData.cache != nil {
+		log.Debug("Fetching Skin %d (cached)", skinIdx)
+		return skinData.cache, nil
+	}
+	log.Debug("Loading Skin %d", skinIdx)
 
 	// Create Skeleton and set it on Rigged mesh
 	skeleton := graphic.NewSkeleton()
@@ -295,6 +300,9 @@ func (g *GLTF) LoadSkin(skinIdx int) (*graphic.Skeleton, error) {
 		ibmData.GetMatrix4(16 * i, &ibm)
 		skeleton.AddBone(jointNode.GetNode(), &ibm)
 	}
+
+	// Cache skin
+	g.Skins[skinIdx].cache = skeleton
 
 	return skeleton, nil
 }
