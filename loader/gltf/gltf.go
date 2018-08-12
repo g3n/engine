@@ -13,6 +13,7 @@ import (
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
 	"image"
+	"github.com/g3n/engine/graphic"
 )
 
 // glTF Extensions.
@@ -307,6 +308,8 @@ type Skin struct {
 	Name                string                 // The user-define named of this object. Not required.
 	Extensions          map[string]interface{} // Dictionary object with extension-specific objects. Not required.
 	Extras              interface{}            // Application-specific data. Not required.
+
+	cache *graphic.Skeleton // Cached skin.
 }
 
 // Sparse storage of attributes that deviate from their initialization value.
