@@ -154,7 +154,7 @@ func (m *Mesh) Raycast(rc *core.Raycaster, intersects *[]core.Intersect) {
 			intersect.Index = uint32(i)
 			*intersects = append(*intersects, *intersect)
 		}
-		i++
+		i += 3
 		return false
 	})
 }
