@@ -425,6 +425,9 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 	}
 
 	renderGraphicMaterials(r.grmatsOpaque) // Render opaque objects (front to back)
+	if err != nil {
+		return err
+	}
 	renderGraphicMaterials(r.grmatsTransp) // Render transparent objects (back to front)
 
 	return err
