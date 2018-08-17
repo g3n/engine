@@ -27,6 +27,7 @@
   On Unix-based systems the engine depends on some C libraries that can be installed using the appropriate distribution package manager.
 
   * For Ubuntu/Debian-like Linux distributions, install the following packages:
+
     * `xorg-dev`
     * `libgl1-mesa-dev`
     * `libopenal1`
@@ -34,19 +35,29 @@
     * `libvorbis0a`
     * `libvorbis-dev`
     * `libvorbisfile3`
-  * For CentOS/Fedora-like Linux distributions, install the following packages:
-    * `xorg-x11-devel.x86_64`
-    * `mesa-libGL.x86_64`
-    * `mesa-libGL-devel.x86_64`
-    * `openal-soft.x86_64`
-    * `openal-soft-devel.x86_64`
-    * `libvorbis.x86_64`
-    * `libvorbis-devel.x86_64`
+
+  * For Fedora, install the required packages:
+
+    ```
+    $ sudo dnf -y install xorg-x11-proto-devel mesa-libGL mesa-libGL-devel openal-soft \
+      openal-soft-devel libvorbis libvorbis-devel glfw-devel libXi-devel
+    ```
+
+  * For CentOS 7, enable the EPEL repo then install the same packages as for Fedora above:
+
+    ```
+    $ sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    ```
+
+    Remember to use `yum` instead of `dnf` for the package installation command.
+
   * For Windows, the necessary audio libraries sources and DLLs are supplied but they need to be installed
     manually. Please see [Audio libraries for Windows](audio/windows) for details.
     We tested the Windows build using the [mingw-w64](https://mingw-w64.org) toolchain.
+
   * For macOS, you should install the development files of OpenAL and Vorbis. If
     you are using [Homebrew](https://brew.sh/) as your package manager, run:
+
     `brew install libvorbis openal-soft`
 
   ## Installation
