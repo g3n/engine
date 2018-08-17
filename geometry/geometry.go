@@ -195,6 +195,18 @@ func (g *Geometry) VBO(atype gls.AttribType) *gls.VBO {
 	return nil
 }
 
+// VBOName returns a pointer to this geometry's VBO which contain the specified attribute.
+// Returns nil if the VBO is not found.
+func (g *Geometry) VBOName(name string) *gls.VBO {
+
+	for _, vbo := range g.vbos {
+		if vbo.AttribName(name) != nil {
+			return vbo
+		}
+	}
+	return nil
+}
+
 // VBOs returns all of this geometry's VBOs.
 func (g *Geometry) VBOs() []*gls.VBO {
 
