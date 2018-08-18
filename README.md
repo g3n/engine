@@ -149,10 +149,15 @@
 
   For the engine API reference, please see
   [![GoDoc](https://godoc.org/github.com/g3n/engine?status.svg)](https://godoc.org/github.com/g3n/engine).
-  
-  Currently, the best way to learn how to use G3N is to look at the source code
-  of the demos from [G3ND](https://github.com/g3n/g3nd).
-  In the future we would like to have a "Getting Started" guide along with tutorials in the [wiki](https://github.com/g3n/engine/wiki).
+
+  There is also the beginning of a Getting Started Guide, and a newly created list of
+  Guides and Tutorials:
+
+  * https://github.com/g3n/engine/wiki/Getting-Started-(WIP)
+  * https://github.com/g3n/engine/wiki/Guides-and-Tutorials
+
+  Along with those, a good way to learn G3N is to step through the source code of the
+  [demos](https://github.com/g3n/g3nd).
 
   ## Contributing
 
