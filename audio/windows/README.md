@@ -9,11 +9,13 @@ The G3N engine audio support currently depends on the following external librari
 
 These libraries are easily installed in Linux systems using the distribution package manager.
 
-For compiling `G3N` for windows, the directory `<GOPATH>/src/github.com/g3n/engine/audio/windows`
-contains the sources of these libraries, and the subdirectory `bin` contains compiled `dlls`,
-used during the link process. For running an application which uses `G3N`, you will need
-to copy these dlls to the directory from which will run your application.
+For Windows, the directory `<GOPATH>/src/github.com/g3n/engine/audio/windows`
+contains the sources of these libraries, and the subdirectory `bin` contains the compiled DLLs,
+used during the link process. To run a G3N application in Windows you will need
+to copy these DLLs to the directory from which you will run your application.
 It is recommended to avoid copying them to the Windows system directory.
+
+## Building the DLLs from source
 
 The library sources were obtained from:
 - http://kcat.strangesoft.net/openal-releases/openal-soft-1.18.2.tar.bz2
@@ -23,7 +25,7 @@ The library sources were obtained from:
 The original file `libvorbis-1.3.5/win32/VS2010/libogg.props` was changed to setup
 `libogg` version and location.
 
-If you want to build the `dlls` from source instead of using the supplied `dlls` you
+If you want to build the DLLs from source instead of using the supplied DLLs you
 can use the following procedure:
 
 1. Download and install *Microsoft Studio Community* from https://www.visualstudio.com/downloads/.
