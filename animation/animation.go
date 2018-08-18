@@ -16,6 +16,7 @@ type Animation struct {
 	time     float32    // Total running time
 	minTime  float32    // Minimum time value across all channels
 	maxTime  float32    // Maximum time value across all channels
+	speed    float32    // Animation speed multiplier
 	channels []IChannel // List of channels
 }
 
@@ -23,6 +24,7 @@ type Animation struct {
 func NewAnimation() *Animation {
 
 	anim := new(Animation)
+	anim.speed = 1
 	return anim
 }
 
@@ -38,12 +40,28 @@ func (anim *Animation) Name() string {
 	return anim.name
 }
 
+// SetSpeed sets the animation speed.
+func (anim *Animation) SetSpeed(speed float32) {
+
+	anim.speed = speed
+}
+
+// Speed returns the animation speed.
+func (anim *Animation) Speed() float32 {
+
+	return anim.speed
+}
+
 // Reset resets the animation to the beginning.
 func (anim *Animation) Reset() {
 
 	anim.time = anim.start
-	anim.paused = false
-	// TODO reset channels?
+
+	// Update all channels
+	for i := range anim.channels {
+		ch := anim.channels[i]
+		ch.Update(anim.start)
+	}
 }
 
 // SetPaused sets whether the animation is paused.
@@ -87,7 +105,7 @@ func (anim *Animation) Update(delta float32) {
 	}
 
 	// Check if input is less than minimum
-	anim.time = anim.time + delta
+	anim.time = anim.time + delta * anim.speed
 	if anim.time < anim.minTime {
 		return
 	}
@@ -103,7 +121,7 @@ func (anim *Animation) Update(delta float32) {
 	}
 
 	// Update all channels
-	for i := 0; i < len(anim.channels); i++ {
+	for i := range anim.channels {
 		ch := anim.channels[i]
 		ch.Update(anim.time)
 	}

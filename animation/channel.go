@@ -83,17 +83,12 @@ func (c *Channel) Update(time float32) {
 		return
 	}
 
-	// Find key frame interval
+	// Find keyframe interval
 	var idx int
 	for idx = 0; idx < len(c.keyframes)-1; idx++ {
 		if time >= c.keyframes[idx] && time < c.keyframes[idx+1] {
 			break
 		}
-	}
-
-	// Check if last keyframe
-	if idx >= len(c.keyframes)-1 {
-		return
 	}
 
 	// Interpolate and update
