@@ -6,7 +6,8 @@
   </p>
   <p><h1 align="center">G3N - Go 3D Game Engine</h1></p>
 
-  G3N (pronounced "gen") is a cross-platform OpenGL 3D game engine written in Go.
+**G3N** (pronounced "gen") is an OpenGL 3D Game Engine written in Go.
+It can be used to write cross-platform Go applications that show rich and dynamic 3D representations - not just games. A basic integrated GUI framework is provided, and 3D spatial audio is supported through [OpenAL](https://www.openal.org/).
 
   ### **To see G3N in action try the [G3N demo](https://github.com/g3n/g3nd) or the [Gokoban](https://github.com/danaugrs/gokoban) award winning game.**
 
@@ -20,49 +21,40 @@
 
   ## Dependencies
 
-  **G3N requires Go 1.8+**
+  **Go 1.8+** is required. The engine also requires the system to have an **OpenGL driver** and a **GCC-compatible C compiler**.
 
-  The engine requires an OpenGL driver and a GCC-compatible C compiler to be installed.
+  On Unix-based systems the engine depends on some C libraries that can be installed using the appropriate distribution package manager. See below for OS specific requirements.
 
-  On Unix-based systems the engine depends on some C libraries that can be installed using the appropriate distribution package manager.
+  ### Ubuntu/Debian-like
 
-  * For Ubuntu/Debian-like Linux distributions, install the following packages:
+    $ sudo apt-get install xorg-dev libgl1-mesa-dev libopenal1 libopenal-dev libvorbis0a libvorbis-dev libvorbisfile3
 
-    * `xorg-dev`
-    * `libgl1-mesa-dev`
-    * `libopenal1`
-    * `libopenal-dev`
-    * `libvorbis0a`
-    * `libvorbis-dev`
-    * `libvorbisfile3`
+  ### Fedora
 
-  * For Fedora, install the required packages:
+    $ sudo dnf -y install xorg-x11-proto-devel mesa-libGL mesa-libGL-devel openal-soft openal-soft-devel libvorbis libvorbis-devel glfw-devel libXi-devel
 
-    ```
-    $ sudo dnf -y install xorg-x11-proto-devel mesa-libGL mesa-libGL-devel openal-soft \
-      openal-soft-devel libvorbis libvorbis-devel glfw-devel libXi-devel
-    ```
+  ### CentOS 7
 
-  * For CentOS 7, enable the EPEL repo then install the same packages as for Fedora above:
+Enable the EPEL repository:
 
-    ```
     $ sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-    ```
 
-    Remember to use `yum` instead of `dnf` for the package installation command.
+Then install the same packages as for Fedora - remember to use `yum` instead of `dnf` for the package installation command.
 
-  * For Windows, the necessary audio libraries sources and DLLs are supplied but they need to be installed
-    manually. Please see [Audio libraries for Windows](audio/windows) for details.
-    We tested the Windows build using the [mingw-w64](https://mingw-w64.org) toolchain.
+  ### Windows
 
-  * For macOS, you should install the development files of OpenAL and Vorbis. If
-    you are using [Homebrew](https://brew.sh/) as your package manager, run:
+The necessary audio libraries sources and DLLs are supplied but they need to be installed
+manually. Please see [Audio libraries for Windows](audio/windows) for details. We tested the Windows build using the [mingw-w64](https://mingw-w64.org) toolchain (you can download [this file](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/8.1.0/threads-posix/seh/x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z) in particular).
 
-    `brew install libvorbis openal-soft`
+  ### macOS
+
+Install the development files of OpenAL and Vorbis using [Homebrew](https://brew.sh/):
+
+    brew install libvorbis openal-soft
 
   ## Installation
 
-  The following command will download the engine along with all its Go dependencies:
+  The following command will download and install the engine along with all its Go dependencies:
 
   `go get -u github.com/g3n/engine/...`
 
@@ -95,7 +87,9 @@
   The code below is a basic "hello world" application 
   ([hellog3n](https://github.com/g3n/demos/tree/master/hellog3n))
   that shows a blue torus.
-  You can download and install `hellog3n` via: `go get -u github.com/g3n/demos/hellog3n`
+  You can download and install `hellog3n` via:
+    
+    go get -u github.com/g3n/demos/hellog3n
 
   For more complex demos please see the [G3N demo program](https://github.com/g3n/g3nd).
 
@@ -147,13 +141,15 @@
 
   ## Documentation
 
-  For the engine API reference, please see
-  [![GoDoc](https://godoc.org/github.com/g3n/engine?status.svg)](https://godoc.org/github.com/g3n/engine).
-  
-  Currently, the best way to learn how to use G3N is to look at the source code
-  of the demos from [G3ND](https://github.com/g3n/g3nd).
-  In the future we would like to have a "Getting Started" guide along with tutorials in the [wiki](https://github.com/g3n/engine/wiki).
+  The complete engine API reference can be found here: [![GoDoc](https://godoc.org/github.com/g3n/engine?status.svg)](https://godoc.org/github.com/g3n/engine).
 
+  There is also the beginning of a Getting Started Guide, and a newly created list of Guides and Tutorials:
+
+  * [Getting Started](https://github.com/g3n/engine/wiki/Getting-Started-(WIP))
+  * [Guides and Tutorials](https://github.com/g3n/engine/wiki/Guides-and-Tutorials)
+
+  Along with those, a good way to learn how to use the engine is to see the source code of [G3ND - the G3N demo](https://github.com/g3n/g3nd).
+  
   ## Contributing
 
   If you find a bug or create a new feature you are encouraged to send pull requests!
