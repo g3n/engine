@@ -124,8 +124,8 @@ func (gr *Graphic) Clone() core.INode {
 	clone.ShaderDefines = gr.ShaderDefines
 	clone.materials = make([]GraphicMaterial, len(gr.materials))
 
-	for _, grmat := range gr.materials {
-		clone.materials = append(clone.materials, grmat)
+	for i, grmat := range gr.materials {
+		clone.materials[i] = grmat
 	}
 
 	return clone
