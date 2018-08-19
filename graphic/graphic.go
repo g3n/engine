@@ -27,6 +27,7 @@ type Graphic struct {
 
 	ShaderDefines gls.ShaderDefines // Graphic-specific shader defines
 
+	mm   math32.Matrix4 // Cached Model matrix
 	mvm  math32.Matrix4 // Cached ModelView matrix
 	mvpm math32.Matrix4 // Cached ModelViewProjection matrix
 }
@@ -105,6 +106,29 @@ func (gr *Graphic) Dispose() {
 	for i := 0; i < len(gr.materials); i++ {
 		gr.materials[i].imat.Dispose()
 	}
+}
+
+// Clone clones the graphic and satisfies the INode interface.
+// It should be called by Clone() implementations of IGraphic.
+// Note that the topmost implementation calling this method needs
+// to call clone.SetIGraphic(igraphic) after calling this method.
+func (gr *Graphic) Clone() core.INode {
+
+	clone := new(Graphic)
+	clone.Node = *gr.Node.Clone().(*core.Node)
+	clone.igeom = gr.igeom
+	clone.mode = gr.mode
+	clone.renderable = gr.renderable
+	clone.cullable = gr.cullable
+	clone.renderOrder = gr.renderOrder
+	clone.ShaderDefines = gr.ShaderDefines
+	clone.materials = make([]GraphicMaterial, len(gr.materials))
+
+	for _, grmat := range gr.materials {
+		clone.materials = append(clone.materials, grmat)
+	}
+
+	return clone
 }
 
 // SetRenderable satisfies the IGraphic interface and
@@ -195,11 +219,17 @@ func (gr *Graphic) GetMaterial(vpos int) material.IMaterial {
 	return nil
 }
 
+// ClearMaterials removes all the materials from this Graphic.
+func (gr *Graphic) ClearMaterials() {
+
+	gr.materials = gr.materials[0:0]
+}
+
 // SetIGraphic sets the IGraphic on all this Graphic's GraphicMaterials.
-func (gr *Graphic) SetIGraphic(ig IGraphic) {
+func (gr *Graphic) SetIGraphic(igr IGraphic) {
 
 	for i := range gr.materials {
-		gr.materials[i].igraphic = ig
+		gr.materials[i].igraphic = igr
 	}
 }
 
@@ -222,9 +252,15 @@ func (gr *Graphic) BoundingBox() math32.Box3 {
 // CalculateMatrices calculates the model view and model view projection matrices.
 func (gr *Graphic) CalculateMatrices(gs *gls.GLS, rinfo *core.RenderInfo) {
 
-	mw := gr.MatrixWorld()
-	gr.mvm.MultiplyMatrices(&rinfo.ViewMatrix, &mw)
+	gr.mm = gr.MatrixWorld()
+	gr.mvm.MultiplyMatrices(&rinfo.ViewMatrix, &gr.mm)
 	gr.mvpm.MultiplyMatrices(&rinfo.ProjMatrix, &gr.mvm)
+}
+
+// ModelViewMatrix returns the last cached model view matrix for this graphic.
+func (gr *Graphic) ModelMatrix() *math32.Matrix4 {
+
+	return &gr.mm
 }
 
 // ModelViewMatrix returns the last cached model view matrix for this graphic.
