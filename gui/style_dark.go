@@ -86,6 +86,16 @@ func NewDarkStyle() *Style {
 	s.Button.Disabled.BorderColor = s.Color.TextDis
 	s.Button.Disabled.FgColor = s.Color.TextDis
 
+	// ButtonDestructive styles
+	s.ButtonDestructive = ButtonDestructiveStyles{}
+	s.ButtonDestructive.Normal = ButtonDestructiveStyle(s.Button.Normal)
+	s.ButtonDestructive.Over = ButtonDestructiveStyle(s.Button.Over)
+	s.ButtonDestructive.PressedOnce = ButtonDestructiveStyle(s.Button.Pressed)
+	s.ButtonDestructive.PressedOnce.BgColor = math32.Color4{1, 0, 0, 1}
+	s.ButtonDestructive.PressedTwice = ButtonDestructiveStyle(s.Button.Pressed)
+	s.ButtonDestructive.PressedTwice.BgColor = math32.Color4{1, 0, 0, 1}
+	s.ButtonDestructive.Disabled = ButtonDestructiveStyle(s.Button.Disabled)
+
 	// CheckRadio styles
 	s.CheckRadio = CheckRadioStyles{}
 	s.CheckRadio.Normal = CheckRadioStyle{}
