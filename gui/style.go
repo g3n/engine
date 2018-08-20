@@ -11,28 +11,29 @@ import (
 
 // Style contains the styles for all GUI elements
 type Style struct {
-	Color         ColorStyle
-	Font          *text.Font
-	FontIcon      *text.Font
-	Label         LabelStyle
-	Button        ButtonStyles
-	CheckRadio    CheckRadioStyles
-	Edit          EditStyles
-	ScrollBar     ScrollBarStyles
-	Slider        SliderStyles
-	Splitter      SplitterStyles
-	Window        WindowStyles
-	ItemScroller  ItemScrollerStyles
-	Scroller      ScrollerStyle
-	List          ListStyles
-	DropDown      DropDownStyles
-	Folder        FolderStyles
-	Tree          TreeStyles
-	ControlFolder ControlFolderStyles
-	Menu          MenuStyles
-	Table         TableStyles
-	ImageButton   ImageButtonStyles
-	TabBar        TabBarStyles
+	Color             ColorStyle
+	Font              *text.Font
+	FontIcon          *text.Font
+	Label             LabelStyle
+	Button            ButtonStyles
+	ButtonDestructive ButtonDestructiveStyles
+	CheckRadio        CheckRadioStyles
+	Edit              EditStyles
+	ScrollBar         ScrollBarStyles
+	Slider            SliderStyles
+	Splitter          SplitterStyles
+	Window            WindowStyles
+	ItemScroller      ItemScrollerStyles
+	Scroller          ScrollerStyle
+	List              ListStyles
+	DropDown          DropDownStyles
+	Folder            FolderStyles
+	Tree              TreeStyles
+	ControlFolder     ControlFolderStyles
+	Menu              MenuStyles
+	Table             TableStyles
+	ImageButton       ImageButtonStyles
+	TabBar            TabBarStyles
 }
 
 // ColorStyle defines the main colors used.
