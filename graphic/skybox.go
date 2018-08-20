@@ -62,7 +62,7 @@ func NewSkybox(data SkyboxData) (*Skybox, error) {
 	skybox.uniNm.Init("NormalMatrix")
 
 	// The skybox should always be rendered first
-	skybox.SetRenderOrder(-1)
+	skybox.SetRenderOrder(-100)
 
 	return skybox, nil
 }
@@ -71,7 +71,7 @@ func NewSkybox(data SkyboxData) (*Skybox, error) {
 // It is responsible to updating the current shader uniforms with
 // the model matrices.
 func (skybox *Skybox) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
-	
+
 	mvm := *skybox.ModelViewMatrix()
 
 	// Clear translation
