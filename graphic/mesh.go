@@ -48,6 +48,13 @@ func (m *Mesh) Init(igeom geometry.IGeometry, imat material.IMaterial) {
 	}
 }
 
+// SetMaterial clears all materials and adds the specified material for all vertices.
+func (m *Mesh) SetMaterial(imat material.IMaterial) {
+
+	m.Graphic.ClearMaterials()
+	m.Graphic.AddMaterial(m, imat, 0, 0)
+}
+
 // AddMaterial adds a material for the specified subset of vertices.
 func (m *Mesh) AddMaterial(imat material.IMaterial, start, count int) {
 
