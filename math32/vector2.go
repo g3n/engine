@@ -390,3 +390,17 @@ func (v *Vector2) ToArray(array []float32, offset int) []float32 {
 	array[offset+1] = v.Y
 	return array
 }
+
+// InTriangle returns whether the vector is inside the specified triangle.
+func (v *Vector2) InTriangle(p0, p1, p2 *Vector2) bool {
+
+	A := 0.5 * (-p1.Y*p2.X + p0.Y*(-p1.X+p2.X) + p0.X*(p1.Y-p2.Y) + p1.X*p2.Y)
+	sign := float32(1)
+	if A < 0 {
+		sign = float32(-1)
+	}
+	s := (p0.Y*p2.X - p0.X*p2.Y + (p2.Y-p0.Y)*v.X + (p0.X-p2.X)*v.Y) * sign
+	t := (p0.X*p1.Y - p0.Y*p1.X + (p0.Y-p1.Y)*v.X + (p1.X-p0.X)*v.Y) * sign
+
+	return s >= 0 && t >= 0 && (s+t) < 2*A*sign
+}
