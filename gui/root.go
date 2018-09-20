@@ -41,9 +41,15 @@ func NewRoot(gs *gls.GLS, win window.IWindow) *Root {
 	r.root = r
 	r.Panel.Initialize(0, 0)
 	r.TimerManager.Initialize()
-	// for optimization, sets this root panel as not renderable as in most cases
+
+	// Set the size of the root panel based on the window framebuffer size
+	width, height := win.FramebufferSize()
+	r.SetSize(float32(width), float32(height))
+
+	// For optimization, set this root panel as not renderable as in most cases
 	// it is used only as a container
 	r.SetRenderable(false)
+
 	// Subscribe to window events
 	r.SubscribeWin()
 	r.targets = []IPanel{}
