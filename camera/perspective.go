@@ -99,6 +99,24 @@ func (cam *Perspective) Project(v *math32.Vector3) (*math32.Vector3, error) {
 	return v, nil
 }
 
+// Override method to sync target value to node rotation
+func (cam *Perspective) RotateX(x float32) {
+	cam.Node.RotateX(x)
+	cam.target.X += x
+}
+
+// Override method to sync target value to node rotation
+func (cam *Perspective) RotateY(y float32) {
+	cam.Node.RotateY(y)
+	cam.target.Y += y
+}
+
+// Override method to sync target value to node rotation
+func (cam *Perspective) RotateZ(z float32) {
+	cam.Node.RotateZ(z)
+	cam.target.Y += z
+}
+
 // Unproject transforms the specified position from camera projected coordinates to world coordinates.
 func (cam *Perspective) Unproject(v *math32.Vector3) (*math32.Vector3, error) {
 
