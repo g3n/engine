@@ -323,10 +323,10 @@ type ScrollEvent struct {
 
 // Manager returns the window manager for the specified type.
 // Currently only "glfw" type is supported.
-func Manager(wtype string) (IWindowManager, error) {
+func Manager(wtype string, visible bool) (IWindowManager, error) {
 
 	if wtype != "glfw" {
 		panic("Unsupported window manager")
 	}
-	return Glfw()
+	return Glfw(visible)
 }

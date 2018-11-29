@@ -127,7 +127,7 @@ func Create(ops Options) (*Application, error) {
 	runtime.LockOSThread()
 
 	// Get the window manager
-	wmgr, err := window.Manager("glfw")
+	wmgr, err := window.Manager("glfw", true)
 	if err != nil {
 		return nil, err
 	}

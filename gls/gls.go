@@ -258,6 +258,13 @@ func (gs *GLS) BlendFunc(sfactor, dfactor uint32) {
 	gs.blendDst = dfactor
 }
 
+// Read rendered pixels
+func (gs *GLS) ReadPixels(x, y, width, height int, format, format_type int) []byte {
+	size := uint32((width - x) * (height - y) * 4)
+	C.glReadPixels(C.GLInt(x), C.GLInt(y), C.GLInt(height), C.GLInt(width), C.GLenum(format), C.GLenum(format_type), unsafe.Pointer(gs.gobufSize(size)))
+	return gs.gobuf[:size]
+}
+
 // BlendFuncSeparate defines the operation of blending for all draw buffers when blending
 // is enabled, allowing different operations for the RGB and alpha components.
 func (gs *GLS) BlendFuncSeparate(srcRGB uint32, dstRGB uint32, srcAlpha uint32, dstAlpha uint32) {

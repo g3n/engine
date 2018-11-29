@@ -7,13 +7,13 @@ package window
 import (
 	"runtime"
 
+	"bytes"
 	"github.com/g3n/engine/core"
+	"github.com/g3n/engine/gui/assets"
 	"github.com/go-gl/glfw/v3.2/glfw"
-	"os"
 	"image"
 	_ "image/png"
-	"bytes"
-	"github.com/g3n/engine/gui/assets"
+	"os"
 )
 
 // glfwManager contains data shared by all windows
@@ -26,8 +26,8 @@ type glfwManager struct {
 	vresizeCursor   *glfw.Cursor // Preallocated standard vertical resize cursor
 
 	// Non GLFW standard cursors (but g3n standard)
-	diag1Cursor     *glfw.Cursor // Preallocated diagonal resize cursor (/)
-	diag2Cursor     *glfw.Cursor // Preallocated diagonal resize cursor (\)
+	diag1Cursor *glfw.Cursor // Preallocated diagonal resize cursor (/)
+	diag2Cursor *glfw.Cursor // Preallocated diagonal resize cursor (\)
 
 	// User-created custom cursors
 	customCursors map[int]*glfw.Cursor
@@ -48,20 +48,20 @@ type glfwWindow struct {
 	scaleY          float64
 
 	// Events
-	keyEv           KeyEvent
-	charEv          CharEvent
-	mouseEv         MouseEvent
-	posEv           PosEvent
-	sizeEv          SizeEvent
-	cursorEv        CursorEvent
-	scrollEv        ScrollEvent
+	keyEv    KeyEvent
+	charEv   CharEvent
+	mouseEv  MouseEvent
+	posEv    PosEvent
+	sizeEv   SizeEvent
+	cursorEv CursorEvent
+	scrollEv ScrollEvent
 }
 
 // glfw manager singleton
 var manager *glfwManager
 
 // Glfw returns the glfw window manager
-func Glfw() (IWindowManager, error) {
+func Glfw(visible bool) (IWindowManager, error) {
 
 	if manager != nil {
 		return manager, nil
@@ -74,6 +74,9 @@ func Glfw() (IWindowManager, error) {
 	}
 
 	// Sets window hints
+	if !visible {
+		glfw.WindowHint(glfw.Visible, 0)
+	}
 	glfw.WindowHint(glfw.ContextVersionMajor, 3)
 	glfw.WindowHint(glfw.ContextVersionMinor, 3)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
