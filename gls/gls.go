@@ -261,7 +261,7 @@ func (gs *GLS) BlendFunc(sfactor, dfactor uint32) {
 // Read rendered pixels
 func (gs *GLS) ReadPixels(x, y, width, height int, format, format_type int) []byte {
 	size := uint32((width - x) * (height - y) * 4)
-	C.glReadPixels(C.GLInt(x), C.GLInt(y), C.GLInt(height), C.GLInt(width), C.GLenum(format), C.GLenum(format_type), unsafe.Pointer(gs.gobufSize(size)))
+	C.glReadPixels(C.GLint(x), C.GLint(y), C.GLint(height), C.GLint(width), C.GLenum(format), C.GLenum(format_type), unsafe.Pointer(gs.gobufSize(size)))
 	return gs.gobuf[:size]
 }
 
