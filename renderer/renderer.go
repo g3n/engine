@@ -307,21 +307,21 @@ func (r *Renderer) renderScene(iscene core.INode, icam camera.ICamera) error {
 				rO1 := gr1.RenderOrder()
 				rO2 := gr2.RenderOrder()
 				if rO1 != rO2 {
-					return  rO1 < rO2
+					return rO1 < rO2
 				}
 
-				mvm1 := gr1.ModelViewMatrix()
-				mvm2 := gr2.ModelViewMatrix()
 				g1pos := gr1.Position()
 				g2pos := gr2.Position()
-				g1pos.ApplyMatrix4(mvm1)
-				g2pos.ApplyMatrix4(mvm2)
+
+				pc := icam.GetCamera().Position()
+				dc1 := g1pos.DistanceTo(&pc)
+				dc2 := g2pos.DistanceTo(&pc)
 
 				if backToFront {
-					return g1pos.Z < g2pos.Z
+					return dc1 > dc2
 				}
 
-				return g1pos.Z > g2pos.Z
+				return dc2 < dc1
 			})
 		}
 
