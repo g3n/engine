@@ -340,7 +340,7 @@ func (mat *Material) RenderSetup(gs *gls.GLS) {
 	// If this material requires time for its shader
 	if mat.useTime {
 		timelocation := mat.uTime.Location(gs)
-		fms := int32(time.Now().Nanosecond() / 100000)
+		fms := int32(time.Now().Second()*100 + time.Now().Nanosecond()/10000000)
 		gs.Uniform1i(timelocation, fms)
 	}
 }
