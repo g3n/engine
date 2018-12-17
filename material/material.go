@@ -63,8 +63,11 @@ type Material struct {
 	shaderUnique  bool              // shader has only one instance (does not depend on lights or textures)
 	ShaderDefines gls.ShaderDefines // shader defines
 
-	uTime   gls.Uniform // Uniform location cache
-	useTime bool        // if this material needs time to be sent to the shader
+	uTime        gls.Uniform // Uniform location cache
+	useTime      bool        // if this material needs time to be sent to the shader
+	uFrames      gls.Uniform // Uniform location cache
+	useFrames    bool        // if this material needs frame to be sent to the shader
+	currentFrame int64       // the actual frame number
 
 	uselights   UseLights            // Which light types to consider
 	sidevis     Side                 // Face side(s) visibility
@@ -203,7 +206,7 @@ func (mat *Material) Side() Side {
 	return mat.sidevis
 }
 
-// SetUseTime sets wether to send time to the shader uniform or not (for time-based shaders)
+// SetUseTime sets whether to send time to the shader uniform or not (for time-based shaders)
 func (mat *Material) SetUseTime(state bool) {
 	if mat.uTime.Name() == "" {
 		mat.uTime.Init("uTime")
@@ -211,9 +214,21 @@ func (mat *Material) SetUseTime(state bool) {
 	mat.useTime = state
 }
 
+// SetUseFrames sets whether to send the frame number to the shader uniform or not (for time-based shaders)
+func (mat *Material) SetUseFrames(state bool) {
+	if mat.uFrames.Name() == "" {
+		mat.uFrames.Init("uFrame")
+	}
+	mat.useFrames = state
+}
+
+// SetUseFrames sets whether to send the frame number to the shader uniform or not (for time-based shaders)
+func (mat *Material) SetFrame(frame int64) {
+	mat.currentFrame = frame
+}
+
 // SetTransparent sets whether this material is transparent.
 func (mat *Material) SetTransparent(state bool) {
-
 	mat.transparent = state
 }
 
@@ -342,6 +357,12 @@ func (mat *Material) RenderSetup(gs *gls.GLS) {
 		timelocation := mat.uTime.Location(gs)
 		fms := int32(time.Now().Second()*100 + time.Now().Nanosecond()/10000000)
 		gs.Uniform1i(timelocation, fms)
+	}
+
+	// If this material requires frames
+	if mat.useFrames {
+		framesLocation := mat.uFrames.Location(gs)
+		gs.Uniform1i(framesLocation, int32(mat.currentFrame))
 	}
 }
 
