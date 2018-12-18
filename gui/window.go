@@ -203,7 +203,6 @@ func (w *Window) onCursor(evname string, ev interface{}) {
 			// Check if cursor is on the top of the window (border + drag margin)
 			if cy <= w.borderSizes.Top {
 				w.overTop = true
-				w.root.SetCursorVResize()
 			} else {
 				w.overTop = false
 			}
@@ -216,14 +215,12 @@ func (w *Window) onCursor(evname string, ev interface{}) {
 			// Check if cursor is on the left of the window (border + drag margin)
 			if cx <= w.borderSizes.Left + w.dragPadding {
 				w.overLeft = true
-				w.root.SetCursorHResize()
 			} else {
 				w.overLeft = false
 			}
 			// Check if cursor is on the right of the window (border + drag margin)
 			if cx >= w.width-w.borderSizes.Right - w.dragPadding {
 				w.overRight = true
-				w.root.SetCursorHResize()
 			} else {
 				w.overRight = false
 			}
