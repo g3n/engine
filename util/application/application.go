@@ -114,8 +114,8 @@ func Create(ops Options) (*Application, error) {
 		app.noglErrors = flag.Bool("noglerrors", false, "Do not check OpenGL errors at each call (may increase FPS)")
 		app.cpuProfile = flag.String("cpuprofile", "", "Activate cpu profiling writing profile to the specified file")
 		app.execTrace = flag.String("exectrace", "", "Activate execution tracer writing data to the specified file")
+		flag.Parse()
 	}
-	flag.Parse()
 
 	// Creates application logger
 	app.log = logger.New(ops.LogPrefix, nil)
