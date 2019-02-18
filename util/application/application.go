@@ -108,12 +108,12 @@ func Create(ops Options) (*Application, error) {
 
 	// Creates flags if requested (override options defaults)
 	if ops.EnableFlags {
-		app.fullScreen = flag.Bool("fullscreen", false, "Starts application with full screen")
-		app.swapInterval = flag.Int("swapinterval", -1, "Sets the swap buffers interval to this value")
-		app.targetFPS = flag.Uint("targetfps", 60, "Sets the frame rate in frames per second")
-		app.noglErrors = flag.Bool("noglerrors", false, "Do not check OpenGL errors at each call (may increase FPS)")
-		app.cpuProfile = flag.String("cpuprofile", "", "Activate cpu profiling writing profile to the specified file")
-		app.execTrace = flag.String("exectrace", "", "Activate execution tracer writing data to the specified file")
+		app.fullScreen = flag.Bool("fullscreen", *app.fullScreen, "Starts application with full screen")
+		app.swapInterval = flag.Int("swapinterval", *app.swapInterval, "Sets the swap buffers interval to this value")
+		app.targetFPS = flag.Uint("targetfps", *app.targetFPS, "Sets the frame rate in frames per second")
+		app.noglErrors = flag.Bool("noglerrors", *app.noglErrors, "Do not check OpenGL errors at each call (may increase FPS)")
+		app.cpuProfile = flag.String("cpuprofile", *app.cpuProfile, "Activate cpu profiling writing profile to the specified file")
+		app.execTrace = flag.String("exectrace", *app.execTrace, "Activate execution tracer writing data to the specified file")
 		flag.Parse()
 	}
 
