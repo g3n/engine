@@ -206,6 +206,12 @@ func (a ArrayF32) SetColor4(pos int, v *Color4) {
 	a[pos+3] = v.A
 }
 
+// ToFloat32 converts this array to an array of float32
+func (a ArrayF32) ToFloat32() []float32 {
+
+	return (*[1 << 27]float32)(unsafe.Pointer(&a[0]))[:len(a)]
+}
+
 // ArrayU32 is a slice of uint32 with additional convenience methods
 type ArrayU32 []uint32
 
