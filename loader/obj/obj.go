@@ -71,6 +71,13 @@ type Material struct {
 	MapKd      string       // Texture file linked to diffuse color
 }
 
+var defaultMat = &Material{
+	Diffuse:   math32.Color{R: 0.7, G: 0.7, B: 0.7},
+	Ambient:   math32.Color{R: 0.7, G: 0.7, B: 0.7},
+	Specular:  math32.Color{R: 0.5, G: 0.5, B: 0.5},
+	Shininess: 30.0,
+}
+
 // Local constants
 const (
 	blanks   = "\r\n\t "
@@ -100,29 +107,16 @@ func Decode(objpath string, mtlpath string) (*Decoder, error) {
 
 	fmt.Println("USING TEST VERSION")
 	// Opens mtl file
-	var mtlReader io.Reader
-	fmtl, err := os.Open(mtlpath) // NOTE(Ben): insert material here if there's an error opening mtlpath?
-	if err == nil {
-		mtlReader = fmtl
-		defer fmtl.Close()
-	}
+	fmtl, err := os.Open(mtlpath)
+	defer fmtl.Close() // will produce (ignored) err if fmtl==nil
 
-	fmt.Println("before DecodeReader()")
-	dec, err := DecodeReader(fobj, mtlReader)
+	// fmt.Println("before DecodeReader()")
+	dec, err := DecodeReader(fobj, fmtl)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println("after DecodeReader()")
-	if mtlReader == io.Reader(nil) {
-		// no valid mtl file could be located, so the decoder will proceed
-		// without loading materials. When the mesh is created, a Basic
-		// material will be used.
-		// Still, we will log a warning about this in the decoder.
-		msg := fmt.Sprintf("no material file (*.mtl) could be found for %s", objpath)
-		dec.appendWarn(mtlType, msg)
-		fmt.Println(msg)
-	}
+	// fmt.Println("after DecodeReader()")
 
 	dec.mtlDir = filepath.Dir(objpath)
 	return dec, nil
@@ -147,26 +141,26 @@ func DecodeReader(objreader, mtlreader io.Reader) (*Decoder, error) {
 		return nil, err
 	}
 
-	fmt.Printf("before dec.parse(mtlreader), mtlreader=<%#v>\n", mtlreader)
-	// Parses mtl lines if mtlreader is not nil
+	// fmt.Printf("before dec.parse(mtlreader), mtlreader=<%#v>\n", mtlreader)
+	// Parses mtl lines
+	// if parsing causes an error, range over the materials named in the OBJ
+	// file and substitute a default.
 	dec.matCurrent = nil
 	dec.line = 1
-	if mtlreader != io.Reader(nil) {
-		fmt.Println("calling dec.parse(mtlreader)")
-		err = dec.parse(mtlreader, dec.parseMtlLine)
-		if err != nil {
-			return nil, err
+	// fmt.Println("calling dec.parse(mtlreader)")
+	err = dec.parse(mtlreader, dec.parseMtlLine)
+	if err != nil {
+		// handle error by using default material instead
+		// of simply passing it up the call stack.
+		// But log it.
+		for key := range dec.Materials {
+			dec.Materials[key] = defaultMat
 		}
-	} else {
-		for _, v := range dec.Materials {
-			v.Diffuse = math32.Color{0.7, 0.7, 0.7}
-			v.Ambient = v.Diffuse
-			v.Specular = math32.Color{0.5, 0.5, 0.5}
-			v.Shininess = 30.0
-		}
+		fmt.Println("logged warning")
+		dec.appendWarn(mtlType, "unable to parse a mtl file for obj. using default material instead.")
 	}
 
-	fmt.Println("after dec.parse(mtlreader)")
+	// fmt.Println("after dec.parse(mtlreader)")
 
 	return dec, nil
 }
@@ -196,55 +190,75 @@ func (dec *Decoder) NewMesh(obj *Object) (*graphic.Mesh, error) {
 		return nil, err
 	}
 
-	defaultMaterial := material.NewPhong(math32.NewColor("gray"))
+	// defaultMaterial := material.NewPhong(math32.NewColor("gray"))
 
 	// Single material
 	if geom.GroupCount() == 1 {
-		fmt.Println("single group geom")
-		var mat material.IMaterial = defaultMaterial
+		// fmt.Println("single group geom")
+
+		// get Material info from mtl file and ensure it's valid.
+		// substitute default material if it is not.
+		var matDesc *Material
+		var matName string
 		if len(obj.materials) > 0 {
-			matName := obj.materials[0]
-			matDesc, found := dec.Materials[matName]
-			// Creates material
-			if found {
-				phongmat := material.NewPhong(&matDesc.Diffuse)
-				ambientColor := phongmat.AmbientColor()
-				phongmat.SetAmbientColor(ambientColor.Multiply(&matDesc.Ambient))
-				phongmat.SetSpecularColor(&matDesc.Specular)
-				phongmat.SetShininess(matDesc.Shininess)
-				// Loads material textures if specified
-				err = dec.loadTex(&phongmat.Material, matDesc)
-				if err != nil {
-					return nil, err
-				}
-				mat = phongmat
-			}
+			matName = obj.materials[0]
 		}
+		matDesc = dec.Materials[matName]
+		if matDesc == nil {
+			matDesc = defaultMat
+			// log warning
+			msg := fmt.Sprintf("could not find material for %s. using default material.", obj.Name)
+			dec.appendWarn(objType, msg)
+		}
+
+		// Creates material for mesh
+		mat := material.NewPhong(&matDesc.Diffuse)
+		ambientColor := mat.AmbientColor()
+		mat.SetAmbientColor(ambientColor.Multiply(&matDesc.Ambient))
+		mat.SetSpecularColor(&matDesc.Specular)
+		mat.SetShininess(matDesc.Shininess)
+		// Loads material textures if specified
+		err = dec.loadTex(&mat.Material, matDesc)
+		if err != nil {
+			return nil, err
+		}
+
 		return graphic.NewMesh(geom, mat), nil
 	}
 
 	// Multi material
-	fmt.Println("multi group geom")
+	// fmt.Println("multi group geom")
 	mesh := graphic.NewMesh(geom, nil)
 	for idx := 0; idx < geom.GroupCount(); idx++ {
 		group := geom.GroupAt(idx)
-		// Creates material
-		var matGroup material.IMaterial = defaultMaterial
-		matName := obj.materials[group.Matindex]
-		matDesc, found := dec.Materials[matName]
-		if found {
-			matGroupPhong := material.NewPhong(&matDesc.Diffuse)
-			ambientColor := matGroupPhong.AmbientColor()
-			matGroupPhong.SetAmbientColor(ambientColor.Multiply(&matDesc.Ambient))
-			matGroupPhong.SetSpecularColor(&matDesc.Specular)
-			matGroupPhong.SetShininess(matDesc.Shininess)
-			// Loads material textures if specified
-			err = dec.loadTex(&matGroupPhong.Material, matDesc)
-			if err != nil {
-				return nil, err
-			}
-			matGroup = matGroupPhong
+
+		// get Material info from mtl file and ensure it's valid.
+		// substitute default material if it is not.
+		var matDesc *Material
+		var matName string
+		if len(obj.materials) > group.Matindex {
+			matName = obj.materials[group.Matindex]
 		}
+		matDesc = dec.Materials[matName]
+		if matDesc == nil {
+			matDesc = defaultMat
+			// log warning
+			msg := fmt.Sprintf("could not find material for %s. using default material.", obj.Name)
+			dec.appendWarn(objType, msg)
+		}
+
+		// Creates material for mesh
+		matGroup := material.NewPhong(&matDesc.Diffuse)
+		ambientColor := matGroup.AmbientColor()
+		matGroup.SetAmbientColor(ambientColor.Multiply(&matDesc.Ambient))
+		matGroup.SetSpecularColor(&matDesc.Specular)
+		matGroup.SetShininess(matDesc.Shininess)
+		// Loads material textures if specified
+		err = dec.loadTex(&matGroup.Material, matDesc)
+		if err != nil {
+			return nil, err
+		}
+
 		mesh.AddGroupMaterial(matGroup, idx)
 	}
 	return mesh, nil
@@ -510,8 +524,10 @@ func (dec *Decoder) parseFace(fields []string) error {
 	if dec.matCurrent != nil {
 		face.Material = dec.matCurrent.Name
 	} else {
-		dec.appendWarn(objType, "No material defined")
-		face.Material = "No material defined"
+		// TODO (Ben): do something better than spamming warnings for each line
+		// dec.appendWarn(objType, "No material defined")
+		face.Material = "internal default" // causes error on in NewGeom() if ""
+		// dec.matCurrent = defaultMat
 	}
 	face.Smooth = dec.smoothCurrent
 
