@@ -99,31 +99,37 @@ func Decode(objpath string, mtlpath string) (*Decoder, error) {
 
 	// If path of material file not supplied,
 	// try to use the base name of the obj file
-	if len(mtlpath) == 0 {
-		dir, objfile := filepath.Split(objpath)
-		ext := filepath.Ext(objfile)
-		mtlpath = dir + objfile[:len(objfile)-len(ext)] + ".mtl"
-	}
+	// if len(mtlpath) == 0 {
+	// 	dir, objfile := filepath.Split(objpath)
+	// 	ext := filepath.Ext(objfile)
+	// 	mtlpath = dir + objfile[:len(objfile)-len(ext)] + ".mtl"
+	// }
 
 	fmt.Println("USING TEST VERSION")
 	// Opens mtl file
+	// if mtlpath=="", then os.Open() will produce an error,
+	// causing fmtl to be nil
 	fmtl, err := os.Open(mtlpath)
 	defer fmtl.Close() // will produce (ignored) err if fmtl==nil
 
-	// fmt.Println("before DecodeReader()")
+	// if fmtl==nil, the io.Reader in DecodeReader() will be (T=*os.File, V=nil)
+	// which is NOT equal to plain nil or (io.Reader, nil)
 	dec, err := DecodeReader(fobj, fmtl)
 	if err != nil {
 		return nil, err
 	}
-
-	// fmt.Println("after DecodeReader()")
 
 	dec.mtlDir = filepath.Dir(objpath)
 	return dec, nil
 }
 
 // DecodeReader decodes the specified obj and mtl readers returning a decoder
-// object and an error.
+// object and an error if a problem was encoutered while parsing the OBJ.
+//
+// Pass a valid io.Reader to override the materials defined in the OBJ file,
+// or `nil` to use the materials listed in the OBJ's "mtllib" line (if present),
+// or a default material as a last resort. No error will be returned for
+// problems with materials--a gray default material will be used.
 func DecodeReader(objreader, mtlreader io.Reader) (*Decoder, error) {
 
 	dec := new(Decoder)
@@ -142,25 +148,50 @@ func DecodeReader(objreader, mtlreader io.Reader) (*Decoder, error) {
 	}
 
 	// fmt.Printf("before dec.parse(mtlreader), mtlreader=<%#v>\n", mtlreader)
+
 	// Parses mtl lines
-	// if parsing causes an error, range over the materials named in the OBJ
-	// file and substitute a default.
+	// 1) try passed in mtlreader,
+	// 2) try file in mtllib line
+	// 3) use default material as last resort
 	dec.matCurrent = nil
 	dec.line = 1
-	// fmt.Println("calling dec.parse(mtlreader)")
+	// first try: use the material file passed in as an io.Reader
 	err = dec.parse(mtlreader, dec.parseMtlLine)
 	if err != nil {
-		// handle error by using default material instead
-		// of simply passing it up the call stack.
-		// But log it.
-		for key := range dec.Materials {
-			dec.Materials[key] = defaultMat
+		// if mtlreader produces an error (eg. it's nil), try the file listed
+		// in the OBJ's matlib line, if it exists.
+		if dec.Matlib != "" {
+			// ... first need to get the path of the OBJ, since mtllib is relative
+			var mtllibPath string
+			if objf, ok := objreader.(*os.File); ok {
+				// NOTE (quillaja): this is a hack because we need the directory of
+				// the OBJ, but can't get it any other way (dec.mtlDir isn't set
+				// until AFTER this function is finished)
+				objdir := filepath.Dir(objf.Name())
+				mtllibPath = filepath.Join(objdir, dec.Matlib)
+			}
+			fmt.Println("mtllib:", mtllibPath)
+			mtlf, errMTL := os.Open(mtllibPath)
+			defer mtlf.Close()
+			if errMTL == nil {
+				fmt.Println("attempting to parse", mtllibPath)
+				err = dec.parse(mtlf, dec.parseMtlLine) // will set err to nil if successful
+				fmt.Println("error while parsing mtllib:", err)
+			}
 		}
-		fmt.Println("logged warning")
-		dec.appendWarn(mtlType, "unable to parse a mtl file for obj. using default material instead.")
-	}
 
-	// fmt.Println("after dec.parse(mtlreader)")
+		// handle error(s) instead of simply passing it up the call stack.
+		// range over the materials named in the OBJ file and substitute a default
+		// But log that an error occured.
+		if err != nil {
+			for key := range dec.Materials {
+				dec.Materials[key] = defaultMat
+			}
+			fmt.Println("logged warning for last ditch effort")
+			// NOTE (quillaja): could be an error instead of some custom type.
+			dec.appendWarn(mtlType, "unable to parse a mtl file for obj. using default material instead.")
+		}
+	}
 
 	return dec, nil
 }
