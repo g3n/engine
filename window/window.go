@@ -8,6 +8,7 @@ package window
 
 import (
 	"github.com/g3n/engine/core"
+	"github.com/g3n/engine/gls"
 )
 
 // IWindowManager is the interface for all window managers
@@ -25,6 +26,7 @@ type IWindowManager interface {
 // IWindow is the interface for all windows
 type IWindow interface {
 	core.IDispatcher
+	Gls() *gls.GLS
 	Manager() IWindowManager
 	MakeContextCurrent()
 	FramebufferSize() (width int, height int)
