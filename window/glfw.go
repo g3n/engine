@@ -9,6 +9,7 @@ import (
 
 	"bytes"
 	"github.com/g3n/engine/core"
+	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/gui/assets"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"image"
@@ -223,6 +224,7 @@ type glfwManager struct {
 // glfwWindow describes one glfw window
 type glfwWindow struct {
 	core.Dispatcher              // Embedded event dispatcher
+	gls             *gls.GLS     // Associated OpenGL State
 	win             *glfw.Window // Pointer to native glfw window
 	mgr             *glfwManager // Pointer to window manager
 	fullScreen      bool
@@ -321,7 +323,7 @@ func (m *glfwManager) SetSwapInterval(interval int) {
 	glfw.SwapInterval(interval)
 }
 
-// Terminate destroys any remainding window, cursors and other related objects.
+// Terminate destroys any remaining window, cursors and other related objects.
 func (m *glfwManager) Terminate() {
 
 	glfw.Terminate()
@@ -486,7 +488,21 @@ func (m *glfwManager) CreateWindow(width, height int, title string, fullscreen b
 	if fullscreen {
 		w.SetFullScreen(true)
 	}
+
+	// Create OpenGL state
+	gl, err := gls.New()
+	if err != nil {
+		return nil, err
+	}
+	w.gls = gl
+
 	return w, nil
+}
+
+// Gls returns the associated OpenGL state
+func (w *glfwWindow) Gls() *gls.GLS {
+
+	return w.gls
 }
 
 // Manager returns the window manager and satisfies the IWindow interface

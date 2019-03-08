@@ -161,13 +161,8 @@ func Create(ops Options) (*Application, error) {
 	}
 	win.SetPos(posx, posy)
 	app.win = win
+	app.gl = win.Gls()
 
-	// Create OpenGL state
-	gl, err := gls.New()
-	if err != nil {
-		return nil, err
-	}
-	app.gl = gl
 	// Checks OpenGL errors
 	app.gl.SetCheckErrors(!*app.noglErrors)
 
@@ -210,7 +205,7 @@ func Create(ops Options) (*Application, error) {
 	app.guiroot.SetColor(math32.NewColor("silver"))
 
 	// Creates renderer
-	app.renderer = renderer.NewRenderer(gl)
+	app.renderer = renderer.NewRenderer(app.gl)
 	err = app.renderer.AddDefaultShaders()
 	if err != nil {
 		return nil, fmt.Errorf("Error from AddDefaulShaders:%v", err)
