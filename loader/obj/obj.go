@@ -445,13 +445,19 @@ func (dec *Decoder) parseObject(fields []string) error {
 	if len(fields) < 1 {
 		return errors.New("Object line (o) with less than 2 fields")
 	}
-	var ob Object
-	ob.Name = fields[0]
-	ob.Faces = make([]Face, 0)
-	ob.materials = make([]string, 0)
-	dec.Objects = append(dec.Objects, ob)
+
+	dec.Objects = append(dec.Objects, makeObject(fields[0]))
 	dec.objCurrent = &dec.Objects[len(dec.Objects)-1]
 	return nil
+}
+
+// makes an Object with name.
+func makeObject(name string) Object {
+	var ob Object
+	ob.Name = name
+	ob.Faces = make([]Face, 0)
+	ob.materials = make([]string, 0)
+	return ob
 }
 
 // Parses a vertex position line
@@ -508,6 +514,14 @@ func (dec *Decoder) parseTex(fields []string) error {
 // parseFace parses a face decription line:
 // f v1[/vt1][/vn1] v2[/vt2][/vn2] v3[/vt3][/vn3] ...
 func (dec *Decoder) parseFace(fields []string) error {
+
+	// NOTE(quillaja): this wasn't really part of the original issue-29
+	if dec.objCurrent == nil {
+		// if a face line is encountered before a group (g) or object (o),
+		// create a new "default" object. This 'handles' the case when
+		// a g or o line is not specified (allowed in OBJ format)
+		dec.parseObject([]string{fmt.Sprintf("unnamed%d", dec.line)})
+	}
 
 	// If current object has no material, appends last material if defined
 	if len(dec.objCurrent.materials) == 0 && dec.matCurrent != nil {
@@ -612,6 +626,11 @@ func (dec *Decoder) parseUsemtl(fields []string) error {
 
 	if len(fields) < 1 {
 		return dec.formatError("Usemtl with no fields")
+	}
+
+	// NOTE(quillaja): see similar nil test in parseFace()
+	if dec.objCurrent == nil {
+		dec.parseObject([]string{fmt.Sprintf("unnamed%d", dec.line)})
 	}
 
 	// Checks if this material has already been parsed
