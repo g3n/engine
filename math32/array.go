@@ -245,3 +245,9 @@ func (a *ArrayU32) Append(v ...uint32) {
 
 	*a = append(*a, v...)
 }
+
+// ToUint32 converts this array to an array of uint32
+func (a ArrayU32) ToUint32() []uint32 {
+
+	return (*[1 << 27]uint32)(unsafe.Pointer(&a[0]))[:len(a)]
+}
