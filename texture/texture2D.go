@@ -12,7 +12,6 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"os"
-	"unsafe"
 
 	"github.com/g3n/engine/gls"
 )
@@ -359,5 +358,5 @@ func (t *Texture2D) RenderSetup(gs *gls.GLS, slotIdx, uniIdx int) { // Could hav
 	// Transfer texture info combined uniform
 	const vec2count = 3
 	location = t.uniInfo.LocationIdx(gs, vec2count*int32(uniIdx))
-	gs.Uniform2fvUP(location, vec2count, unsafe.Pointer(&t.udata))
+	gs.Uniform2fv(location, vec2count, &t.udata.offsetX)
 }

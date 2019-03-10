@@ -6,7 +6,6 @@ package gui
 
 import (
 	"math"
-	"unsafe"
 
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/geometry"
@@ -961,7 +960,7 @@ func (p *Panel) RenderSetup(gl *gls.GLS, rinfo *core.RenderInfo) {
 	// Transfer panel parameters combined uniform
 	location = p.uniPanel.Location(gl)
 	const vec4count = 8
-	gl.Uniform4fvUP(location, vec4count, unsafe.Pointer(&p.udata))
+	gl.Uniform4fv(location, vec4count, &p.udata.bounds.X)
 }
 
 // SetModelMatrix calculates and sets the specified matrix with the model matrix for this panel

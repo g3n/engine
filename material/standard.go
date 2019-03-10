@@ -7,7 +7,6 @@ package material
 import (
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/math32"
-	"unsafe"
 )
 
 // Standard material supports the classic lighting model with
@@ -114,5 +113,5 @@ func (ms *Standard) RenderSetup(gs *gls.GLS) {
 
 	ms.Material.RenderSetup(gs)
 	location := ms.uni.Location(gs)
-	gs.Uniform3fvUP(location, standardVec3Count, unsafe.Pointer(&ms.udata))
+	gs.Uniform3fv(location, standardVec3Count, &ms.udata.ambient.R)
 }
