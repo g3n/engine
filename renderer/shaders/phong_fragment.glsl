@@ -2,6 +2,8 @@
 // Fragment Shader template
 //
 
+precision highp float;
+
 // Inputs from vertex shader
 in vec4 Position;       // Vertex position in camera coordinates.
 in vec3 Normal;         // Vertex normal in camera coordinates.

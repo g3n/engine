@@ -14,7 +14,7 @@ void main() {
 
     // Always flip texture coordinates
     vec2 texcoord = VertexTexcoord;
-    texcoord.y = 1 - texcoord.y;
+    texcoord.y = 1.0 - texcoord.y;
     FragTexcoord = texcoord;
 
     // Set position

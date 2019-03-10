@@ -2,6 +2,8 @@
 // Fragment shader for sprite
 //
 
+precision highp float;
+
 #include <material>
 
 // Inputs from vertex shader
