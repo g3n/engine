@@ -5,8 +5,6 @@
 package light
 
 import (
-	"unsafe"
-
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/math32"
@@ -81,5 +79,5 @@ func (ld *Directional) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo, idx int)
 	// Transfer uniform data
 	const vec3count = 2
 	location := ld.uni.LocationIdx(gs, vec3count*int32(idx))
-	gs.Uniform3fvUP(location, vec3count, unsafe.Pointer(&ld.udata))
+	gs.Uniform3fv(location, vec3count, &ld.udata.color.R)
 }
