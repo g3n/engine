@@ -300,6 +300,8 @@ const basic_fragment_source = `//
 // Fragment Shader template
 //
 
+precision highp float;
+
 in vec3 Color;
 out vec4 FragColor;
 
@@ -333,6 +335,8 @@ void main() {
 const panel_fragment_source = `//
 // Fragment Shader template
 //
+
+precision highp float;
 
 // Texture uniforms
 uniform sampler2D	MatTexture;
@@ -411,7 +415,7 @@ void main() {
 		if (TextureValid) {
             // Adjust texture coordinates to fit texture inside the content area
             vec2 offset = vec2(-Content[0], -Content[1]);
-            vec2 factor = vec2(1/Content[2], 1/Content[3]);
+            vec2 factor = vec2(1.0/Content[2], 1.0/Content[3]);
             vec2 texcoord = (FragTexcoord + offset) * factor;
             vec4 texColor = texture(MatTexture, texcoord * MatTexRepeat + MatTexOffset);
 
@@ -429,7 +433,7 @@ void main() {
             texPre.rgb *= texPre.a;
 
             // Combine colors the premultiplied final color
-            color = texPre + contentPre * (1 - texPre.a);
+            color = texPre + contentPre * (1.0 - texPre.a);
 
             // Un-pre-multiply (pre-divide? :P)
             color.rgb /= color.a;
@@ -473,7 +477,7 @@ void main() {
 
     // Always flip texture coordinates
     vec2 texcoord = VertexTexcoord;
-    texcoord.y = 1 - texcoord.y;
+    texcoord.y = 1.0 - texcoord.y;
     FragTexcoord = texcoord;
 
     // Set position
@@ -486,6 +490,8 @@ void main() {
 const phong_fragment_source = `//
 // Fragment Shader template
 //
+
+precision highp float;
 
 // Inputs from vertex shader
 in vec4 Position;       // Vertex position in camera coordinates.
@@ -572,7 +578,7 @@ void main() {
     vec2 texcoord = VertexTexcoord;
 #if MAT_TEXTURES>0
     if (MatTexFlipY(0)) {
-        texcoord.y = 1 - texcoord.y;
+        texcoord.y = 1.0 - texcoord.y;
     }
 #endif
     FragTexcoord = texcoord;
@@ -1056,7 +1062,9 @@ void main() {
 
 `
 
-const point_fragment_source = `#include <material>
+const point_fragment_source = `precision highp float;
+
+#include <material>
 
 // GLSL 3.30 does not allow indexing texture sampler with non constant values.
 // This macro is used to mix the texture with the specified index with the material color.
@@ -1136,6 +1144,8 @@ const sprite_fragment_source = `//
 // Fragment shader for sprite
 //
 
+precision highp float;
+
 #include <material>
 
 // Inputs from vertex shader
@@ -1193,7 +1203,7 @@ void main() {
     vec2 texcoord = VertexTexcoord;
 #if MAT_TEXTURES>0
     if (MatTexFlipY[0]) {
-        texcoord.y = 1 - texcoord.y;
+        texcoord.y = 1.0 - texcoord.y;
     }
 #endif
     FragTexcoord = texcoord;
@@ -1204,6 +1214,9 @@ void main() {
 const standard_fragment_source = `//
 // Fragment Shader template
 //
+
+precision highp float;
+
 #include <material>
 
 // Inputs from Vertex shader
@@ -1291,7 +1304,7 @@ void main() {
 #if MAT_TEXTURES > 0
     // Flips texture coordinate Y if requested.
     if (MatTexFlipY(0)) {
-        texcoord.y = 1 - texcoord.y;
+        texcoord.y = 1.0 - texcoord.y;
     }
 #endif
     FragTexcoord = texcoord;

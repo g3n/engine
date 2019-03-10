@@ -42,7 +42,7 @@ void main() {
 #if MAT_TEXTURES > 0
     // Flips texture coordinate Y if requested.
     if (MatTexFlipY(0)) {
-        texcoord.y = 1 - texcoord.y;
+        texcoord.y = 1.0 - texcoord.y;
     }
 #endif
     FragTexcoord = texcoord;

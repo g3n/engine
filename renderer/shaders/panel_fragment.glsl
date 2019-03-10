@@ -2,6 +2,8 @@
 // Fragment Shader template
 //
 
+precision highp float;
+
 // Texture uniforms
 uniform sampler2D	MatTexture;
 uniform vec2		MatTexinfo[3];
@@ -79,7 +81,7 @@ void main() {
 		if (TextureValid) {
             // Adjust texture coordinates to fit texture inside the content area
             vec2 offset = vec2(-Content[0], -Content[1]);
-            vec2 factor = vec2(1/Content[2], 1/Content[3]);
+            vec2 factor = vec2(1.0/Content[2], 1.0/Content[3]);
             vec2 texcoord = (FragTexcoord + offset) * factor;
             vec4 texColor = texture(MatTexture, texcoord * MatTexRepeat + MatTexOffset);
 
@@ -97,7 +99,7 @@ void main() {
             texPre.rgb *= texPre.a;
 
             // Combine colors the premultiplied final color
-            color = texPre + contentPre * (1 - texPre.a);
+            color = texPre + contentPre * (1.0 - texPre.a);
 
             // Un-pre-multiply (pre-divide? :P)
             color.rgb /= color.a;

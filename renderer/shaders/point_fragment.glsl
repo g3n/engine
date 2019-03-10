@@ -1,3 +1,5 @@
+precision highp float;
+
 #include <material>
 
 // GLSL 3.30 does not allow indexing texture sampler with non constant values.

@@ -1,6 +1,9 @@
 //
 // Fragment Shader template
 //
+
+precision highp float;
+
 #include <material>
 
 // Inputs from Vertex shader
