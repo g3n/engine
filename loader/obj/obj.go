@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package obj
+// Package obj is used to parse the Wavefront OBJ file format (*.obj), including
+// associated materials (*.mtl). Not all features of the OBJ format are
+// supported. Basic format info: https://en.wikipedia.org/wiki/Wavefront_.obj_file
 package obj
 
 import (
@@ -71,6 +73,7 @@ type Material struct {
 	MapKd      string       // Texture file linked to diffuse color
 }
 
+// Light gray default material used as when other materials cannot be loaded.
 var defaultMat = &Material{
 	Diffuse:   math32.Color{R: 0.7, G: 0.7, B: 0.7},
 	Ambient:   math32.Color{R: 0.7, G: 0.7, B: 0.7},
@@ -87,7 +90,9 @@ const (
 )
 
 // Decode decodes the specified obj and mtl files returning a decoder
-// object and an error.
+// object and an error. Passing an empty string (or otherwise invalid path)
+// to mtlpath will cause the decoder to check the 'mtllib' file in the OBJ if
+// present, and fall back to a default material as a last resort.
 func Decode(objpath string, mtlpath string) (*Decoder, error) {
 
 	// Opens obj file
@@ -97,6 +102,7 @@ func Decode(objpath string, mtlpath string) (*Decoder, error) {
 	}
 	defer fobj.Close()
 
+	// TODO: remove
 	// If path of material file not supplied,
 	// try to use the base name of the obj file
 	// if len(mtlpath) == 0 {
@@ -105,7 +111,7 @@ func Decode(objpath string, mtlpath string) (*Decoder, error) {
 	// 	mtlpath = dir + objfile[:len(objfile)-len(ext)] + ".mtl"
 	// }
 
-	fmt.Println("USING TEST VERSION")
+	fmt.Println("USING TEST VERSION") // TODO: remove
 	// Opens mtl file
 	// if mtlpath=="", then os.Open() will produce an error,
 	// causing fmtl to be nil
@@ -113,7 +119,8 @@ func Decode(objpath string, mtlpath string) (*Decoder, error) {
 	defer fmtl.Close() // will produce (ignored) err if fmtl==nil
 
 	// if fmtl==nil, the io.Reader in DecodeReader() will be (T=*os.File, V=nil)
-	// which is NOT equal to plain nil or (io.Reader, nil)
+	// which is NOT equal to plain nil or (io.Reader, nil) but will produce
+	// the desired result of passing nil to DecodeReader() per it's func comment.
 	dec, err := DecodeReader(fobj, fmtl)
 	if err != nil {
 		return nil, err
@@ -146,8 +153,6 @@ func DecodeReader(objreader, mtlreader io.Reader) (*Decoder, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// fmt.Printf("before dec.parse(mtlreader), mtlreader=<%#v>\n", mtlreader)
 
 	// Parses mtl lines
 	// 1) try passed in mtlreader,
@@ -188,7 +193,7 @@ func DecodeReader(objreader, mtlreader io.Reader) (*Decoder, error) {
 				dec.Materials[key] = defaultMat
 			}
 			fmt.Println("logged warning for last ditch effort")
-			// NOTE (quillaja): could be an error instead of some custom type.
+			// NOTE (quillaja): could be an error of some custom type.
 			dec.appendWarn(mtlType, "unable to parse a mtl file for obj. using default material instead.")
 		}
 	}
@@ -221,12 +226,8 @@ func (dec *Decoder) NewMesh(obj *Object) (*graphic.Mesh, error) {
 		return nil, err
 	}
 
-	// defaultMaterial := material.NewPhong(math32.NewColor("gray"))
-
 	// Single material
 	if geom.GroupCount() == 1 {
-		// fmt.Println("single group geom")
-
 		// get Material info from mtl file and ensure it's valid.
 		// substitute default material if it is not.
 		var matDesc *Material
@@ -258,7 +259,6 @@ func (dec *Decoder) NewMesh(obj *Object) (*graphic.Mesh, error) {
 	}
 
 	// Multi material
-	// fmt.Println("multi group geom")
 	mesh := graphic.NewMesh(geom, nil)
 	for idx := 0; idx < geom.GroupCount(); idx++ {
 		group := geom.GroupAt(idx)
@@ -463,7 +463,7 @@ func (dec *Decoder) parseObjLine(line string) error {
 func (dec *Decoder) parseMatlib(fields []string) error {
 
 	if len(fields) < 1 {
-		return errors.New("Object line (o) with less than 2 fields")
+		return errors.New("Material library (mtllib) with no fields")
 	}
 	dec.Matlib = fields[0]
 	return nil
@@ -474,7 +474,7 @@ func (dec *Decoder) parseMatlib(fields []string) error {
 func (dec *Decoder) parseObject(fields []string) error {
 
 	if len(fields) < 1 {
-		return errors.New("Object line (o) with less than 2 fields")
+		return errors.New("Object line (o) with no fields")
 	}
 
 	dec.Objects = append(dec.Objects, makeObject(fields[0]))
@@ -569,7 +569,7 @@ func (dec *Decoder) parseFace(fields []string) error {
 	if dec.matCurrent != nil {
 		face.Material = dec.matCurrent.Name
 	} else {
-		// TODO (Ben): do something better than spamming warnings for each line
+		// TODO (quillaja): do something better than spamming warnings for each line
 		// dec.appendWarn(objType, "No material defined")
 		face.Material = "internal default" // causes error on in NewGeom() if ""
 		// dec.matCurrent = defaultMat
