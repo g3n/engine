@@ -102,16 +102,6 @@ func Decode(objpath string, mtlpath string) (*Decoder, error) {
 	}
 	defer fobj.Close()
 
-	// TODO: remove
-	// If path of material file not supplied,
-	// try to use the base name of the obj file
-	// if len(mtlpath) == 0 {
-	// 	dir, objfile := filepath.Split(objpath)
-	// 	ext := filepath.Ext(objfile)
-	// 	mtlpath = dir + objfile[:len(objfile)-len(ext)] + ".mtl"
-	// }
-
-	fmt.Println("USING TEST VERSION") // TODO: remove
 	// Opens mtl file
 	// if mtlpath=="", then os.Open() will produce an error,
 	// causing fmtl to be nil
@@ -179,13 +169,10 @@ func DecodeReader(objreader, mtlreader io.Reader) (*Decoder, error) {
 				mtllibPath = filepath.Join(objdir, dec.Matlib)
 				dec.mtlDir = objdir // NOTE (quillaja): should this be set?
 			}
-			fmt.Println("mtllib:", mtllibPath) // TODO: remove
 			mtlf, errMTL := os.Open(mtllibPath)
 			defer mtlf.Close()
 			if errMTL == nil {
-				fmt.Println("attempting to parse", mtllibPath)  // TODO: remove
-				err = dec.parse(mtlf, dec.parseMtlLine)         // will set err to nil if successful
-				fmt.Println("error while parsing mtllib:", err) // TODO: remove
+				err = dec.parse(mtlf, dec.parseMtlLine) // will set err to nil if successful
 			}
 		}
 
@@ -198,13 +185,10 @@ func DecodeReader(objreader, mtlreader io.Reader) (*Decoder, error) {
 				mtlpath = objdir + ".mtl"
 				dec.mtlDir = objdir // NOTE (quillaja): should this be set?
 			}
-			fmt.Println("mtl file:", mtlpath) // TODO: remove
 			mtlf, errMTL := os.Open(mtlpath)
 			defer mtlf.Close()
 			if errMTL == nil {
-				fmt.Println("attempting to parse", mtlpath)        // TODO: remove
-				err = dec.parse(mtlf, dec.parseMtlLine)            // will set err to nil if successful
-				fmt.Println("error while parsing <obj>.mtl:", err) // TODO: remove
+				err = dec.parse(mtlf, dec.parseMtlLine) // will set err to nil if successful
 				if err == nil {
 					// log a warning
 					msg := fmt.Sprintf("using material file %s", mtlpath)
@@ -220,7 +204,6 @@ func DecodeReader(objreader, mtlreader io.Reader) (*Decoder, error) {
 			for key := range dec.Materials {
 				dec.Materials[key] = defaultMat
 			}
-			fmt.Println("logged warning for last ditch effort") // TODO: remove
 			// NOTE (quillaja): could be an error of some custom type. But people
 			// tend to ignore errors and pass them up the call stack instead
 			// of handling them... so all this work would probably be wasted.
