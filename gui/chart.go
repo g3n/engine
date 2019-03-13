@@ -769,6 +769,8 @@ void main() {
 // Fragment Shader template
 //
 const shaderChartFrag = `
+precision highp float;
+
 // Input uniforms from vertex shader
 in vec3 Color;
 
