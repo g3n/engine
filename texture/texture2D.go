@@ -324,7 +324,6 @@ func (t *Texture2D) RenderSetup(gs *gls.GLS, slotIdx, uniIdx int) { // Could hav
 			t.iformat,      // internal format
 			t.width,        // width in texels
 			t.height,       // height in texels
-			0,              // border must be 0
 			t.format,       // format of supplied texture data
 			t.formatType,   // type of external format color component
 			t.data,         // image data

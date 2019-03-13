@@ -2,31 +2,26 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build !wasm
+// +build wasm
 
 package gls
-
-// #include <stdlib.h>
-// #include "glcorearb.h"
-// #include "glapi.h"
-import "C"
 
 import (
 	"fmt"
 	"math"
-	"reflect"
+	"syscall/js"
 	"unsafe"
 )
 
-// GLS encapsulates the state of an OpenGL context and contains
-// methods to call OpenGL functions.
+// GLS encapsulates the state of a WebGL context and contains
+// methods to call WebGL functions.
 type GLS struct {
 	stats       Stats             // statistics
 	prog        *Program          // current active shader program
 	programs    map[*Program]bool // shader programs cache
 	checkErrors bool              // check openGL API errors flag
 
-	// Cache OpenGL state to avoid making unnecessary API calls
+	// Cache WebGL state to avoid making unnecessary API calls
 	activeTexture       uint32      // cached last set active texture unit
 	viewportX           int32       // cached last set viewport x
 	viewportY           int32       // cached last set viewport y
@@ -51,12 +46,34 @@ type GLS struct {
 	polygonModeMode     uint32      // cached last set polygon mode mode
 	polygonOffsetFactor float32     // cached last set polygon offset factor
 	polygonOffsetUnits  float32     // cached last set polygon offset units
-	gobuf               []byte      // conversion buffer with GO memory
-	cbuf                []byte      // conversion buffer with C memory
+
+	// js.Value storage maps
+	programMap      map[uint32]js.Value
+	shaderMap       map[uint32]js.Value
+	bufferMap       map[uint32]js.Value
+	framebufferMap  map[uint32]js.Value
+	renderbufferMap map[uint32]js.Value
+	textureMap      map[uint32]js.Value
+	uniformMap      map[uint32]js.Value
+	vertexArrayMap  map[uint32]js.Value
+
+	// Next free index to be used for each map
+	programMapIndex      uint32
+	shaderMapIndex       uint32
+	bufferMapIndex       uint32
+	framebufferMapIndex  uint32
+	renderbufferMapIndex uint32
+	textureMapIndex      uint32
+	uniformMapIndex      uint32
+	vertexArrayMapIndex  uint32
+
+	// Canvas and WebGL Context
+	canvas js.Value
+	gl     js.Value
 }
 
-// Stats contains counters of OpenGL resources being used as well
-// the cumulative numbers of some OpenGL calls for performance evaluation.
+// Stats contains counters of WebGL resources being used as well
+// the cumulative numbers of some WebGL calls for performance evaluation.
 type Stats struct {
 	Shaders    int    // Current number of shader programs
 	Vaos       int    // Number of Vertex Array Objects
@@ -78,46 +95,59 @@ const (
 	intTrue     = 1
 )
 
-const (
-	FloatSize = int32(unsafe.Sizeof(float32(0)))
-)
-
 // New creates and returns a new instance of a GLS object,
-// which encapsulates the state of an OpenGL context.
-// This should be called only after an active OpenGL context
+// which encapsulates the state of an WebGL context.
+// This should be called only after an active WebGL context
 // is established, such as by creating a new window.
 func New() (*GLS, error) {
 
 	gs := new(GLS)
 	gs.reset()
-
-	// Load OpenGL functions
-	err := C.glapiLoad()
-	if err != 0 {
-		return nil, fmt.Errorf("Error loading OpenGL")
-	}
-	gs.setDefaultState()
 	gs.checkErrors = true
 
-	// Preallocate conversion buffers
-	size := 1 * 1024
-	gs.gobuf = make([]byte, size)
-	p := C.malloc(C.size_t(size))
-	gs.cbuf = (*[1 << 30]byte)(unsafe.Pointer(p))[:size:size]
+	// Create js.Value storage maps
+	gs.programMap = make(map[uint32]js.Value)
+	gs.shaderMap = make(map[uint32]js.Value)
+	gs.bufferMap = make(map[uint32]js.Value)
+	gs.framebufferMap = make(map[uint32]js.Value)
+	gs.renderbufferMap = make(map[uint32]js.Value)
+	gs.textureMap = make(map[uint32]js.Value)
+	gs.uniformMap = make(map[uint32]js.Value)
+	gs.vertexArrayMap = make(map[uint32]js.Value)
 
+	// Initialize indexes to be used with the maps above
+	gs.programMapIndex = 1
+	gs.shaderMapIndex = 1
+	gs.bufferMapIndex = 1
+	gs.framebufferMapIndex = 1
+	gs.renderbufferMapIndex = 1
+	gs.textureMapIndex = 1
+	gs.uniformMapIndex = 1
+	gs.vertexArrayMapIndex = 1
+
+	// Create canvas and get reference to WebGL context
+	doc := js.Global().Get("document")
+	gs.canvas = doc.Call("createElement", "canvas")
+	gs.gl = gs.canvas.Call("getContext", "webgl2")
+	if gs.gl == js.Undefined() {
+		return nil, fmt.Errorf("Browser doesn't support WebGL2")
+	}
+
+	gs.setDefaultState()
 	return gs, nil
 }
 
+// Canvas returns the associated WebGL canvas.
+func (gs *GLS) Canvas() js.Value {
+
+	return gs.canvas
+}
+
 // SetCheckErrors enables/disables checking for errors after the
-// call of any OpenGL function. It is enabled by default but
+// call of any WebGL function. It is enabled by default but
 // could be disabled after an application is stable to improve the performance.
 func (gs *GLS) SetCheckErrors(enable bool) {
 
-	if enable {
-		C.glapiCheckError(1)
-	} else {
-		C.glapiCheckError(0)
-	}
 	gs.checkErrors = enable
 }
 
@@ -127,7 +157,7 @@ func (gs *GLS) CheckErrors() bool {
 	return gs.checkErrors
 }
 
-// reset resets the internal state kept of the OpenGL
+// reset resets the internal state kept of the WebGL
 func (gs *GLS) reset() {
 
 	gs.lineWidth = 0.0
@@ -155,7 +185,7 @@ func (gs *GLS) reset() {
 	gs.polygonOffsetUnits = -1
 }
 
-// setDefaultState is used internally to set the initial state of OpenGL
+// setDefaultState is used internally to set the initial state of WebGL
 // for this context.
 func (gs *GLS) setDefaultState() {
 
@@ -171,12 +201,13 @@ func (gs *GLS) setDefaultState() {
 	gs.BlendEquation(FUNC_ADD)
 	gs.BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA)
 
-	gs.Enable(VERTEX_PROGRAM_POINT_SIZE)
-	gs.Enable(PROGRAM_POINT_SIZE)
-	gs.Enable(MULTISAMPLE)
+	// TODO commented constants not available in WebGL
+	//gs.Enable(VERTEX_PROGRAM_POINT_SIZE)
+	//gs.Enable(PROGRAM_POINT_SIZE)
+	//gs.Enable(MULTISAMPLE)
 	gs.Enable(POLYGON_OFFSET_FILL)
-	gs.Enable(POLYGON_OFFSET_LINE)
-	gs.Enable(POLYGON_OFFSET_POINT)
+	//gs.Enable(POLYGON_OFFSET_LINE)
+	//gs.Enable(POLYGON_OFFSET_POINT)
 }
 
 // Stats copy the current values of the internal statistics structure
@@ -195,32 +226,37 @@ func (gs *GLS) ActiveTexture(texture uint32) {
 	if gs.activeTexture == texture {
 		return
 	}
-	C.glActiveTexture(C.GLenum(texture))
+	gs.gl.Call("activeTexture", int(texture))
+	gs.checkError("ActiveTexture")
 	gs.activeTexture = texture
 }
 
 // AttachShader attaches the specified shader object to the specified program object.
 func (gs *GLS) AttachShader(program, shader uint32) {
 
-	C.glAttachShader(C.GLuint(program), C.GLuint(shader))
+	gs.gl.Call("attachShader", gs.programMap[program], gs.shaderMap[shader])
+	gs.checkError("AttachShader")
 }
 
 // BindBuffer binds a buffer object to the specified buffer binding point.
 func (gs *GLS) BindBuffer(target int, vbo uint32) {
 
-	C.glBindBuffer(C.GLenum(target), C.GLuint(vbo))
+	gs.gl.Call("bindBuffer", target, gs.bufferMap[vbo])
+	gs.checkError("BindBuffer")
 }
 
 // BindTexture lets you create or use a named texture.
 func (gs *GLS) BindTexture(target int, tex uint32) {
 
-	C.glBindTexture(C.GLenum(target), C.GLuint(tex))
+	gs.gl.Call("bindTexture", target, gs.textureMap[tex])
+	gs.checkError("BindTexture")
 }
 
 // BindVertexArray binds the vertex array object.
 func (gs *GLS) BindVertexArray(vao uint32) {
 
-	C.glBindVertexArray(C.GLuint(vao))
+	gs.gl.Call("bindVertexArray", gs.vertexArrayMap[vao])
+	gs.checkError("BindVertexArray")
 }
 
 // BlendEquation sets the blend equations for all draw buffers.
@@ -229,7 +265,8 @@ func (gs *GLS) BlendEquation(mode uint32) {
 	if gs.blendEquation == mode {
 		return
 	}
-	C.glBlendEquation(C.GLenum(mode))
+	gs.gl.Call("blendEquation", int(mode))
+	gs.checkError("BlendEquation")
 	gs.blendEquation = mode
 }
 
@@ -240,7 +277,8 @@ func (gs *GLS) BlendEquationSeparate(modeRGB uint32, modeAlpha uint32) {
 	if gs.blendEquationRGB == modeRGB && gs.blendEquationAlpha == modeAlpha {
 		return
 	}
-	C.glBlendEquationSeparate(C.GLenum(modeRGB), C.GLenum(modeAlpha))
+	gs.gl.Call("blendEquationSeparate", int(modeRGB), int(modeAlpha))
+	gs.checkError("BlendEquationSeparate")
 	gs.blendEquationRGB = modeRGB
 	gs.blendEquationAlpha = modeAlpha
 }
@@ -252,7 +290,8 @@ func (gs *GLS) BlendFunc(sfactor, dfactor uint32) {
 	if gs.blendSrc == sfactor && gs.blendDst == dfactor {
 		return
 	}
-	C.glBlendFunc(C.GLenum(sfactor), C.GLenum(dfactor))
+	gs.gl.Call("blendFunc", int(sfactor), int(dfactor))
+	gs.checkError("BlendFunc")
 	gs.blendSrc = sfactor
 	gs.blendDst = dfactor
 }
@@ -265,7 +304,8 @@ func (gs *GLS) BlendFuncSeparate(srcRGB uint32, dstRGB uint32, srcAlpha uint32, 
 		gs.blendSrcAlpha == srcAlpha && gs.blendDstAlpha == dstAlpha {
 		return
 	}
-	C.glBlendFuncSeparate(C.GLenum(srcRGB), C.GLenum(dstRGB), C.GLenum(srcAlpha), C.GLenum(dstAlpha))
+	gs.gl.Call("blendFuncSeparate", int(srcRGB), int(dstRGB), int(srcAlpha), int(dstAlpha))
+	gs.checkError("BlendFuncSeparate")
 	gs.blendSrcRGB = srcRGB
 	gs.blendDstRGB = dstRGB
 	gs.blendSrcAlpha = srcAlpha
@@ -276,94 +316,124 @@ func (gs *GLS) BlendFuncSeparate(srcRGB uint32, dstRGB uint32, srcAlpha uint32, 
 // bound to target, deleting any pre-existing data store.
 func (gs *GLS) BufferData(target uint32, size int, data interface{}, usage uint32) {
 
-	C.glBufferData(C.GLenum(target), C.GLsizeiptr(size), ptr(data), C.GLenum(usage))
+	dataTA := js.TypedArrayOf(data)
+	gs.gl.Call("bufferData", int(target), dataTA, int(usage))
+	gs.checkError("BufferData")
+	dataTA.Release()
 }
 
 // ClearColor specifies the red, green, blue, and alpha values
 // used by glClear to clear the color buffers.
 func (gs *GLS) ClearColor(r, g, b, a float32) {
 
-	C.glClearColor(C.GLfloat(r), C.GLfloat(g), C.GLfloat(b), C.GLfloat(a))
+	gs.gl.Call("clearColor", r, g, b, a)
+	gs.checkError("ClearColor")
 }
 
 // ClearDepth specifies the depth value used by Clear to clear the depth buffer.
 func (gs *GLS) ClearDepth(v float32) {
 
-	C.glClearDepth(C.GLclampd(v))
+	gs.gl.Call("clearDepth", v)
+	gs.checkError("ClearDepth")
 }
 
 // ClearStencil specifies the index used by Clear to clear the stencil buffer.
 func (gs *GLS) ClearStencil(v int32) {
 
-	C.glClearStencil(C.GLint(v))
+	gs.gl.Call("clearStencil", int(v))
+	gs.checkError("ClearStencil")
 }
 
 // Clear sets the bitplane area of the window to values previously
 // selected by ClearColor, ClearDepth, and ClearStencil.
 func (gs *GLS) Clear(mask uint) {
 
-	C.glClear(C.GLbitfield(mask))
+	gs.gl.Call("clear", int(mask))
+	gs.checkError("Clear")
 }
 
 // CompileShader compiles the source code strings that
 // have been stored in the specified shader object.
 func (gs *GLS) CompileShader(shader uint32) {
 
-	C.glCompileShader(C.GLuint(shader))
+	gs.gl.Call("compileShader", gs.shaderMap[shader])
+	gs.checkError("CompileShader")
 }
 
 // CreateProgram creates an empty program object and returns
 // a non-zero value by which it can be referenced.
 func (gs *GLS) CreateProgram() uint32 {
 
-	p := C.glCreateProgram()
-	return uint32(p)
+	gs.programMap[gs.programMapIndex] = gs.gl.Call("createProgram")
+	gs.checkError("CreateProgram")
+	idx := gs.programMapIndex
+	gs.programMapIndex++
+	return idx
 }
 
 // CreateShader creates an empty shader object and returns
 // a non-zero value by which it can be referenced.
 func (gs *GLS) CreateShader(stype uint32) uint32 {
 
-	h := C.glCreateShader(C.GLenum(stype))
-	return uint32(h)
+	gs.shaderMap[gs.shaderMapIndex] = gs.gl.Call("createShader", int(stype))
+	gs.checkError("CreateShader")
+	idx := gs.shaderMapIndex
+	gs.shaderMapIndex++
+	return idx
 }
 
 // DeleteBuffers deletes n​buffer objects named
 // by the elements of the provided array.
 func (gs *GLS) DeleteBuffers(bufs ...uint32) {
 
-	C.glDeleteBuffers(C.GLsizei(len(bufs)), (*C.GLuint)(&bufs[0]))
-	gs.stats.Buffers -= len(bufs)
+	for _, buf := range bufs {
+		gs.gl.Call("deleteBuffer", gs.bufferMap[buf])
+		gs.checkError("DeleteBuffers")
+		gs.stats.Buffers--
+		delete(gs.bufferMap, buf)
+	}
 }
 
 // DeleteShader frees the memory and invalidates the name
 // associated with the specified shader object.
 func (gs *GLS) DeleteShader(shader uint32) {
 
-	C.glDeleteShader(C.GLuint(shader))
+	gs.gl.Call("deleteShader", gs.shaderMap[shader])
+	gs.checkError("DeleteShader")
+	delete(gs.shaderMap, shader)
 }
 
 // DeleteProgram frees the memory and invalidates the name
 // associated with the specified program object.
 func (gs *GLS) DeleteProgram(program uint32) {
 
-	C.glDeleteProgram(C.GLuint(program))
+	gs.gl.Call("deleteProgram", gs.programMap[program])
+	gs.checkError("DeleteProgram")
+	delete(gs.programMap, program)
 }
 
 // DeleteTextures deletes n​textures named
 // by the elements of the provided array.
 func (gs *GLS) DeleteTextures(tex ...uint32) {
 
-	C.glDeleteTextures(C.GLsizei(len(tex)), (*C.GLuint)(&tex[0]))
-	gs.stats.Textures -= len(tex)
+	for _, t := range tex {
+		gs.gl.Call("deleteTexture", gs.textureMap[t])
+		gs.checkError("DeleteTextures")
+		delete(gs.textureMap, t)
+		gs.stats.Textures--
+	}
 }
 
 // DeleteVertexArrays deletes n​vertex array objects named
 // by the elements of the provided array.
 func (gs *GLS) DeleteVertexArrays(vaos ...uint32) {
 
-	C.glDeleteVertexArrays(C.GLsizei(len(vaos)), (*C.GLuint)(&vaos[0]))
-	gs.stats.Vaos -= len(vaos)
+	for _, v := range vaos {
+		gs.gl.Call("deleteVertexArray", gs.vertexArrayMap[v])
+		gs.checkError("DeleteVertexArrays")
+		delete(gs.vertexArrayMap, v)
+		gs.stats.Vaos--
+	}
 }
 
 // DepthFunc specifies the function used to compare each incoming pixel
@@ -373,7 +443,8 @@ func (gs *GLS) DepthFunc(mode uint32) {
 	if gs.depthFunc == mode {
 		return
 	}
-	C.glDepthFunc(C.GLenum(mode))
+	gs.gl.Call("depthFunc", int(mode))
+	gs.checkError("DepthFunc")
 	gs.depthFunc = mode
 }
 
@@ -386,7 +457,8 @@ func (gs *GLS) DepthMask(flag bool) {
 	if gs.depthMask == intFalse && !flag {
 		return
 	}
-	C.glDepthMask(bool2c(flag))
+	gs.gl.Call("depthMask", flag)
+	gs.checkError("DepthMask")
 	if flag {
 		gs.depthMask = intTrue
 	} else {
@@ -397,14 +469,16 @@ func (gs *GLS) DepthMask(flag bool) {
 // DrawArrays renders primitives from array data.
 func (gs *GLS) DrawArrays(mode uint32, first int32, count int32) {
 
-	C.glDrawArrays(C.GLenum(mode), C.GLint(first), C.GLsizei(count))
+	gs.gl.Call("drawArrays", int(mode), first, count)
+	gs.checkError("DrawArrays")
 	gs.stats.Drawcalls++
 }
 
 // DrawElements renders primitives from array data.
 func (gs *GLS) DrawElements(mode uint32, count int32, itype uint32, start uint32) {
 
-	C.glDrawElements(C.GLenum(mode), C.GLsizei(count), C.GLenum(itype), unsafe.Pointer(uintptr(start)))
+	gs.gl.Call("drawElements", int(mode), count, int(itype), start)
+	gs.checkError("DrawElements")
 	gs.stats.Drawcalls++
 }
 
@@ -415,7 +489,8 @@ func (gs *GLS) Enable(cap int) {
 		gs.stats.Caphits++
 		return
 	}
-	C.glEnable(C.GLenum(cap))
+	gs.gl.Call("enable", int32(cap))
+	gs.checkError("Enable")
 	gs.capabilities[cap] = capEnabled
 }
 
@@ -426,20 +501,23 @@ func (gs *GLS) Disable(cap int) {
 		gs.stats.Caphits++
 		return
 	}
-	C.glDisable(C.GLenum(cap))
+	gs.gl.Call("disable", cap)
+	gs.checkError("Disable")
 	gs.capabilities[cap] = capDisabled
 }
 
 // EnableVertexAttribArray enables a generic vertex attribute array.
 func (gs *GLS) EnableVertexAttribArray(index uint32) {
 
-	C.glEnableVertexAttribArray(C.GLuint(index))
+	gs.gl.Call("enableVertexAttribArray", index)
+	gs.checkError("EnableVertexAttribArray")
 }
 
 // CullFace specifies whether front- or back-facing facets can be culled.
 func (gs *GLS) CullFace(mode uint32) {
 
-	C.glCullFace(C.GLenum(mode))
+	gs.gl.Call("cullFace", int(mode))
+	gs.checkError("CullFace")
 }
 
 // FrontFace defines front- and back-facing polygons.
@@ -448,92 +526,111 @@ func (gs *GLS) FrontFace(mode uint32) {
 	if gs.frontFace == mode {
 		return
 	}
-	C.glFrontFace(C.GLenum(mode))
+	gs.gl.Call("frontFace", int(mode))
+	gs.checkError("FrontFace")
 	gs.frontFace = mode
 }
 
-// GenBuffer generates a​buffer object name.
 func (gs *GLS) GenBuffer() uint32 {
 
-	var buf uint32
-	C.glGenBuffers(1, (*C.GLuint)(&buf))
+	gs.bufferMap[gs.bufferMapIndex] = gs.gl.Call("createBuffer")
+	gs.checkError("CreateBuffer")
+	idx := gs.bufferMapIndex
+	gs.bufferMapIndex++
 	gs.stats.Buffers++
-	return buf
+	return idx
 }
 
 // GenerateMipmap generates mipmaps for the specified texture target.
 func (gs *GLS) GenerateMipmap(target uint32) {
 
-	C.glGenerateMipmap(C.GLenum(target))
+	gs.gl.Call("generateMipmap", int(target))
+	gs.checkError("GenerateMipmap")
 }
 
 // GenTexture generates a texture object name.
 func (gs *GLS) GenTexture() uint32 {
 
-	var tex uint32
-	C.glGenTextures(1, (*C.GLuint)(&tex))
+	gs.textureMap[gs.textureMapIndex] = gs.gl.Call("createTexture")
+	gs.checkError("GenTexture")
+	idx := gs.textureMapIndex
+	gs.textureMapIndex++
 	gs.stats.Textures++
-	return tex
+	return idx
 }
 
 // GenVertexArray generates a vertex array object name.
 func (gs *GLS) GenVertexArray() uint32 {
 
-	var vao uint32
-	C.glGenVertexArrays(1, (*C.GLuint)(&vao))
+	gs.vertexArrayMap[gs.vertexArrayMapIndex] = gs.gl.Call("createVertexArray")
+	gs.checkError("GenVertexArray")
+	idx := gs.vertexArrayMapIndex
+	gs.vertexArrayMapIndex++
 	gs.stats.Vaos++
-	return vao
+	return idx
 }
 
 // GetAttribLocation returns the location of the specified attribute variable.
 func (gs *GLS) GetAttribLocation(program uint32, name string) int32 {
 
-	loc := C.glGetAttribLocation(C.GLuint(program), gs.gobufStr(name))
+	loc := gs.gl.Call("getAttribLocation", gs.programMap[program], name).Int()
+	gs.checkError("GetAttribLocation")
 	return int32(loc)
 }
 
 // GetProgramiv returns the specified parameter from the specified program object.
 func (gs *GLS) GetProgramiv(program, pname uint32, params *int32) {
 
-	C.glGetProgramiv(C.GLuint(program), C.GLenum(pname), (*C.GLint)(params))
+	sparam := gs.gl.Call("getProgramParameter", gs.programMap[program], int(pname))
+	gs.checkError("GetProgramiv")
+	switch pname {
+	case DELETE_STATUS, LINK_STATUS, VALIDATE_STATUS:
+		if sparam.Bool() {
+			*params = TRUE
+		} else {
+			*params = FALSE
+		}
+	default:
+		*params = int32(sparam.Int())
+	}
 }
 
 // GetProgramInfoLog returns the information log for the specified program object.
 func (gs *GLS) GetProgramInfoLog(program uint32) string {
 
-	var length int32
-	gs.GetProgramiv(program, INFO_LOG_LENGTH, &length)
-	if length == 0 {
-		return ""
-	}
-	C.glGetProgramInfoLog(C.GLuint(program), C.GLsizei(length), nil, gs.gobufSize(uint32(length)))
-	return string(gs.gobuf[:length])
+	res := gs.gl.Call("getProgramInfoLog", gs.programMap[program]).String()
+	gs.checkError("GetProgramInfoLog")
+	return res
 }
 
 // GetShaderInfoLog returns the information log for the specified shader object.
 func (gs *GLS) GetShaderInfoLog(shader uint32) string {
 
-	var length int32
-	gs.GetShaderiv(shader, INFO_LOG_LENGTH, &length)
-	if length == 0 {
-		return ""
-	}
-	C.glGetShaderInfoLog(C.GLuint(shader), C.GLsizei(length), nil, gs.gobufSize(uint32(length)))
-	return string(gs.gobuf[:length])
+	res := gs.gl.Call("getShaderInfoLog", gs.shaderMap[shader]).String()
+	gs.checkError("GetShaderInfoLog")
+	return res
 }
 
 // GetString returns a string describing the specified aspect of the current GL connection.
 func (gs *GLS) GetString(name uint32) string {
 
-	cs := C.glGetString(C.GLenum(name))
-	return C.GoString((*C.char)(unsafe.Pointer(cs)))
+	res := gs.gl.Call("getParameter", int(name)).String()
+	gs.checkError("GetString")
+	return res
 }
 
 // GetUniformLocation returns the location of a uniform variable for the specified program.
 func (gs *GLS) GetUniformLocation(program uint32, name string) int32 {
 
-	loc := C.glGetUniformLocation(C.GLuint(program), gs.gobufStr(name))
-	return int32(loc)
+	loc := gs.gl.Call("getUniformLocation", gs.programMap[program], name)
+	if loc == js.Null() {
+		return -1
+	}
+	gs.uniformMap[gs.uniformMapIndex] = loc
+	gs.checkError("GetUniformLocation")
+	idx := gs.uniformMapIndex
+	gs.uniformMapIndex++
+	return int32(idx)
 }
 
 // GetViewport returns the current viewport information.
@@ -548,64 +645,69 @@ func (gs *GLS) LineWidth(width float32) {
 	if gs.lineWidth == width {
 		return
 	}
-	C.glLineWidth(C.GLfloat(width))
+	gs.gl.Call("lineWidth", width)
+	gs.checkError("LineWidth")
 	gs.lineWidth = width
 }
 
 // LinkProgram links the specified program object.
 func (gs *GLS) LinkProgram(program uint32) {
 
-	C.glLinkProgram(C.GLuint(program))
+	gs.gl.Call("linkProgram", gs.programMap[program])
+	gs.checkError("LinkProgram")
 }
 
 // GetShaderiv returns the specified parameter from the specified shader object.
 func (gs *GLS) GetShaderiv(shader, pname uint32, params *int32) {
 
-	C.glGetShaderiv(C.GLuint(shader), C.GLenum(pname), (*C.GLint)(params))
+	sparam := gs.gl.Call("getShaderParameter", gs.shaderMap[shader], int(pname))
+	gs.checkError("GetShaderiv")
+	switch pname {
+	case DELETE_STATUS, COMPILE_STATUS:
+		if sparam.Bool() {
+			*params = TRUE
+		} else {
+			*params = FALSE
+		}
+	default:
+		*params = int32(sparam.Int())
+	}
 }
 
 // Scissor defines the scissor box rectangle in window coordinates.
 func (gs *GLS) Scissor(x, y int32, width, height uint32) {
 
-	C.glScissor(C.GLint(x), C.GLint(y), C.GLsizei(width), C.GLsizei(height))
+	gs.gl.Call("scissor", x, y, int(width), int(height))
+	gs.checkError("Scissor")
 }
 
 // ShaderSource sets the source code for the specified shader object.
 func (gs *GLS) ShaderSource(shader uint32, src string) {
 
-	csource := gs.cbufStr(src)
-	C.glShaderSource(C.GLuint(shader), 1, (**C.GLchar)(unsafe.Pointer(&csource)), nil)
+	gs.gl.Call("shaderSource", gs.shaderMap[shader], src)
+	gs.checkError("ShaderSource")
 }
 
 // TexImage2D specifies a two-dimensional texture image.
 func (gs *GLS) TexImage2D(target uint32, level int32, iformat int32, width int32, height int32, format uint32, itype uint32, data interface{}) {
 
-	C.glTexImage2D(C.GLenum(target),
-		C.GLint(level),
-		C.GLint(iformat),
-		C.GLsizei(width),
-		C.GLsizei(height),
-		C.GLint(0),
-		C.GLenum(format),
-		C.GLenum(itype),
-		ptr(data))
+	dataTA := js.TypedArrayOf(data)
+	gs.gl.Call("texImage2D", int(target), level, iformat, width, height, 0, int(format), int(itype), dataTA)
+	gs.checkError("TexImage2D")
+	dataTA.Release()
 }
 
 // TexParameteri sets the specified texture parameter on the specified texture.
 func (gs *GLS) TexParameteri(target uint32, pname uint32, param int32) {
 
-	C.glTexParameteri(C.GLenum(target), C.GLenum(pname), C.GLint(param))
+	gs.gl.Call("texParameteri", int(target), int(pname), param)
+	gs.checkError("TexParameteri")
 }
 
 // PolygonMode controls the interpretation of polygons for rasterization.
 func (gs *GLS) PolygonMode(face, mode uint32) {
 
-	if gs.polygonModeFace == face && gs.polygonModeMode == mode {
-		return
-	}
-	C.glPolygonMode(C.GLenum(face), C.GLenum(mode))
-	gs.polygonModeFace = face
-	gs.polygonModeMode = mode
+	log.Warn("PolygonMode not available in WebGL")
 }
 
 // PolygonOffset sets the scale and units used to calculate depth values.
@@ -614,7 +716,8 @@ func (gs *GLS) PolygonOffset(factor float32, units float32) {
 	if gs.polygonOffsetFactor == factor && gs.polygonOffsetUnits == units {
 		return
 	}
-	C.glPolygonOffset(C.GLfloat(factor), C.GLfloat(units))
+	gs.gl.Call("polygonOffset", factor, units)
+	gs.checkError("PolygonOffset")
 	gs.polygonOffsetFactor = factor
 	gs.polygonOffsetUnits = units
 }
@@ -622,90 +725,121 @@ func (gs *GLS) PolygonOffset(factor float32, units float32) {
 // Uniform1i sets the value of an int uniform variable for the current program object.
 func (gs *GLS) Uniform1i(location int32, v0 int32) {
 
-	C.glUniform1i(C.GLint(location), C.GLint(v0))
+	gs.gl.Call("uniform1i", gs.uniformMap[uint32(location)], v0)
+	gs.checkError("Uniform1i")
 	gs.stats.Unisets++
 }
 
 // Uniform1f sets the value of a float uniform variable for the current program object.
 func (gs *GLS) Uniform1f(location int32, v0 float32) {
 
-	C.glUniform1f(C.GLint(location), C.GLfloat(v0))
+	gs.gl.Call("uniform1f", gs.uniformMap[uint32(location)], v0)
+	gs.checkError("Uniform1f")
 	gs.stats.Unisets++
 }
 
 // Uniform2f sets the value of a vec2 uniform variable for the current program object.
 func (gs *GLS) Uniform2f(location int32, v0, v1 float32) {
 
-	C.glUniform2f(C.GLint(location), C.GLfloat(v0), C.GLfloat(v1))
+	gs.gl.Call("uniform2f", gs.uniformMap[uint32(location)], v0, v1)
+	gs.checkError("Uniform2f")
 	gs.stats.Unisets++
 }
 
 // Uniform3f sets the value of a vec3 uniform variable for the current program object.
 func (gs *GLS) Uniform3f(location int32, v0, v1, v2 float32) {
 
-	C.glUniform3f(C.GLint(location), C.GLfloat(v0), C.GLfloat(v1), C.GLfloat(v2))
+	gs.gl.Call("uniform3f", gs.uniformMap[uint32(location)], v0, v1, v2)
+	gs.checkError("Uniform3f")
 	gs.stats.Unisets++
 }
 
 // Uniform4f sets the value of a vec4 uniform variable for the current program object.
 func (gs *GLS) Uniform4f(location int32, v0, v1, v2, v3 float32) {
 
-	C.glUniform4f(C.GLint(location), C.GLfloat(v0), C.GLfloat(v1), C.GLfloat(v2), C.GLfloat(v3))
+	gs.gl.Call("uniform4f", gs.uniformMap[uint32(location)], v0, v1, v2, v3)
+	gs.checkError("Uniform4f")
 	gs.stats.Unisets++
 }
 
-// UniformMatrix3fv sets the value of one or many 3x3 float matrices for the current program object.
+//// UniformMatrix3fv sets the value of one or many 3x3 float matrices for the current program object.
 func (gs *GLS) UniformMatrix3fv(location int32, count int32, transpose bool, pm *float32) {
 
-	C.glUniformMatrix3fv(C.GLint(location), C.GLsizei(count), bool2c(transpose), (*C.GLfloat)(pm))
+	data := (*[1 << 30]float32)(unsafe.Pointer(pm))[:9*count]
+	dataTA := js.TypedArrayOf(data)
+	gs.gl.Call("uniformMatrix3fv", gs.uniformMap[uint32(location)], transpose, dataTA)
+	dataTA.Release()
+	gs.checkError("UniformMatrix3fv")
 	gs.stats.Unisets++
 }
 
 // UniformMatrix4fv sets the value of one or many 4x4 float matrices for the current program object.
 func (gs *GLS) UniformMatrix4fv(location int32, count int32, transpose bool, pm *float32) {
 
-	C.glUniformMatrix4fv(C.GLint(location), C.GLsizei(count), bool2c(transpose), (*C.GLfloat)(pm))
+	data := (*[1 << 30]float32)(unsafe.Pointer(pm))[:16*count]
+	dataTA := js.TypedArrayOf(data)
+	gs.gl.Call("uniformMatrix4fv", gs.uniformMap[uint32(location)], transpose, dataTA)
+	dataTA.Release()
+	gs.checkError("UniformMatrix4fv")
 	gs.stats.Unisets++
 }
 
 // Uniform1fv sets the value of one or many float uniform variables for the current program object.
 func (gs *GLS) Uniform1fv(location int32, count int32, v *float32) {
 
-	C.glUniform1fv(C.GLint(location), C.GLsizei(count), (*C.GLfloat)(v))
+	data := (*[1 << 30]float32)(unsafe.Pointer(v))[:count]
+	dataTA := js.TypedArrayOf(data)
+	gs.gl.Call("uniform1fv", gs.uniformMap[uint32(location)], dataTA)
+	dataTA.Release()
+	gs.checkError("Uniform1fv")
 	gs.stats.Unisets++
 }
 
 // Uniform2fv sets the value of one or many vec2 uniform variables for the current program object.
 func (gs *GLS) Uniform2fv(location int32, count int32, v *float32) {
 
-	C.glUniform2fv(C.GLint(location), C.GLsizei(count), (*C.GLfloat)(v))
+	data := (*[1 << 30]float32)(unsafe.Pointer(v))[:2*count]
+	dataTA := js.TypedArrayOf(data)
+	gs.gl.Call("uniform2fv", gs.uniformMap[uint32(location)], dataTA)
+	dataTA.Release()
+	gs.checkError("Uniform2fv")
 	gs.stats.Unisets++
 }
 
 // Uniform3fv sets the value of one or many vec3 uniform variables for the current program object.
 func (gs *GLS) Uniform3fv(location int32, count int32, v *float32) {
 
-	C.glUniform3fv(C.GLint(location), C.GLsizei(count), (*C.GLfloat)(v))
+	data := (*[1 << 30]float32)(unsafe.Pointer(v))[:3*count]
+	dataTA := js.TypedArrayOf(data)
+	gs.gl.Call("uniform3fv", gs.uniformMap[uint32(location)], dataTA)
+	dataTA.Release()
+	gs.checkError("Uniform3fv")
 	gs.stats.Unisets++
 }
 
 // Uniform4fv sets the value of one or many vec4 uniform variables for the current program object.
 func (gs *GLS) Uniform4fv(location int32, count int32, v *float32) {
 
-	C.glUniform4fv(C.GLint(location), C.GLsizei(count), (*C.GLfloat)(v))
+	data := (*[1 << 30]float32)(unsafe.Pointer(v))[:4*count]
+	dataTA := js.TypedArrayOf(data)
+	gs.gl.Call("uniform4fv", gs.uniformMap[uint32(location)], dataTA)
+	dataTA.Release()
+	gs.checkError("Uniform4fv")
 	gs.stats.Unisets++
 }
 
 // VertexAttribPointer defines an array of generic vertex attribute data.
 func (gs *GLS) VertexAttribPointer(index uint32, size int32, xtype uint32, normalized bool, stride int32, offset uint32) {
 
-	C.glVertexAttribPointer(C.GLuint(index), C.GLint(size), C.GLenum(xtype), bool2c(normalized), C.GLsizei(stride), unsafe.Pointer(uintptr(offset)))
+	gs.gl.Call("vertexAttribPointer", index, size, int(xtype), normalized, stride, offset)
+	gs.checkError("VertexAttribPointer")
 }
 
 // Viewport sets the viewport.
 func (gs *GLS) Viewport(x, y, width, height int32) {
 
-	C.glViewport(C.GLint(x), C.GLint(y), C.GLsizei(width), C.GLsizei(height))
+	gs.gl.Call("viewport", x, y, width, height)
+	gs.checkError("Viewport")
 	gs.viewportX = x
 	gs.viewportY = y
 	gs.viewportWidth = width
@@ -718,7 +852,9 @@ func (gs *GLS) UseProgram(prog *Program) {
 	if prog.handle == 0 {
 		panic("Invalid program")
 	}
-	C.glUseProgram(C.GLuint(prog.handle))
+
+	gs.gl.Call("useProgram", gs.programMap[prog.handle])
+	gs.checkError("UseProgram")
 	gs.prog = prog
 
 	// Inserts program in cache if not already there.
@@ -728,93 +864,14 @@ func (gs *GLS) UseProgram(prog *Program) {
 	}
 }
 
-// Ptr takes a slice or pointer (to a singular scalar value or the first
-// element of an array or slice) and returns its GL-compatible address.
-//
-// For example:
-//
-// 	var data []uint8
-// 	...
-// 	gl.TexImage2D(gl.TEXTURE_2D, ..., gl.UNSIGNED_BYTE, gl.Ptr(&data[0]))
-func ptr(data interface{}) unsafe.Pointer {
-	if data == nil {
-		return unsafe.Pointer(nil)
+// checkError checks if there are any WebGL errors and panics if so.
+func (gs *GLS) checkError(name string) {
+
+	if !gs.checkErrors {
+		return
 	}
-	var addr unsafe.Pointer
-	v := reflect.ValueOf(data)
-	switch v.Type().Kind() {
-	case reflect.Ptr:
-		e := v.Elem()
-		switch e.Kind() {
-		case
-			reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
-			reflect.Float32, reflect.Float64:
-			addr = unsafe.Pointer(e.UnsafeAddr())
-		default:
-			panic(fmt.Errorf("unsupported pointer to type %s; must be a slice or pointer to a singular scalar value or the first element of an array or slice", e.Kind()))
-		}
-	case reflect.Uintptr:
-		addr = unsafe.Pointer(v.Pointer())
-	case reflect.Slice:
-		addr = unsafe.Pointer(v.Index(0).UnsafeAddr())
-	default:
-		panic(fmt.Errorf("unsupported type %s; must be a slice or pointer to a singular scalar value or the first element of an array or slice", v.Type()))
+	err := gs.gl.Call("getError")
+	if err.Int() != NO_ERROR {
+		panic(fmt.Sprintf("%s error: %v", name, err))
 	}
-	return addr
-}
-
-// bool2c convert a Go bool to C.GLboolean
-func bool2c(b bool) C.GLboolean {
-
-	if b {
-		return C.GLboolean(1)
-	}
-	return C.GLboolean(0)
-}
-
-// gobufSize returns a pointer to static buffer with the specified size not including the terminator.
-// If there is available space, there is no memory allocation.
-func (gs *GLS) gobufSize(size uint32) *C.GLchar {
-
-	if size+1 > uint32(len(gs.gobuf)) {
-		gs.gobuf = make([]byte, size+1)
-	}
-	return (*C.GLchar)(unsafe.Pointer(&gs.gobuf[0]))
-}
-
-// gobufStr converts a Go String to a C string by copying it to a static buffer
-// and returning a pointer to the start of the buffer.
-// If there is available space, there is no memory allocation.
-func (gs *GLS) gobufStr(s string) *C.GLchar {
-
-	p := gs.gobufSize(uint32(len(s) + 1))
-	copy(gs.gobuf, s)
-	gs.gobuf[len(s)] = 0
-	return p
-}
-
-// cbufSize returns a pointer to static buffer with C memory
-// If there is available space, there is no memory allocation.
-func (gs *GLS) cbufSize(size uint32) *C.GLchar {
-
-	if size > uint32(len(gs.cbuf)) {
-		if len(gs.cbuf) > 0 {
-			C.free(unsafe.Pointer(&gs.cbuf[0]))
-		}
-		p := C.malloc(C.size_t(size))
-		gs.cbuf = (*[1 << 30]byte)(unsafe.Pointer(p))[:size:size]
-	}
-	return (*C.GLchar)(unsafe.Pointer(&gs.cbuf[0]))
-}
-
-// cbufStr converts a Go String to a C string by copying it to a single pre-allocated buffer
-// using C memory and returning a pointer to the start of the buffer.
-// If there is available space, there is no memory allocation.
-func (gs *GLS) cbufStr(s string) *C.GLchar {
-
-	p := gs.cbufSize(uint32(len(s) + 1))
-	copy(gs.cbuf, s)
-	gs.cbuf[len(s)] = 0
-	return p
 }
