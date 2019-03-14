@@ -273,11 +273,6 @@ func (r *Root) onCursor(evname string, ev interface{}) {
 // which contain the specified screen position
 func (r *Root) sendPanels(x, y float32, evname string, ev interface{}) {
 
-	// Apply scale of window (for HiDPI support)
-	sX64, sY64 := r.Window().Scale()
-	x /= float32(sX64)
-	y /= float32(sY64)
-
 	// If there is panel with MouseFocus send only to this panel
 	if r.mouseFocus != nil {
 		// Checks modal panel
