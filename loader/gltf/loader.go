@@ -19,6 +19,7 @@ import (
 	"strings"
 	"unsafe"
 
+	"github.com/g3n/engine/animation"
 	"github.com/g3n/engine/camera"
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/geometry"
@@ -27,7 +28,6 @@ import (
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/texture"
-	"github.com/g3n/engine/animation"
 )
 
 // ParseJSON parses the glTF data from the specified JSON file
@@ -200,12 +200,16 @@ func (g *GLTF) LoadNode(nodeIdx int) (core.INode, error) {
 		}
 
 		if nodeData.Skin != nil {
-			children := in.GetNode().Children()
-			if len(children) > 1 {
-				//log.Error("skinning/rigging meshes with more than a single primitive is not supported")
-				return nil, fmt.Errorf("skinning/rigging meshes with more than a single primitive is not supported")
+
+			mesh, ok := in.(*graphic.Mesh)
+			if !ok {
+				children := in.GetNode().Children()
+				if len(children) > 1 {
+					return nil, fmt.Errorf("skinning/rigging meshes with more than a single primitive is not supported")
+				}
+				mesh = children[0].(*graphic.Mesh)
 			}
-			mesh := children[0].(*graphic.Mesh)
+
 			// Create RiggedMesh
 			rm := graphic.NewRiggedMesh(mesh)
 			skeleton, err := g.LoadSkin(*nodeData.Skin)
@@ -297,7 +301,7 @@ func (g *GLTF) LoadSkin(skinIdx int) (*graphic.Skeleton, error) {
 			return nil, err
 		}
 		var ibm math32.Matrix4
-		ibmData.GetMatrix4(16 * i, &ibm)
+		ibmData.GetMatrix4(16*i, &ibm)
 		skeleton.AddBone(jointNode.GetNode(), &ibm)
 	}
 
@@ -442,7 +446,8 @@ func (g *GLTF) LoadMesh(meshIdx int) (core.INode, error) {
 	var err error
 
 	// Create container node
-	meshNode := core.NewNode()
+	var meshNode core.INode
+	meshNode = core.NewNode()
 
 	for i := 0; i < len(meshData.Primitives); i++ {
 
@@ -513,16 +518,21 @@ func (g *GLTF) LoadMesh(meshIdx int) (core.INode, error) {
 		// Create Mesh
 		// TODO materials for LINES, etc need to be different...
 		if mode == TRIANGLES {
-			meshNode.Add(graphic.NewMesh(igeom, grMat))
+			meshNode.GetNode().Add(graphic.NewMesh(igeom, grMat))
 		} else if mode == LINES {
-			meshNode.Add(graphic.NewLines(igeom, grMat))
+			meshNode.GetNode().Add(graphic.NewLines(igeom, grMat))
 		} else if mode == LINE_STRIP {
-			meshNode.Add(graphic.NewLineStrip(igeom, grMat))
+			meshNode.GetNode().Add(graphic.NewLineStrip(igeom, grMat))
 		} else if mode == POINTS {
-			meshNode.Add(graphic.NewPoints(igeom, grMat))
+			meshNode.GetNode().Add(graphic.NewPoints(igeom, grMat))
 		} else {
 			return nil, fmt.Errorf("unsupported primitive:%v", mode)
 		}
+	}
+
+	children := meshNode.GetNode().Children()
+	if len(children) == 1 {
+		meshNode = children[0]
 	}
 
 	// Cache mesh
@@ -703,7 +713,7 @@ func (g *GLTF) LoadMaterial(matIdx int) (material.IMaterial, error) {
 				imat, err = g.loadMaterialCommon(extData)
 			} else if ext == KhrMaterialsUnlit {
 				//imat, err = g.loadMaterialUnlit(matData, extData)
-			//} else if ext == KhrMaterialsPbrSpecularGlossiness {
+				//} else if ext == KhrMaterialsPbrSpecularGlossiness {
 			} else {
 				return nil, fmt.Errorf("unsupported extension:%s", ext)
 			}
@@ -854,8 +864,8 @@ func (g *GLTF) bytesToArrayU32(data []byte, componentType, count int) (math32.Ar
 		return math32.ArrayU32(arr), nil
 	}
 
-	// Converts UNSIGNED_SHORT to UNSIGNED_INT
-	if componentType == UNSIGNED_SHORT {
+	// Converts UNSIGNED_SHORT or SHORT to UNSIGNED_INT
+	if componentType == UNSIGNED_SHORT || componentType == SHORT {
 		out := math32.NewArrayU32(count, count)
 		for i := 0; i < count; i++ {
 			out[i] = uint32(data[i*2]) + uint32(data[i*2+1])*256
@@ -863,8 +873,8 @@ func (g *GLTF) bytesToArrayU32(data []byte, componentType, count int) (math32.Ar
 		return out, nil
 	}
 
-	// Converts UNSIGNED_BYTE indices to UNSIGNED_INT
-	if componentType == UNSIGNED_BYTE {
+	// Converts UNSIGNED_BYTE or BYTE to UNSIGNED_INT
+	if componentType == UNSIGNED_BYTE || componentType == BYTE {
 		out := math32.NewArrayU32(count, count)
 		for i := 0; i < count; i++ {
 			out[i] = uint32(data[i])
@@ -884,8 +894,8 @@ func (g *GLTF) bytesToArrayF32(data []byte, componentType, count int) (math32.Ar
 		return math32.ArrayF32(arr), nil
 	}
 
-	// Converts UNSIGNED_SHORT to UNSIGNED_INT
-	if componentType == UNSIGNED_SHORT {
+	// Converts UNSIGNED_SHORT or SHORT to UNSIGNED_INT
+	if componentType == UNSIGNED_SHORT || componentType == SHORT {
 		out := math32.NewArrayF32(count, count)
 		for i := 0; i < count; i++ {
 			out[i] = float32(data[i*2]) + float32(data[i*2+1])*256
@@ -893,8 +903,8 @@ func (g *GLTF) bytesToArrayF32(data []byte, componentType, count int) (math32.Ar
 		return out, nil
 	}
 
-	// Converts UNSIGNED_BYTE indices to UNSIGNED_INT
-	if componentType == UNSIGNED_BYTE {
+	// Converts UNSIGNED_BYTE or BYTE to UNSIGNED_INT
+	if componentType == UNSIGNED_BYTE || componentType == BYTE {
 		out := math32.NewArrayF32(count, count)
 		for i := 0; i < count; i++ {
 			out[i] = float32(data[i])
