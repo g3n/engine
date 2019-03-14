@@ -44,7 +44,7 @@ type OrbitControl struct {
 	rotateEnd   math32.Vector2
 	rotateDelta math32.Vector2
 	panStart    math32.Vector2 // initial pan screen coordinates
-	panEnd      math32.Vector2 // final pan scren coordinates
+	panEnd      math32.Vector2 // final pan screen coordinates
 	panDelta    math32.Vector2
 	panOffset   math32.Vector2
 	zoomStart   float32
