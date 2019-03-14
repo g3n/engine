@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package obj
+// Package obj is used to parse the Wavefront OBJ file format (*.obj), including
+// associated materials (*.mtl). Not all features of the OBJ format are
+// supported. Basic format info: https://en.wikipedia.org/wiki/Wavefront_.obj_file
 package obj
 
 import (
@@ -71,6 +73,14 @@ type Material struct {
 	MapKd      string       // Texture file linked to diffuse color
 }
 
+// Light gray default material used as when other materials cannot be loaded.
+var defaultMat = &Material{
+	Diffuse:   math32.Color{R: 0.7, G: 0.7, B: 0.7},
+	Ambient:   math32.Color{R: 0.7, G: 0.7, B: 0.7},
+	Specular:  math32.Color{R: 0.5, G: 0.5, B: 0.5},
+	Shininess: 30.0,
+}
+
 // Local constants
 const (
 	blanks   = "\r\n\t "
@@ -80,7 +90,9 @@ const (
 )
 
 // Decode decodes the specified obj and mtl files returning a decoder
-// object and an error.
+// object and an error. Passing an empty string (or otherwise invalid path)
+// to mtlpath will cause the decoder to check the 'mtllib' file in the OBJ if
+// present, and fall back to a default material as a last resort.
 func Decode(objpath string, mtlpath string) (*Decoder, error) {
 
 	// Opens obj file
@@ -90,31 +102,32 @@ func Decode(objpath string, mtlpath string) (*Decoder, error) {
 	}
 	defer fobj.Close()
 
-	// If path of material file not supplied,
-	// try to use the base name of the obj file
-	if len(mtlpath) == 0 {
-		dir, objfile := filepath.Split(objpath)
-		ext := filepath.Ext(objfile)
-		mtlpath = dir + objfile[:len(objfile)-len(ext)] + ".mtl"
-	}
-
 	// Opens mtl file
+	// if mtlpath=="", then os.Open() will produce an error,
+	// causing fmtl to be nil
 	fmtl, err := os.Open(mtlpath)
-	if err != nil {
-		return nil, err
-	}
-	defer fmtl.Close()
+	defer fmtl.Close() // will produce (ignored) err if fmtl==nil
 
+	// if fmtl==nil, the io.Reader in DecodeReader() will be (T=*os.File, V=nil)
+	// which is NOT equal to plain nil or (io.Reader, nil) but will produce
+	// the desired result of passing nil to DecodeReader() per it's func comment.
 	dec, err := DecodeReader(fobj, fmtl)
 	if err != nil {
 		return nil, err
 	}
+
 	dec.mtlDir = filepath.Dir(objpath)
 	return dec, nil
 }
 
 // DecodeReader decodes the specified obj and mtl readers returning a decoder
-// object and an error.
+// object and an error if a problem was encoutered while parsing the OBJ.
+//
+// Pass a valid io.Reader to override the materials defined in the OBJ file,
+// or `nil` to use the materials listed in the OBJ's "mtllib" line (if present),
+// a ".mtl" file with the same name as the OBJ file if presemt, or a default
+// material as a last resort. No error will be returned for problems
+// with materials--a gray default material will be used if nothing else works.
 func DecodeReader(objreader, mtlreader io.Reader) (*Decoder, error) {
 
 	dec := new(Decoder)
@@ -133,12 +146,71 @@ func DecodeReader(objreader, mtlreader io.Reader) (*Decoder, error) {
 	}
 
 	// Parses mtl lines
+	// 1) try passed in mtlreader,
+	// 2) try file in mtllib line
+	// 3) try <obj_filename>.mtl
+	// 4) use default material as last resort
 	dec.matCurrent = nil
 	dec.line = 1
+	// first try: use the material file passed in as an io.Reader
 	err = dec.parse(mtlreader, dec.parseMtlLine)
 	if err != nil {
-		return nil, err
+
+		// 2) if mtlreader produces an error (eg. it's nil), try the file listed
+		// in the OBJ's matlib line, if it exists.
+		if dec.Matlib != "" {
+			// ... first need to get the path of the OBJ, since mtllib is relative
+			var mtllibPath string
+			if objf, ok := objreader.(*os.File); ok {
+				// NOTE (quillaja): this is a hack because we need the directory of
+				// the OBJ, but can't get it any other way (dec.mtlDir isn't set
+				// until AFTER this function is finished).
+				objdir := filepath.Dir(objf.Name())
+				mtllibPath = filepath.Join(objdir, dec.Matlib)
+				dec.mtlDir = objdir // NOTE (quillaja): should this be set?
+			}
+			mtlf, errMTL := os.Open(mtllibPath)
+			defer mtlf.Close()
+			if errMTL == nil {
+				err = dec.parse(mtlf, dec.parseMtlLine) // will set err to nil if successful
+			}
+		}
+
+		// 3) if the mtllib line fails try <obj_filename>.mtl in the same directory.
+		// process is basically identical to the above code block.
+		if err != nil {
+			var mtlpath string
+			if objf, ok := objreader.(*os.File); ok {
+				objdir := strings.TrimSuffix(objf.Name(), ".obj")
+				mtlpath = objdir + ".mtl"
+				dec.mtlDir = objdir // NOTE (quillaja): should this be set?
+			}
+			mtlf, errMTL := os.Open(mtlpath)
+			defer mtlf.Close()
+			if errMTL == nil {
+				err = dec.parse(mtlf, dec.parseMtlLine) // will set err to nil if successful
+				if err == nil {
+					// log a warning
+					msg := fmt.Sprintf("using material file %s", mtlpath)
+					dec.appendWarn(mtlType, msg)
+				}
+			}
+		}
+
+		// 4) handle error(s) instead of simply passing it up the call stack.
+		// range over the materials named in the OBJ file and substitute a default
+		// But log that an error occured.
+		if err != nil {
+			for key := range dec.Materials {
+				dec.Materials[key] = defaultMat
+			}
+			// NOTE (quillaja): could be an error of some custom type. But people
+			// tend to ignore errors and pass them up the call stack instead
+			// of handling them... so all this work would probably be wasted.
+			dec.appendWarn(mtlType, "unable to parse a material file for obj. using default material instead.")
+		}
 	}
+
 	return dec, nil
 }
 
@@ -169,9 +241,22 @@ func (dec *Decoder) NewMesh(obj *Object) (*graphic.Mesh, error) {
 
 	// Single material
 	if geom.GroupCount() == 1 {
-		matName := obj.materials[0]
-		matDesc := dec.Materials[matName]
-		// Creates material
+		// get Material info from mtl file and ensure it's valid.
+		// substitute default material if it is not.
+		var matDesc *Material
+		var matName string
+		if len(obj.materials) > 0 {
+			matName = obj.materials[0]
+		}
+		matDesc = dec.Materials[matName]
+		if matDesc == nil {
+			matDesc = defaultMat
+			// log warning
+			msg := fmt.Sprintf("could not find material for %s. using default material.", obj.Name)
+			dec.appendWarn(objType, msg)
+		}
+
+		// Creates material for mesh
 		mat := material.NewPhong(&matDesc.Diffuse)
 		ambientColor := mat.AmbientColor()
 		mat.SetAmbientColor(ambientColor.Multiply(&matDesc.Ambient))
@@ -182,6 +267,7 @@ func (dec *Decoder) NewMesh(obj *Object) (*graphic.Mesh, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		return graphic.NewMesh(geom, mat), nil
 	}
 
@@ -189,9 +275,23 @@ func (dec *Decoder) NewMesh(obj *Object) (*graphic.Mesh, error) {
 	mesh := graphic.NewMesh(geom, nil)
 	for idx := 0; idx < geom.GroupCount(); idx++ {
 		group := geom.GroupAt(idx)
-		matName := obj.materials[group.Matindex]
-		matDesc := dec.Materials[matName]
-		// Creates material
+
+		// get Material info from mtl file and ensure it's valid.
+		// substitute default material if it is not.
+		var matDesc *Material
+		var matName string
+		if len(obj.materials) > group.Matindex {
+			matName = obj.materials[group.Matindex]
+		}
+		matDesc = dec.Materials[matName]
+		if matDesc == nil {
+			matDesc = defaultMat
+			// log warning
+			msg := fmt.Sprintf("could not find material for %s. using default material.", obj.Name)
+			dec.appendWarn(objType, msg)
+		}
+
+		// Creates material for mesh
 		matGroup := material.NewPhong(&matDesc.Diffuse)
 		ambientColor := matGroup.AmbientColor()
 		matGroup.SetAmbientColor(ambientColor.Multiply(&matDesc.Ambient))
@@ -202,6 +302,7 @@ func (dec *Decoder) NewMesh(obj *Object) (*graphic.Mesh, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		mesh.AddGroupMaterial(matGroup, idx)
 	}
 	return mesh, nil
@@ -375,7 +476,7 @@ func (dec *Decoder) parseObjLine(line string) error {
 func (dec *Decoder) parseMatlib(fields []string) error {
 
 	if len(fields) < 1 {
-		return errors.New("Object line (o) with less than 2 fields")
+		return errors.New("Material library (mtllib) with no fields")
 	}
 	dec.Matlib = fields[0]
 	return nil
@@ -386,7 +487,7 @@ func (dec *Decoder) parseMatlib(fields []string) error {
 func (dec *Decoder) parseObject(fields []string) error {
 
 	if len(fields) < 1 {
-		return errors.New("Object line (o) with less than 2 fields")
+		return errors.New("Object line (o) with no fields")
 	}
 	var ob Object
 	ob.Name = fields[0]
@@ -460,14 +561,18 @@ func (dec *Decoder) parseFace(fields []string) error {
 	if len(fields) < 3 {
 		return dec.formatError("Face line with less 3 fields")
 	}
-	if dec.matCurrent == nil {
-		return dec.formatError("No material defined")
-	}
 	var face Face
 	face.Vertices = make([]int, len(fields))
 	face.Uvs = make([]int, len(fields))
 	face.Normals = make([]int, len(fields))
-	face.Material = dec.matCurrent.Name
+	if dec.matCurrent != nil {
+		face.Material = dec.matCurrent.Name
+	} else {
+		// TODO (quillaja): do something better than spamming warnings for each line
+		// dec.appendWarn(objType, "No material defined")
+		face.Material = "internal default" // causes error on in NewGeom() if ""
+		// dec.matCurrent = defaultMat
+	}
 	face.Smooth = dec.smoothCurrent
 
 	for pos, f := range fields {
