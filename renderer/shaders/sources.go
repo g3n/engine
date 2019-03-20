@@ -130,30 +130,33 @@ uniform vec3 Material[6];
     #define MatTexRepeat(a)		MatTexinfo[(3*a)+1]
     #define MatTexFlipY(a)		bool(MatTexinfo[(3*a)+2].x)
     #define MatTexVisible(a)	bool(MatTexinfo[(3*a)+2].y)
-#endif
 
 // GLSL 3.30 does not allow indexing texture sampler with non constant values.
 // This macro is used to mix the texture with the specified index with the material color.
 // It should be called for each texture index. It uses two externally defined variables:
 // vec4 texColor
 // vec4 texMixed
-#define MIX_TEXTURE(i)                                                                       \
-    if (MatTexVisible(i)) {                                                                  \
-        texColor = texture(MatTexture[i], FragTexcoord * MatTexRepeat(i) + MatTexOffset(i)); \
-        if (i == 0) {                                                                        \
-            texMixed = texColor;                                                             \
-        } else {                                                                             \
-            texMixed = mix(texMixed, texColor, texColor.a);                                  \
-        }                                                                                    \
+vec4 MIX_TEXTURE(vec4 texMixed, vec2 FragTexcoord, int i) {
+    if (MatTexVisible(i)) {
+        vec4 texColor = texture(MatTexture[i], FragTexcoord * MatTexRepeat(i) + MatTexOffset(i));
+        if (i == 0) {
+            texMixed = texColor;
+        } else {
+            texMixed = mix(texMixed, texColor, texColor.a);
+        }
     }
+    return texMixed;
+}
+
+#endif
 
 // TODO for alpha blending dont use mix use implementation below (similar to one in panel shader)
-            //vec4 prevTexPre = texMixed;                                                      \
-            //prevTexPre.rgb *= prevTexPre.a;                                                  \
-            //vec4 currTexPre = texColor;                                                      \
-            //currTexPre.rgb *= currTexPre.a;                                                  \
-            //texMixed = currTexPre + prevTexPre * (1 - currTexPre.a);                         \
-            //texMixed.rgb /= texMixed.a;
+//vec4 prevTexPre = texMixed;
+//prevTexPre.rgb *= prevTexPre.a;
+//vec4 currTexPre = texColor;
+//currTexPre.rgb *= currTexPre.a;
+//texMixed = currTexPre + prevTexPre * (1 - currTexPre.a);
+//texMixed.rgb /= texMixed.a;
 `
 
 const include_morphtarget_vertex_source = `#ifdef MORPHTARGETS
@@ -510,16 +513,15 @@ void main() {
 
     // Mix material color with textures colors
     vec4 texMixed = vec4(1);
-    vec4 texColor;
     #if MAT_TEXTURES==1
-        MIX_TEXTURE(0)
+        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 0);
     #elif MAT_TEXTURES==2
-        MIX_TEXTURE(0)
-        MIX_TEXTURE(1)
+        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 0);
+        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 1);
     #elif MAT_TEXTURES==3
-        MIX_TEXTURE(0)
-        MIX_TEXTURE(1)
-        MIX_TEXTURE(2)
+        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 0);
+        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 1);
+        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 2);
     #endif
 
     // Combine material with texture colors
@@ -1069,16 +1071,20 @@ const point_fragment_source = `precision highp float;
 // GLSL 3.30 does not allow indexing texture sampler with non constant values.
 // This macro is used to mix the texture with the specified index with the material color.
 // It should be called for each texture index.
-#define MIX_POINT_TEXTURE(i)                                                                                     \
+#if MAT_TEXTURES > 0
+vec4 MIX_POINT_TEXTURE(vec4 texMixed, mat2 rotation, int i) {                                                           \
     if (MatTexVisible(i)) {                                                                                      \
         vec2 pt = gl_PointCoord - vec2(0.5);                                                                     \
-        vec4 texColor = texture(MatTexture[i], (Rotation * pt + vec2(0.5)) * MatTexRepeat(i) + MatTexOffset(i)); \
+        vec4 texColor = texture(MatTexture[i], (rotation * pt + vec2(0.5)) * MatTexRepeat(i) + MatTexOffset(i)); \
         if (i == 0) {                                                                                            \
             texMixed = texColor;                                                                                 \
         } else {                                                                                                 \
             texMixed = mix(texMixed, texColor, texColor.a);                                                      \
         }                                                                                                        \
     }
+    return texMixed;
+}
+#endif
 
 // Inputs from vertex shader
 in vec3 Color;
@@ -1092,14 +1098,14 @@ void main() {
     // Mix material color with textures colors
     vec4 texMixed = vec4(1);
     #if MAT_TEXTURES==1
-        MIX_POINT_TEXTURE(0)
+        texMixed = MIX_POINT_TEXTURE(texMixed, Rotation, 0);
     #elif MAT_TEXTURES==2
-        MIX_POINT_TEXTURE(0)
-        MIX_POINT_TEXTURE(1)
+        texMixed = MIX_POINT_TEXTURE(texMixed, Rotation, 0);
+        texMixed = MIX_POINT_TEXTURE(texMixed, Rotation, 1);
     #elif MAT_TEXTURES==3
-        MIX_POINT_TEXTURE(0)
-        MIX_POINT_TEXTURE(1)
-        MIX_POINT_TEXTURE(2)
+        texMixed = MIX_POINT_TEXTURE(texMixed, Rotation, 0);
+        texMixed = MIX_POINT_TEXTURE(texMixed, Rotation, 1);
+        texMixed = MIX_POINT_TEXTURE(texMixed, Rotation, 2);
     #endif
 
     // Generates final color
@@ -1234,16 +1240,15 @@ void main() {
 
     // Mix material color with textures colors
     vec4 texMixed = vec4(1);
-    vec4 texColor;
     #if MAT_TEXTURES==1
-        MIX_TEXTURE(0)
+        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 0);
     #elif MAT_TEXTURES==2
-        MIX_TEXTURE(0)
-        MIX_TEXTURE(1)
+        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 0);
+        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 1);
     #elif MAT_TEXTURES==3
-        MIX_TEXTURE(0)
-        MIX_TEXTURE(1)
-        MIX_TEXTURE(2)
+        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 0);
+        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 1);
+        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 2);
     #endif
 
     vec4 colorAmbDiff;

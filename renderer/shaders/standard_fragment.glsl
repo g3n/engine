@@ -21,16 +21,15 @@ void main() {
 
     // Mix material color with textures colors
     vec4 texMixed = vec4(1);
-    vec4 texColor;
     #if MAT_TEXTURES==1
-        MIX_TEXTURE(0)
+        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 0);
     #elif MAT_TEXTURES==2
-        MIX_TEXTURE(0)
-        MIX_TEXTURE(1)
+        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 0);
+        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 1);
     #elif MAT_TEXTURES==3
-        MIX_TEXTURE(0)
-        MIX_TEXTURE(1)
-        MIX_TEXTURE(2)
+        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 0);
+        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 1);
+        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 2);
     #endif
 
     vec4 colorAmbDiff;
