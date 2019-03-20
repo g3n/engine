@@ -24,27 +24,30 @@ uniform vec3 Material[6];
     #define MatTexRepeat(a)		MatTexinfo[(3*a)+1]
     #define MatTexFlipY(a)		bool(MatTexinfo[(3*a)+2].x)
     #define MatTexVisible(a)	bool(MatTexinfo[(3*a)+2].y)
-#endif
 
 // GLSL 3.30 does not allow indexing texture sampler with non constant values.
 // This macro is used to mix the texture with the specified index with the material color.
 // It should be called for each texture index. It uses two externally defined variables:
 // vec4 texColor
 // vec4 texMixed
-#define MIX_TEXTURE(i)                                                                       \
-    if (MatTexVisible(i)) {                                                                  \
-        texColor = texture(MatTexture[i], FragTexcoord * MatTexRepeat(i) + MatTexOffset(i)); \
-        if (i == 0) {                                                                        \
-            texMixed = texColor;                                                             \
-        } else {                                                                             \
-            texMixed = mix(texMixed, texColor, texColor.a);                                  \
-        }                                                                                    \
+vec4 MIX_TEXTURE(vec4 texMixed, vec2 FragTexcoord, int i) {
+    if (MatTexVisible(i)) {
+        vec4 texColor = texture(MatTexture[i], FragTexcoord * MatTexRepeat(i) + MatTexOffset(i));
+        if (i == 0) {
+            texMixed = texColor;
+        } else {
+            texMixed = mix(texMixed, texColor, texColor.a);
+        }
     }
+    return texMixed;
+}
+
+#endif
 
 // TODO for alpha blending dont use mix use implementation below (similar to one in panel shader)
-            //vec4 prevTexPre = texMixed;                                                      \
-            //prevTexPre.rgb *= prevTexPre.a;                                                  \
-            //vec4 currTexPre = texColor;                                                      \
-            //currTexPre.rgb *= currTexPre.a;                                                  \
-            //texMixed = currTexPre + prevTexPre * (1 - currTexPre.a);                         \
-            //texMixed.rgb /= texMixed.a;
+//vec4 prevTexPre = texMixed;
+//prevTexPre.rgb *= prevTexPre.a;
+//vec4 currTexPre = texColor;
+//currTexPre.rgb *= currTexPre.a;
+//texMixed = currTexPre + prevTexPre * (1 - currTexPre.a);
+//texMixed.rgb /= texMixed.a;
