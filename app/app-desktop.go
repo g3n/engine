@@ -32,9 +32,6 @@ type Application struct {
 	frameDelta     time.Duration      // Duration of last frame
 }
 
-// Application singleton
-var app *Application
-
 // App returns the Application singleton, creating it the first time.
 func App() *Application {
 
