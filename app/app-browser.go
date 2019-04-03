@@ -28,9 +28,6 @@ type Application struct {
 	cbid           js.Value
 }
 
-// Application singleton
-var app *Application
-
 // App returns the Application singleton, creating it the first time.
 func App() *Application {
 
