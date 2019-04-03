@@ -79,6 +79,7 @@ func (app *Application) Run(update func(renderer *renderer.Renderer, deltaTime t
 		if !app.exit {
 			app.cbid = js.Global().Call("requestAnimationFrame", tick)
 		} else {
+			app.Dispatch(OnExit, nil)
 			done <- true // Write to done channel to exit the app
 		}
 		return nil
