@@ -297,13 +297,6 @@ const (
 	MouseButtonMiddle = MouseButton(1)
 )
 
-// Actions
-const (
-	Release = Action(iota) // Release indicates that the key or mouse button was released
-	Press                  // Press indicates that the key or mouse button was pressed
-	Repeat                 // Repeat indicates that the key was held down until it repeated
-)
-
 // Input modes
 const (
 	CursorInputMode             = InputMode(iota) // See Cursor mode values
@@ -393,7 +386,6 @@ func Init(canvasId string) error {
 		event := args[0]
 		eventCode := event.Get("code").String()
 		w.keyEv.Keycode = Key(keyMap[eventCode])
-		w.keyEv.Action = Action(Press)
 		w.keyEv.Mods = getModifiers(event)
 		w.Dispatch(OnKeyDown, &w.keyEv)
 		return nil
@@ -404,7 +396,6 @@ func Init(canvasId string) error {
 		event := args[0]
 		eventCode := event.Get("code").String()
 		w.keyEv.Keycode = Key(keyMap[eventCode])
-		w.keyEv.Action = Action(Release)
 		w.keyEv.Mods = getModifiers(event)
 		w.Dispatch(OnKeyUp, &w.keyEv)
 		return nil
@@ -415,14 +406,10 @@ func Init(canvasId string) error {
 
 	w.mouseDown = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		event := args[0]
-		button := MouseButton(event.Get("button").Int())
-		xpos := event.Get("offsetX").Int()
-		ypos := event.Get("offsetY").Int()
-		w.mouseEv.Button = MouseButton(button)
-		w.mouseEv.Action = Action(Press)
+		w.mouseEv.Button = MouseButton(event.Get("button").Int())
+		w.mouseEv.Xpos = float32(event.Get("offsetX").Int()) //* float32(w.scaleX) TODO
+		w.mouseEv.Ypos = float32(event.Get("offsetY").Int()) //* float32(w.scaleY)
 		w.mouseEv.Mods = getModifiers(event)
-		w.mouseEv.Xpos = float32(xpos) //* float32(w.scaleX) TODO
-		w.mouseEv.Ypos = float32(ypos) //* float32(w.scaleY)
 		w.Dispatch(OnMouseDown, &w.mouseEv)
 		return nil
 	})
@@ -430,14 +417,10 @@ func Init(canvasId string) error {
 
 	w.mouseUp = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		event := args[0]
-		button := MouseButton(event.Get("button").Int())
-		xpos := event.Get("offsetX").Float()
-		ypos := event.Get("offsetY").Float()
-		w.mouseEv.Button = MouseButton(button)
-		w.mouseEv.Action = Action(Release)
+		w.mouseEv.Button = MouseButton(event.Get("button").Int())
+		w.mouseEv.Xpos = float32(event.Get("offsetX").Float()) //* float32(w.scaleX) TODO
+		w.mouseEv.Ypos = float32(event.Get("offsetY").Float()) //* float32(w.scaleY)
 		w.mouseEv.Mods = getModifiers(event)
-		w.mouseEv.Xpos = float32(xpos) //* float32(w.scaleX) TODO
-		w.mouseEv.Ypos = float32(ypos) //* float32(w.scaleY)
 		w.Dispatch(OnMouseUp, &w.mouseEv)
 		return nil
 	})
@@ -445,10 +428,8 @@ func Init(canvasId string) error {
 
 	w.mouseMove = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		event := args[0]
-		xpos := event.Get("offsetX").Float()
-		ypos := event.Get("offsetY").Float()
-		w.cursorEv.Xpos = float32(xpos) //* float32(w.scaleX) TODO
-		w.cursorEv.Ypos = float32(ypos) //* float32(w.scaleY)
+		w.cursorEv.Xpos = float32(event.Get("offsetX").Float()) //* float32(w.scaleX) TODO
+		w.cursorEv.Ypos = float32(event.Get("offsetY").Float()) //* float32(w.scaleY)
 		w.cursorEv.Mods = getModifiers(event)
 		w.Dispatch(OnCursor, &w.cursorEv)
 		return nil
@@ -458,10 +439,8 @@ func Init(canvasId string) error {
 	w.mouseWheel = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		event := args[0]
 		event.Call("preventDefault")
-		xoff := event.Get("deltaX").Float()
-		yoff := event.Get("deltaY").Float()
-		w.scrollEv.Xoffset = -float32(xoff) / 100.0
-		w.scrollEv.Yoffset = -float32(yoff) / 100.0
+		w.scrollEv.Xoffset = -float32(event.Get("deltaX").Float()) / 100.0
+		w.scrollEv.Yoffset = -float32(event.Get("deltaY").Float()) / 100.0
 		w.scrollEv.Mods = getModifiers(event)
 		w.Dispatch(OnScroll, &w.scrollEv)
 		return nil
