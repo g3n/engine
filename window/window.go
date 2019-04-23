@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package window abstracts a system window.
+// Package window abstracts a platform-specific window.
 // Depending on the build tags it can be a GLFW desktop window or a browser WebGlCanvas.
 package window
 
@@ -46,9 +46,6 @@ type ModifierKey int
 // MouseButton corresponds to a mouse button.
 type MouseButton int
 
-// Action corresponds to a key or button action.
-type Action int
-
 // InputMode corresponds to an input mode.
 type InputMode int
 
@@ -71,20 +68,18 @@ const (
 	CursorLast = DiagResize2Cursor
 )
 
-//
-// Window event names used for dispatch and subscribe
-//
-const (
-	OnWindowPos  = "w.OnWindowPos"
-	OnWindowSize = "w.OnWindowSize"
-	OnKeyUp      = "w.OnKeyUp"
-	OnKeyDown    = "w.OnKeyDown"
-	OnKeyRepeat  = "w.OnKeyRepeat"
-	OnChar       = "w.OnChar"
-	OnCursor     = "w.OnCursor"
-	OnMouseUp    = "w.OnMouseUp"
-	OnMouseDown  = "w.OnMouseDown"
-	OnScroll     = "w.OnScroll"
+// Window event names. See availability per platform below ("x" indicates available).
+const ( //                             Desktop | Browser |
+	OnWindowPos  = "w.OnWindowPos"  //    x    |         |
+	OnWindowSize = "w.OnWindowSize" //    x    |         |
+	OnKeyUp      = "w.OnKeyUp"      //    x    |    x    |
+	OnKeyDown    = "w.OnKeyDown"    //    x    |    x    |
+	OnKeyRepeat  = "w.OnKeyRepeat"  //    x    |         |
+	OnChar       = "w.OnChar"       //    x    |    x    |
+	OnCursor     = "w.OnCursor"     //    x    |    x    |
+	OnMouseUp    = "w.OnMouseUp"    //    x    |    x    |
+	OnMouseDown  = "w.OnMouseDown"  //    x    |    x    |
+	OnScroll     = "w.OnScroll"     //    x    |    x    |
 )
 
 // PosEvent describes a windows position changed event
@@ -101,9 +96,8 @@ type SizeEvent struct {
 
 // KeyEvent describes a window key event
 type KeyEvent struct {
-	Keycode Key
-	Action  Action
-	Mods    ModifierKey
+	Key  Key
+	Mods ModifierKey
 }
 
 // CharEvent describes a window char event
@@ -117,7 +111,6 @@ type MouseEvent struct {
 	Xpos   float32
 	Ypos   float32
 	Button MouseButton
-	Action Action
 	Mods   ModifierKey
 }
 

@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// +build !wasm
+
 package window
 
 import (
@@ -168,16 +170,6 @@ const (
 	MouseButtonMiddle = MouseButton(glfw.MouseButtonMiddle)
 )
 
-// Actions
-const (
-	// Release indicates that key or mouse button was released
-	Release = Action(glfw.Release)
-	// Press indicates that key or mouse button was pressed
-	Press = Action(glfw.Press)
-	// Repeat indicates that key was held down until it repeated
-	Repeat = Action(glfw.Repeat)
-)
-
 // Input modes
 const (
 	CursorInputMode             = InputMode(glfw.CursorMode)             // See Cursor mode values
@@ -303,18 +295,14 @@ func Init(width, height int, title string) error {
 
 	// Set key callback to dispatch event
 	w.SetKeyCallback(func(x *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
-		w.keyEv.Keycode = Key(key)
-		w.keyEv.Action = Action(action)
+		w.keyEv.Key = Key(key)
 		w.keyEv.Mods = ModifierKey(mods)
 		w.mods = w.keyEv.Mods
 		if action == glfw.Press {
-			fmt.Println("GLFW: OnKeyDown")
 			w.Dispatch(OnKeyDown, &w.keyEv)
 		} else if action == glfw.Release {
-			fmt.Println("GLFW: OnKeyUp")
 			w.Dispatch(OnKeyUp, &w.keyEv)
 		} else if action == glfw.Repeat {
-			fmt.Println("GLFW: OnKeyRepeat")
 			w.Dispatch(OnKeyRepeat, &w.keyEv)
 		}
 	})
@@ -330,7 +318,6 @@ func Init(width, height int, title string) error {
 	w.SetMouseButtonCallback(func(x *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
 		xpos, ypos := x.GetCursorPos()
 		w.mouseEv.Button = MouseButton(button)
-		w.mouseEv.Action = Action(action)
 		w.mouseEv.Mods = ModifierKey(mods)
 		w.mouseEv.Xpos = float32(xpos * w.scaleX)
 		w.mouseEv.Ypos = float32(ypos * w.scaleY)
@@ -344,7 +331,6 @@ func Init(width, height int, title string) error {
 	// Set window size callback to dispatch event
 	w.SetSizeCallback(func(x *glfw.Window, width int, height int) {
 		fbw, fbh := x.GetFramebufferSize()
-		w.sizeEv.W = w
 		w.sizeEv.Width = width
 		w.sizeEv.Height = height
 		w.scaleX = float64(fbw) / float64(width)
