@@ -19,9 +19,9 @@ type IGeometry interface {
 
 // Geometry encapsulates a three-dimensional vertex-based geometry.
 type Geometry struct {
-	gs            *gls.GLS          // Pointer to gl context. Valid after first render setup
-	groups        []Group           // Array geometry groups
+	gs            *gls.GLS          // Reference to OpenGL state (valid after first RenderSetup)
 	refcount      int               // Current number of references
+	groups        []Group           // Array geometry groups
 	vbos          []*gls.VBO        // Array of VBOs
 	handleVAO     uint32            // Handle to OpenGL VAO
 	indices       math32.ArrayU32   // Buffer with indices
@@ -73,38 +73,6 @@ func (g *Geometry) Init() {
 	g.ShaderDefines = *gls.NewShaderDefines()
 }
 
-// Incref increments the reference count for this geometry
-// and returns a pointer to the geometry.
-// It should be used when this geometry is shared by another
-// Graphic object.
-func (g *Geometry) Incref() *Geometry {
-
-	g.refcount++
-	return g
-}
-
-// Dispose decrements this geometry reference count and
-// if possible releases OpenGL resources, C memory
-// and VBOs associated with this geometry.
-func (g *Geometry) Dispose() {
-
-	if g.refcount > 1 {
-		g.refcount--
-		return
-	}
-
-	// Delete VAO and indices buffer
-	if g.gs != nil {
-		g.gs.DeleteVertexArrays(g.handleVAO)
-		g.gs.DeleteBuffers(g.handleIndices)
-	}
-	// Delete this geometry VBO buffers
-	for i := 0; i < len(g.vbos); i++ {
-		g.vbos[i].Dispose()
-	}
-	g.Init()
-}
-
 // GetGeometry satisfies the IGeometry interface.
 func (g *Geometry) GetGeometry() *Geometry {
 
@@ -151,18 +119,6 @@ func (g *Geometry) SetIndices(indices math32.ArrayU32) {
 func (g *Geometry) Indices() math32.ArrayU32 {
 
 	return g.indices
-}
-
-// SetVAO sets the Vertex Array Object handle associated with this geometry.
-func (g *Geometry) SetVAO(handle uint32) {
-
-	g.handleVAO = handle
-}
-
-// VAO returns the Vertex Array Object handle associated with this geometry.
-func (g *Geometry) VAO() uint32 {
-
-	return g.handleVAO
 }
 
 // AddVBO adds a Vertex Buffer Object for this geometry.
@@ -517,16 +473,46 @@ func (g *Geometry) ApplyMatrix(m *math32.Matrix4) {
 	})
 }
 
+// Incref increments the reference count for this geometry
+// and returns a pointer to the geometry.
+// It should be used when this geometry is shared by another
+// Graphic object.
+func (g *Geometry) Incref() *Geometry {
+
+	g.refcount++
+	return g
+}
+
+// Dispose decrements this geometry reference count and
+// if possible releases OpenGL resources, C memory
+// and VBOs associated with this geometry.
+func (g *Geometry) Dispose() {
+
+	// Only dispose if last
+	if g.refcount > 1 {
+		g.refcount--
+		return
+	}
+	// Delete VAO and indices buffer
+	if g.gs != nil {
+		g.gs.DeleteVertexArrays(g.handleVAO)
+		g.gs.DeleteBuffers(g.handleIndices)
+	}
+	// Delete VBOs
+	for i := 0; i < len(g.vbos); i++ {
+		g.vbos[i].Dispose()
+	}
+	g.Init()
+}
+
 // RenderSetup is called by the renderer before drawing the geometry.
 func (g *Geometry) RenderSetup(gs *gls.GLS) {
 
 	// First time initialization
 	if g.gs == nil {
-		if g.handleVAO == 0 {
-			// Generate VAO and bind it
-			g.handleVAO = gs.GenVertexArray()
-		}
-		// Generate VBO for indices
+		// Generate VAO
+		g.handleVAO = gs.GenVertexArray()
+		// Generate buffer for indices
 		g.handleIndices = gs.GenBuffer()
 		// Save pointer to gs indicating initialization was done
 		g.gs = gs
