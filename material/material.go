@@ -55,35 +55,35 @@ type IMaterial interface {
 
 // Material is the base material.
 type Material struct {
-	refcount         int                    // Current number of references
+	refcount int // Current number of references
 
 	// Shader specification // TODO Move ShaderSpecs into Material ?
-	shader           string                 // Shader name
-	shaderUnique     bool                   // shader has only one instance (does not depend on lights or textures)
-	ShaderDefines    gls.ShaderDefines      // shader defines
+	shader        string            // Shader name
+	shaderUnique  bool              // shader has only one instance (does not depend on lights or textures)
+	ShaderDefines gls.ShaderDefines // shader defines
 
-	uselights        UseLights              // Which light types to consider
-	sidevis          Side                   // Face side(s) visibility
-	blending         Blending               // Blending mode
-	transparent      bool                   // Whether at all transparent
-	wireframe        bool                   // Whether to render only the wireframe
-	lineWidth        float32                // Line width for lines and mesh wireframe
-	textures         []*texture.Texture2D   // List of textures
+	uselights   UseLights            // Which light types to consider
+	sidevis     Side                 // Face side(s) visibility
+	blending    Blending             // Blending mode
+	transparent bool                 // Whether at all transparent
+	wireframe   bool                 // Whether to render only the wireframe
+	lineWidth   float32              // Line width for lines and mesh wireframe
+	textures    []*texture.Texture2D // List of textures
 
-	polyOffsetFactor float32                // polygon offset factor
-	polyOffsetUnits  float32                // polygon offset units
+	polyOffsetFactor float32 // polygon offset factor
+	polyOffsetUnits  float32 // polygon offset units
 
-	depthMask        bool                   // Enable writing into the depth buffer
-	depthTest        bool                   // Enable depth buffer test
-	depthFunc        uint32                 // Active depth test function
+	depthMask bool   // Enable writing into the depth buffer
+	depthTest bool   // Enable depth buffer test
+	depthFunc uint32 // Active depth test function
 
 	// Equations used for custom blending (when blending=BlendingCustom) // TODO implement methods
-	blendRGB         uint32                 // separate blend equation for RGB
-	blendAlpha       uint32                 // separate blend equation for Alpha
-	blendSrcRGB      uint32                 // separate blend func source RGB
-	blendDstRGB      uint32                 // separate blend func dest RGB
-	blendSrcAlpha    uint32                 // separate blend func source Alpha
-	blendDstAlpha    uint32                 // separate blend func dest Alpha
+	blendRGB      uint32 // separate blend equation for RGB
+	blendAlpha    uint32 // separate blend equation for Alpha
+	blendSrcRGB   uint32 // separate blend func source RGB
+	blendDstRGB   uint32 // separate blend func dest RGB
+	blendSrcAlpha uint32 // separate blend func source Alpha
+	blendDstAlpha uint32 // separate blend func dest Alpha
 }
 
 // NewMaterial creates and returns a pointer to a new Material.
@@ -113,7 +113,6 @@ func (mat *Material) Init() *Material {
 	// Setup shader defines and add default values
 	mat.ShaderDefines = *gls.NewShaderDefines()
 
-
 	return mat
 }
 
@@ -138,10 +137,12 @@ func (mat *Material) Incref() *Material {
 // and textures associated with this material.
 func (mat *Material) Dispose() {
 
+	// Only dispose if last
 	if mat.refcount > 1 {
 		mat.refcount--
 		return
 	}
+	// Delete textures
 	for i := 0; i < len(mat.textures); i++ {
 		mat.textures[i].Dispose()
 	}
@@ -232,6 +233,11 @@ func (mat *Material) SetDepthMask(state bool) {
 func (mat *Material) SetDepthTest(state bool) {
 
 	mat.depthTest = state
+}
+
+func (mat *Material) SetDepthFunc(state uint32) {
+
+	mat.depthFunc = state
 }
 
 func (mat *Material) SetBlending(blending Blending) {
