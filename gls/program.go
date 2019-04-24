@@ -17,7 +17,7 @@ import (
 // It must have Vertex and Fragment shaders.
 // It can also have a Geometry shader.
 type Program struct {
-	gs         *GLS             // OpenGL state
+	gs         *GLS             // Reference to OpenGL state
 	ShowSource bool             // Show source code in error messages
 	handle     uint32           // OpenGL program handle
 	shaders    []shaderInfo     // List of shaders for this program

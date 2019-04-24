@@ -47,7 +47,7 @@ type ProgSpecs struct {
 
 // Shaman is the shader manager
 type Shaman struct {
-	gs       *gls.GLS
+	gs       *gls.GLS                       // Reference to OpenGL state
 	includes map[string]string              // include files sources
 	shadersm map[string]string              // maps shader name to its template
 	proginfo map[string]shaders.ProgramInfo // maps name of the program to ProgramInfo

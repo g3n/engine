@@ -8,6 +8,7 @@ import (
 
 // Stats contains several statistics useful for performance evaluation
 type Stats struct {
+	gs           *gls.GLS  // Reference to OpenGL state
 	Glstats      gls.Stats // GLS statistics structure
 	UnilocHits   int       // Uniform location cache hits per frame
 	UnilocMiss   int       // Uniform location cache misses per frame
@@ -16,7 +17,6 @@ type Stats struct {
 	Cgocalls     int       // Cgo calls per frame
 	prevGls      gls.Stats // previous gls statistics
 	prevCgocalls int64     // previous number of cgo calls
-	gs           *gls.GLS  // reference to gls state
 	frames       int       // frame counter
 	last         time.Time // last update time
 }
