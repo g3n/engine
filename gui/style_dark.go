@@ -15,12 +15,12 @@ import (
 func NewDarkStyle() *Style {
 
 	// Fonts to use
-	const fontName = "fonts/FreeSans.ttf"
-	const iconName = "fonts/MaterialIcons-Regular.ttf"
+	const textFont = "fonts/FreeSans.ttf"
+	const iconFont = "fonts/MaterialIcons-Regular.ttf"
 	s := new(Style)
 
 	// Creates text font
-	fontData := assets.MustAsset(fontName)
+	fontData := assets.MustAsset(textFont)
 	font, err := text.NewFontFromData(fontData)
 	if err != nil {
 		panic(err)
@@ -28,7 +28,7 @@ func NewDarkStyle() *Style {
 	s.Font = font
 
 	// Creates icon font
-	fontIconData := assets.MustAsset(iconName)
+	fontIconData := assets.MustAsset(iconFont)
 	fontIcon, err := text.NewFontFromData(fontIconData)
 	if err != nil {
 		panic(err)
