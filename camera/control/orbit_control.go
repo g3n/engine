@@ -132,7 +132,7 @@ func (oc *OrbitControl) Reset() {
 // Pan the camera and target by the specified deltas
 func (oc *OrbitControl) Pan(deltaX, deltaY float32) {
 
-	width, height := oc.win.Size()
+	width, height := oc.win.GetSize()
 	oc.pan(deltaX, deltaY, width, height)
 	oc.updatePan()
 }
@@ -342,7 +342,8 @@ func (oc *OrbitControl) onMouse(evname string, ev interface{}) {
 
 	mev := ev.(*window.MouseEvent)
 	// Mouse button pressed
-	if mev.Action == window.Press {
+	switch evname {
+	case window.OnMouseDown:
 		// Left button pressed sets Rotate state
 		if mev.Button == window.MouseButtonLeft {
 			if !oc.EnableRotate {
@@ -372,10 +373,7 @@ func (oc *OrbitControl) onMouse(evname string, ev interface{}) {
 			oc.win.SubscribeID(window.OnCursor, &oc.subsPos, oc.onCursorPos)
 		}
 		return
-	}
-
-	// Mouse button released
-	if mev.Action == window.Release {
+	case window.OnMouseUp:
 		oc.win.UnsubscribeID(window.OnCursor, &oc.subsPos)
 		oc.state = stateNone
 	}
@@ -396,7 +394,7 @@ func (oc *OrbitControl) onCursorPos(evname string, ev interface{}) {
 		oc.rotateDelta.SubVectors(&oc.rotateEnd, &oc.rotateStart)
 		oc.rotateStart = oc.rotateEnd
 		// rotating across whole screen goes 360 degrees around
-		width, height := oc.win.Size()
+		width, height := oc.win.GetSize()
 		oc.RotateLeft(2 * math32.Pi * oc.rotateDelta.X / float32(width) * oc.RotateSpeed)
 		// rotating up and down along whole screen attempts to go 360, but limited to 180
 		oc.RotateUp(2 * math32.Pi * oc.rotateDelta.Y / float32(height) * oc.RotateSpeed)
@@ -439,12 +437,9 @@ func (oc *OrbitControl) onKey(evname string, ev interface{}) {
 	}
 
 	kev := ev.(*window.KeyEvent)
-	if kev.Action == window.Release {
-		return
-	}
 
 	if oc.EnablePan && kev.Mods == 0 {
-		switch kev.Keycode {
+		switch kev.Key {
 		case window.KeyUp:
 			oc.Pan(0, oc.KeyPanSpeed)
 		case window.KeyDown:
@@ -457,7 +452,7 @@ func (oc *OrbitControl) onKey(evname string, ev interface{}) {
 	}
 
 	if oc.EnableRotate && kev.Mods == window.ModShift {
-		switch kev.Keycode {
+		switch kev.Key {
 		case window.KeyUp:
 			oc.RotateUp(oc.KeyRotateSpeed)
 		case window.KeyDown:
@@ -470,7 +465,7 @@ func (oc *OrbitControl) onKey(evname string, ev interface{}) {
 	}
 
 	if oc.EnableZoom && kev.Mods == window.ModControl {
-		switch kev.Keycode {
+		switch kev.Key {
 		case window.KeyUp:
 			oc.Zoom(-1.0)
 		case window.KeyDown:
