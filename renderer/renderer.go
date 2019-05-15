@@ -279,7 +279,7 @@ func (r *Renderer) renderGraphicMaterial(grmat *graphic.GraphicMaterial) error {
 	geom := grmat.IGraphic().GetGeometry()
 	gr := grmat.IGraphic().GetGraphic()
 
-	// Add defines from material and geometry
+	// Add defines from material, geometry and graphic
 	r.specs.Defines = *gls.NewShaderDefines()
 	r.specs.Defines.Add(&mat.ShaderDefines)
 	r.specs.Defines.Add(&geom.ShaderDefines)
