@@ -23,7 +23,6 @@ type Renderer struct {
 	specs       ShaderSpecs     // Preallocated Shader specs
 	sortObjects bool            // Flag indicating whether objects should be sorted before rendering
 	stats       Stats           // Renderer statistics
-	prevStats   Stats           // Renderer statistics for previous frame
 
 	// Populated each frame
 	rgraphics    []*graphic.Graphic         // Array of rendered graphics
@@ -180,7 +179,6 @@ func (r *Renderer) Render(scene core.INode, cam camera.ICamera) error {
 		r.stats.Others++
 	}
 
-	r.prevStats = r.stats
 	return nil
 }
 
