@@ -23,7 +23,7 @@ import (
 
 // Button represents a button GUI element
 type Button struct {
-	*Panel                  // Embedded Panel
+	Panel                   // Embedded Panel
 	Label     *Label        // Label panel
 	image     *Image        // pointer to button image (may be nil)
 	icon      *Label        // pointer to button icon (may be nil
@@ -52,7 +52,7 @@ func NewButton(text string) *Button {
 	b.styles = &StyleDefault().Button
 
 	// Initializes the button panel
-	b.Panel = NewPanel(0, 0)
+	b.Panel.Initialize(b, 0, 0)
 
 	// Subscribe to panel events
 	b.Subscribe(OnKeyDown, b.onKey)

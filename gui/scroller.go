@@ -98,7 +98,7 @@ func NewScroller(width, height float32, mode ScrollMode, target IPanel) *Scrolle
 // initialize initializes this scroller and can be called by other types which embed a scroller
 func (s *Scroller) initialize(width, height float32, mode ScrollMode, target IPanel) {
 
-	s.Panel.Initialize(width, height)
+	s.Panel.Initialize(s, width, height)
 	s.style = &StyleDefault().Scroller
 	s.target = target
 	s.Panel.Add(s.target)

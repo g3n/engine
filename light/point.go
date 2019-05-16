@@ -29,7 +29,7 @@ type Point struct {
 func NewPoint(color *math32.Color, intensity float32) *Point {
 
 	lp := new(Point)
-	lp.Node.Init()
+	lp.Node.Init(lp)
 	lp.color = *color
 	lp.intensity = intensity
 

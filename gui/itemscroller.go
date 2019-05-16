@@ -290,7 +290,7 @@ func (s *ItemScroller) initialize(vert bool, width, height float32) {
 
 	s.vert = vert
 	s.autoButtonSize = true
-	s.Panel.Initialize(width, height)
+	s.Panel.Initialize(s, width, height)
 	s.styles = &StyleDefault().ItemScroller
 
 	s.Panel.Subscribe(OnCursorEnter, s.onCursor)

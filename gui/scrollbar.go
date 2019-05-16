@@ -84,11 +84,11 @@ func (sb *ScrollBar) initialize(width, height float32, vertical bool) {
 
 	sb.styles = &StyleDefault().ScrollBar
 	sb.vertical = vertical
-	sb.Panel.Initialize(width, height)
+	sb.Panel.Initialize(sb, width, height)
 	sb.Panel.Subscribe(OnMouseDown, sb.onMouse)
 
 	// Initialize scrollbar button
-	sb.button.Panel.Initialize(0, 0)
+	sb.button.Panel.Initialize(&sb.button, 0, 0)
 	sb.button.Panel.Subscribe(OnMouseDown, sb.button.onMouse)
 	sb.button.Panel.Subscribe(OnMouseUp, sb.button.onMouse)
 	sb.button.Panel.Subscribe(OnCursor, sb.button.onCursor)

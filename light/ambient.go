@@ -23,7 +23,7 @@ type Ambient struct {
 func NewAmbient(color *math32.Color, intensity float32) *Ambient {
 
 	la := new(Ambient)
-	la.Node.Init()
+	la.Node.Init(la)
 	la.color = *color
 	la.intensity = intensity
 	la.uni.Init("AmbientLightColor")

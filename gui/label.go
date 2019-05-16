@@ -55,7 +55,7 @@ func NewLabelWithFont(msg string, font *text.Font) *Label {
 func (l *Label) initialize(msg string, font *text.Font) {
 
 	l.font = font
-	l.Panel.Initialize(0, 0)
+	l.Panel.Initialize(l, 0, 0)
 
 	// TODO: Remove this hack in an elegant way e.g. set the label style depending of if it's an icon or text label and have two defaults (one for icon labels one for text tabels)
 	if font != StyleDefault().FontIcon {

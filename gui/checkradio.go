@@ -75,7 +75,7 @@ func newCheckRadio(check bool, text string) *CheckRadio {
 	}
 
 	// Initialize panel
-	cb.Panel.Initialize(0, 0)
+	cb.Panel.Initialize(cb, 0, 0)
 
 	// Subscribe to events
 	cb.Panel.Subscribe(OnKeyDown, cb.onKey)

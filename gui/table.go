@@ -193,12 +193,12 @@ type tableCell struct {
 func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 
 	t := new(Table)
-	t.Panel.Initialize(width, height)
+	t.Panel.Initialize(t, width, height)
 	t.styles = &StyleDefault().Table
 	t.rowCursor = -1
 
 	// Initialize table header
-	t.header.Initialize(0, 0)
+	t.header.Initialize(&t.header, 0, 0)
 	t.header.cmap = make(map[string]*tableColHeader)
 	t.header.cols = make([]*tableColHeader, 0)
 
@@ -215,7 +215,7 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 		}
 		// Creates a column header
 		c := new(tableColHeader)
-		c.Initialize(0, 0)
+		c.Initialize(c, 0, 0)
 		t.applyHeaderStyle(&c.Panel, false)
 		c.label = NewLabel(cdesc.Header)
 		c.Add(c.label)
@@ -260,7 +260,7 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 		t.header.Panel.Add(c)
 	}
 	// Creates last header
-	t.header.lastPan.Initialize(0, 0)
+	t.header.lastPan.Initialize(&t.header, 0, 0)
 	t.applyHeaderStyle(&t.header.lastPan, true)
 	t.header.Panel.Add(&t.header.lastPan)
 
@@ -268,13 +268,13 @@ func NewTable(width, height float32, cols []TableColumn) (*Table, error) {
 	t.Panel.Add(&t.header)
 
 	// Creates resizer panel
-	t.resizerPanel.Initialize(t.styles.Resizer.Width, 0)
+	t.resizerPanel.Initialize(&t.resizerPanel, t.styles.Resizer.Width, 0)
 	t.resizerPanel.SetVisible(false)
 	t.applyResizerStyle()
 	t.Panel.Add(&t.resizerPanel)
 
 	// Creates status panel
-	t.statusPanel.Initialize(0, 0)
+	t.statusPanel.Initialize(&t.statusPanel, 0, 0)
 	t.statusPanel.SetVisible(false)
 	t.statusLabel = NewLabel("")
 	t.applyStatusStyle()
@@ -693,12 +693,12 @@ func (t *Table) insertRow(row int, values map[string]interface{}) {
 
 	// Creates tableRow panel
 	trow := new(tableRow)
-	trow.Initialize(0, 0)
+	trow.Initialize(trow, 0, 0)
 	trow.cells = make([]*tableCell, 0)
 	for ci := 0; ci < len(t.header.cols); ci++ {
 		// Creates tableRow cell panel
 		cell := new(tableCell)
-		cell.Initialize(0, 0)
+		cell.Initialize(cell, 0, 0)
 		cell.label.initialize("", StyleDefault().Font)
 		cell.Add(&cell.label)
 		trow.cells = append(trow.cells, cell)

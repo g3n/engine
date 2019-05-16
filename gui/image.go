@@ -39,7 +39,7 @@ func NewImageFromRGBA(rgba *image.RGBA) *Image {
 func NewImageFromTex(tex *texture.Texture2D) *Image {
 
 	i := new(Image)
-	i.Panel.Initialize(0, 0)
+	i.Panel.Initialize(i, 0, 0)
 	i.tex = tex
 	i.Panel.SetContentSize(float32(i.tex.Width()), float32(i.tex.Height()))
 	i.Material().AddTexture(i.tex)

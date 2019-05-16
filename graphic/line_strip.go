@@ -22,7 +22,7 @@ type LineStrip struct {
 func NewLineStrip(igeom geometry.IGeometry, imat material.IMaterial) *LineStrip {
 
 	l := new(LineStrip)
-	l.Graphic.Init(igeom, gls.LINE_STRIP)
+	l.Graphic.Init(l, igeom, gls.LINE_STRIP)
 	l.AddMaterial(l, imat, 0, 0)
 	l.uniMVPm.Init("MVP")
 	return l

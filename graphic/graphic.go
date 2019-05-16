@@ -58,17 +58,17 @@ type IGraphic interface {
 // NewGraphic creates and returns a pointer to a new graphic object with
 // the specified geometry and OpenGL primitive.
 // The created graphic object, though, has not materials.
-func NewGraphic(igeom geometry.IGeometry, mode uint32) *Graphic {
+func NewGraphic(igr IGraphic, igeom geometry.IGeometry, mode uint32) *Graphic {
 
 	gr := new(Graphic)
-	return gr.Init(igeom, mode)
+	return gr.Init(igr, igeom, mode)
 }
 
 // Init initializes a Graphic type embedded in another type
 // with the specified geometry and OpenGL mode.
-func (gr *Graphic) Init(igeom geometry.IGeometry, mode uint32) *Graphic {
+func (gr *Graphic) Init(igr IGraphic, igeom geometry.IGeometry, mode uint32) *Graphic {
 
-	gr.Node.Init()
+	gr.Node.Init(igr)
 	gr.igeom = igeom
 	gr.mode = mode
 	gr.materials = make([]GraphicMaterial, 0)

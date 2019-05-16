@@ -47,7 +47,7 @@ func NewFolder(text string, width float32, contentPanel IPanel) *Folder {
 // It is normally used when the folder is embedded in another object.
 func (f *Folder) Initialize(text string, width float32, contentPanel IPanel) {
 
-	f.Panel.Initialize(width, 0)
+	f.Panel.Initialize(f, width, 0)
 	f.styles = &StyleDefault().Folder
 
 	// Initialize label

@@ -14,17 +14,35 @@ import (
 type INode interface {
 	IDispatcher
 	GetNode() *Node
+	GetINode() INode
+	Visible() bool
+	SetVisible(state bool)
+	Name() string
+	SetName(string)
+	Parent() INode
+	Children() []INode
+	IsAncestorOf(INode) bool
+	LowestCommonAncestor(INode) INode
 	UpdateMatrixWorld()
 	Raycast(*Raycaster, *[]Intersect)
 	BoundingBox() math32.Box3
 	Render(gs *gls.GLS)
 	Clone() INode
 	Dispose()
+	Position() math32.Vector3
+	Rotation() math32.Vector3
+	Scale() math32.Vector3
 }
+
+// Node events.
+const (
+	OnDescendant = "core.OnDescendant" // Dispatched when a descendent is added or removed
+)
 
 // Node represents an object in 3D space existing within a hierarchy.
 type Node struct {
 	Dispatcher                 // Embedded event dispatcher
+	inode          INode       // The INode associated with this Node
 	parent         INode       // Parent node
 	children       []INode     // Children nodes
 	name           string      // Optional node name
@@ -35,29 +53,32 @@ type Node struct {
 	userData       interface{} // Generic user data
 
 	// Spatial properties
-	position    math32.Vector3    // Node position in 3D space (relative to parent)
-	scale       math32.Vector3    // Node scale (relative to parent)
-	direction   math32.Vector3    // Initial direction (relative to parent)
-	rotation    math32.Vector3    // Node rotation specified in Euler angles (relative to parent)
-	quaternion  math32.Quaternion // Node rotation specified as a Quaternion (relative to parent)
-	matrix      math32.Matrix4    // Local transform matrix. Contains all position/rotation/scale information (relative to parent)
-	matrixWorld math32.Matrix4    // World transform matrix. Contains all absolute position/rotation/scale information (i.e. relative to very top parent, generally the scene)
+	position   math32.Vector3    // Node position in 3D space (relative to parent)
+	scale      math32.Vector3    // Node scale (relative to parent)
+	direction  math32.Vector3    // Initial direction (relative to parent)
+	rotation   math32.Vector3    // Node rotation specified in Euler angles (relative to parent)
+	quaternion math32.Quaternion // Node rotation specified as a Quaternion (relative to parent)
+
+	// Local transform matrix stores position/rotation/scale relative to parent
+	matrix math32.Matrix4
+	// World transform matrix stores position/rotation/scale relative to highest ancestor (generally the scene)
+	matrixWorld math32.Matrix4
 }
 
 // NewNode returns a pointer to a new Node.
 func NewNode() *Node {
 
 	n := new(Node)
-	n.Init()
+	n.Init(n)
 	return n
 }
 
 // Init initializes the node.
 // Normally called by other types which embed a Node.
-func (n *Node) Init() {
+func (n *Node) Init(inode INode) {
 
 	n.Dispatcher.Initialize()
-
+	n.inode = inode
 	n.children = make([]INode, 0)
 	n.visible = true
 
@@ -69,6 +90,19 @@ func (n *Node) Init() {
 	n.quaternion.Set(0, 0, 0, 1)
 	n.matrix.Identity()
 	n.matrixWorld.Identity()
+
+	// Subscribe to events
+	n.Subscribe(OnDescendant, func(evname string, ev interface{}) {
+		if n.parent != nil {
+			n.parent.Dispatch(evname, ev)
+		}
+	})
+}
+
+// GetINode returns the INode associated with this Node.
+func (n *Node) GetINode() INode {
+
+	return n.inode
 }
 
 // GetNode satisfies the INode interface
@@ -79,10 +113,10 @@ func (n *Node) GetNode() *Node {
 }
 
 // Raycast satisfies the INode interface.
-func (n *Node) Raycast(rc *Raycaster, intersects *[]Intersect) {
-}
+func (n *Node) Raycast(rc *Raycaster, intersects *[]Intersect) {}
 
 // BoundingBox satisfies the INode interface.
+// Computes union of own bounding box with those of all descendents.
 func (n *Node) BoundingBox() math32.Box3 {
 
 	bbox := math32.Box3{n.position, n.position}
@@ -94,12 +128,10 @@ func (n *Node) BoundingBox() math32.Box3 {
 }
 
 // Render satisfies the INode interface.
-func (n *Node) Render(gs *gls.GLS) {
-}
+func (n *Node) Render(gs *gls.GLS) {}
 
 // Dispose satisfies the INode interface.
-func (n *Node) Dispose() {
-}
+func (n *Node) Dispose() {}
 
 // Clone clones the Node and satisfies the INode interface.
 func (n *Node) Clone() INode {
@@ -135,12 +167,6 @@ func (n *Node) Clone() INode {
 	}
 
 	return clone
-}
-
-// SetParent sets the parent.
-func (n *Node) SetParent(iparent INode) {
-
-	n.parent = iparent
 }
 
 // Parent returns the parent.
@@ -283,44 +309,48 @@ func (n *Node) Children() []INode {
 // If the specified node had a parent, the specified node is removed from the original parent's list of children.
 func (n *Node) Add(ichild INode) *Node {
 
-	n.setParentOf(ichild)
+	setParent(n.GetINode(), ichild)
 	n.children = append(n.children, ichild)
+	n.Dispatch(OnDescendant, nil)
 	return n
 }
 
 // AddAt adds the specified node to the list of children at the specified index and sets its parent pointer.
 // If the specified node had a parent, the specified node is removed from the original parent's list of children.
-func (n *Node) AddAt(idx int, ichild INode) {
+func (n *Node) AddAt(idx int, ichild INode) *Node {
 
 	// Validate position
 	if idx < 0 || idx > len(n.children) {
 		panic("Node.AddAt: invalid position")
 	}
 
-	n.setParentOf(ichild)
+	setParent(n.GetINode(), ichild)
 
 	// Insert child in the specified position
 	n.children = append(n.children, nil)
 	copy(n.children[idx+1:], n.children[idx:])
 	n.children[idx] = ichild
+
+	n.Dispatch(OnDescendant, nil)
+
+	return n
 }
 
-// setParentOf is used by Add and AddAt.
+// setParent is used by Add and AddAt.
 // It verifies that the node is not being added to itself and sets the parent pointer of the specified node.
 // If the specified node had a parent, the specified node is removed from the original parent's list of children.
 // It does not add the specified node to the list of children.
-func (n *Node) setParentOf(ichild INode) {
+func setParent(parent INode, child INode) {
 
-	child := ichild.GetNode()
-	if n == child {
+	if parent.GetNode() == child.GetNode() {
 		panic("Node.{Add,AddAt}: object can't be added as a child of itself")
 	}
 	// If the specified node already has a parent,
 	// remove it from the original parent's list of children
-	if child.parent != nil {
-		child.parent.GetNode().Remove(ichild)
+	if child.Parent() != nil {
+		child.Parent().GetNode().Remove(child)
 	}
-	child.parent = n
+	child.GetNode().parent = parent
 }
 
 // ChildAt returns the child at the specified index.
@@ -343,6 +373,44 @@ func (n *Node) ChildIndex(ichild INode) int {
 	return -1
 }
 
+// IsAncestorOf returns whether this node is an ancestor of the specified node. Returns true if they are the same.
+func (n *Node) IsAncestorOf(desc INode) bool {
+
+	if desc == nil {
+		return false
+	}
+	if n == desc.GetNode() {
+		return true
+	}
+	for _, child := range n.Children() {
+		res := child.IsAncestorOf(desc)
+		if res {
+			return res
+		}
+	}
+	return false
+}
+
+// LowestCommonAncestor returns the common ancestor of this node and the specified node if any.
+func (n *Node) LowestCommonAncestor(other INode) INode {
+
+	if other == nil {
+		return nil
+	}
+	n1 := n.GetINode()
+	for n1 != nil {
+		n2 := other
+		for n2 != nil {
+			if n1 == n2 {
+				return n1
+			}
+			n2 = n2.Parent()
+		}
+		n1 = n1.Parent()
+	}
+	return nil
+}
+
 // Remove removes the specified INode from the list of children.
 // Returns true if found or false otherwise.
 func (n *Node) Remove(ichild INode) bool {
@@ -353,6 +421,7 @@ func (n *Node) Remove(ichild INode) bool {
 			n.children[len(n.children)-1] = nil
 			n.children = n.children[:len(n.children)-1]
 			ichild.GetNode().parent = nil
+			n.Dispatch(OnDescendant, nil)
 			return true
 		}
 	}
@@ -373,6 +442,8 @@ func (n *Node) RemoveAt(idx int) INode {
 	copy(n.children[idx:], n.children[idx+1:])
 	n.children[len(n.children)-1] = nil
 	n.children = n.children[:len(n.children)-1]
+
+	n.Dispatch(OnDescendant, nil)
 
 	return child
 }
@@ -459,19 +530,19 @@ func (n *Node) TranslateOnAxis(axis *math32.Vector3, dist float32) {
 // TranslateX translates the specified distance on the local X axis.
 func (n *Node) TranslateX(dist float32) {
 
-	n.TranslateOnAxis(&math32.Vector3{1,0,0}, dist)
+	n.TranslateOnAxis(&math32.Vector3{1, 0, 0}, dist)
 }
 
 // TranslateY translates the specified distance on the local Y axis.
 func (n *Node) TranslateY(dist float32) {
 
-	n.TranslateOnAxis(&math32.Vector3{0,1,0}, dist)
+	n.TranslateOnAxis(&math32.Vector3{0, 1, 0}, dist)
 }
 
 // TranslateZ translates the specified distance on the local Z axis.
 func (n *Node) TranslateZ(dist float32) {
 
-	n.TranslateOnAxis(&math32.Vector3{0,0,1}, dist)
+	n.TranslateOnAxis(&math32.Vector3{0, 0, 1}, dist)
 }
 
 // SetRotation sets the global rotation in Euler angles (radians).
@@ -554,19 +625,19 @@ func (n *Node) RotateOnAxis(axis *math32.Vector3, angle float32) {
 // RotateX rotates around the local X axis the specified angle in radians.
 func (n *Node) RotateX(x float32) {
 
-	n.RotateOnAxis(&math32.Vector3{1,0,0}, x)
+	n.RotateOnAxis(&math32.Vector3{1, 0, 0}, x)
 }
 
 // RotateY rotates around the local Y axis the specified angle in radians.
 func (n *Node) RotateY(y float32) {
 
-	n.RotateOnAxis(&math32.Vector3{0,1,0}, y)
+	n.RotateOnAxis(&math32.Vector3{0, 1, 0}, y)
 }
 
 // RotateZ rotates around the local Z axis the specified angle in radians.
 func (n *Node) RotateZ(z float32) {
 
-	n.RotateOnAxis(&math32.Vector3{0,0,1}, z)
+	n.RotateOnAxis(&math32.Vector3{0, 0, 1}, z)
 }
 
 // SetQuaternion sets the quaternion based on the specified quaternion unit multiples.
@@ -750,8 +821,7 @@ func (n *Node) UpdateMatrixWorld() {
 	if n.parent == nil {
 		n.matrixWorld = n.matrix
 	} else {
-		parent := n.parent.GetNode()
-		n.matrixWorld.MultiplyMatrices(&parent.matrixWorld, &n.matrix)
+		n.matrixWorld.MultiplyMatrices(&n.parent.GetNode().matrixWorld, &n.matrix)
 	}
 	// Update this Node children matrices
 	for _, ichild := range n.children {

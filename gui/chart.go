@@ -66,7 +66,7 @@ func NewChart(width, height float32) *Chart {
 // It is normally used to initialize a Chart embedded in a struct
 func (ch *Chart) Init(width float32, height float32) {
 
-	ch.Panel.Initialize(width, height)
+	ch.Panel.Initialize(ch, width, height)
 	ch.left = 40
 	ch.bottom = 20
 	ch.top = 10
@@ -479,7 +479,7 @@ func newChartScaleX(chart *Chart, lines int, color *math32.Color) *chartScaleX {
 	geom.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition))
 
 	// Initializes the panel graphic
-	gr := graphic.NewGraphic(geom, gls.LINES)
+	gr := graphic.NewGraphic(sx, geom, gls.LINES)
 	sx.mat.Init(color)
 	gr.AddMaterial(sx, &sx.mat, 0, 0)
 	sx.Panel.InitializeGraphic(chart.ContentWidth(), chart.ContentHeight(), gr)
@@ -564,7 +564,7 @@ func newChartScaleY(chart *Chart, lines int, color *math32.Color) *chartScaleY {
 	geom.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition))
 
 	// Initializes the panel with this graphic
-	gr := graphic.NewGraphic(geom, gls.LINES)
+	gr := graphic.NewGraphic(sy, geom, gls.LINES)
 	sy.mat.Init(color)
 	gr.AddMaterial(sy, &sy.mat, 0, 0)
 	sy.Panel.InitializeGraphic(chart.ContentWidth(), chart.ContentHeight(), gr)
@@ -634,7 +634,7 @@ func newGraph(chart *Chart, color *math32.Color, data []float32) *Graph {
 	geom.AddVBO(lg.vbo)
 
 	// Initializes the panel with this graphic
-	gr := graphic.NewGraphic(geom, gls.LINE_STRIP)
+	gr := graphic.NewGraphic(lg, geom, gls.LINE_STRIP)
 	lg.mat.Init(&lg.color)
 	gr.AddMaterial(lg, &lg.mat, 0, 0)
 	lg.Panel.InitializeGraphic(lg.chart.ContentWidth(), lg.chart.ContentHeight(), gr)

@@ -71,7 +71,7 @@ func newSlider(horiz bool, width, height float32) *Slider {
 	s.scaleFactor = 1.0
 
 	// Initialize main panel
-	s.Panel.Initialize(width, height)
+	s.Panel.Initialize(s, width, height)
 	s.Panel.Subscribe(OnMouseDown, s.onMouse)
 	s.Panel.Subscribe(OnMouseUp, s.onMouse)
 	s.Panel.Subscribe(OnCursor, s.onCursor)
@@ -84,7 +84,7 @@ func newSlider(horiz bool, width, height float32) *Slider {
 	s.Panel.Subscribe(OnEnable, func(evname string, ev interface{}) { s.update() })
 
 	// Initialize slider panel
-	s.slider.Initialize(0, 0)
+	s.slider.Initialize(&s.slider, 0, 0)
 	s.Panel.Add(&s.slider)
 
 	s.recalc()
