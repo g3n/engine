@@ -58,18 +58,18 @@ func newSplitter(horiz bool, width, height float32) *Splitter {
 	s := new(Splitter)
 	s.horiz = horiz
 	s.styles = &StyleDefault().Splitter
-	s.Panel.Initialize(width, height)
+	s.Panel.Initialize(s, width, height)
 
 	// Initialize left/top panel
-	s.P0.Initialize(0, 0)
+	s.P0.Initialize(&s.P0, 0, 0)
 	s.Panel.Add(&s.P0)
 
 	// Initialize right/bottom panel
-	s.P1.Initialize(0, 0)
+	s.P1.Initialize(&s.P1, 0, 0)
 	s.Panel.Add(&s.P1)
 
 	// Initialize spacer panel
-	s.spacer.Initialize(0, 0)
+	s.spacer.Initialize(&s.spacer, 0, 0)
 	s.Panel.Add(&s.spacer)
 
 	if horiz {

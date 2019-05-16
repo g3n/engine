@@ -48,7 +48,7 @@ func NewPlayer(filename string) (*Player, error) {
 
 	// Creates player
 	p := new(Player)
-	p.Node.Init()
+	p.Node.Init(p)
 	p.af = af
 
 	// Generate buffers names

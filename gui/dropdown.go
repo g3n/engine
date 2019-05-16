@@ -41,7 +41,7 @@ func NewDropDown(width float32, item *ImageLabel) *DropDown {
 	dd.styles = &StyleDefault().DropDown
 	dd.litem = item
 
-	dd.Panel.Initialize(width, 0)
+	dd.Panel.Initialize(dd, width, 0)
 	dd.Panel.Subscribe(OnKeyDown, dd.onKeyEvent)
 	dd.Panel.Subscribe(OnMouseDown, dd.onMouse)
 	dd.Panel.Subscribe(OnCursorEnter, dd.onCursor)

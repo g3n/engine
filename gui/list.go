@@ -466,7 +466,7 @@ func (li *List) update() {
 func newListItem(list *List, item IPanel) *ListItem {
 
 	litem := new(ListItem)
-	litem.Panel.Initialize(0, 0)
+	litem.Panel.Initialize(litem, 0, 0)
 	litem.item = item
 	litem.list = list
 	litem.Panel.Add(item)

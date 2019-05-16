@@ -60,13 +60,13 @@ func NewTabBar(width, height float32) *TabBar {
 
 	// Creates new TabBar
 	tb := new(TabBar)
-	tb.Initialize(width, height)
+	tb.Initialize(tb, width, height)
 	tb.styles = &StyleDefault().TabBar
 	tb.tabs = make([]*Tab, 0)
 	tb.selected = -1
 
 	// Creates separator panel (between the tab headers and content panel)
-	tb.separator.Initialize(0, 0)
+	tb.separator.Initialize(&tb.separator, 0, 0)
 	tb.Add(&tb.separator)
 
 	// Create list for contained tabs not visible
@@ -407,13 +407,13 @@ func newTab(text string, tb *TabBar, styles *TabStyles) *Tab {
 	tab.tb = tb
 	tab.styles = styles
 	// Setup the header panel
-	tab.header.Initialize(0, 0)
+	tab.header.Initialize(&tab.header, 0, 0)
 	tab.label = NewLabel(text)
 	tab.iconClose = NewIcon(styles.IconClose)
 	tab.header.Add(tab.label)
 	tab.header.Add(tab.iconClose)
 	// Creates the bottom panel
-	tab.bottom.Initialize(0, 0)
+	tab.bottom.Initialize(&tab.bottom, 0, 0)
 	tab.bottom.SetBounded(false)
 	tab.bottom.SetColor4(&tab.styles.Selected.BgColor)
 	tab.header.Add(&tab.bottom)

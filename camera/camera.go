@@ -33,7 +33,7 @@ type Camera struct {
 // Normally used by other camera types which embed this base camera.
 func (cam *Camera) Initialize() {
 
-	cam.Node.Init()
+	cam.Node.Init(cam)
 	cam.target.Set(0, 0, 0)
 	cam.up.Set(0, 1, 0)
 	cam.SetDirection(0, 0, -1)

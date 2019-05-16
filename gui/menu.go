@@ -150,7 +150,7 @@ func NewMenuBar() *Menu {
 func NewMenu() *Menu {
 
 	m := new(Menu)
-	m.Panel.Initialize(0, 0)
+	m.Panel.Initialize(m, 0, 0)
 	m.styles = &StyleDefault().Menu
 	m.items = make([]*MenuItem, 0)
 	m.Panel.Subscribe(OnCursorEnter, m.onCursor)
@@ -571,7 +571,7 @@ func (m *Menu) recalcBar(setSize bool) {
 func newMenuItem(text string, styles *MenuItemStyles) *MenuItem {
 
 	mi := new(MenuItem)
-	mi.Panel.Initialize(0, 0)
+	mi.Panel.Initialize(mi, 0, 0)
 	mi.styles = styles
 	if text != "" {
 		mi.label = NewLabel(text)

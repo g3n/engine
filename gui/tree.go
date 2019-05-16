@@ -204,7 +204,7 @@ func (t *Tree) onKey(evname string, ev interface{}) {
 func newTreeNode(text string, tree *Tree, parNode *TreeNode) *TreeNode {
 
 	n := new(TreeNode)
-	n.Panel.Initialize(0, 0)
+	n.Panel.Initialize(n, 0, 0)
 
 	// Initialize node label
 	n.label.initialize(text, StyleDefault().Font)
