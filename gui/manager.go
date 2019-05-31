@@ -74,11 +74,11 @@ func (gm *manager) SetKeyFocus(disp core.IDispatcher) {
 		return
 	}
 	if gm.keyFocus != nil {
-		gm.keyFocus.Dispatch(OnFocus, nil)
+		gm.keyFocus.Dispatch(OnFocusLost, nil)
 	}
 	gm.keyFocus = disp
 	if gm.keyFocus != nil {
-		gm.keyFocus.Dispatch(OnFocusLost, nil)
+		gm.keyFocus.Dispatch(OnFocus, nil)
 	}
 }
 
