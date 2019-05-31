@@ -150,8 +150,8 @@ func (r *Renderer) Render(scene core.INode, cam camera.ICamera) error {
 	}
 
 	// Render GUI elements first
-	for i := len(r.ipanels) - 1; i > -1; i-- {
-		err := r.renderPanel(r.ipanels[i])
+	for _, ipan := range r.ipanels {
+		err := r.renderPanel(ipan)
 		if err != nil {
 			return err
 		}
