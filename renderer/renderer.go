@@ -285,7 +285,7 @@ func (r *Renderer) renderGraphicMaterial(grmat *graphic.GraphicMaterial) error {
 	r.specs.Defines.Add(&geom.ShaderDefines)
 	r.specs.Defines.Add(&gr.ShaderDefines)
 
-	// Set the shader specs for this material and sets shader program
+	// Set the shader specs for this material and set shader program
 	r.specs.Name = mat.Shader()
 	r.specs.ShaderUnique = mat.ShaderUnique()
 	r.specs.UseLights = mat.UseLights()
