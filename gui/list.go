@@ -81,7 +81,6 @@ func (li *List) initialize(vert bool, width, height float32) {
 	li.ItemScroller.initialize(vert, width, height)
 	li.ItemScroller.SetStyles(li.styles.Scroller)
 	li.ItemScroller.adjustItem = true
-	li.ItemScroller.Subscribe(OnMouseDown, li.onMouseEvent)
 	li.ItemScroller.Subscribe(OnKeyDown, li.onKeyEvent)
 	li.ItemScroller.Subscribe(OnKeyRepeat, li.onKeyEvent)
 
@@ -117,19 +116,20 @@ func (li *List) SetStyles(s *ListStyles) {
 }
 
 // Add add a list item at the end of the list
-func (li *List) Add(item IPanel) {
+func (li *List) Add(item IPanel) *ListItem {
 
-	li.InsertAt(len(li.items), item)
+	return li.InsertAt(len(li.items), item)
 }
 
 // InsertAt inserts a list item at the specified position
 // Returs true if the item was successfully inserted
-func (li *List) InsertAt(pos int, item IPanel) {
+func (li *List) InsertAt(pos int, item IPanel) *ListItem {
 
 	litem := newListItem(li, item)
 	li.ItemScroller.InsertAt(pos, litem)
 	litem.Panel.Subscribe(OnMouseDown, litem.onMouse)
 	litem.Panel.Subscribe(OnCursorEnter, litem.onCursor)
+	return litem
 }
 
 // RemoveAt removes the list item from the specified position
@@ -366,20 +366,13 @@ func (li *List) highlighted() (pos int) {
 	return -1
 }
 
-// onMouseEvent receives subscribed mouse events for the list
-func (li *List) onMouseEvent(evname string, ev interface{}) {
-
-	li.root.SetKeyFocus(li)
-	li.root.StopPropagation(StopAll)
-}
-
 // onKeyEvent receives subscribed key events for the list
 func (li *List) onKeyEvent(evname string, ev interface{}) {
 
 	kev := ev.(*window.KeyEvent)
 	// Dropdown mode
 	if li.dropdown {
-		switch kev.Keycode {
+		switch kev.Key {
 		case li.keyNext:
 			li.selNext(true, true)
 		case li.keyPrev:
@@ -389,13 +382,12 @@ func (li *List) onKeyEvent(evname string, ev interface{}) {
 		default:
 			return
 		}
-		li.root.StopPropagation(Stop3D)
 		return
 	}
 
 	// Listbox mode single selection
 	if li.single {
-		switch kev.Keycode {
+		switch kev.Key {
 		case li.keyNext:
 			li.selNext(true, true)
 		case li.keyPrev:
@@ -403,12 +395,11 @@ func (li *List) onKeyEvent(evname string, ev interface{}) {
 		default:
 			return
 		}
-		li.root.StopPropagation(Stop3D)
 		return
 	}
 
 	// Listbox mode multiple selection
-	switch kev.Keycode {
+	switch kev.Key {
 	case li.keyNext:
 		li.selNext(false, true)
 	case li.keyPrev:
@@ -422,13 +413,13 @@ func (li *List) onKeyEvent(evname string, ev interface{}) {
 	default:
 		return
 	}
-	li.root.StopPropagation(Stop3D)
 }
 
 // setSelection sets the selected state of the specified item
 // updating the visual appearance of the list if necessary
 func (li *List) setSelection(litem *ListItem, state bool, force bool, dispatch bool) {
 
+	Manager().SetKeyFocus(li)
 	// If already at this state, nothing to do
 	if litem.selected == state && !force {
 		return
@@ -487,6 +478,9 @@ func (litem *ListItem) onMouse(evname string, ev interface{}) {
 		litem.list.setSelection(litem, true, true, true)
 	} else {
 		litem.list.setSelection(litem, !litem.selected, true, true)
+	}
+	if litem.list.dropdown {
+		litem.list.SetVisible(false)
 	}
 }
 

@@ -71,7 +71,7 @@ func NewTabBar(width, height float32) *TabBar {
 
 	// Create list for contained tabs not visible
 	tb.list = NewVList(0, 0)
-	tb.list.Subscribe(OnMouseOut, func(evname string, ev interface{}) {
+	tb.list.Subscribe(OnMouseDownOut, func(evname string, ev interface{}) {
 		tb.list.SetVisible(false)
 	})
 	tb.list.Subscribe(OnChange, tb.onListChange)
@@ -250,7 +250,6 @@ func (tb *TabBar) onCursor(evname string, ev interface{}) {
 	default:
 		return
 	}
-	tb.root.StopPropagation(StopAll)
 }
 
 // onListButtonMouse process subscribed MouseButton events over the list button
@@ -264,7 +263,6 @@ func (tb *TabBar) onListButton(evname string, ev interface{}) {
 	default:
 		return
 	}
-	tb.root.StopPropagation(StopAll)
 }
 
 // onListChange process OnChange event from the tab list
@@ -441,24 +439,14 @@ func (tab *Tab) onCursor(evname string, ev interface{}) {
 	default:
 		return
 	}
-	tab.header.root.StopPropagation(StopAll)
 }
 
 // onMouse process subscribed mouse events over the tab header
 func (tab *Tab) onMouseHeader(evname string, ev interface{}) {
 
-	switch evname {
-	case OnMouseDown:
-		mev := ev.(*window.MouseEvent)
-		if mev.Button == window.MouseButtonLeft {
-			tab.tb.SetSelected(tab.tb.TabPosition(tab))
-		} else {
-			tab.header.Dispatch(OnRightClick, ev)
-		}
-	default:
-		return
+	if evname == OnMouseDown && ev.(*window.MouseEvent).Button == window.MouseButtonLeft {
+		tab.tb.SetSelected(tab.tb.TabPosition(tab))
 	}
-	tab.header.root.StopPropagation(StopAll)
 }
 
 // onMouseIcon process subscribed mouse events over the tab close icon
@@ -470,7 +458,6 @@ func (tab *Tab) onMouseIcon(evname string, ev interface{}) {
 	default:
 		return
 	}
-	tab.header.root.StopPropagation(StopAll)
 }
 
 // SetText sets the text of the tab header

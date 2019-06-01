@@ -16,15 +16,14 @@ import (
 // The interlocking of the scrollbars (which happens when both scrollbars are visible) can be configured.
 // Whether each scrollbar overlaps the content can also be configured (useful for transparent UIs).
 type Scroller struct {
-	Panel                        // Embedded panel
-	mode          ScrollMode     // ScrollMode specifies which scroll directions are allowed
-	target        IPanel         // The IPanel that will be scrolled through
-	hscroll       *ScrollBar     // Horizontal scrollbar (may be nil)
-	vscroll       *ScrollBar     // Vertical scrollbar (may be nil)
-	style         *ScrollerStyle // The current style
-	corner        *Panel         // The optional corner panel (can be visible when scrollMode==Both, interlocking==None, corner=true)
-	cursorOver    bool           // Cursor is over the scroller
-	modKeyPressed bool           // Modifier key is pressed
+	Panel                     // Embedded panel
+	mode       ScrollMode     // ScrollMode specifies which scroll directions are allowed
+	target     IPanel         // The IPanel that will be scrolled through
+	hscroll    *ScrollBar     // Horizontal scrollbar (may be nil)
+	vscroll    *ScrollBar     // Vertical scrollbar (may be nil)
+	style      *ScrollerStyle // The current style
+	corner     *Panel         // The optional corner panel (can be visible when scrollMode==Both, interlocking==None, corner=true)
+	cursorOver bool           // Cursor is over the scroller
 }
 
 // ScrollMode specifies which scroll directions are allowed.
@@ -83,8 +82,8 @@ type ScrollerScrollbarStyle struct {
 // TODO these configuration variables could be made part of a global engine configuration object in the future
 // They should not be added to style since they are not style changes and not to the struct since they are global
 
-// ScrollModifierKey is the Key that changes the scrolling direction from vertical to horizontal
-const ScrollModifierKey = window.KeyLeftShift
+// ScrollModifierKey is the ModifierKey that changes the scrolling direction from vertical to horizontal when pressed
+const ScrollModifierKey = window.ModShift
 
 // NewScroller creates and returns a pointer to a new Scroller with the specified
 // target IPanel and ScrollMode.
@@ -104,12 +103,8 @@ func (s *Scroller) initialize(width, height float32, mode ScrollMode, target IPa
 	s.Panel.Add(s.target)
 	s.mode = mode
 
-	s.Subscribe(OnCursorEnter, s.onCursor)
-	s.Subscribe(OnCursorLeave, s.onCursor)
-	s.Subscribe(OnScroll, s.onScroll)
-	s.Subscribe(OnKeyDown, s.onKey)
-	s.Subscribe(OnKeyUp, s.onKey)
 	s.Subscribe(OnResize, s.onResize)
+	s.Subscribe(OnScroll, s.onScroll)
 
 	s.Update()
 }
@@ -278,22 +273,6 @@ func (s *Scroller) ScrollTo(x, y float32) {
 	// TODO
 }
 
-// onCursor receives subscribed cursor events over the panel
-func (s *Scroller) onCursor(evname string, ev interface{}) {
-
-	switch evname {
-	case OnCursorEnter:
-		s.root.SetScrollFocus(s)
-		s.root.SetKeyFocus(s)
-		s.cursorOver = true
-	case OnCursorLeave:
-		s.root.SetScrollFocus(nil)
-		s.root.SetKeyFocus(nil)
-		s.cursorOver = false
-	}
-	s.root.StopPropagation(Stop3D)
-}
-
 // onScroll receives mouse scroll events when this scroller has the scroll focus (set by OnMouseEnter)
 func (s *Scroller) onScroll(evname string, ev interface{}) {
 
@@ -307,7 +286,7 @@ func (s *Scroller) onScroll(evname string, ev interface{}) {
 	offsetY := sev.Yoffset * mult
 
 	// If modifier key is pressed (left shift by default) - then scroll in the horizontal direction
-	if s.modKeyPressed {
+	if sev.Mods&ScrollModifierKey > 0 {
 		if math32.Abs(offsetY) > math32.Abs(offsetX) {
 			offsetX = offsetY
 		}
@@ -331,24 +310,6 @@ func (s *Scroller) onScroll(evname string, ev interface{}) {
 	}
 
 	s.recalc()
-	s.root.StopPropagation(Stop3D)
-}
-
-// onKey receives key events
-func (s *Scroller) onKey(evname string, ev interface{}) {
-
-	key := ev.(*window.KeyEvent)
-	log.Error("Key %v", key)
-	if key.Keycode == ScrollModifierKey {
-		if evname == OnKeyDown {
-			s.modKeyPressed = true
-			log.Error("true")
-		} else if evname == OnKeyUp {
-			log.Error("false")
-			s.modKeyPressed = false
-		}
-	}
-	s.root.StopPropagation(Stop3D)
 }
 
 // onResize receives resize events
@@ -385,8 +346,8 @@ func (s *Scroller) setHorizontalScrollbarVisible() {
 func (s *Scroller) updateScrollbarsVisibility() {
 
 	// Obtain the size of the target panel
-	targetWidth := s.target.TotalWidth()
-	targetHeight := s.target.TotalHeight()
+	targetWidth := s.target.Width()
+	targetHeight := s.target.Height()
 
 	// If vertical scrolling is enabled and the vertical scrollbar should be visible
 	if (s.mode&ScrollVertical > 0) && (targetHeight > s.content.Height) {
@@ -458,8 +419,8 @@ func (s *Scroller) recalc() {
 	// The multipliers of the scrollbars' [0,1] values.
 	// After applied, they will give the correct target panel position.
 	// They can be thought of as the range of motion of the target panel in each axis
-	multHeight := s.target.TotalHeight() - s.content.Height
-	multWidth := s.target.TotalWidth() - s.content.Width
+	multHeight := s.target.Height() - s.content.Height
+	multWidth := s.target.Width() - s.content.Width
 
 	var targetX, targetY float32
 	var offsetX, offsetY float32
@@ -540,7 +501,7 @@ func (s *Scroller) recalcV() {
 
 	// Adjust the scrollbar button size to the correct proportion proportion according to the style
 	if s.style.VerticalScrollbar.AutoSizeButton {
-		s.vscroll.SetButtonSize(vscrollHeight * viewHeight / s.target.TotalHeight())
+		s.vscroll.SetButtonSize(vscrollHeight * viewHeight / s.target.Height())
 	}
 
 	// Update the position and height of the vertical scrollbar
@@ -579,7 +540,7 @@ func (s *Scroller) recalcH() {
 
 	// Adjust the scrollbar button size to the correct proportion proportion according to the style
 	if s.style.HorizontalScrollbar.AutoSizeButton {
-		s.hscroll.SetButtonSize(hscrollWidth * viewWidth / s.target.TotalWidth())
+		s.hscroll.SetButtonSize(hscrollWidth * viewWidth / s.target.Width())
 	}
 
 	// Update the position and width of the horizontal scrollbar

@@ -43,6 +43,7 @@ type TreeNode struct {
 	parNode  *TreeNode // Parent node
 	items    []IPanel  // List of node items
 	expanded bool      // Node expanded flag
+	litem    *ListItem // Reference to ListItem
 }
 
 // NewTree creates and returns a pointer to a new tree widget.
@@ -61,7 +62,6 @@ func (t *Tree) Initialize(width, height float32) {
 	t.SetStyles(&StyleDefault().Tree)
 	t.List.Subscribe(OnKeyDown, t.onKey)
 	t.List.Subscribe(OnKeyUp, t.onKey)
-	t.List.Subscribe(OnCursor, t.onCursor)
 }
 
 // SetStyles sets the tree styles overriding the default style.
@@ -92,7 +92,7 @@ func (t *Tree) InsertNodeAt(pos int, text string) *TreeNode {
 	n := newTreeNode(text, t, nil)
 	n.update()
 	n.recalc()
-	t.List.InsertAt(pos, n)
+	n.litem = t.List.InsertAt(pos, n)
 	return n
 }
 
@@ -103,7 +103,7 @@ func (t *Tree) AddNode(text string) *TreeNode {
 	n := newTreeNode(text, t, nil)
 	n.update()
 	n.recalc()
-	t.List.Add(n)
+	n.litem = t.List.Add(n)
 	return n
 }
 
@@ -162,13 +162,6 @@ func (t *Tree) FindChild(child IPanel) (*TreeNode, int) {
 	return nil, -1
 }
 
-// onCursor receives subscribed cursor events over the tree
-func (t *Tree) onCursor(evname string, ev interface{}) {
-
-	// Do not propagate any cursor events
-	t.root.StopPropagation(StopAll)
-}
-
 // onKey receives key down events for the embedded list
 func (t *Tree) onKey(evname string, ev interface{}) {
 
@@ -180,13 +173,12 @@ func (t *Tree) onKey(evname string, ev interface{}) {
 	// If item is not a tree node, dispatch event to item
 	node, ok := item.(*TreeNode)
 	if !ok {
-		item.SetRoot(t.root)
 		item.GetPanel().Dispatch(evname, ev)
 		return
 	}
 	// If not enter key pressed, ignore
 	kev := ev.(*window.KeyEvent)
-	if evname != OnKeyDown || kev.Keycode != window.KeyEnter {
+	if evname != OnKeyDown || kev.Key != window.KeyEnter {
 		return
 	}
 	// Toggles the expansion state of the node
@@ -343,9 +335,9 @@ func (n *TreeNode) onMouse(evname string, ev interface{}) {
 		n.update()
 		n.recalc()
 		n.updateItems()
-	default:
-		return
 	}
+
+	n.litem.onMouse(evname, ev)
 }
 
 // level returns the level of this node from the start of the tree
@@ -439,7 +431,7 @@ func (n *TreeNode) insertItems(pos int) int {
 		node, ok := ipanel.(*TreeNode)
 		if ok {
 			node.update()
-			n.tree.List.InsertAt(pos, ipanel)
+			node.litem = n.tree.List.InsertAt(pos, ipanel)
 			n.tree.List.SetItemPadLeftAt(pos, padLeft)
 			pos++
 			pos = node.insertItems(pos)
