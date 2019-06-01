@@ -307,19 +307,15 @@ func (s *ItemScroller) onCursor(evname string, ev interface{}) {
 
 	switch evname {
 	case OnCursorEnter:
-		s.root.SetScrollFocus(s)
 		s.cursorOver = true
 		s.update()
 	case OnCursorLeave:
-		s.root.SetScrollFocus(nil)
 		s.cursorOver = false
 		s.update()
 	}
-	s.root.StopPropagation(Stop3D)
 }
 
-// onScroll receives subscriber mouse scroll events when this scroller has
-// the scroll focus (set by OnMouseEnter)
+// onScroll receives mouse scroll events
 func (s *ItemScroller) onScroll(evname string, ev interface{}) {
 
 	sev := ev.(*window.ScrollEvent)
@@ -328,7 +324,6 @@ func (s *ItemScroller) onScroll(evname string, ev interface{}) {
 	} else if sev.Yoffset < 0 {
 		s.ScrollDown()
 	}
-	s.root.StopPropagation(Stop3D)
 }
 
 // onResize receives resize events
@@ -351,7 +346,7 @@ func (s *ItemScroller) autoSize() {
 		if panel.Width() > width {
 			width = panel.Width()
 		}
-		height += panel.TotalHeight()
+		height += panel.Height()
 	}
 
 	// If auto maximum width enabled
@@ -388,7 +383,7 @@ func (s *ItemScroller) vRecalc() {
 	} else {
 		var posY float32
 		for _, item := range s.items[s.first:] {
-			posY += item.TotalHeight()
+			posY += item.Height()
 			if posY > s.height {
 				scroll = true
 				break
@@ -403,7 +398,7 @@ func (s *ItemScroller) vRecalc() {
 		for _, item := range s.items {
 			// TODO OPTIMIZATION
 			// Break when the view/content proportion becomes smaller than the minimum button size
-			totalHeight += item.TotalHeight()
+			totalHeight += item.Height()
 		}
 		s.vscroll.SetButtonSize(s.height * s.height / totalHeight)
 	}
@@ -433,7 +428,7 @@ func (s *ItemScroller) vRecalc() {
 		if s.adjustItem {
 			item.SetWidth(width)
 		}
-		posY += ipan.TotalHeight()
+		posY += ipan.Height()
 	}
 
 	// Set scroll bar value if recalc was not due by scroll event

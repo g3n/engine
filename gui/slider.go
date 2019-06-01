@@ -164,6 +164,9 @@ func (s *Slider) setPos(pos float32) {
 func (s *Slider) onMouse(evname string, ev interface{}) {
 
 	mev := ev.(*window.MouseEvent)
+	if mev.Button != window.MouseButtonLeft {
+		return
+	}
 	switch evname {
 	case OnMouseDown:
 		s.pressed = true
@@ -172,36 +175,30 @@ func (s *Slider) onMouse(evname string, ev interface{}) {
 		} else {
 			s.posLast = mev.Ypos
 		}
-		s.root.SetMouseFocus(s)
-		s.root.SetKeyFocus(s)
+		Manager().SetKeyFocus(s)
+		Manager().SetCursorFocus(s)
 	case OnMouseUp:
 		s.pressed = false
-		if !s.cursorOver {
-			s.root.SetCursorNormal()
-		}
-		s.root.SetMouseFocus(nil)
+		Manager().SetCursorFocus(nil)
 	default:
 		return
 	}
-	s.root.StopPropagation(Stop3D)
 }
 
 // onCursor process subscribed cursor events
 func (s *Slider) onCursor(evname string, ev interface{}) {
 
 	if evname == OnCursorEnter {
-		s.root.SetScrollFocus(s)
-		if s.horiz {
-			s.root.SetCursorHResize()
-		} else {
-			s.root.SetCursorVResize()
-		}
 		s.cursorOver = true
+		if s.horiz {
+			window.Get().SetCursor(window.HResizeCursor)
+		} else {
+			window.Get().SetCursor(window.VResizeCursor)
+		}
 		s.update()
 	} else if evname == OnCursorLeave {
-		s.root.SetScrollFocus(nil)
-		s.root.SetCursorNormal()
 		s.cursorOver = false
+		window.Get().SetCursor(window.ArrowCursor)
 		s.update()
 	} else if evname == OnCursor {
 		if !s.pressed {
@@ -222,7 +219,6 @@ func (s *Slider) onCursor(evname string, ev interface{}) {
 		}
 		s.setPos(pos)
 	}
-	s.root.StopPropagation(Stop3D)
 }
 
 // onScroll process subscribed scroll events
@@ -232,7 +228,6 @@ func (s *Slider) onScroll(evname string, ev interface{}) {
 	v := s.pos
 	v += sev.Yoffset * 0.01
 	s.setPos(v)
-	s.root.StopPropagation(Stop3D)
 }
 
 // onKey process subscribed key events
@@ -242,7 +237,7 @@ func (s *Slider) onKey(evname string, ev interface{}) {
 	delta := float32(0.01)
 	// Horizontal slider
 	if s.horiz {
-		switch kev.Keycode {
+		switch kev.Key {
 		case window.KeyLeft:
 			s.setPos(s.pos - delta)
 		case window.KeyRight:
@@ -252,7 +247,7 @@ func (s *Slider) onKey(evname string, ev interface{}) {
 		}
 		// Vertical slider
 	} else {
-		switch kev.Keycode {
+		switch kev.Key {
 		case window.KeyDown:
 			s.setPos(s.pos - delta)
 		case window.KeyUp:
@@ -261,7 +256,6 @@ func (s *Slider) onKey(evname string, ev interface{}) {
 			return
 		}
 	}
-	s.root.StopPropagation(Stop3D)
 }
 
 // onResize process subscribed resize events
@@ -277,7 +271,7 @@ func (s *Slider) update() {
 		s.applyStyle(&s.styles.Disabled)
 		return
 	}
-	if s.cursorOver {
+	if s.cursorOver || s.pressed {
 		s.applyStyle(&s.styles.Over)
 		return
 	}

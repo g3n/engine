@@ -163,7 +163,6 @@ func (sb *ScrollBar) onMouse(evname string, ev interface{}) {
 		newX := math32.Clamp(posx-(sb.button.width/2), 0, sb.content.Width-sb.button.width)
 		sb.button.SetPositionX(newX)
 	}
-	sb.root.StopPropagation(StopAll)
 	sb.Dispatch(OnChange, nil)
 }
 
@@ -213,14 +212,13 @@ func (button *scrollBarButton) onMouse(evname string, ev interface{}) {
 		button.pressed = true
 		button.mouseX = e.Xpos
 		button.mouseY = e.Ypos
-		button.sb.root.SetMouseFocus(button)
+		Manager().SetCursorFocus(button)
 	case OnMouseUp:
 		button.pressed = false
-		button.sb.root.SetMouseFocus(nil)
+		Manager().SetCursorFocus(nil)
 	default:
 		return
 	}
-	button.sb.root.StopPropagation(StopAll)
 }
 
 // onCursor receives subscribed cursor events for the scroll bar button
@@ -242,5 +240,4 @@ func (button *scrollBarButton) onCursor(evname string, ev interface{}) {
 	button.mouseX = e.Xpos
 	button.mouseY = e.Ypos
 	button.sb.Dispatch(OnChange, nil)
-	button.sb.root.StopPropagation(StopAll)
 }

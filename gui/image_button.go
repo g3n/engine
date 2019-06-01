@@ -177,7 +177,6 @@ func (b *ImageButton) onCursor(evname string, ev interface{}) {
 		b.mouseOver = false
 		b.update()
 	}
-	b.root.StopPropagation(StopAll)
 }
 
 // onMouseEvent process subscribed mouse events
@@ -185,7 +184,7 @@ func (b *ImageButton) onMouse(evname string, ev interface{}) {
 
 	switch evname {
 	case OnMouseDown:
-		b.root.SetKeyFocus(b)
+		Manager().SetKeyFocus(b)
 		b.pressed = true
 		b.update()
 		b.Dispatch(OnClick, nil)
@@ -195,24 +194,21 @@ func (b *ImageButton) onMouse(evname string, ev interface{}) {
 	default:
 		return
 	}
-	b.root.StopPropagation(StopAll)
 }
 
 // onKey processes subscribed key events
 func (b *ImageButton) onKey(evname string, ev interface{}) {
 
 	kev := ev.(*window.KeyEvent)
-	if evname == OnKeyDown && kev.Keycode == window.KeyEnter {
+	if evname == OnKeyDown && kev.Key == window.KeyEnter {
 		b.pressed = true
 		b.update()
 		b.Dispatch(OnClick, nil)
-		b.root.StopPropagation(Stop3D)
 		return
 	}
-	if evname == OnKeyUp && kev.Keycode == window.KeyEnter {
+	if evname == OnKeyUp && kev.Key == window.KeyEnter {
 		b.pressed = false
 		b.update()
-		b.root.StopPropagation(Stop3D)
 		return
 	}
 	return

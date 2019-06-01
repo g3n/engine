@@ -6,7 +6,6 @@ package gui
 
 import (
 	"github.com/g3n/engine/gui/assets/icon"
-	"github.com/g3n/engine/window"
 )
 
 // DropDown represents a dropdown GUI element.
@@ -20,7 +19,6 @@ type DropDown struct {
 	overDropdown bool
 	overList     bool
 	focus        bool
-	clickOut     bool
 }
 
 // DropDownStyle contains the styling of a DropDown.
@@ -42,7 +40,6 @@ func NewDropDown(width float32, item *ImageLabel) *DropDown {
 	dd.litem = item
 
 	dd.Panel.Initialize(dd, width, 0)
-	dd.Panel.Subscribe(OnKeyDown, dd.onKeyEvent)
 	dd.Panel.Subscribe(OnMouseDown, dd.onMouse)
 	dd.Panel.Subscribe(OnCursorEnter, dd.onCursor)
 	dd.Panel.Subscribe(OnCursorLeave, dd.onCursor)
@@ -63,10 +60,22 @@ func NewDropDown(width float32, item *ImageLabel) *DropDown {
 	dd.list.dropdown = true
 	dd.list.SetVisible(false)
 
-	dd.list.Subscribe(OnMouseDown, dd.onListMouse)
-	dd.list.Subscribe(OnMouseOut, dd.onListMouse)
+	dd.Panel.Subscribe(OnKeyDown, dd.list.onKeyEvent)
+	dd.Subscribe(OnMouseDownOut, func(s string, i interface{}) {
+		// Hide list when clicked out
+		if dd.list.Visible() {
+			dd.list.SetVisible(false)
+		}
+	})
+
+	dd.list.Subscribe(OnCursorEnter, func(evname string, ev interface{}) {
+		dd.Dispatch(OnCursorLeave, ev)
+	})
+	dd.list.Subscribe(OnCursorLeave, func(evname string, ev interface{}) {
+		dd.Dispatch(OnCursorEnter, ev)
+	})
+
 	dd.list.Subscribe(OnChange, dd.onListChangeEvent)
-	dd.list.Subscribe(OnCursor, func(evname string, ev interface{}) { dd.root.StopPropagation(StopAll) })
 	dd.Panel.Add(dd.list)
 
 	dd.update()
@@ -115,11 +124,13 @@ func (dd *DropDown) Selected() *ImageLabel {
 
 // SelectedPos returns the currently selected position or -1 if no item was selected
 func (dd *DropDown) SelectedPos() int {
+
 	return dd.list.selected()
 }
 
 // SetSelected sets the selected item
 func (dd *DropDown) SetSelected(item *ImageLabel) {
+
 	dd.list.SetSelected(dd.selItem, false)
 	dd.list.SetSelected(item, true)
 	dd.copySelected()
@@ -128,9 +139,10 @@ func (dd *DropDown) SetSelected(item *ImageLabel) {
 
 // SelectPos selects the item at the specified position
 func (dd *DropDown) SelectPos(pos int) {
-    dd.list.SetSelected(dd.selItem, false)
+
+	dd.list.SetSelected(dd.selItem, false)
 	dd.list.SelectPos(pos, true)
-    dd.Dispatch(OnChange, nil)
+	dd.Dispatch(OnChange, nil)
 }
 
 // SetStyles sets the drop down styles overriding the default style
@@ -140,31 +152,12 @@ func (dd *DropDown) SetStyles(dds *DropDownStyles) {
 	dd.update()
 }
 
-// onKeyEvent is called when key event is received when this dropdown has the key focus.
-func (dd *DropDown) onKeyEvent(evname string, ev interface{}) {
-
-	kev := ev.(*window.KeyEvent)
-	switch kev.Keycode {
-	case window.KeyF1:
-		if dd.list.Visible() {
-			dd.list.SetVisible(false)
-		}
-	default:
-		return
-	}
-}
-
 // onMouse receives subscribed mouse events over the dropdown
 func (dd *DropDown) onMouse(evname string, ev interface{}) {
 
+	Manager().SetKeyFocus(dd.list)
 	if evname == OnMouseDown {
-		// If clickOut list already closed
-		if dd.clickOut {
-			dd.clickOut = false
-			return
-		}
-		dd.list.SetVisible(true)
-		dd.root.SetKeyFocus(dd.list)
+		dd.list.SetVisible(!dd.list.Visible())
 		return
 	}
 }
@@ -179,70 +172,22 @@ func (dd *DropDown) onCursor(evname string, ev interface{}) {
 		dd.overDropdown = false
 	}
 	dd.update()
-	dd.root.StopPropagation(StopAll)
 }
-
-// onListMouseEvent receives mouse events over the list
-func (dd *DropDown) onListMouse(evname string, ev interface{}) {
-
-	mev := ev.(*window.MouseEvent)
-	// List was clicked
-	if evname == OnMouseDown {
-		// If click occurred inside the list scrollbar ignore it
-		if dd.list.vscroll != nil {
-			if dd.list.vscroll.InsideBorders(mev.Xpos, mev.Ypos) {
-				return
-			}
-		}
-		// Otherwise, closes the list
-		dd.list.SetVisible(false)
-		//dd.copySelected()
-		dd.overList = false
-		dd.update()
-		return
-	}
-	// Hide list when clicked out
-	if evname == OnMouseOut {
-		if dd.list.Visible() {
-			dd.list.SetVisible(false)
-		}
-		// If list clickout occurred inside the dropdown, set 'clickOut' to
-		// indicate that the list was already closed
-		if dd.Panel.InsideBorders(mev.Xpos, mev.Ypos) {
-			dd.clickOut = true
-		}
-	}
-}
-
-// onListCursor receives subscribed events over the list
-//func (dd *DropDown) onListCursor(evname string, ev interface{}) {
-//
-//	if evname == OnCursorEnter {
-//		dd.overList = true
-//		dd.update()
-//		return
-//	}
-//	if evname == OnCursorLeave {
-//		dd.overList = false
-//		dd.update()
-//		return
-//	}
-//	dd.root.StopPropagation(StopAll)
-//}
 
 // copySelected copy to the dropdown panel the selected item
 // from the list.
 func (dd *DropDown) copySelected() {
-    selected := dd.list.Selected()
-    if len(selected) > 0 {
-        dd.selItem = selected[0].(*ImageLabel)
-        dd.litem.CopyFields(dd.selItem)
-        dd.litem.SetWidth(dd.selItem.Width())
-        dd.recalc()
-        dd.Dispatch(OnChange, nil)
-    } else {
-        return
-    }
+
+	selected := dd.list.Selected()
+	if len(selected) > 0 {
+		dd.selItem = selected[0].(*ImageLabel)
+		dd.litem.CopyFields(dd.selItem)
+		dd.litem.SetWidth(dd.selItem.Width())
+		dd.recalc()
+		dd.Dispatch(OnChange, nil)
+	} else {
+		return
+	}
 }
 
 // onListChangeEvent is called when an item in the list is selected

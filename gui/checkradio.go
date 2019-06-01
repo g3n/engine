@@ -142,7 +142,7 @@ func (cb *CheckRadio) toggleState() {
 	// Subscribes once to the root panel for OnRadioGroup events
 	// The root panel is used to dispatch events to all checkradios
 	if !cb.subroot {
-		cb.root.Subscribe(OnRadioGroup, func(name string, ev interface{}) {
+		Manager().Subscribe(OnRadioGroup, func(name string, ev interface{}) {
 			cb.onRadioGroup(ev.(*CheckRadio))
 		})
 		cb.subroot = true
@@ -163,24 +163,22 @@ func (cb *CheckRadio) toggleState() {
 	cb.update()
 	cb.Dispatch(OnChange, nil)
 	if !cb.check && len(cb.group) > 0 {
-		cb.root.Dispatch(OnRadioGroup, cb)
+		Manager().Dispatch(OnRadioGroup, cb)
 	}
 }
 
 // onMouse process OnMouseDown events
 func (cb *CheckRadio) onMouse(evname string, ev interface{}) {
 
-	cb.root.SetKeyFocus(cb)
-	cb.root.StopPropagation(Stop3D)
-	cb.toggleState()
 	// Dispatch OnClick for left mouse button down
 	if evname == OnMouseDown {
 		mev := ev.(*window.MouseEvent)
 		if mev.Button == window.MouseButtonLeft {
+			Manager().SetKeyFocus(cb)
+			cb.toggleState()
 			cb.Dispatch(OnClick, nil)
 		}
 	}
-	cb.root.StopPropagation(StopAll)
 }
 
 // onCursor process OnCursor* events
@@ -192,18 +190,16 @@ func (cb *CheckRadio) onCursor(evname string, ev interface{}) {
 		cb.cursorOver = false
 	}
 	cb.update()
-	cb.root.StopPropagation(StopAll)
 }
 
 // onKey receives subscribed key events
 func (cb *CheckRadio) onKey(evname string, ev interface{}) {
 
 	kev := ev.(*window.KeyEvent)
-	if evname == OnKeyDown && kev.Keycode == window.KeyEnter {
+	if evname == OnKeyDown && kev.Key == window.KeyEnter {
 		cb.toggleState()
 		cb.update()
 		cb.Dispatch(OnClick, nil)
-		cb.root.StopPropagation(Stop3D)
 		return
 	}
 	return

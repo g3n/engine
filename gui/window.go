@@ -326,7 +326,7 @@ func newWindowTitle(win *Window, text string) *WindowTitle {
 	wt.closeButton = NewButton("")
 	wt.closeButton.SetIcon(icon.Close)
 	wt.closeButton.Subscribe(OnCursorEnter, func(s string, i interface{}) {
-		wt.win.root.SetCursorNormal()
+		window.Get().SetCursor(window.ArrowCursor)
 	})
 	wt.closeButton.Subscribe(OnClick, func(s string, i interface{}) {
 		wt.win.Parent().GetNode().Remove(wt.win)
@@ -367,25 +367,23 @@ func (wt *WindowTitle) onMouse(evname string, ev interface{}) {
 		wt.pressed = true
 		wt.mouseX = mev.Xpos
 		wt.mouseY = mev.Ypos
-		wt.win.root.SetMouseFocus(wt)
+		Manager().SetCursorFocus(wt)
 	case OnMouseUp:
 		wt.pressed = false
-		wt.win.root.SetMouseFocus(nil)
+		Manager().SetCursorFocus(nil)
 	default:
 		return
 	}
-	wt.win.root.StopPropagation(Stop3D)
 }
 
 // onCursor process subscribed cursor events over the window title.
 func (wt *WindowTitle) onCursor(evname string, ev interface{}) {
 
 	if evname == OnCursorLeave {
-		wt.win.root.SetCursorNormal()
+		window.Get().SetCursor(window.ArrowCursor)
 		wt.pressed = false
 	} else if evname == OnCursor {
 		if !wt.pressed {
-			wt.win.root.StopPropagation(Stop3D)
 			return
 		}
 		cev := ev.(*window.CursorEvent)
@@ -397,7 +395,6 @@ func (wt *WindowTitle) onCursor(evname string, ev interface{}) {
 		posY := wt.win.Position().Y - dy
 		wt.win.SetPosition(posX, posY)
 	}
-	wt.win.root.StopPropagation(Stop3D)
 }
 
 // applyStyle applies the specified WindowTitleStyle.

@@ -59,6 +59,7 @@ func NewButton(text string) *Button {
 	b.Subscribe(OnKeyUp, b.onKey)
 	b.Subscribe(OnMouseUp, b.onMouse)
 	b.Subscribe(OnMouseDown, b.onMouse)
+	b.Subscribe(OnMouseUpOut, b.onMouse)
 	b.Subscribe(OnCursor, b.onCursor)
 	b.Subscribe(OnCursorEnter, b.onCursor)
 	b.Subscribe(OnCursorLeave, b.onCursor)
@@ -127,11 +128,9 @@ func (b *Button) onCursor(evname string, ev interface{}) {
 		b.mouseOver = true
 		b.update()
 	case OnCursorLeave:
-		b.pressed = false
 		b.mouseOver = false
 		b.update()
 	}
-	b.root.StopPropagation(StopAll)
 }
 
 // onMouseEvent process subscribed mouse events
@@ -139,37 +138,38 @@ func (b *Button) onMouse(evname string, ev interface{}) {
 
 	switch evname {
 	case OnMouseDown:
-		b.root.SetKeyFocus(b)
+		Manager().SetKeyFocus(b)
 		b.pressed = true
 		b.update()
-		b.Dispatch(OnClick, nil)
+	case OnMouseUpOut:
+		fallthrough
 	case OnMouseUp:
+		if b.pressed && b.mouseOver {
+			b.Dispatch(OnClick, nil)
+		}
 		b.pressed = false
 		b.update()
 	default:
 		return
 	}
-	b.root.StopPropagation(StopAll)
 }
 
 // onKey processes subscribed key events
 func (b *Button) onKey(evname string, ev interface{}) {
 
 	kev := ev.(*window.KeyEvent)
-	if evname == OnKeyDown && kev.Keycode == window.KeyEnter {
+	if kev.Key != window.KeyEnter {
+		return
+	}
+	switch evname {
+	case OnKeyDown:
 		b.pressed = true
 		b.update()
 		b.Dispatch(OnClick, nil)
-		b.root.StopPropagation(Stop3D)
-		return
-	}
-	if evname == OnKeyUp && kev.Keycode == window.KeyEnter {
+	case OnKeyUp:
 		b.pressed = false
 		b.update()
-		b.root.StopPropagation(Stop3D)
-		return
 	}
-	return
 }
 
 // update updates the button visual state
@@ -179,7 +179,7 @@ func (b *Button) update() {
 		b.applyStyle(&b.styles.Disabled)
 		return
 	}
-	if b.pressed {
+	if b.pressed && b.mouseOver {
 		b.applyStyle(&b.styles.Pressed)
 		return
 	}

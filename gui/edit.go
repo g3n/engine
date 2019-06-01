@@ -72,6 +72,7 @@ func NewEdit(width int, placeHolder string) *Edit {
 	ed.Label.Subscribe(OnCursorEnter, ed.onCursor)
 	ed.Label.Subscribe(OnCursorLeave, ed.onCursor)
 	ed.Label.Subscribe(OnEnable, func(evname string, ev interface{}) { ed.update() })
+	ed.Subscribe(OnFocusLost, ed.OnFocusLost)
 
 	ed.update()
 	return ed
@@ -109,11 +110,11 @@ func (ed *Edit) SetStyles(es *EditStyles) {
 
 // LostKeyFocus satisfies the IPanel interface and is called by gui root
 // container when the panel loses the key focus
-func (ed *Edit) LostKeyFocus() {
+func (ed *Edit) OnFocusLost(evname string, ev interface{}) {
 
 	ed.focus = false
 	ed.update()
-	ed.root.ClearTimeout(ed.blinkID)
+	Manager().ClearTimeout(ed.blinkID)
 }
 
 // CursorPos sets the position of the cursor at the
@@ -221,7 +222,7 @@ func (ed *Edit) redraw(caret bool) {
 func (ed *Edit) onKey(evname string, ev interface{}) {
 
 	kev := ev.(*window.KeyEvent)
-	switch kev.Keycode {
+	switch kev.Key {
 	case window.KeyLeft:
 		ed.CursorLeft()
 	case window.KeyRight:
@@ -237,7 +238,6 @@ func (ed *Edit) onKey(evname string, ev interface{}) {
 	default:
 		return
 	}
-	ed.root.StopPropagation(Stop3D)
 }
 
 // onChar receives subscribed char events
@@ -256,7 +256,7 @@ func (ed *Edit) onMouse(evname string, ev interface{}) {
 	}
 
 	// Set key focus to this panel
-	ed.root.SetKeyFocus(ed)
+	Manager().SetKeyFocus(ed)
 
 	// Find clicked column
 	var nchars int
@@ -269,27 +269,24 @@ func (ed *Edit) onMouse(evname string, ev interface{}) {
 	}
 	if !ed.focus {
 		ed.focus = true
-		ed.blinkID = ed.root.SetInterval(750*time.Millisecond, nil, ed.blink)
+		ed.blinkID = Manager().SetInterval(750*time.Millisecond, nil, ed.blink)
 	}
 	ed.CursorPos(nchars - 1)
-	ed.root.StopPropagation(Stop3D)
 }
 
 // onCursor receives subscribed cursor events
 func (ed *Edit) onCursor(evname string, ev interface{}) {
 
 	if evname == OnCursorEnter {
-		ed.root.SetCursorText()
+		window.Get().SetCursor(window.IBeamCursor)
 		ed.cursorOver = true
 		ed.update()
-		ed.root.StopPropagation(Stop3D)
 		return
 	}
 	if evname == OnCursorLeave {
-		ed.root.SetCursorNormal()
+		window.Get().SetCursor(window.ArrowCursor)
 		ed.cursorOver = false
 		ed.update()
-		ed.root.StopPropagation(Stop3D)
 		return
 	}
 }

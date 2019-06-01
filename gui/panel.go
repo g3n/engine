@@ -5,8 +5,6 @@
 package gui
 
 import (
-	"math"
-
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/geometry"
 	"github.com/g3n/engine/gls"
@@ -42,12 +40,14 @@ import (
 type IPanel interface {
 	graphic.IGraphic
 	GetPanel() *Panel
-	SetRoot(*Root)
-	Root() *Root
-	LostKeyFocus()
-	TotalHeight() float32
-	TotalWidth() float32
+	Width() float32
+	Height() float32
+	Enabled() bool
+	SetEnabled(bool)
 	SetLayout(ILayout)
+	InsideBorders(x, y float32) bool
+
+	// TODO these methods here should probably be defined in INode
 	SetPosition(x, y float32)
 	SetPositionX(x float32)
 	SetPositionY(y float32)
@@ -59,9 +59,6 @@ type IPanel interface {
 // It is the building block of most GUI widgets.
 type Panel struct {
 	*graphic.Graphic                    // Embedded graphic
-	root             *Root              // pointer to root container
-	width            float32            // external width in pixels
-	height           float32            // external height in pixels
 	mat              *material.Material // panel material
 
 	bounded   bool // Whether panel is bounded by its parent
@@ -708,7 +705,7 @@ func (p *Panel) setContentSize(width, height float32, dispatch bool) {
 // All unbounded panels and its children are closer than any of the bounded panels.
 func (p *Panel) setZ(z, zunb float32) (float32, float32) {
 
-	// TODO there's a problem here - two buttons wish labels one on top of the other have interlacing labels...
+	// TODO there's a problem here - two buttons with labels one on top of the other have interlacing labels...
 
 	// Bounded panel
 	if p.bounded {
@@ -855,20 +852,11 @@ func (p *Panel) resize(width, height float32, dispatch bool) {
 	// Adjust other area widths
 	padding.Width = p.paddingSizes.Left + p.content.Width + p.paddingSizes.Right
 	border.Width = p.borderSizes.Left + padding.Width + p.borderSizes.Right
-
-	// Adjusts content height
-	p.content.Height = height -
-		p.marginSizes.Top - p.marginSizes.Bottom -
-		p.borderSizes.Top - p.borderSizes.Bottom -
-		p.paddingSizes.Top - p.paddingSizes.Bottom
-	if p.content.Height < 0 {
-		p.content.Height = 0
-	}
 	// Adjust other area heights
 	padding.Height = p.paddingSizes.Top + p.content.Height + p.paddingSizes.Bottom
 	border.Height = p.borderSizes.Top + padding.Height + p.borderSizes.Bottom
 
-	// Sets area positions
+	// Set area positions
 	border.X = p.marginSizes.Left
 	border.Y = p.marginSizes.Top
 	padding.X = border.X + p.borderSizes.Left
@@ -876,25 +864,25 @@ func (p *Panel) resize(width, height float32, dispatch bool) {
 	p.content.X = padding.X + p.paddingSizes.Left
 	p.content.Y = padding.Y + p.paddingSizes.Top
 
-	// Sets final panel dimensions (may be different from requested dimensions)
+	// Set final panel dimensions (may be different from requested dimensions)
 	p.width = p.marginSizes.Left + border.Width + p.marginSizes.Right
 	p.height = p.marginSizes.Top + border.Height + p.marginSizes.Bottom
 
-	// Updates border uniform in texture coordinates (0,0 -> 1,1)
+	// Update border uniform in texture coordinates (0,0 -> 1,1)
 	p.udata.borders = math32.Vector4{
 		float32(border.X) / float32(p.width),
 		float32(border.Y) / float32(p.height),
 		float32(border.Width) / float32(p.width),
 		float32(border.Height) / float32(p.height),
 	}
-	// Updates padding uniform in texture coordinates (0,0 -> 1,1)
+	// Update padding uniform in texture coordinates (0,0 -> 1,1)
 	p.udata.paddings = math32.Vector4{
 		float32(padding.X) / float32(p.width),
 		float32(padding.Y) / float32(p.height),
 		float32(padding.Width) / float32(p.width),
 		float32(padding.Height) / float32(p.height),
 	}
-	// Updates content uniform in texture coordinates (0,0 -> 1,1)
+	// Update content uniform in texture coordinates (0,0 -> 1,1)
 	p.udata.content = math32.Vector4{
 		float32(p.content.X) / float32(p.width),
 		float32(p.content.Y) / float32(p.height),
@@ -942,7 +930,7 @@ func (p *Panel) RenderSetup(gl *gls.GLS, rinfo *core.RenderInfo) {
 func (p *Panel) SetModelMatrix(gl *gls.GLS, mm *math32.Matrix4) {
 
 	// Get scale of window (for HiDPI support)
-	sX64, sY64 := p.Root().Window().Scale()
+	sX64, sY64 := Manager().win.GetScale()
 	sX := float32(sX64)
 	sY := float32(sY64)
 

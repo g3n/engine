@@ -70,6 +70,20 @@ func (f *Folder) Initialize(text string, width float32, contentPanel IPanel) {
 	f.Panel.Subscribe(OnCursorEnter, f.onCursor)
 	f.Panel.Subscribe(OnCursorLeave, f.onCursor)
 
+	f.Subscribe(OnMouseDownOut, func(s string, i interface{}) {
+		// Hide list when clicked out
+		if f.contentPanel.Visible() {
+			f.contentPanel.SetVisible(false)
+		}
+	})
+
+	f.contentPanel.Subscribe(OnCursorEnter, func(evname string, ev interface{}) {
+		f.Dispatch(OnCursorLeave, ev)
+	})
+	f.contentPanel.Subscribe(OnCursorLeave, func(evname string, ev interface{}) {
+		f.Dispatch(OnCursorEnter, ev)
+	})
+
 	f.alignRight = true
 	f.update()
 	f.recalc()
@@ -90,9 +104,9 @@ func (f *Folder) SetAlignRight(state bool) {
 	f.recalc()
 }
 
-// TotalHeight returns this folder total height
+// Height returns this folder total height
 // considering the contents panel, if visible.
-func (f *Folder) TotalHeight() float32 {
+func (f *Folder) Height() float32 {
 
 	height := f.Height()
 	if f.contentPanel.GetPanel().Visible() {
