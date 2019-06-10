@@ -246,11 +246,13 @@ func sendAncestry(ipan IPanel, all bool, uptoEx IPanel, uptoIn IPanel, evname st
 // executing the specified function for each IPanel.
 func traverseIPanel(ipan IPanel, f func(ipan IPanel)) {
 
-	// If panel not visible or not enabled, ignore entire hierarchy below this point
-	if !ipan.Visible() || !ipan.Enabled() {
+	// If panel not visible, ignore entire hierarchy below this point
+	if !ipan.Visible() {
 		return
 	}
-	f(ipan) // Call specified function
+	if ipan.Enabled() {
+		f(ipan) // Call specified function
+	}
 	// Check descendants (can assume they are IPanels)
 	for _, child := range ipan.Children() {
 		traverseIPanel(child.(IPanel), f)
