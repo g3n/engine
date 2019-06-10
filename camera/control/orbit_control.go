@@ -6,6 +6,8 @@ package control
 
 import (
 	"github.com/g3n/engine/camera"
+	"github.com/g3n/engine/core"
+	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/util/logger"
 	"github.com/g3n/engine/window"
@@ -14,6 +16,7 @@ import (
 
 // OrbitControl is a camera controller that allows orbiting a center point while looking at it.
 type OrbitControl struct {
+	core.Dispatcher         // Embedded event dispatcher
 	Enabled         bool    // Control enabled state
 	EnableRotate    bool    // Rotate enabled state
 	EnableZoom      bool    // Zoom enabled state
@@ -64,13 +67,12 @@ const (
 // Package logger
 var log = logger.New("ORBIT", logger.Default)
 
-// NewOrbitControl creates and returns a pointer to a new orbito control for
-// the specified camera and window
-func NewOrbitControl(icam camera.ICamera, win window.IWindow) *OrbitControl {
+// NewOrbitControl creates and returns a pointer to a new orbit control for the specified camera.
+func NewOrbitControl(icam camera.ICamera) *OrbitControl {
 
 	oc := new(OrbitControl)
+	oc.Dispatcher.Initialize()
 	oc.icam = icam
-	oc.win = win
 
 	oc.cam = icam.GetCamera()
 	if persp, ok := icam.(*camera.Perspective); ok {
@@ -103,10 +105,11 @@ func NewOrbitControl(icam camera.ICamera, win window.IWindow) *OrbitControl {
 	oc.target0 = oc.cam.Target()
 
 	// Subscribe to events
-	oc.win.SubscribeID(window.OnMouseUp, &oc.subsEvents, oc.onMouse)
-	oc.win.SubscribeID(window.OnMouseDown, &oc.subsEvents, oc.onMouse)
-	oc.win.SubscribeID(window.OnScroll, &oc.subsEvents, oc.onScroll)
-	oc.win.SubscribeID(window.OnKeyDown, &oc.subsEvents, oc.onKey)
+	gui.Manager().SubscribeID(window.OnMouseUp, &oc.subsEvents, oc.onMouse)
+	gui.Manager().SubscribeID(window.OnMouseDown, &oc.subsEvents, oc.onMouse)
+	gui.Manager().SubscribeID(window.OnScroll, &oc.subsEvents, oc.onScroll)
+	gui.Manager().SubscribeID(window.OnKeyDown, &oc.subsEvents, oc.onKey)
+	oc.SubscribeID(window.OnCursor, &oc.subsPos, oc.onCursorPos)
 	return oc
 }
 
@@ -114,11 +117,11 @@ func NewOrbitControl(icam camera.ICamera, win window.IWindow) *OrbitControl {
 func (oc *OrbitControl) Dispose() {
 
 	// Unsubscribe to event handlers
-	oc.win.UnsubscribeID(window.OnMouseUp, &oc.subsEvents)
-	oc.win.UnsubscribeID(window.OnMouseDown, &oc.subsEvents)
-	oc.win.UnsubscribeID(window.OnScroll, &oc.subsEvents)
-	oc.win.UnsubscribeID(window.OnKeyDown, &oc.subsEvents)
-	oc.win.UnsubscribeID(window.OnCursor, &oc.subsPos)
+	gui.Manager().UnsubscribeID(window.OnMouseUp, &oc.subsEvents)
+	gui.Manager().UnsubscribeID(window.OnMouseDown, &oc.subsEvents)
+	gui.Manager().UnsubscribeID(window.OnScroll, &oc.subsEvents)
+	gui.Manager().UnsubscribeID(window.OnKeyDown, &oc.subsEvents)
+	oc.UnsubscribeID(window.OnCursor, &oc.subsPos)
 }
 
 // Reset to initial camera position
@@ -132,7 +135,7 @@ func (oc *OrbitControl) Reset() {
 // Pan the camera and target by the specified deltas
 func (oc *OrbitControl) Pan(deltaX, deltaY float32) {
 
-	width, height := oc.win.GetSize()
+	width, height := window.Get().GetSize()
 	oc.pan(deltaX, deltaY, width, height)
 	oc.updatePan()
 }
@@ -344,6 +347,7 @@ func (oc *OrbitControl) onMouse(evname string, ev interface{}) {
 	// Mouse button pressed
 	switch evname {
 	case window.OnMouseDown:
+		gui.Manager().SetCursorFocus(oc)
 		// Left button pressed sets Rotate state
 		if mev.Button == window.MouseButtonLeft {
 			if !oc.EnableRotate {
@@ -368,13 +372,9 @@ func (oc *OrbitControl) onMouse(evname string, ev interface{}) {
 			oc.state = statePan
 			oc.panStart.Set(float32(mev.Xpos), float32(mev.Ypos))
 		}
-		// If a valid state is set requests mouse position events
-		if oc.state != stateNone {
-			oc.win.SubscribeID(window.OnCursor, &oc.subsPos, oc.onCursorPos)
-		}
 		return
 	case window.OnMouseUp:
-		oc.win.UnsubscribeID(window.OnCursor, &oc.subsPos)
+		gui.Manager().SetCursorFocus(nil)
 		oc.state = stateNone
 	}
 }
@@ -394,7 +394,7 @@ func (oc *OrbitControl) onCursorPos(evname string, ev interface{}) {
 		oc.rotateDelta.SubVectors(&oc.rotateEnd, &oc.rotateStart)
 		oc.rotateStart = oc.rotateEnd
 		// rotating across whole screen goes 360 degrees around
-		width, height := oc.win.GetSize()
+		width, height := window.Get().GetSize()
 		oc.RotateLeft(2 * math32.Pi * oc.rotateDelta.X / float32(width) * oc.RotateSpeed)
 		// rotating up and down along whole screen attempts to go 360, but limited to 180
 		oc.RotateUp(2 * math32.Pi * oc.rotateDelta.Y / float32(height) * oc.RotateSpeed)
