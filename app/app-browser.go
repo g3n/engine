@@ -22,6 +22,7 @@ type Application struct {
 	window.IWindow                    // Embedded WebGLCanvas
 	keyState       *window.KeyState   // Keep track of keyboard state
 	renderer       *renderer.Renderer // Renderer object
+	startTime      time.Time          // Application start time
 	frameStart     time.Time          // Frame start time
 	frameDelta     time.Duration      // Duration of last frame
 	exit           bool
@@ -32,56 +33,57 @@ type Application struct {
 func App() *Application {
 
 	// Return singleton if already created
-	if app != nil {
-		return app
+	if a != nil {
+		return a
 	}
-	app = new(Application)
+	a = new(Application)
 	// Initialize window
 	err := window.Init(canvasId)
 	if err != nil {
 		panic(err)
 	}
-	app.IWindow = window.Get()
+	a.IWindow = window.Get()
 	// TODO audio setup here
-	app.keyState = window.NewKeyState(app) // Create KeyState
+	a.keyState = window.NewKeyState(a) // Create KeyState
 	// Create renderer and add default shaders
-	app.renderer = renderer.NewRenderer(app.Gls())
-	err = app.renderer.AddDefaultShaders()
+	a.renderer = renderer.NewRenderer(a.Gls())
+	err = a.renderer.AddDefaultShaders()
 	if err != nil {
 		panic(fmt.Errorf("AddDefaultShaders:%v", err))
 	}
-	return app
+	return a
 }
 
 // Run starts the update loop.
 // It calls the user-provided update function every frame.
-func (app *Application) Run(update func(renderer *renderer.Renderer, deltaTime time.Duration)) {
+func (a *Application) Run(update func(rend *renderer.Renderer, deltaTime time.Duration)) {
 
 	// Create channel so later we can prevent application from finishing while we wait for callbacks
 	done := make(chan bool, 0)
 
-	// Initialize frame time
-	app.frameStart = time.Now()
+	// Initialize start and frame time
+	a.startTime = time.Now()
+	a.frameStart = time.Now()
 
 	// Set up recurring calls to user's update function
 	var tick js.Func
 	tick = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		// Update frame start and frame delta
 		now := time.Now()
-		app.frameDelta = now.Sub(app.frameStart)
-		app.frameStart = now
+		a.frameDelta = now.Sub(a.frameStart)
+		a.frameStart = now
 		// Call user's update function
-		update(app.renderer, app.frameDelta)
+		update(a.renderer, a.frameDelta)
 		// Set up new callback if not exiting
-		if !app.exit {
-			app.cbid = js.Global().Call("requestAnimationFrame", tick)
+		if !a.exit {
+			a.cbid = js.Global().Call("requestAnimationFrame", tick)
 		} else {
-			app.Dispatch(OnExit, nil)
+			a.Dispatch(OnExit, nil)
 			done <- true // Write to done channel to exit the app
 		}
 		return nil
 	})
-	app.cbid = js.Global().Call("requestAnimationFrame", tick)
+	a.cbid = js.Global().Call("requestAnimationFrame", tick)
 
 	// Read from done channel
 	// This channel will be empty (except when we want to exit the app)
@@ -89,23 +91,29 @@ func (app *Application) Run(update func(renderer *renderer.Renderer, deltaTime t
 	<-done
 
 	// Destroy the window
-	app.IWindow.Destroy()
+	a.IWindow.Destroy()
 }
 
 // Exit exits the app.
-func (app *Application) Exit() {
+func (a *Application) Exit() {
 
-	app.exit = true
+	a.exit = true
 }
 
 // Renderer returns the application's renderer.
-func (app *Application) Renderer() *renderer.Renderer {
+func (a *Application) Renderer() *renderer.Renderer {
 
-	return app.renderer
+	return a.renderer
 }
 
 // KeyState returns the application's KeyState.
-func (app *Application) KeyState() *window.KeyState {
+func (a *Application) KeyState() *window.KeyState {
 
-	return app.keyState
+	return a.keyState
+}
+
+// RunTime returns the elapsed duration since the call to Run().
+func (a *Application) RunTime() time.Duration {
+
+	return time.Now().Sub(a.startTime)
 }
