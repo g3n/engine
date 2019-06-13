@@ -61,9 +61,8 @@ type Panel struct {
 	*graphic.Graphic                    // Embedded graphic
 	mat              *material.Material // panel material
 
-	bounded   bool // Whether panel is bounded by its parent
-	enabled   bool // Whether event should be processed for this panel
-	focusable bool // Whether panel can be focused on mouse down (so it receives key events)
+	bounded bool // Whether panel is bounded by its parent
+	enabled bool // Whether event should be processed for this panel
 
 	layout       ILayout     // current layout for children
 	layoutParams interface{} // current layout parameters used by container panel
