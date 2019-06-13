@@ -189,7 +189,9 @@ func (p *Panel) Initialize(ipan IPanel, width, height float32) { // TODO rename 
 
 	// Subscribe to OnDescendant to update Z-positions starting from "root" panels
 	p.Subscribe(core.OnDescendant, func(evname string, ev interface{}) {
-		if p.Parent() == nil {
+		par := p.Parent()
+		_, parentIsIPanel := par.(IPanel)
+		if par == nil || !parentIsIPanel {
 			// This is a "root" panel
 			p.setZ(0, deltaZunb)
 		}
