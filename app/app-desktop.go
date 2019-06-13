@@ -28,6 +28,7 @@ type Application struct {
 	keyState       *window.KeyState   // Keep track of keyboard state
 	renderer       *renderer.Renderer // Renderer object
 	audioDev       *al.Device         // Default audio device
+	startTime      time.Time          // Application start time
 	frameStart     time.Time          // Frame start time
 	frameDelta     time.Duration      // Duration of last frame
 }
@@ -36,30 +37,34 @@ type Application struct {
 func App() *Application {
 
 	// Return singleton if already created
-	if app != nil {
-		return app
+	if a != nil {
+		return a
 	}
-	app = new(Application)
+	a = new(Application)
 	// Initialize window
 	err := window.Init(width, height, title)
 	if err != nil {
 		panic(err)
 	}
-	app.IWindow = window.Get()
-	app.openDefaultAudioDevice()           // Set up audio
-	app.keyState = window.NewKeyState(app) // Create KeyState
+	a.IWindow = window.Get()
+	a.openDefaultAudioDevice()         // Set up audio
+	a.keyState = window.NewKeyState(a) // Create KeyState
 	// Create renderer and add default shaders
-	app.renderer = renderer.NewRenderer(app.Gls())
-	err = app.renderer.AddDefaultShaders()
+	a.renderer = renderer.NewRenderer(a.Gls())
+	err = a.renderer.AddDefaultShaders()
 	if err != nil {
 		panic(fmt.Errorf("AddDefaultShaders:%v", err))
 	}
-	return app
+	return a
 }
 
 // Run starts the update loop.
 // It calls the user-provided update function every frame.
-func (app *Application) Run(update func(renderer *renderer.Renderer, deltaTime time.Duration)) {
+func (a *Application) Run(update func(rend *renderer.Renderer, deltaTime time.Duration)) {
+
+	// Initialize start and frame time
+	a.startTime = time.Now()
+	a.frameStart = time.Now()
 
 	// Initialize frame time
 	app.frameStart = time.Now()
@@ -68,60 +73,66 @@ func (app *Application) Run(update func(renderer *renderer.Renderer, deltaTime t
 	for true {
 		// If Exit() was called or there was an attempt to close the window dispatch OnExit event for subscribers.
 		// If no subscriber cancelled the event, terminate the application.
-		if app.IWindow.(*window.GlfwWindow).ShouldClose() {
-			app.Dispatch(OnExit, nil)
+		if a.IWindow.(*window.GlfwWindow).ShouldClose() {
+			a.Dispatch(OnExit, nil)
 			// TODO allow for cancelling exit e.g. showing dialog asking the user if he/she wants to save changes
 			// if exit was cancelled {
-			//     app.IWindow.(*window.GlfwWindow).SetShouldClose(false)
+			//     a.IWindow.(*window.GlfwWindow).SetShouldClose(false)
 			// } else {
 			break
 			// }
 		}
 		// Update frame start and frame delta
 		now := time.Now()
-		app.frameDelta = now.Sub(app.frameStart)
-		app.frameStart = now
+		a.frameDelta = now.Sub(a.frameStart)
+		a.frameStart = now
 		// Call user's update function
-		update(app.renderer, app.frameDelta)
+		update(a.renderer, a.frameDelta)
 		// Swap buffers and poll events
-		app.IWindow.(*window.GlfwWindow).SwapBuffers()
-		app.IWindow.(*window.GlfwWindow).PollEvents()
+		a.IWindow.(*window.GlfwWindow).SwapBuffers()
+		a.IWindow.(*window.GlfwWindow).PollEvents()
 	}
 
 	// Close default audio device
-	if app.audioDev != nil {
-		al.CloseDevice(app.audioDev)
+	if a.audioDev != nil {
+		al.CloseDevice(a.audioDev)
 	}
 	// Destroy window
-	app.Destroy()
+	a.Destroy()
 }
 
 // Exit requests to terminate the application
 // Application will dispatch OnQuit events to registered subscribers which
 // can cancel the process by calling CancelDispatch().
-func (app *Application) Exit() {
+func (a *Application) Exit() {
 
-	app.IWindow.(*window.GlfwWindow).SetShouldClose(true)
+	a.IWindow.(*window.GlfwWindow).SetShouldClose(true)
 }
 
 // Renderer returns the application's renderer.
-func (app *Application) Renderer() *renderer.Renderer {
+func (a *Application) Renderer() *renderer.Renderer {
 
-	return app.renderer
+	return a.renderer
 }
 
 // KeyState returns the application's KeyState.
-func (app *Application) KeyState() *window.KeyState {
+func (a *Application) KeyState() *window.KeyState {
 
-	return app.keyState
+	return a.keyState
+}
+
+// RunTime returns the elapsed duration since the call to Run().
+func (a *Application) RunTime() time.Duration {
+
+	return time.Now().Sub(a.startTime)
 }
 
 // openDefaultAudioDevice opens the default audio device setting it to the current context
-func (app *Application) openDefaultAudioDevice() error {
+func (a *Application) openDefaultAudioDevice() error {
 
 	// Opens default audio device
 	var err error
-	app.audioDev, err = al.OpenDevice("")
+	a.audioDev, err = al.OpenDevice("")
 	if err != nil {
 		return fmt.Errorf("opening OpenAL default device: %s", err)
 	}
@@ -131,7 +142,7 @@ func (app *Application) openDefaultAudioDevice() error {
 		attribs = []int{al.MAX_AUXILIARY_SENDS, 4}
 	}
 	// Create audio context
-	acx, err := al.CreateContext(app.audioDev, attribs)
+	acx, err := al.CreateContext(a.audioDev, attribs)
 	if err != nil {
 		return fmt.Errorf("creating OpenAL context: %s", err)
 	}
