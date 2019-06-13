@@ -11,6 +11,7 @@ import (
 	"github.com/g3n/engine/graphic"
 	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/light"
+	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
 	"sort"
 )
@@ -179,6 +180,9 @@ func (r *Renderer) Render(scene core.INode, cam camera.ICamera) error {
 		r.stats.Others++
 	}
 
+	// Enable depth mask so that clearing the depth buffer works
+	r.gs.DepthMask(true)
+
 	return nil
 }
 
@@ -332,11 +336,14 @@ func (r *Renderer) renderPanel(ipan gui.IPanel) error {
 
 	// If panel is renderable, render it
 	if ipan.Renderable() {
-		// Set shader program for the panel's material
+		// Set shader specs
 		grmat := ipan.GetGraphic().Materials()[0]
 		mat := grmat.IMaterial().GetMaterial()
 		r.specs.Name = mat.Shader()
 		r.specs.ShaderUnique = mat.ShaderUnique()
+		r.specs.UseLights = material.UseLightNone
+		r.specs.MatTexturesMax = mat.TextureCount()
+		// Set active program and apply shader specs
 		_, err := r.Shaman.SetProgram(&r.specs)
 		if err != nil {
 			return err
