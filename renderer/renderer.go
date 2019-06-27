@@ -26,26 +26,25 @@ type Renderer struct {
 	stats       Stats           // Renderer statistics
 
 	// Populated each frame
-	rgraphics    []*graphic.Graphic         // Array of rendered graphics
-	cgraphics    []*graphic.Graphic         // Array of culled graphics
-	grmatsOpaque []*graphic.GraphicMaterial // Array of rendered opaque graphic materials for scene
-	grmatsTransp []*graphic.GraphicMaterial // Array of rendered transparent graphic materials for scene
-	grmatsGui    []*graphic.GraphicMaterial // Array of rendered GUI graphic materials for scene
-	ipanels      []gui.IPanel               // Array of all top rendered IPanels (panels which are not children of other IPanels)
-	ambLights    []*light.Ambient           // Array of ambient lights for last scene
-	dirLights    []*light.Directional       // Array of directional lights for last scene
-	pointLights  []*light.Point             // Array of point
-	spotLights   []*light.Spot              // Array of spot lights for the scene
+	ambLights    []*light.Ambient           // Ambient lights in the scene
+	dirLights    []*light.Directional       // Directional lights in the scene
+	pointLights  []*light.Point             // Point lights in the scene
+	spotLights   []*light.Spot              // Spot lights in the scene
 	others       []core.INode               // Other nodes (audio, players, etc)
+	graphics     []*graphic.Graphic         // Graphics to be rendered
+	grmatsOpaque []*graphic.GraphicMaterial // Opaque graphic materials to be rendered
+	grmatsTransp []*graphic.GraphicMaterial // Transparent graphic materials to be rendered
+	zLayers      map[int][]gui.IPanel       // All IPanels to be rendered organized by Z-layer
+	zLayerKeys   []int                      // Z-layers being used (initially in no particular order, sorted later)
 }
 
-// Stats describes how many object types were rendered.
+// Stats describes how many objects of each type are being rendered.
 // It is cleared at the start of each render.
 type Stats struct {
-	Graphics int // Number of graphic objects rendered
-	Lights   int // Number of lights rendered
-	Panels   int // Number of Gui panels rendered
-	Others   int // Number of other objects rendered
+	GraphicMats int // Number of graphic materials rendered
+	Lights      int // Number of lights rendered
+	Panels      int // Number of GUI panels rendered
+	Others      int // Number of other objects rendered
 }
 
 // NewRenderer creates and returns a pointer to a new Renderer.
@@ -61,11 +60,12 @@ func NewRenderer(gs *gls.GLS) *Renderer {
 	r.pointLights = make([]*light.Point, 0)
 	r.spotLights = make([]*light.Spot, 0)
 	r.others = make([]core.INode, 0)
-	r.rgraphics = make([]*graphic.Graphic, 0)
-	r.cgraphics = make([]*graphic.Graphic, 0)
+	r.graphics = make([]*graphic.Graphic, 0)
 	r.grmatsOpaque = make([]*graphic.GraphicMaterial, 0)
 	r.grmatsTransp = make([]*graphic.GraphicMaterial, 0)
-	r.ipanels = make([]gui.IPanel, 0)
+	r.zLayers = make(map[int][]gui.IPanel)
+	r.zLayers[0] = make([]gui.IPanel, 0)
+	r.zLayerKeys = append(r.zLayerKeys, 0)
 
 	return r
 }
@@ -106,11 +106,13 @@ func (r *Renderer) Render(scene core.INode, cam camera.ICamera) error {
 	r.pointLights = r.pointLights[0:0]
 	r.spotLights = r.spotLights[0:0]
 	r.others = r.others[0:0]
-	r.rgraphics = r.rgraphics[0:0]
-	r.cgraphics = r.cgraphics[0:0]
+	r.graphics = r.graphics[0:0]
 	r.grmatsOpaque = r.grmatsOpaque[0:0]
 	r.grmatsTransp = r.grmatsTransp[0:0]
-	r.ipanels = r.ipanels[0:0]
+	r.zLayers = make(map[int][]gui.IPanel)
+	r.zLayers[0] = make([]gui.IPanel, 0)
+	r.zLayerKeys = r.zLayerKeys[0:1]
+	r.zLayerKeys[0] = 0
 
 	// Prepare for frustum culling
 	var proj math32.Matrix4
@@ -118,8 +120,7 @@ func (r *Renderer) Render(scene core.INode, cam camera.ICamera) error {
 	frustum := math32.NewFrustumFromMatrix(&proj)
 
 	// Classify scene and all scene nodes, culling renderable IGraphics which are fully outside of the camera frustum
-	r.classifyAndCull(scene, frustum)
-	//log.Debug("Rendered/Culled: %v/%v", len(r.grmats), len(r.cgrmats))
+	r.classifyAndCull(scene, frustum, 0)
 
 	// Set light counts in shader specs
 	r.specs.AmbientLightsMax = len(r.ambLights)
@@ -127,13 +128,14 @@ func (r *Renderer) Render(scene core.INode, cam camera.ICamera) error {
 	r.specs.PointLightsMax = len(r.pointLights)
 	r.specs.SpotLightsMax = len(r.spotLights)
 
-	// Pre-calculate MV and MVP matrices and compile lists of opaque and transparent graphic materials
-	for _, gr := range r.rgraphics {
+	// Pre-calculate MV and MVP matrices and compile initial lists of opaque and transparent graphic materials
+	for _, gr := range r.graphics {
 		// Calculate MV and MVP matrices for all non-GUI graphics to be rendered
 		gr.CalculateMatrices(r.gs, &r.rinfo)
 		// Append all graphic materials of this graphic to lists of graphic materials to be rendered
 		materials := gr.Materials()
 		for i := range materials {
+			r.stats.GraphicMats++
 			if materials[i].IMaterial().GetMaterial().Transparent() {
 				r.grmatsTransp = append(r.grmatsTransp, &materials[i])
 			} else {
@@ -143,30 +145,42 @@ func (r *Renderer) Render(scene core.INode, cam camera.ICamera) error {
 	}
 
 	// TODO: If both GraphicMaterials belong to same Graphic we might want to keep their relative order...
-
-	// Z-sort graphic materials (opaque front-to-back and transparent back-to-front)
+	// Z-sort graphic materials back to front
 	if r.sortObjects {
-		zSort(r.grmatsOpaque, false) // Sort opaque graphics front to back
-		zSort(r.grmatsTransp, true)  // Sort transparent graphics back to front
+		zSort(r.grmatsOpaque)
+		zSort(r.grmatsTransp)
 	}
 
-	// Render GUI elements first
-	for _, ipan := range r.ipanels {
-		err := r.renderPanel(ipan)
+	// Sort zLayers back to front
+	sort.Ints(r.zLayerKeys)
+
+	// Iterate over all panels from back to front, setting Z and adding graphic materials to grmatsTransp/grmatsOpaque
+	const deltaZ = 0.00001
+	panZ := float32(-1 + float32(r.stats.Panels)*deltaZ)
+	for _, k := range r.zLayerKeys {
+		for _, ipan := range r.zLayers[k] {
+			// Set panel Z
+			ipan.SetPositionZ(panZ)
+			panZ -= deltaZ
+			// Append the panel's graphic material to lists of graphic materials to be rendered
+			mat := ipan.GetGraphic().Materials()[0]
+			if mat.IMaterial().GetMaterial().Transparent() {
+				r.grmatsTransp = append(r.grmatsTransp, &mat)
+			} else {
+				r.grmatsOpaque = append(r.grmatsOpaque, &mat)
+			}
+		}
+	}
+
+	// Render opaque objects front to back
+	for i := len(r.grmatsOpaque) - 1; i >= 0; i-- {
+		err := r.renderGraphicMaterial(r.grmatsOpaque[i])
 		if err != nil {
 			return err
 		}
 	}
 
-	// Render opaque objects (already sorted front to back)
-	for _, grmat := range r.grmatsOpaque {
-		err := r.renderGraphicMaterial(grmat)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Render transparent objects (already sorted back to front)
+	// Render transparent objects back to front
 	for _, grmat := range r.grmatsTransp {
 		err := r.renderGraphicMaterial(grmat)
 		if err != nil {
@@ -177,28 +191,37 @@ func (r *Renderer) Render(scene core.INode, cam camera.ICamera) error {
 	// Render other nodes (audio players, etc)
 	for _, inode := range r.others {
 		inode.Render(r.gs)
-		r.stats.Others++
 	}
 
 	// Enable depth mask so that clearing the depth buffer works
 	r.gs.DepthMask(true)
+	// TODO enable color mask, stencil mask?
+	// TODO clear the buffers for the user, and set the appropriate masks to true before clearing
 
 	return nil
 }
 
 // classifyAndCull classifies the provided INode and all of its descendents.
 // It ignores (culls) renderable IGraphics which are fully outside of the specified frustum.
-func (r *Renderer) classifyAndCull(inode core.INode, frustum *math32.Frustum) {
+func (r *Renderer) classifyAndCull(inode core.INode, frustum *math32.Frustum, zLayer int) {
 
-	classifyChildren := true
 	// Ignore invisible nodes and their descendants
 	if !inode.Visible() {
 		return
 	}
 	// If node is an IPanel append it to appropriate list
 	if ipan, ok := inode.(gui.IPanel); ok {
-		r.ipanels = append(r.ipanels, ipan)
-		classifyChildren = false // Don't classify children since they must be IPanels
+		zLayer += ipan.ZLayerDelta()
+		if ipan.Renderable() {
+			// TODO cull panels
+			_, ok := r.zLayers[zLayer]
+			if !ok {
+				r.zLayerKeys = append(r.zLayerKeys, zLayer)
+				r.zLayers[zLayer] = make([]gui.IPanel, 0)
+			}
+			r.zLayers[zLayer] = append(r.zLayers[zLayer], ipan)
+			r.stats.Panels++
+		}
 		// Check if node is an IGraphic
 	} else if igr, ok := inode.(graphic.IGraphic); ok {
 		if igr.Renderable() {
@@ -206,19 +229,15 @@ func (r *Renderer) classifyAndCull(inode core.INode, frustum *math32.Frustum) {
 			// Frustum culling
 			if igr.Cullable() {
 				mw := gr.MatrixWorld()
-				geom := igr.GetGeometry()
-				bb := geom.BoundingBox()
+				bb := igr.GetGeometry().BoundingBox()
 				bb.ApplyMatrix4(&mw)
 				if frustum.IntersectsBox(&bb) {
 					// Append graphic to list of graphics to be rendered
-					r.rgraphics = append(r.rgraphics, gr)
-				} else {
-					// Append graphic to list of culled graphics
-					r.cgraphics = append(r.cgraphics, gr)
+					r.graphics = append(r.graphics, gr)
 				}
 			} else {
 				// Append graphic to list of graphics to be rendered
-				r.rgraphics = append(r.rgraphics, gr)
+				r.graphics = append(r.graphics, gr)
 			}
 		}
 		// Node is not a Graphic
@@ -240,19 +259,18 @@ func (r *Renderer) classifyAndCull(inode core.INode, frustum *math32.Frustum) {
 			// Other nodes
 		} else {
 			r.others = append(r.others, inode)
+			r.stats.Others++
 		}
 	}
-	// Classify children (if not an IPanel)
-	if classifyChildren {
-		for _, ichild := range inode.Children() {
-			r.classifyAndCull(ichild, frustum)
-		}
+	// Classify children
+	for _, ichild := range inode.Children() {
+		r.classifyAndCull(ichild, frustum, zLayer)
 	}
 }
 
-// zSort sorts a list of graphic materials based on the
-// user-specified order first then based on their Z position relative to the camera
-func zSort(grmats []*graphic.GraphicMaterial, backToFront bool) {
+// zSort sorts a list of graphic materials based on the user-specified render order
+// then based on their Z position relative to the camera, back to front.
+func zSort(grmats []*graphic.GraphicMaterial) {
 
 	sort.Slice(grmats, func(i, j int) bool {
 		gr1 := grmats[i].IGraphic().GetGraphic()
@@ -269,10 +287,7 @@ func zSort(grmats []*graphic.GraphicMaterial, backToFront bool) {
 		g2pos := gr2.Position()
 		g1pos.ApplyMatrix4(mvm1)
 		g2pos.ApplyMatrix4(mvm2)
-		if backToFront {
-			return g1pos.Z < g2pos.Z
-		}
-		return g1pos.Z > g2pos.Z
+		return g1pos.Z < g2pos.Z
 	})
 }
 
@@ -302,64 +317,35 @@ func (r *Renderer) renderGraphicMaterial(grmat *graphic.GraphicMaterial) error {
 	}
 
 	// Set up lights (transfer lights' uniforms)
-	for idx, l := range r.ambLights {
-		l.RenderSetup(r.gs, &r.rinfo, idx)
-		r.stats.Lights++
-	}
-	for idx, l := range r.dirLights {
-		l.RenderSetup(r.gs, &r.rinfo, idx)
-		r.stats.Lights++
-	}
-	for idx, l := range r.pointLights {
-		l.RenderSetup(r.gs, &r.rinfo, idx)
-		r.stats.Lights++
-	}
-	for idx, l := range r.spotLights {
-		l.RenderSetup(r.gs, &r.rinfo, idx)
-		r.stats.Lights++
+	if r.specs.UseLights != material.UseLightNone {
+		if r.specs.UseLights&material.UseLightAmbient != 0 {
+			for idx, l := range r.ambLights {
+				l.RenderSetup(r.gs, &r.rinfo, idx)
+				r.stats.Lights++
+			}
+		}
+		if r.specs.UseLights&material.UseLightDirectional != 0 {
+			for idx, l := range r.dirLights {
+				l.RenderSetup(r.gs, &r.rinfo, idx)
+				r.stats.Lights++
+			}
+		}
+		if r.specs.UseLights&material.UseLightPoint != 0 {
+			for idx, l := range r.pointLights {
+				l.RenderSetup(r.gs, &r.rinfo, idx)
+				r.stats.Lights++
+			}
+		}
+		if r.specs.UseLights&material.UseLightSpot != 0 {
+			for idx, l := range r.spotLights {
+				l.RenderSetup(r.gs, &r.rinfo, idx)
+				r.stats.Lights++
+			}
+		}
 	}
 
 	// Render this graphic material
 	grmat.Render(r.gs, &r.rinfo)
-	r.stats.Graphics++
-
-	return nil
-}
-
-// renderPanel renders the specified panel and all its children
-// and then sets the panel as not changed.
-func (r *Renderer) renderPanel(ipan gui.IPanel) error {
-
-	if !ipan.Visible() {
-		return nil
-	}
-
-	// If panel is renderable, render it
-	if ipan.Renderable() {
-		// Set shader specs
-		grmat := ipan.GetGraphic().Materials()[0]
-		mat := grmat.IMaterial().GetMaterial()
-		r.specs.Name = mat.Shader()
-		r.specs.ShaderUnique = mat.ShaderUnique()
-		r.specs.UseLights = material.UseLightNone
-		r.specs.MatTexturesMax = mat.TextureCount()
-		// Set active program and apply shader specs
-		_, err := r.Shaman.SetProgram(&r.specs)
-		if err != nil {
-			return err
-		}
-		// Render this panel's graphic material
-		grmat.Render(r.gs, &r.rinfo)
-		r.stats.Panels++
-	}
-
-	// Render children panels
-	for i := 0; i < len(ipan.Children()); i++ {
-		err := r.renderPanel(ipan.Children()[i].(gui.IPanel))
-		if err != nil {
-			return err
-		}
-	}
 
 	return nil
 }

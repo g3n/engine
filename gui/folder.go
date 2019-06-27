@@ -62,6 +62,7 @@ func (f *Folder) Initialize(text string, width float32, contentPanel IPanel) {
 	// Setup content panel
 	f.contentPanel = contentPanel
 	contentPanel.GetPanel().bounded = false
+	contentPanel.GetPanel().zLayerDelta = 1
 	contentPanel.GetPanel().SetVisible(false)
 	f.Panel.Add(f.contentPanel)
 
