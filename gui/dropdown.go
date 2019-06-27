@@ -57,6 +57,7 @@ func NewDropDown(width float32, item *ImageLabel) *DropDown {
 	/// Create list
 	dd.list = NewVList(0, 0)
 	dd.list.bounded = false
+	dd.list.zLayerDelta = 1
 	dd.list.dropdown = true
 	dd.list.SetVisible(false)
 

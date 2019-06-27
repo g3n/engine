@@ -46,11 +46,14 @@ type IPanel interface {
 	SetEnabled(bool)
 	SetLayout(ILayout)
 	InsideBorders(x, y float32) bool
+	SetZLayerDelta(zLayerDelta int)
+	ZLayerDelta() int
 
 	// TODO these methods here should probably be defined in INode
 	SetPosition(x, y float32)
 	SetPositionX(x float32)
 	SetPositionY(y float32)
+	SetPositionZ(y float32)
 }
 
 // Panel is 2D rectangular graphic which by default has a quad (2 triangles) geometry.
@@ -60,6 +63,7 @@ type IPanel interface {
 type Panel struct {
 	*graphic.Graphic                    // Embedded graphic
 	mat              *material.Material // panel material
+	zLayerDelta      int                // Z-layer relative to parent
 
 	bounded bool // Whether panel is bounded by its parent
 	enabled bool // Whether event should be processed for this panel
@@ -119,11 +123,6 @@ type BasicStyle struct {
 	FgColor math32.Color4
 }
 
-const (
-	deltaZ    = -0.000001      // delta Z for bounded panels
-	deltaZunb = deltaZ * 10000 // delta Z for unbounded panels
-)
-
 // Quad geometry shared by ALL Panels
 var panelQuadGeometry *geometry.Geometry
 
@@ -169,8 +168,14 @@ func (p *Panel) Initialize(ipan IPanel, width, height float32) { // TODO rename 
 
 	// Initialize material
 	p.mat = material.NewMaterial()
+	p.mat.SetUseLights(material.UseLightNone)
 	p.mat.SetShader("panel")
 	p.mat.SetShaderUnique(true)
+
+	// For now set all panels as transparent by default
+	// This means they are all rendered back to front, after and on top of everything else
+	// TODO if we know a panel is opaque, setting it as such will improve rendering performance
+	p.mat.SetTransparent(true)
 
 	// Initialize graphic
 	p.Graphic = graphic.NewGraphic(ipan, panelQuadGeometry.Incref(), gls.TRIANGLES)
@@ -185,16 +190,6 @@ func (p *Panel) Initialize(ipan IPanel, width, height float32) { // TODO rename 
 	p.bounded = true
 	p.enabled = true
 	p.resize(width, height, true)
-
-	// Subscribe to OnDescendant to update Z-positions starting from "root" panels
-	p.Subscribe(core.OnDescendant, func(evname string, ev interface{}) {
-		par := p.Parent()
-		_, parentIsIPanel := par.(IPanel)
-		if par == nil || !parentIsIPanel {
-			// This is a "root" panel
-			p.setZ(0, deltaZunb)
-		}
-	})
 }
 
 // InitializeGraphic initializes this panel with a different graphic
@@ -240,6 +235,18 @@ func (p *Panel) SetTopChild(ipan IPanel) {
 		p.Add(ipan)
 		p.SetChanged(true)
 	}
+}
+
+// SetZLayerDelta sets the Z-layer of the panel relative to its parent.
+func (p *Panel) SetZLayerDelta(zLayerDelta int) {
+
+	p.zLayerDelta = zLayerDelta
+}
+
+// ZLayerDelta returns the Z-layer of the panel relative to its parent.
+func (p *Panel) ZLayerDelta() int {
+
+	return p.zLayerDelta
 }
 
 // SetPosition sets this panel absolute position in pixel coordinates
@@ -697,35 +704,6 @@ func (p *Panel) setContentSize(width, height float32, dispatch bool) {
 		p.borderSizes.Top + p.borderSizes.Bottom +
 		p.marginSizes.Top + p.marginSizes.Bottom
 	p.resize(eWidth, eHeight, dispatch)
-}
-
-// setZ sets the Z coordinate for this panel and its children recursively
-// starting at the specified z and zunb coordinates.
-// The z coordinate is used for bound panels and zunb for unbounded panels.
-// The z coordinate is set so panels added later are closer to the screen.
-// All unbounded panels and its children are closer than any of the bounded panels.
-func (p *Panel) setZ(z, zunb float32) (float32, float32) {
-
-	// TODO there's a problem here - two buttons with labels one on top of the other have interlacing labels...
-
-	// Bounded panel
-	if p.bounded {
-		p.SetPositionZ(z)
-		z += deltaZ
-		for _, ichild := range p.Children() {
-			z, zunb = ichild.(IPanel).GetPanel().setZ(z, zunb)
-		}
-		return z, zunb
-	}
-
-	// Unbounded panel
-	p.SetPositionZ(zunb)
-	zchild := zunb + deltaZ
-	zunb += deltaZunb
-	for _, ichild := range p.Children() {
-		_, zunb = ichild.(IPanel).GetPanel().setZ(zchild, zunb)
-	}
-	return z, zunb
 }
 
 // updateBounds is called by UpdateMatrixWorld() and calculates this panel
