@@ -81,11 +81,6 @@ type Panel struct {
 	width  float32
 	height float32
 
-	// Absolute screen position and size in clip (NDC) coordinates
-	posclip math32.Vector3
-	wclip   float32
-	hclip   float32
-
 	xmin float32 // minimum absolute x this panel can use
 	xmax float32 // maximum absolute x this panel can use
 	ymin float32 // minimum absolute y this panel can use
@@ -507,7 +502,7 @@ func (p *Panel) Pospix() math32.Vector3 {
 }
 
 // Add adds a child panel to this one
-// TODO DOC This overrides Node because only IPanels can be children of an IPanel
+// This overrides the Node method to enforce that IPanels can only have IPanels as children
 func (p *Panel) Add(ichild IPanel) *Panel {
 
 	p.Node.Add(ichild)
@@ -568,10 +563,7 @@ func (p *Panel) UpdateMatrixWorld() {
 // the specified screen position in pixels.
 func (p *Panel) ContainsPosition(x, y float32) bool {
 
-	if x < p.pospix.X || x >= (p.pospix.X+p.width) {
-		return false
-	}
-	if y < p.pospix.Y || y >= (p.pospix.Y+p.height) {
+	if x < p.pospix.X || y < p.pospix.Y || x >= (p.pospix.X+p.width) || y >= (p.pospix.Y+p.height) {
 		return false
 	}
 	return true
@@ -592,12 +584,8 @@ func (p *Panel) InsideBorders(x, y float32) bool {
 // Intersects returns if this panel intersects with the other panel
 func (p *Panel) Intersects(other *Panel) bool {
 
-	// Checks if one panel is completely on the left side of the other
-	if p.pospix.X+p.width <= other.pospix.X || other.pospix.X+other.width <= p.pospix.X {
-		return false
-	}
-	// Checks if one panel is completely above the other
-	if p.pospix.Y+p.height <= other.pospix.Y || other.pospix.Y+other.height <= p.pospix.Y {
+	if p.pospix.X+p.width <= other.pospix.X || other.pospix.X+other.width <= p.pospix.X ||
+		p.pospix.Y+p.height <= other.pospix.Y || other.pospix.Y+other.height <= p.pospix.Y {
 		return false
 	}
 	return true
@@ -660,38 +648,10 @@ func (p *Panel) ContentCoords(wx, wy float32) (float32, float32) {
 	return cx, cy
 }
 
-// NDC2Pix converts the specified NDC coordinates (-1,1) to relative pixel coordinates
-// for this panel content area.
-// 0,0      1,0        0,0       w,0
-//  +--------+          +---------+
-//  |        | -------> |         |
-//  +--------+          +---------+
-// 0,-1     1,-1       0,h       w,h
-func (p *Panel) NDC2Pix(nx, ny float32) (x, y float32) {
-
-	w := p.ContentWidth()
-	h := p.ContentHeight()
-	return w * nx, -h * ny
-}
-
-// Pix2NDC converts the specified relative pixel coordinates to NDC coordinates for this panel
-// content area
-// 0,0       w,0       0,0       1,0
-//  +---------+         +---------+
-//  |         | ------> |         |
-//  +---------+         +---------+
-// 0,h       w,h       0,-1      1,-1
-func (p *Panel) Pix2NDC(px, py float32) (nx, ny float32) {
-
-	w := p.ContentWidth()
-	h := p.ContentHeight()
-	return px / w, -py / h
-}
-
 // setContentSize is an internal version of SetContentSize() which allows
 // to determine if the panel will recalculate its layout and dispatch event.
 // It is normally used by layout managers when setting the panel content size
-// to avoid another invokation of the layout manager.
+// to avoid another invocation of the layout manager.
 func (p *Panel) setContentSize(width, height float32, dispatch bool) {
 
 	// Calculates the new desired external width and height
@@ -909,26 +869,14 @@ func (p *Panel) RenderSetup(gl *gls.GLS, rinfo *core.RenderInfo) {
 func (p *Panel) SetModelMatrix(gl *gls.GLS, mm *math32.Matrix4) {
 
 	// Get scale of window (for HiDPI support)
-	sX64, sY64 := Manager().win.GetScale()
-	sX := float32(sX64)
-	sY := float32(sY64)
+	sX, sY := Manager().win.GetScale()
 
 	// Get the current viewport width and height
 	_, _, width, height := gl.GetViewport()
-	fwidth := float32(width) / sX
-	fheight := float32(height) / sY
 
-	// Scale the quad for the viewport so it has fixed dimensions in pixels.
-	p.wclip = 2 * float32(p.width) / fwidth
-	p.hclip = 2 * float32(p.height) / fheight
-	var scale math32.Vector3
-	scale.Set(p.wclip, p.hclip, 1)
-
-	// Convert absolute position in pixel coordinates from the top/left to
-	// standard OpenGL clip coordinates of the quad center
-	p.posclip.X = (p.pospix.X - fwidth/2) / (fwidth / 2)
-	p.posclip.Y = -(p.pospix.Y - fheight/2) / (fheight / 2)
-	p.posclip.Z = p.Position().Z
+	// Compute common factors
+	fX := 2 * float32(sX) / float32(width)
+	fY := 2 * float32(sY) / float32(height)
 
 	// Calculates the model matrix
 	var quat math32.Quaternion
