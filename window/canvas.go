@@ -381,29 +381,29 @@ func Init(canvasId string) error {
 
 	// TODO scaling/hidpi (device pixel ratio)
 
-	// Set up key callbacks to dispatch events
+	// Set up key down callback to dispatch event
 	w.keyDown = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		event := args[0]
 		eventCode := event.Get("code").String()
-		w.keyEv.Keycode = Key(keyMap[eventCode])
+		w.keyEv.Key = Key(keyMap[eventCode])
 		w.keyEv.Mods = getModifiers(event)
 		w.Dispatch(OnKeyDown, &w.keyEv)
 		return nil
 	})
 	js.Global().Call("addEventListener", "keydown", w.keyDown)
 
+	// Set up key up callback to dispatch event
 	w.keyUp = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		event := args[0]
 		eventCode := event.Get("code").String()
-		w.keyEv.Keycode = Key(keyMap[eventCode])
+		w.keyEv.Key = Key(keyMap[eventCode])
 		w.keyEv.Mods = getModifiers(event)
 		w.Dispatch(OnKeyUp, &w.keyEv)
 		return nil
 	})
 	js.Global().Call("addEventListener", "keyup", w.keyUp)
 
-	// Set up mouse button callbacks to dispatch events // TODO make these comments consistent
-
+	// Set up mouse down callback to dispatch event
 	w.mouseDown = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		event := args[0]
 		w.mouseEv.Button = MouseButton(event.Get("button").Int())
@@ -415,6 +415,7 @@ func Init(canvasId string) error {
 	})
 	w.canvas.Call("addEventListener", "mousedown", w.mouseDown)
 
+	// Set up mouse down callback to dispatch event
 	w.mouseUp = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		event := args[0]
 		w.mouseEv.Button = MouseButton(event.Get("button").Int())
@@ -426,6 +427,7 @@ func Init(canvasId string) error {
 	})
 	w.canvas.Call("addEventListener", "mouseup", w.mouseUp)
 
+	// Set up mouse move callback to dispatch event
 	w.mouseMove = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		event := args[0]
 		w.cursorEv.Xpos = float32(event.Get("offsetX").Float()) //* float32(w.scaleX) TODO
@@ -436,6 +438,7 @@ func Init(canvasId string) error {
 	})
 	w.canvas.Call("addEventListener", "mousemove", w.mouseMove)
 
+	// Set up mouse wheel callback to dispatch event
 	w.mouseWheel = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		event := args[0]
 		event.Call("preventDefault")
@@ -447,6 +450,7 @@ func Init(canvasId string) error {
 	})
 	w.canvas.Call("addEventListener", "wheel", w.mouseWheel)
 
+	// Set up window resize callback to dispatch event
 	w.winResize = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		w.sizeEv.Width = w.canvas.Get("width").Int()
 		w.sizeEv.Height = w.canvas.Get("height").Int()
@@ -459,7 +463,7 @@ func Init(canvasId string) error {
 	})
 	js.Global().Get("window").Call("addEventListener", "resize", w.winResize)
 
-	//// Set char callback TODO
+	//// Set up char callback to dispatch event TODO
 	//w.SetCharModsCallback(func(x *glfw.Window, char rune, mods glfw.ModifierKey) {	//
 	//	w.charEv.Char = char
 	//	w.charEv.Mods = ModifierKey(mods)

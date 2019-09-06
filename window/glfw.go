@@ -293,7 +293,7 @@ func Init(width, height int, title string) error {
 	w.cursors[DiagResize1Cursor] = glfw.CreateCursor(diag1Img, 8, 8) // [/]
 	w.cursors[DiagResize2Cursor] = glfw.CreateCursor(diag2Img, 8, 8) // [\]
 
-	// Set key callback to dispatch event
+	// Set up key callback to dispatch event
 	w.SetKeyCallback(func(x *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 		w.keyEv.Key = Key(key)
 		w.keyEv.Mods = ModifierKey(mods)
@@ -307,14 +307,14 @@ func Init(width, height int, title string) error {
 		}
 	})
 
-	// Set char callback
+	// Set up char callback to dispatch event
 	w.SetCharModsCallback(func(x *glfw.Window, char rune, mods glfw.ModifierKey) {
 		w.charEv.Char = char
 		w.charEv.Mods = ModifierKey(mods)
 		w.Dispatch(OnChar, &w.charEv)
 	})
 
-	// Set mouse button callback to dispatch event
+	// Set up mouse button callback to dispatch event
 	w.SetMouseButtonCallback(func(x *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
 		xpos, ypos := x.GetCursorPos()
 		w.mouseEv.Button = MouseButton(button)
@@ -328,7 +328,7 @@ func Init(width, height int, title string) error {
 		}
 	})
 
-	// Set window size callback to dispatch event
+	// Set up window size callback to dispatch event
 	w.SetSizeCallback(func(x *glfw.Window, width int, height int) {
 		fbw, fbh := x.GetFramebufferSize()
 		w.sizeEv.Width = width
@@ -338,14 +338,14 @@ func Init(width, height int, title string) error {
 		w.Dispatch(OnWindowSize, &w.sizeEv)
 	})
 
-	// Set window position event callback to dispatch event
+	// Set up window position callback to dispatch event
 	w.SetPosCallback(func(x *glfw.Window, xpos int, ypos int) {
 		w.posEv.Xpos = xpos
 		w.posEv.Ypos = ypos
 		w.Dispatch(OnWindowPos, &w.posEv)
 	})
 
-	// Set window cursor position event callback to dispatch event
+	// Set up window cursor position callback to dispatch event
 	w.SetCursorPosCallback(func(x *glfw.Window, xpos float64, ypos float64) {
 		w.cursorEv.Xpos = float32(xpos * w.scaleX)
 		w.cursorEv.Ypos = float32(ypos * w.scaleY)
@@ -353,7 +353,7 @@ func Init(width, height int, title string) error {
 		w.Dispatch(OnCursor, &w.cursorEv)
 	})
 
-	// Set mouse wheel scroll event callback to dispatch event
+	// Set up mouse wheel scroll callback to dispatch event
 	w.SetScrollCallback(func(x *glfw.Window, xoff float64, yoff float64) {
 		w.scrollEv.Xoffset = float32(xoff)
 		w.scrollEv.Yoffset = float32(yoff)
