@@ -410,26 +410,12 @@ func (m *Matrix4) Determinant() float32 {
 // Returns pointer to this updated matrix.
 func (m *Matrix4) Transpose() *Matrix4 {
 
-	var tmp float32
-	tmp = m[1]
-	m[1] = m[4]
-	m[4] = tmp
-	tmp = m[2]
-	m[2] = m[8]
-	m[8] = tmp
-	tmp = m[6]
-	m[6] = m[9]
-	m[9] = tmp
-
-	tmp = m[3]
-	m[3] = m[12]
-	m[12] = tmp
-	tmp = m[7]
-	m[7] = m[13]
-	m[13] = tmp
-	tmp = m[11]
-	m[11] = m[14]
-	m[14] = tmp
+	m[1], m[4] = m[4], m[1]
+	m[2], m[8] = m[8], m[2]
+	m[6], m[9] = m[9], m[6]
+	m[3], m[12] = m[12], m[3]
+	m[7], m[13] = m[13], m[7]
+	m[11], m[14] = m[14], m[11]
 	return m
 }
 
