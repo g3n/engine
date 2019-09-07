@@ -89,7 +89,7 @@ func (v *Vector4) SetComponent(index int, value float32) *Vector4 {
 	case 2:
 		v.Z = value
 	case 3:
-		v.Z = value
+		v.W = value
 	default:
 		panic("index is out of range")
 	}

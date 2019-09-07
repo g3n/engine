@@ -254,14 +254,14 @@ func (m *Matrix3) GetInverse(src *Matrix3) error {
 	detInv := 1 / det
 
 	m[0] = t11 * detInv
-	m[1] = ( n31 * n23 - n33 * n21 ) * detInv
-	m[2] = ( n32 * n21 - n31 * n22 ) * detInv
+	m[1] = (n31*n23 - n33*n21) * detInv
+	m[2] = (n32*n21 - n31*n22) * detInv
 	m[3] = t12 * detInv
-	m[4] = ( n33 * n11 - n31 * n13 ) * detInv
-	m[5] = ( n31 * n12 - n32 * n11 ) * detInv
+	m[4] = (n33*n11 - n31*n13) * detInv
+	m[5] = (n31*n12 - n32*n11) * detInv
 	m[6] = t13 * detInv
-	m[7] = ( n21 * n13 - n23 * n11 ) * detInv
-	m[8] = ( n22 * n11 - n21 * n12 ) * detInv
+	m[7] = (n21*n13 - n23*n11) * detInv
+	m[8] = (n22*n11 - n21*n12) * detInv
 
 	return nil
 }
@@ -270,16 +270,9 @@ func (m *Matrix3) GetInverse(src *Matrix3) error {
 // Returns pointer to this updated matrix.
 func (m *Matrix3) Transpose() *Matrix3 {
 
-	var tmp float32
-	tmp = m[1]
-	m[1] = m[3]
-	m[3] = tmp
-	tmp = m[2]
-	m[2] = m[6]
-	m[6] = tmp
-	tmp = m[5]
-	m[5] = m[7]
-	m[7] = tmp
+	m[1], m[3] = m[3], m[1]
+	m[2], m[6] = m[6], m[2]
+	m[5], m[7] = m[7], m[5]
 	return m
 }
 
