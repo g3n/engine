@@ -188,6 +188,7 @@ func (m *Menu) AddSeparator() *MenuItem {
 func (m *Menu) AddMenu(text string, subm *Menu) *MenuItem {
 
 	mi := newMenuItem(text, m.styles.Item)
+	mi.zLayerDelta = 1
 	m.Panel.Add(mi)
 	m.items = append(m.items, mi)
 	mi.submenu = subm
