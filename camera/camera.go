@@ -90,3 +90,21 @@ func (cam *Camera) ViewMatrix(m *math32.Matrix4) {
 		panic("Camera.ViewMatrix: Couldn't invert matrix")
 	}
 }
+
+// Project satisfies the ICamera interface and can be implemented for specific camera types.
+func (cam *Camera) Project(v *math32.Vector3) (*math32.Vector3, error) {
+
+	panic("Not implemented")
+}
+
+// Unproject satisfies the ICamera interface and can implemented for specific camera types.
+func (cam *Camera) Unproject(v *math32.Vector3) (*math32.Vector3, error) {
+
+	panic("Not implemented")
+}
+
+// SetRaycaster satisfies the ICamera interface and can implemented for specific camera types.
+func (cam *Camera) SetRaycaster(rc *core.Raycaster, x, y float32) error {
+
+	panic("Not implemented")
+}

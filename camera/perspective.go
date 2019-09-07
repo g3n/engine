@@ -16,7 +16,7 @@ type Perspective struct {
 	aspect      float32        // aspect ratio (width/height)
 	near        float32        // near plane z coordinate
 	far         float32        // far plane z coordinate
-	projChanged bool           // camera projection parameters changed (needs to recalculates projection matrix)
+	projChanged bool           // camera projection parameters changed (needs to recalculate projection matrix)
 	projMatrix  math32.Matrix4 // last calculated projection matrix
 }
 
