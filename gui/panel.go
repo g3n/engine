@@ -828,7 +828,7 @@ func (p *Panel) resize(width, height float32, dispatch bool) {
 		float32(p.content.Width) / float32(p.width),
 		float32(p.content.Height) / float32(p.height),
 	}
-	p.SetChanged(true)
+	p.SetChanged(true) // TODO necessary?
 
 	// Update layout and dispatch event
 	if !dispatch {
@@ -878,8 +878,12 @@ func (p *Panel) SetModelMatrix(gl *gls.GLS, mm *math32.Matrix4) {
 	fX := 2 * float32(sX) / float32(width)
 	fY := 2 * float32(sY) / float32(height)
 
-	// Calculates the model matrix
-	var quat math32.Quaternion
-	quat.SetIdentity()
-	mm.Compose(&p.posclip, &quat, &scale)
+	// Calculate the model matrix
+	// Convert pixel coordinates to standard OpenGL clip coordinates and scale the quad for the viewport
+	mm.Set(
+		fX*float32(p.width), 0, 0, fX*p.pospix.X-1,
+		0, fY*float32(p.height), 0, 1-fY*p.pospix.Y,
+		0, 0, 1, p.Position().Z,
+		0, 0, 0, 1,
+	)
 }
