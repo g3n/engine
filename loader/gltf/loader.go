@@ -572,6 +572,10 @@ func (g *GLTF) loadAttributes(geom *geometry.Geometry, attributes map[string]int
 				if err != nil {
 					return err
 				}
+				//
+				// TODO: BUG HERE
+				// If buffer view has accessors with different component type then this will have a read alignment problem!
+				//
 				data, err := g.bytesToArrayF32(buf, accessor.ComponentType, accessor.Count*TypeSizes[accessor.Type])
 				if err != nil {
 					return err
@@ -1017,10 +1021,7 @@ func (g *GLTF) isInterleaved(accessor Accessor) bool {
 	itemBytes := int(gls.FloatSize) * itemSize
 
 	// If the BufferView stride is equal to the item size, the buffer is not interleaved
-	if bv.ByteStride == nil {
-		return false
-	}
-	if *bv.ByteStride == itemBytes {
+	if bv.ByteStride == nil || *bv.ByteStride == itemBytes {
 		return false
 	}
 	return true
