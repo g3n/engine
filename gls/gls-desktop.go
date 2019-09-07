@@ -13,7 +13,6 @@ import "C"
 
 import (
 	"fmt"
-	"math"
 	"reflect"
 	"unsafe"
 )
@@ -27,16 +26,18 @@ type GLS struct {
 	checkErrors bool              // check openGL API errors flag
 
 	// Cache OpenGL state to avoid making unnecessary API calls
-	activeTexture       uint32      // cached last set active texture unit
-	viewportX           int32       // cached last set viewport x
-	viewportY           int32       // cached last set viewport y
-	viewportWidth       int32       // cached last set viewport width
-	viewportHeight      int32       // cached last set viewport height
-	lineWidth           float32     // cached last set line width
-	sideView            int         // cached last set triangle side view mode
-	frontFace           uint32      // cached last set glFrontFace value
-	depthFunc           uint32      // cached last set depth function
-	depthMask           int         // cached last set depth mask
+	activeTexture  uint32  // cached last set active texture unit
+	viewportX      int32   // cached last set viewport x
+	viewportY      int32   // cached last set viewport y
+	viewportWidth  int32   // cached last set viewport width
+	viewportHeight int32   // cached last set viewport height
+	lineWidth      float32 // cached last set line width
+	sideView       int     // cached last set triangle side view mode
+	frontFace      uint32  // cached last set glFrontFace value
+	depthFunc      uint32  // cached last set depth function
+	depthMask      int     // cached last set depth mask
+	//stencilFunc
+	stencilMask         uint32      // cached last set stencil mask
 	capabilities        map[int]int // cached capabilities (Enable/Disable)
 	blendEquation       uint32      // cached last set blend equation value
 	blendSrc            uint32      // cached last set blend src value
@@ -54,33 +55,6 @@ type GLS struct {
 	gobuf               []byte      // conversion buffer with GO memory
 	cbuf                []byte      // conversion buffer with C memory
 }
-
-// Stats contains counters of OpenGL resources being used as well
-// the cumulative numbers of some OpenGL calls for performance evaluation.
-type Stats struct {
-	Shaders    int    // Current number of shader programs
-	Vaos       int    // Number of Vertex Array Objects
-	Buffers    int    // Number of Buffer Objects
-	Textures   int    // Number of Textures
-	Caphits    uint64 // Cumulative number of hits for Enable/Disable
-	UnilocHits uint64 // Cumulative number of uniform location cache hits
-	UnilocMiss uint64 // Cumulative number of uniform location cache misses
-	Unisets    uint64 // Cumulative number of uniform sets
-	Drawcalls  uint64 // Cumulative number of draw calls
-}
-
-const (
-	capUndef    = 0
-	capDisabled = 1
-	capEnabled  = 2
-	uintUndef   = math.MaxUint32
-	intFalse    = 0
-	intTrue     = 1
-)
-
-const (
-	FloatSize = int32(unsafe.Sizeof(float32(0)))
-)
 
 // New creates and returns a new instance of a GLS object,
 // which encapsulates the state of an OpenGL context.
@@ -163,6 +137,7 @@ func (gs *GLS) setDefaultState() {
 	gs.ClearDepth(1)
 	gs.ClearStencil(0)
 	gs.Enable(DEPTH_TEST)
+	//gs.DepthMask(true)
 	gs.DepthFunc(LEQUAL)
 	gs.FrontFace(CCW)
 	gs.CullFace(BACK)
@@ -392,6 +367,29 @@ func (gs *GLS) DepthMask(flag bool) {
 	} else {
 		gs.depthMask = intFalse
 	}
+}
+
+func (gs *GLS) StencilOp(fail, zfail, zpass uint32) {
+
+	// TODO save state
+	C.glStencilOp(C.GLenum(fail), C.GLenum(zfail), C.GLenum(zpass))
+}
+
+func (gs *GLS) StencilFunc(mode uint32, ref int32, mask uint32) {
+
+	// TODO save state
+	C.glStencilFunc(C.GLenum(mode), C.GLint(ref), C.GLuint(mask))
+}
+
+// TODO doc
+// StencilMask enables or disables writing into the stencil buffer.
+func (gs *GLS) StencilMask(mask uint32) {
+
+	if gs.stencilMask == mask {
+		return
+	}
+	C.glStencilMask(C.GLuint(mask))
+	gs.stencilMask = mask
 }
 
 // DrawArrays renders primitives from array data.
