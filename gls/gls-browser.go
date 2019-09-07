@@ -399,6 +399,8 @@ func (gs *GLS) DeleteVertexArrays(vaos ...uint32) {
 	}
 }
 
+// TODO ReadPixels
+
 // DepthFunc specifies the function used to compare each incoming pixel
 // depth value with the depth value present in the depth buffer.
 func (gs *GLS) DepthFunc(mode uint32) {

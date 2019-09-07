@@ -341,6 +341,18 @@ func (gs *GLS) DeleteVertexArrays(vaos ...uint32) {
 	gs.stats.Vaos -= len(vaos)
 }
 
+// ReadPixels returns the current rendered image.
+// x, y: specifies the window coordinates of the first pixel that is read from the frame buffer.
+// width, height: specifies the dimensions of the pixel rectangle.
+// format: specifies the format of the pixel data.
+// format_type: specifies the data type of the pixel data.
+// more information: http://docs.gl/gl3/glReadPixels
+func (gs *GLS) ReadPixels(x, y, width, height, format, formatType int) []byte {
+	size := uint32((width - x) * (height - y) * 4)
+	C.glReadPixels(C.GLint(x), C.GLint(y), C.GLsizei(width), C.GLsizei(height), C.GLenum(format), C.GLenum(formatType), unsafe.Pointer(gs.gobufSize(size)))
+	return gs.gobuf[:size]
+}
+
 // DepthFunc specifies the function used to compare each incoming pixel
 // depth value with the depth value present in the depth buffer.
 func (gs *GLS) DepthFunc(mode uint32) {
