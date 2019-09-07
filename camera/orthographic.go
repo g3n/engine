@@ -5,7 +5,6 @@
 package camera
 
 import (
-	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/math32"
 )
 
@@ -19,7 +18,7 @@ type Orthographic struct {
 	near        float32 // near plane z coordinate
 	far         float32 // far plane z coordinate
 	zoom        float32
-	projChanged bool           // camera projection parameters changed (needs to recalculates projection matrix)
+	projChanged bool           // camera projection parameters changed (needs to recalculate projection matrix)
 	projMatrix  math32.Matrix4 // last calculated projection matrix
 }
 
@@ -77,25 +76,4 @@ func (cam *Orthographic) ProjMatrix(m *math32.Matrix4) {
 		cam.projChanged = false
 	}
 	*m = cam.projMatrix
-}
-
-// Project satisfies the ICamera interface and must
-// be implemented for specific camera types.
-func (cam *Camera) Project(v *math32.Vector3) (*math32.Vector3, error) {
-
-	panic("Not implemented")
-}
-
-// Unproject satisfies the ICamera interface and must
-// be implemented for specific camera types.
-func (cam *Camera) Unproject(v *math32.Vector3) (*math32.Vector3, error) {
-
-	panic("Not implemented")
-}
-
-// SetRaycaster satisfies the ICamera interface and must
-// be implemented for specific camera types.
-func (cam *Camera) SetRaycaster(rc *core.Raycaster, x, y float32) error {
-
-	panic("Not implemented")
 }
