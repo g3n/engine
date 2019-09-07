@@ -67,7 +67,7 @@ func (a *Application) Run(update func(rend *renderer.Renderer, deltaTime time.Du
 	a.frameStart = time.Now()
 
 	// Initialize frame time
-	app.frameStart = time.Now()
+	a.frameStart = time.Now()
 
 	// Set up recurring calls to user's update function
 	for true {
