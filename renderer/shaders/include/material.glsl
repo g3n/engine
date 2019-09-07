@@ -26,7 +26,7 @@ uniform vec3 Material[6];
     #define MatTexVisible(a)	bool(MatTexinfo[(3*a)+2].y)
 
 // GLSL 3.30 does not allow indexing texture sampler with non constant values.
-// This macro is used to mix the texture with the specified index with the material color.
+// This function is used to mix the texture with the specified index with the material color.
 // It should be called for each texture index. It uses two externally defined variables:
 // vec4 texColor
 // vec4 texMixed
