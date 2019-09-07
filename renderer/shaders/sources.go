@@ -11,10 +11,6 @@ layout(location = 0) in  vec3  VertexPosition;
 layout(location = 1) in  vec3  VertexNormal;
 layout(location = 2) in  vec3  VertexColor;
 layout(location = 3) in  vec2  VertexTexcoord;
-layout(location = 4) in  float VertexDistance;
-layout(location = 5) in  vec4  VertexTexoffsets;
-
-
 `
 
 const include_bones_vertex_source = `#ifdef BONE_INFLUENCERS
@@ -132,7 +128,7 @@ uniform vec3 Material[6];
     #define MatTexVisible(a)	bool(MatTexinfo[(3*a)+2].y)
 
 // GLSL 3.30 does not allow indexing texture sampler with non constant values.
-// This macro is used to mix the texture with the specified index with the material color.
+// This function is used to mix the texture with the specified index with the material color.
 // It should be called for each texture index. It uses two externally defined variables:
 // vec4 texColor
 // vec4 texMixed
@@ -212,82 +208,56 @@ void phongModel(vec4 position, vec3 normal, vec3 camDir, vec3 matAmbient, vec3 m
 
 #if AMB_LIGHTS>0
     // Ambient lights
-    for (int i = 0; i < AMB_LIGHTS; i++) {
+    for (int i = 0; i < AMB_LIGHTS; ++i) {
         ambientTotal += AmbientLightColor[i] * matAmbient;
     }
 #endif
 
 #if DIR_LIGHTS>0
     // Directional lights
-    for (int i = 0; i < DIR_LIGHTS; i++) {
-        // Diffuse reflection
-        // DirLightPosition is the direction of the current light
-        vec3 lightDirection = normalize(DirLightPosition(i));
-        // Calculates the dot product between the light direction and this vertex normal.
-        float dotNormal = max(dot(lightDirection, normal), 0.0);
-        diffuseTotal += DirLightColor(i) * matDiffuse * dotNormal;
-        // Specular reflection
-        // Calculates the light reflection vector
-        vec3 ref = reflect(-lightDirection, normal);
-        if (dotNormal > 0.0) {
-            specularTotal += DirLightColor(i) * MatSpecularColor * pow(max(dot(ref, camDir), 0.0), MatShininess);
+    for (int i = 0; i < DIR_LIGHTS; ++i) {
+        vec3 lightDirection = normalize(DirLightPosition(i)); // Vector from fragment to light source
+        float dotNormal = max(dot(lightDirection, normal), 0.0); // Dot product between light direction and fragment normal
+        if (dotNormal > 0.0) { // If the fragment is lit
+            diffuseTotal += DirLightColor(i) * matDiffuse * dotNormal;
+            specularTotal += DirLightColor(i) * MatSpecularColor * pow(max(dot(reflect(-lightDirection, normal), camDir), 0.0), MatShininess);
         }
     }
 #endif
 
 #if POINT_LIGHTS>0
     // Point lights
-    for (int i = 0; i < POINT_LIGHTS; i++) {
-        // Common calculations
-        // Calculates the direction and distance from the current vertex to this point light.
-        vec3 lightDirection = PointLightPosition(i) - vec3(position);
-        float lightDistance = length(lightDirection);
-        // Normalizes the lightDirection
-        lightDirection = lightDirection / lightDistance;
-        // Calculates the attenuation due to the distance of the light
-        float attenuation = 1.0 / (1.0 + PointLightLinearDecay(i) * lightDistance +
-            PointLightQuadraticDecay(i) * lightDistance * lightDistance);
-        // Diffuse reflection
-        float dotNormal = max(dot(lightDirection, normal), 0.0);
-        diffuseTotal += PointLightColor(i) * matDiffuse * dotNormal * attenuation;
-        // Specular reflection
-        // Calculates the light reflection vector
-        vec3 ref = reflect(-lightDirection, normal);
-        if (dotNormal > 0.0) {
-            specularTotal += PointLightColor(i) * MatSpecularColor *
-                pow(max(dot(ref, camDir), 0.0), MatShininess) * attenuation;
+    for (int i = 0; i < POINT_LIGHTS; ++i) {
+        vec3 lightDirection = PointLightPosition(i) - vec3(position); // Vector from fragment to light source
+        float lightDistance = length(lightDirection); // Distance from fragment to light source
+        lightDirection = lightDirection / lightDistance; // Normalize lightDirection
+        float dotNormal = max(dot(lightDirection, normal), 0.0);  // Dot product between light direction and fragment normal
+        if (dotNormal > 0.0) { // If the fragment is lit
+            float attenuation = 1.0 / (1.0 + PointLightLinearDecay(i) * lightDistance + PointLightQuadraticDecay(i) * lightDistance * lightDistance);
+            vec3 attenuatedColor = PointLightColor(i) * attenuation;
+            diffuseTotal += attenuatedColor * matDiffuse * dotNormal;
+            specularTotal += attenuatedColor * MatSpecularColor * pow(max(dot(reflect(-lightDirection, normal), camDir), 0.0), MatShininess);
         }
     }
 #endif
 
 #if SPOT_LIGHTS>0
-    for (int i = 0; i < SPOT_LIGHTS; i++) {
+    for (int i = 0; i < SPOT_LIGHTS; ++i) {
         // Calculates the direction and distance from the current vertex to this spot light.
-        vec3 lightDirection = SpotLightPosition(i) - vec3(position);
-        float lightDistance = length(lightDirection);
-        lightDirection = lightDirection / lightDistance;
-
-        // Calculates the attenuation due to the distance of the light
-        float attenuation = 1.0 / (1.0 + SpotLightLinearDecay(i) * lightDistance +
-            SpotLightQuadraticDecay(i) * lightDistance * lightDistance);
-
-        // Calculates the angle between the vertex direction and spot direction
-        // If this angle is greater than the cutoff the spotlight will not contribute
-        // to the final color.
-        float angle = acos(dot(-lightDirection, SpotLightDirection(i)));
+        vec3 lightDirection = SpotLightPosition(i) - vec3(position); // Vector from fragment to light source
+        float lightDistance = length(lightDirection); // Distance from fragment to light source
+        lightDirection = lightDirection / lightDistance; // Normalize lightDirection
+        float angleDot = dot(-lightDirection, SpotLightDirection(i));
+        float angle = acos(angleDot);
         float cutoff = radians(clamp(SpotLightCutoffAngle(i), 0.0, 90.0));
-
-        if (angle < cutoff) {
-            float spotFactor = pow(dot(-lightDirection, SpotLightDirection(i)), SpotLightAngularDecay(i));
-
-            // Diffuse reflection
-            float dotNormal = max(dot(lightDirection, normal), 0.0);
-            diffuseTotal += SpotLightColor(i) * matDiffuse * dotNormal * attenuation * spotFactor;
-
-            // Specular reflection
-            vec3 ref = reflect(-lightDirection, normal);
-            if (dotNormal > 0.0) {
-                specularTotal += SpotLightColor(i) * MatSpecularColor * pow(max(dot(ref, camDir), 0.0), MatShininess) * attenuation * spotFactor;
+        if (angle < cutoff) { // Check if fragment is inside spotlight beam
+            float dotNormal = max(dot(lightDirection, normal), 0.0); // Dot product between light direction and fragment normal
+            if (dotNormal > 0.0) { // If the fragment is lit
+                float attenuation = 1.0 / (1.0 + SpotLightLinearDecay(i) * lightDistance + SpotLightQuadraticDecay(i) * lightDistance * lightDistance);
+                float spotFactor = pow(angleDot, SpotLightAngularDecay(i));
+                vec3 attenuatedColor = SpotLightColor(i) * attenuation * spotFactor;
+                diffuseTotal += attenuatedColor * matDiffuse * dotNormal;
+                specularTotal += attenuatedColor * MatSpecularColor * pow(max(dot(reflect(-lightDirection, normal), camDir), 0.0), MatShininess);
             }
         }
     }
@@ -1043,14 +1013,8 @@ void main() {
     // The camera is at 0,0,0
     CamDir = normalize(-Position.xyz);
 
-    // Flips texture coordinate Y if requested.
-    vec2 texcoord = VertexTexcoord;
-    // #if MAT_TEXTURES>0
-    //     if (MatTexFlipY(0)) {
-    //         texcoord.y = 1 - texcoord.y;
-    //     }
-    // #endif
-    FragTexcoord = texcoord;
+    // Output texture coordinates to fragment shader
+    FragTexcoord = VertexTexcoord;
 
     vec3 vPosition = VertexPosition;
     mat4 finalWorld = mat4(1.0);

@@ -30,14 +30,8 @@ void main() {
     // The camera is at 0,0,0
     CamDir = normalize(-Position.xyz);
 
-    // Flips texture coordinate Y if requested.
-    vec2 texcoord = VertexTexcoord;
-    // #if MAT_TEXTURES>0
-    //     if (MatTexFlipY(0)) {
-    //         texcoord.y = 1 - texcoord.y;
-    //     }
-    // #endif
-    FragTexcoord = texcoord;
+    // Output texture coordinates to fragment shader
+    FragTexcoord = VertexTexcoord;
 
     vec3 vPosition = VertexPosition;
     mat4 finalWorld = mat4(1.0);
