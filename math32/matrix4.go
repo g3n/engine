@@ -161,11 +161,12 @@ func (m *Matrix4) MakeRotationFromEuler(euler *Vector3) *Matrix4 {
 	m[6] = be + af*d
 	m[10] = a * c
 
-	// Last column
+	// bottom row
 	m[3] = 0
 	m[7] = 0
 	m[11] = 0
-	// Bottom row
+
+	// last column
 	m[12] = 0
 	m[13] = 0
 	m[14] = 0
@@ -181,9 +182,11 @@ func (m *Matrix4) MakeRotationFromQuaternion(q *Quaternion) *Matrix4 {
 	y := q.Y
 	z := q.Z
 	w := q.W
+
 	x2 := x + x
 	y2 := y + y
 	z2 := z + z
+
 	xx := x * x2
 	xy := x * y2
 	xz := x * z2
@@ -206,12 +209,12 @@ func (m *Matrix4) MakeRotationFromQuaternion(q *Quaternion) *Matrix4 {
 	m[6] = yz + wx
 	m[10] = 1 - (xx + yy)
 
-	// last column
+	// bottom row
 	m[3] = 0
 	m[7] = 0
 	m[11] = 0
 
-	// bottom row
+	// last column
 	m[12] = 0
 	m[13] = 0
 	m[14] = 0
@@ -270,7 +273,7 @@ func (m *Matrix4) Multiply(other *Matrix4) *Matrix4 {
 	return m.MultiplyMatrices(m, other)
 }
 
-// MultiplyMatrices multiply matrix a by b (i.e. b*a) storing the result in this matrix.
+// MultiplyMatrices computes a * b, storing the result in this matrix.
 // Returns pointer to this updated matrix.
 func (m *Matrix4) MultiplyMatrices(a, b *Matrix4) *Matrix4 {
 
@@ -467,34 +470,31 @@ func (m *Matrix4) GetInverse(src *Matrix4) error {
 	t13 := n13*n24*n42 - n14*n23*n42 + n14*n22*n43 - n12*n24*n43 - n13*n22*n44 + n12*n23*n44
 	t14 := n14*n23*n32 - n13*n24*n32 - n14*n22*n33 + n12*n24*n33 + n13*n22*n34 - n12*n23*n34
 
-	det := n11 * t11 + n21 * t12 + n31 * t13 + n41 * t14
+	det := n11*t11 + n21*t12 + n31*t13 + n41*t14
 
 	if det == 0 {
 		m.Identity()
 		return errors.New("cannot invert matrix")
 	}
 
-	detInv := 1 / det
+	m[0] = t11
+	m[1] = n24*n33*n41 - n23*n34*n41 - n24*n31*n43 + n21*n34*n43 + n23*n31*n44 - n21*n33*n44
+	m[2] = n22*n34*n41 - n24*n32*n41 + n24*n31*n42 - n21*n34*n42 - n22*n31*n44 + n21*n32*n44
+	m[3] = n23*n32*n41 - n22*n33*n41 - n23*n31*n42 + n21*n33*n42 + n22*n31*n43 - n21*n32*n43
+	m[4] = t12
+	m[5] = n13*n34*n41 - n14*n33*n41 + n14*n31*n43 - n11*n34*n43 - n13*n31*n44 + n11*n33*n44
+	m[6] = n14*n32*n41 - n12*n34*n41 - n14*n31*n42 + n11*n34*n42 + n12*n31*n44 - n11*n32*n44
+	m[7] = n12*n33*n41 - n13*n32*n41 + n13*n31*n42 - n11*n33*n42 - n12*n31*n43 + n11*n32*n43
+	m[8] = t13
+	m[9] = n14*n23*n41 - n13*n24*n41 - n14*n21*n43 + n11*n24*n43 + n13*n21*n44 - n11*n23*n44
+	m[10] = n12*n24*n41 - n14*n22*n41 + n14*n21*n42 - n11*n24*n42 - n12*n21*n44 + n11*n22*n44
+	m[11] = n13*n22*n41 - n12*n23*n41 - n13*n21*n42 + n11*n23*n42 + n12*n21*n43 - n11*n22*n43
+	m[12] = t14
+	m[13] = n13*n24*n31 - n14*n23*n31 + n14*n21*n33 - n11*n24*n33 - n13*n21*n34 + n11*n23*n34
+	m[14] = n14*n22*n31 - n12*n24*n31 - n14*n21*n32 + n11*n24*n32 + n12*n21*n34 - n11*n22*n34
+	m[15] = n12*n23*n31 - n13*n22*n31 + n13*n21*n32 - n11*n23*n32 - n12*n21*n33 + n11*n22*n33
 
-	m[0] = t11 * detInv
-	m[1] = ( n24*n33*n41 - n23*n34*n41 - n24*n31*n43 + n21*n34*n43 + n23*n31*n44 - n21*n33*n44 ) * detInv
-	m[2] = ( n22*n34*n41 - n24*n32*n41 + n24*n31*n42 - n21*n34*n42 - n22*n31*n44 + n21*n32*n44 ) * detInv
-	m[3] = ( n23*n32*n41 - n22*n33*n41 - n23*n31*n42 + n21*n33*n42 + n22*n31*n43 - n21*n32*n43 ) * detInv
-
-	m[4] = t12 * detInv
-	m[5] = ( n13*n34*n41 - n14*n33*n41 + n14*n31*n43 - n11*n34*n43 - n13*n31*n44 + n11*n33*n44 ) * detInv
-	m[6] = ( n14*n32*n41 - n12*n34*n41 - n14*n31*n42 + n11*n34*n42 + n12*n31*n44 - n11*n32*n44 ) * detInv
-	m[7] = ( n12*n33*n41 - n13*n32*n41 + n13*n31*n42 - n11*n33*n42 - n12*n31*n43 + n11*n32*n43 ) * detInv
-
-	m[8] = t13 * detInv
-	m[9] = ( n14*n23*n41 - n13*n24*n41 - n14*n21*n43 + n11*n24*n43 + n13*n21*n44 - n11*n23*n44 ) * detInv
-	m[10] = ( n12*n24*n41 - n14*n22*n41 + n14*n21*n42 - n11*n24*n42 - n12*n21*n44 + n11*n22*n44 ) * detInv
-	m[11] = ( n13*n22*n41 - n12*n23*n41 - n13*n21*n42 + n11*n23*n42 + n12*n21*n43 - n11*n22*n43 ) * detInv
-
-	m[12] = t14 * detInv
-	m[13] = ( n13*n24*n31 - n14*n23*n31 + n14*n21*n33 - n11*n24*n33 - n13*n21*n34 + n11*n23*n34 ) * detInv
-	m[14] = ( n14*n22*n31 - n12*n24*n31 - n14*n21*n32 + n11*n24*n32 + n12*n21*n34 - n11*n22*n34 ) * detInv
-	m[15] = ( n12*n23*n31 - n13*n22*n31 + n13*n21*n32 - n11*n23*n32 - n12*n21*n33 + n11*n22*n33 ) * detInv
+	m.MultiplyScalar(1.0 / det)
 
 	return nil
 }
@@ -640,24 +640,24 @@ func (m *Matrix4) Decompose(position *Vector3, quaternion *Quaternion, scale *Ve
 	var vector Vector3
 	var matrix = *m
 
-	sx := vector.Set(m[0], m[1], m[2]).Length()
-	sy := vector.Set(m[4], m[5], m[6]).Length()
-	sz := vector.Set(m[8], m[9], m[10]).Length()
-
-	// If determinant is negative, we need to invert one scale
-	det := m.Determinant()
-	if det < 0 {
-		sx = -sx
-	}
-
 	position.X = m[12]
 	position.Y = m[13]
 	position.Z = m[14]
 
+	scale.X = vector.Set(m[0], m[1], m[2]).Length()
+	scale.Y = vector.Set(m[4], m[5], m[6]).Length()
+	scale.Z = vector.Set(m[8], m[9], m[10]).Length()
+
+	// If determinant is negative, we need to invert one scale
+	det := m.Determinant()
+	if det < 0 {
+		scale.X = -scale.X
+	}
+
 	// Scale the rotation part
-	invSX := 1 / sx
-	invSY := 1 / sy
-	invSZ := 1 / sz
+	invSX := 1 / scale.X
+	invSY := 1 / scale.Y
+	invSZ := 1 / scale.Z
 
 	matrix[0] *= invSX
 	matrix[1] *= invSX
@@ -673,9 +673,6 @@ func (m *Matrix4) Decompose(position *Vector3, quaternion *Quaternion, scale *Ve
 
 	quaternion.SetFromRotationMatrix(&matrix)
 
-	scale.X = sx
-	scale.Y = sy
-	scale.Z = sz
 	return m
 }
 
