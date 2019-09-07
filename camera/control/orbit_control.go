@@ -26,7 +26,7 @@ type OrbitControl struct {
 	RotateSpeed     float32 // Rotate speed factor. Default is 1.0
 	MinDistance     float32 // Minimum distance from target. Default is 0.01
 	MaxDistance     float32 // Maximum distance from target. Default is infinity
-	MinPolarAngle   float32 // Minimum polar angle for rotatiom
+	MinPolarAngle   float32 // Minimum polar angle for rotation
 	MaxPolarAngle   float32
 	MinAzimuthAngle float32
 	MaxAzimuthAngle float32
@@ -215,7 +215,7 @@ func (oc *OrbitControl) updateRotate() {
 	oc.phiDelta = 0
 }
 
-// Updates camera rotation from tethaDelta and phiDelta
+// Updates camera rotation from thetaDelta and phiDelta
 // ALTERNATIVE rotation algorithm
 func (oc *OrbitControl) updateRotate2() {
 
