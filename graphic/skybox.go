@@ -61,8 +61,8 @@ func NewSkybox(data SkyboxData) (*Skybox, error) {
 	skybox.uniMVPm.Init("MVP")
 	skybox.uniNm.Init("NormalMatrix")
 
-	// The skybox should always be rendered first
-	skybox.SetRenderOrder(-100)
+	// The skybox should always be rendered last among the opaque objects
+	skybox.SetRenderOrder(100)
 
 	return skybox, nil
 }
