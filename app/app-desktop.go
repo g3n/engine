@@ -66,9 +66,6 @@ func (a *Application) Run(update func(rend *renderer.Renderer, deltaTime time.Du
 	a.startTime = time.Now()
 	a.frameStart = time.Now()
 
-	// Initialize frame time
-	a.frameStart = time.Now()
-
 	// Set up recurring calls to user's update function
 	for true {
 		// If Exit() was called or there was an attempt to close the window dispatch OnExit event for subscribers.
