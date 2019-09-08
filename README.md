@@ -154,7 +154,7 @@ func main() {
 	// Create and add lights to the scene
 	scene.Add(light.NewAmbient(&math32.Color{1.0, 1.0, 1.0}, 0.8))
 	pointLight := light.NewPoint(&math32.Color{1, 1, 1}, 5.0)
-	pointLight.SetPosition(	1, 0, 2)
+	pointLight.SetPosition(1, 0, 2)
 	scene.Add(pointLight)
 
 	// Create and add an axis helper to the scene
