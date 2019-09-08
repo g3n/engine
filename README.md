@@ -15,9 +15,11 @@ It can be used to write cross-platform Go applications that show rich and dynami
     <img style="float: right;" src="https://raw.githubusercontent.com/g3n/g3nd/master/data/images/g3nd_screenshots.png" alt="G3ND In Action"/>
   </p>
 
-  ## Highlighted Projects
+  ## Highlighted Projects Using G3N
 
-  [Gokoban - 3D Puzzle Game (_1st place in the 2017 Gopher Game Jam_)](https://github.com/danaugrs/gokoban)
+ * [Gokoban - 3D Puzzle Game (_1st place in the 2017 Gopher Game Jam_)](https://github.com/danaugrs/gokoban)
+ * [go-tsne (_dimensionality reduction particularly well suited for visualizing high-dimensional datasets_)](https://github.com/danaugrs/go-tsne)
+ * [G3N Server-Side Rendering](https://github.com/moethu/g3nserverside)
 
   ## Dependencies
 
