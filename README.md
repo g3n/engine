@@ -19,7 +19,7 @@ It can be used to write cross-platform Go applications that show rich and dynami
 
  * [Gokoban - 3D Puzzle Game (_1st place in the 2017 Gopher Game Jam_)](https://github.com/danaugrs/gokoban)
  * [go-tsne (_dimensionality reduction particularly well suited for visualizing high-dimensional datasets_)](https://github.com/danaugrs/go-tsne)
- * [G3N Server-Side Rendering](https://github.com/moethu/g3nserverside)
+ * [G3N Server-Side Rendering](https://github.com/moethu/webg3n)
 
   ## Dependencies
 
