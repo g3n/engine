@@ -56,9 +56,13 @@ Install the development files of OpenAL and Vorbis using [Homebrew](https://brew
 
   ## Installation
 
-  The following command will download and install the engine along with all its Go dependencies:
-
-  `go get -u github.com/g3n/engine/...`
+  The following set of commands will download and install the engine along with all its Go dependencies:
+  
+  ```
+  git clone https://github.com/g3n/engine g3n-engine
+  cd g3n-engine
+  go install ./...
+  ```
 
   ## Features
 
