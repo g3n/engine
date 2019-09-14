@@ -2,27 +2,27 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package graphic
+package util
 
 import (
 	"github.com/g3n/engine/geometry"
 	"github.com/g3n/engine/gls"
+	"github.com/g3n/engine/graphic"
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
 )
 
-// AxisHelper is the visual representation of the three axes
+// AxisHelper is a visual representation of the three axes.
 type AxisHelper struct {
-	Lines
+	graphic.Lines
 }
 
-// NewAxisHelper returns a pointer to a new AxisHelper object
+// NewAxisHelper returns a pointer to a new AxisHelper object.
 func NewAxisHelper(size float32) *AxisHelper {
 
 	axis := new(AxisHelper)
 
-	// Creates geometry with three orthogonal lines
-	// starting at the origin
+	// Create geometry with three orthogonal lines starting at the origin
 	geom := geometry.NewGeometry()
 	positions := math32.NewArrayF32(0, 18)
 	positions.Append(
