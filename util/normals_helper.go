@@ -2,19 +2,20 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package graphic
+package util
 
 import (
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/geometry"
 	"github.com/g3n/engine/gls"
+	"github.com/g3n/engine/graphic"
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
 )
 
 // NormalsHelper is the visual representation of the normals of a target object.
 type NormalsHelper struct {
-	Lines
+	graphic.Lines
 	size           float32
 	targetNode     *core.Node
 	targetGeometry *geometry.Geometry
@@ -22,7 +23,7 @@ type NormalsHelper struct {
 
 // NewNormalsHelper creates, initializes and returns a pointer to Normals helper object.
 // This helper shows the surface normals of the specified object.
-func NewNormalsHelper(ig IGraphic, size float32, color *math32.Color, lineWidth float32) *NormalsHelper {
+func NewNormalsHelper(ig graphic.IGraphic, size float32, color *math32.Color, lineWidth float32) *NormalsHelper {
 
 	// Creates new Normals helper
 	nh := new(NormalsHelper)

@@ -2,22 +2,23 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package graphic
+package util
 
 import (
 	"github.com/g3n/engine/geometry"
 	"github.com/g3n/engine/gls"
+	"github.com/g3n/engine/graphic"
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
 )
 
-// GridHelper is the visual representation of a grid
+// GridHelper is a visual representation of a grid.
 type GridHelper struct {
-	Lines
+	graphic.Lines
 }
 
 // NewGridHelper creates and returns a pointer to a new grid help object
-// with the specified size and step
+// with the specified size and step.
 func NewGridHelper(size, step float32, color *math32.Color) *GridHelper {
 
 	grid := new(GridHelper)
