@@ -149,7 +149,6 @@ func (a *Application) openDefaultAudioDevice() error {
 		return fmt.Errorf("setting OpenAL context current: %s", err)
 	}
 	// Logs audio library versions
-	fmt.Println("LOGGING")
 	log.Info("%s version: %s", al.GetString(al.Vendor), al.GetString(al.Version))
 	log.Info("%s", vorbis.VersionString())
 	return nil
