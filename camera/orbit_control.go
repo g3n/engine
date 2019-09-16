@@ -114,6 +114,12 @@ func (oc *OrbitControl) Reset() {
 	oc.target = *math32.NewVec3()
 }
 
+// Target returns the current orbit target.
+func (oc *OrbitControl) Target() math32.Vector3 {
+
+	return oc.target
+}
+
 // Enabled returns the current OrbitEnabled bitmask.
 func (oc *OrbitControl) Enabled() OrbitEnabled {
 
