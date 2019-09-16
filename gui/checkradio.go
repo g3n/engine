@@ -173,7 +173,7 @@ func (cb *CheckRadio) onMouse(evname string, ev interface{}) {
 	// Dispatch OnClick for left mouse button down
 	if evname == OnMouseDown {
 		mev := ev.(*window.MouseEvent)
-		if mev.Button == window.MouseButtonLeft {
+		if mev.Button == window.MouseButtonLeft && cb.Enabled() {
 			Manager().SetKeyFocus(cb)
 			cb.toggleState()
 			cb.Dispatch(OnClick, nil)
