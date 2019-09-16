@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package graphic implements scene objects which have a graphic representation.
 package graphic
 
 import (
@@ -10,7 +11,24 @@ import (
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/util/logger"
 )
+
+// Package logger
+var log = logger.New("GRAPHIC", logger.Default)
+
+// IGraphic is the interface for all Graphic objects.
+type IGraphic interface {
+	core.INode
+	GetGraphic() *Graphic
+	GetGeometry() *geometry.Geometry
+	IGeometry() geometry.IGeometry
+	SetRenderable(bool)
+	Renderable() bool
+	SetCullable(bool)
+	Cullable() bool
+	RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo)
+}
 
 // Graphic is a Node which has a visible representation in the scene.
 // It has an associated geometry and one or more materials.
@@ -30,29 +48,6 @@ type Graphic struct {
 	mm   math32.Matrix4 // Cached Model matrix
 	mvm  math32.Matrix4 // Cached ModelView matrix
 	mvpm math32.Matrix4 // Cached ModelViewProjection matrix
-}
-
-// GraphicMaterial specifies the material to be used for
-// a subset of vertices from the Graphic geometry
-// A Graphic object has at least one GraphicMaterial.
-type GraphicMaterial struct {
-	imat     material.IMaterial // Associated material
-	start    int                // Index of first element in the geometry
-	count    int                // Number of elements
-	igraphic IGraphic           // Graphic which contains this GraphicMaterial
-}
-
-// IGraphic is the interface for all Graphic objects.
-type IGraphic interface {
-	core.INode
-	GetGraphic() *Graphic
-	GetGeometry() *geometry.Geometry
-	IGeometry() geometry.IGeometry
-	SetRenderable(bool)
-	Renderable() bool
-	SetCullable(bool)
-	Cullable() bool
-	RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo)
 }
 
 // NewGraphic creates and returns a pointer to a new graphic object with
@@ -273,6 +268,16 @@ func (gr *Graphic) ModelViewMatrix() *math32.Matrix4 {
 func (gr *Graphic) ModelViewProjectionMatrix() *math32.Matrix4 {
 
 	return &gr.mvpm
+}
+
+// GraphicMaterial specifies the material to be used for
+// a subset of vertices from the Graphic geometry
+// A Graphic object has at least one GraphicMaterial.
+type GraphicMaterial struct {
+	imat     material.IMaterial // Associated material
+	start    int                // Index of first element in the geometry
+	count    int                // Number of elements
+	igraphic IGraphic           // Graphic which contains this GraphicMaterial
 }
 
 // IMaterial returns the material associated with the GraphicMaterial.

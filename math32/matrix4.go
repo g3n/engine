@@ -686,7 +686,7 @@ func (m *Matrix4) MakeFrustum(left, right, bottom, top, near, far float32) *Matr
 }
 
 // MakePerspective sets this matrix to a perspective projection matrix
-// with the specified field of view in degrees,
+// with the specified vertical field of view in degrees,
 // aspect ratio (width/height) and near and far planes.
 // Returns pointer to this updated matrix.
 func (m *Matrix4) MakePerspective(fov, aspect, near, far float32) *Matrix4 {

@@ -36,10 +36,3 @@ func (l *LineStrip) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 	location := l.uniMVPm.Location(gs)
 	gs.UniformMatrix4fv(location, 1, false, &mvpm[0])
 }
-
-// Raycast satisfies the INode interface and checks the intersections
-// of this geometry with the specified raycaster.
-func (l *LineStrip) Raycast(rc *core.Raycaster, intersects *[]core.Intersect) {
-
-	lineRaycast(l, rc, intersects, 1)
-}
