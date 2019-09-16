@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package renderer implements the scene renderer.
 package renderer
 
 import (
@@ -13,8 +14,12 @@ import (
 	"github.com/g3n/engine/light"
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/util/logger"
 	"sort"
 )
+
+// Package logger
+var log = logger.New("RENDERER", logger.Default)
 
 // Renderer renders a scene containing 3D objects and/or 2D GUI elements.
 type Renderer struct {
