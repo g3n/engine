@@ -2,13 +2,18 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package geometry implements several primitive geometry generators.
 package geometry
 
 import (
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/util/logger"
 	"strconv"
 )
+
+// Package logger
+var log = logger.New("GEOMETRY", logger.Default)
 
 // IGeometry is the interface for all geometries.
 type IGeometry interface {

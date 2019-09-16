@@ -24,7 +24,6 @@ type INode interface {
 	IsAncestorOf(INode) bool
 	LowestCommonAncestor(INode) INode
 	UpdateMatrixWorld()
-	Raycast(*Raycaster, *[]Intersect)
 	BoundingBox() math32.Box3
 	Render(gs *gls.GLS)
 	Clone() INode
@@ -111,9 +110,6 @@ func (n *Node) GetNode() *Node {
 
 	return n
 }
-
-// Raycast satisfies the INode interface.
-func (n *Node) Raycast(rc *Raycaster, intersects *[]Intersect) {}
 
 // BoundingBox satisfies the INode interface.
 // Computes union of own bounding box with those of all descendents.
@@ -672,6 +668,17 @@ func (n *Node) QuaternionMult(q *math32.Quaternion) {
 func (n *Node) Quaternion() math32.Quaternion {
 
 	return n.quaternion
+}
+
+// LookAt rotates the node to look at the specified target position, using the specified up vector.
+func (n *Node) LookAt(target, up *math32.Vector3) {
+
+	var worldPos math32.Vector3
+	n.WorldPosition(&worldPos)
+	var rotMat math32.Matrix4
+	rotMat.LookAt(&worldPos, target, up)
+	n.quaternion.SetFromRotationMatrix(&rotMat)
+	n.rotNeedsUpdate = true
 }
 
 // SetScale sets the scale.

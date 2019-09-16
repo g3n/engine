@@ -401,24 +401,25 @@ func (g *GLTF) LoadCamera(camIdx int) (core.INode, error) {
 	log.Debug("Loading Camera %d", camIdx)
 	camData := g.Cameras[camIdx]
 
+	aspect := float32(2) // TODO how to get the current aspect ratio of the viewport from here ?
+
 	if camData.Type == "perspective" {
 		desc := camData.Perspective
 		fov := 360 * (desc.Yfov) / 2 * math32.Pi
-		aspect := float32(2) // TODO how to get the current aspect ratio of the viewport from here ?
 		if desc.AspectRatio != nil {
 			aspect = *desc.AspectRatio
 		}
-		far := float32(2E6)
+		far := float32(2e6)
 		if desc.Zfar != nil {
 			far = *desc.Zfar
 		}
-		cam := camera.NewPerspective(fov, aspect, desc.Znear, far)
+		cam := camera.NewPerspective(aspect, desc.Znear, far, fov, camera.Vertical)
 		return cam, nil
 	}
 
 	if camData.Type == "orthographic" {
 		desc := camData.Orthographic
-		cam := camera.NewOrthographic(desc.Xmag/-2, desc.Xmag/2, desc.Ymag/2, desc.Ymag/-2, desc.Znear, desc.Zfar)
+		cam := camera.NewOrthographic(aspect, desc.Znear, desc.Zfar, desc.Ymag, camera.Vertical)
 		return cam, nil
 
 	}

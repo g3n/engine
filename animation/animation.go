@@ -5,6 +5,11 @@
 // Package animation
 package animation
 
+import "github.com/g3n/engine/util/logger"
+
+// Package logger
+var log = logger.New("ANIMATION", logger.Default)
+
 // Animation is a keyframe animation, containing channels.
 // Each channel animates a specific property of an object.
 // Animations can span multiple objects and properties.
@@ -105,7 +110,7 @@ func (anim *Animation) Update(delta float32) {
 	}
 
 	// Check if input is less than minimum
-	anim.time = anim.time + delta * anim.speed
+	anim.time = anim.time + delta*anim.speed
 	if anim.time < anim.minTime {
 		return
 	}

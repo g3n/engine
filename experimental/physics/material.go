@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package physics implements a basic physics engine.
 package physics
 
 type Material struct {
@@ -33,7 +32,6 @@ func NewContactMaterial() *ContactMaterial {
 	cm.frictionEquationRelaxation = 3
 	return cm
 }
-
 
 //type intPair struct {
 //	i int
