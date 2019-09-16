@@ -57,7 +57,7 @@ func New(aspect float32) *Camera {
 	return NewPerspective(aspect, 0.3, 1000, 60, Vertical)
 }
 
-// NewPersp creates and returns a new perspective camera with the specified parameters.
+// NewPerspective creates and returns a new perspective camera with the specified parameters.
 func NewPerspective(aspect, near, far, fov float32, axis Axis) *Camera {
 
 	c := new(Camera)
@@ -73,7 +73,7 @@ func NewPerspective(aspect, near, far, fov float32, axis Axis) *Camera {
 	return c
 }
 
-// NewOrtho creates and returns a new orthographic camera with the specified parameters.
+// NewOrthographic creates and returns a new orthographic camera with the specified parameters.
 func NewOrthographic(aspect, near, far, size float32, axis Axis) *Camera {
 
 	c := new(Camera)
