@@ -41,5 +41,3 @@ void main() {
     gl_Position = MVP * finalWorld * vec4(vPosition, 1.0);
 
 }
-
-

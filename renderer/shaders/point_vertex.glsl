@@ -2,6 +2,7 @@
 
 // Model uniforms
 uniform mat4 MVP;
+uniform mat4 MV;
 
 // Material uniforms
 #include <material>
@@ -22,7 +23,8 @@ void main() {
     gl_Position = pos;
 
     // Sets the size of the rasterized point decreasing with distance
-    gl_PointSize = (1.0 - pos.z / pos.w) * MatPointSize;
+    vec4 posMV = MV * vec4(VertexPosition, 1.0);
+    gl_PointSize = MatPointSize / -posMV.z;
 
     // Outputs color
     Color = MatEmissiveColor;

@@ -22,13 +22,6 @@ func (g *GLTF) loadMaterialCommon(ext interface{}) (material.IMaterial, error) {
 		doubleSided = val.(bool)
 	}
 
-	// Technique
-	technique := ""
-	val, ok = m["technique"]
-	if ok {
-		technique = val.(string)
-	}
-
 	// Transparent
 	transparent := false
 	val, ok = m["transparent"]
@@ -120,33 +113,17 @@ func (g *GLTF) loadMaterialCommon(ext interface{}) (material.IMaterial, error) {
 	//log.Error("shininess:%v", shininess)
 	//log.Error("transparency:%v", transparency)
 
-	var imat material.IMaterial
-	if technique == "PHONG" {
-		pm := material.NewPhong(&math32.Color{diffuse[0], diffuse[1], diffuse[2]})
-		pm.SetAmbientColor(&math32.Color{ambient[0], ambient[1], ambient[2]})
-		pm.SetEmissiveColor(&math32.Color{emission[0], emission[1], emission[2]})
-		pm.SetSpecularColor(&math32.Color{specular[0], specular[1], specular[2]})
-		pm.SetShininess(shininess)
-		pm.SetOpacity(transparency)
-		if texDiffuse != nil {
-			pm.AddTexture(texDiffuse)
-		}
-		imat = pm
-	} else {
-		sm := material.NewStandard(&math32.Color{diffuse[0], diffuse[1], diffuse[2]})
-		sm.SetAmbientColor(&math32.Color{ambient[0], ambient[1], ambient[2]})
-		sm.SetEmissiveColor(&math32.Color{emission[0], emission[1], emission[2]})
-		sm.SetSpecularColor(&math32.Color{specular[0], specular[1], specular[2]})
-		sm.SetShininess(shininess)
-		sm.SetOpacity(transparency)
-		if texDiffuse != nil {
-			sm.AddTexture(texDiffuse)
-		}
-		imat = sm
+	mat := material.NewStandard(&math32.Color{diffuse[0], diffuse[1], diffuse[2]})
+	mat.SetAmbientColor(&math32.Color{ambient[0], ambient[1], ambient[2]})
+	mat.SetEmissiveColor(&math32.Color{emission[0], emission[1], emission[2]})
+	mat.SetSpecularColor(&math32.Color{specular[0], specular[1], specular[2]})
+	mat.SetShininess(shininess)
+	mat.SetOpacity(transparency)
+	if texDiffuse != nil {
+		mat.AddTexture(texDiffuse)
 	}
 
 	// Double Sided
-	mat := imat.GetMaterial()
 	if doubleSided {
 		mat.SetSide(material.SideDouble)
 	} else {
@@ -159,5 +136,5 @@ func (g *GLTF) loadMaterialCommon(ext interface{}) (material.IMaterial, error) {
 	} else {
 		mat.SetDepthMask(false)
 	}
-	return imat, nil
+	return mat, nil
 }

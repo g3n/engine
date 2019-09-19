@@ -257,7 +257,7 @@ func (dec *Decoder) NewMesh(obj *Object) (*graphic.Mesh, error) {
 		}
 
 		// Creates material for mesh
-		mat := material.NewPhong(&matDesc.Diffuse)
+		mat := material.NewStandard(&matDesc.Diffuse)
 		ambientColor := mat.AmbientColor()
 		mat.SetAmbientColor(ambientColor.Multiply(&matDesc.Ambient))
 		mat.SetSpecularColor(&matDesc.Specular)
@@ -292,7 +292,7 @@ func (dec *Decoder) NewMesh(obj *Object) (*graphic.Mesh, error) {
 		}
 
 		// Creates material for mesh
-		matGroup := material.NewPhong(&matDesc.Diffuse)
+		matGroup := material.NewStandard(&matDesc.Diffuse)
 		ambientColor := matGroup.AmbientColor()
 		matGroup.SetAmbientColor(ambientColor.Multiply(&matDesc.Ambient))
 		matGroup.SetSpecularColor(&matDesc.Specular)

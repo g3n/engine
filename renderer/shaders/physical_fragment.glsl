@@ -411,5 +411,3 @@ void main() {
     // Final fragment color
     FragColor = vec4(pow(color,vec3(1.0/2.2)), baseColor.a);
 }
-
-

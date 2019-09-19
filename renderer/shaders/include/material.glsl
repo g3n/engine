@@ -24,6 +24,7 @@ uniform vec3 Material[6];
     #define MatTexRepeat(a)		MatTexinfo[(3*a)+1]
     #define MatTexFlipY(a)		bool(MatTexinfo[(3*a)+2].x)
     #define MatTexVisible(a)	bool(MatTexinfo[(3*a)+2].y)
+    #define MatTex(a)           MatTexture[a]
 
 // GLSL 3.30 does not allow indexing texture sampler with non constant values.
 // This function is used to mix the texture with the specified index with the material color.
@@ -32,7 +33,7 @@ uniform vec3 Material[6];
 // vec4 texMixed
 vec4 MIX_TEXTURE(vec4 texMixed, vec2 FragTexcoord, int i) {
     if (MatTexVisible(i)) {
-        vec4 texColor = texture(MatTexture[i], FragTexcoord * MatTexRepeat(i) + MatTexOffset(i));
+        vec4 texColor = texture(MatTex(i), FragTexcoord * MatTexRepeat(i) + MatTexOffset(i));
         if (i == 0) {
             texMixed = texColor;
         } else {
