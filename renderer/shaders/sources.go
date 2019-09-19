@@ -996,8 +996,7 @@ const standard_fragment_source = `precision highp float;
 
 // Inputs from vertex shader
 in vec4 Position;     // Fragment position in camera coordinates
-in vec3 Normal;       // Interpolated fragment normal in camera coordinates
-in vec3 CamDir;       // Direction from fragment to camera
+in vec3 Normal;       // Fragment normal in camera coordinates
 in vec2 FragTexcoord; // Fragment texture coordinates
 
 #include <lights>
@@ -1029,6 +1028,9 @@ void main() {
     // Normalize interpolated normal as it may have shrinked
     vec3 fragNormal = normalize(Normal);
 
+    // Calculate the direction vector from the fragment to the camera (origin)
+    vec3 camDir = normalize(-Position.xyz);
+
     // Invert the fragment normal if not FrontFacing
     if (!gl_FrontFacing) {
         fragNormal = -fragNormal;
@@ -1036,7 +1038,7 @@ void main() {
 
     // Calculates the Ambient+Diffuse and Specular colors for this fragment using the Phong model.
     vec3 Ambdiff, Spec;
-    phongModel(Position, fragNormal, CamDir, vec3(matAmbient), vec3(matDiffuse), Ambdiff, Spec);
+    phongModel(Position, fragNormal, camDir, vec3(matAmbient), vec3(matDiffuse), Ambdiff, Spec);
 
     // Final fragment color
     FragColor = min(vec4(Ambdiff + Spec, matDiffuse.a), vec4(1.0));
@@ -1057,20 +1059,15 @@ uniform mat4 MVP;
 // Output variables for Fragment shader
 out vec4 Position;
 out vec3 Normal;
-out vec3 CamDir;
 out vec2 FragTexcoord;
 
 void main() {
 
-    // Transform this vertex position to camera coordinates.
+    // Transform vertex position to camera coordinates
     Position = ModelViewMatrix * vec4(VertexPosition, 1.0);
 
-    // Transform this vertex normal to camera coordinates.
+    // Transform vertex normal to camera coordinates
     Normal = normalize(NormalMatrix * VertexNormal);
-
-    // Calculate the direction vector from the vertex to the camera
-    // The camera is at 0,0,0
-    CamDir = normalize(-Position.xyz);
 
     vec2 texcoord = VertexTexcoord;
 #if MAT_TEXTURES > 0
@@ -1085,6 +1082,7 @@ void main() {
     #include <morphtarget_vertex>
     #include <bones_vertex>
 
+    // Output projected and transformed vertex position
     gl_Position = MVP * finalWorld * vec4(vPosition, 1.0);
 }
 `

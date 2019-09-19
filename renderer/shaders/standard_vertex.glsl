@@ -12,7 +12,6 @@ uniform mat4 MVP;
 // Output variables for Fragment shader
 out vec4 Position;
 out vec3 Normal;
-out vec3 CamDir;
 out vec2 FragTexcoord;
 
 void main() {
@@ -22,9 +21,6 @@ void main() {
 
     // Transform vertex normal to camera coordinates
     Normal = normalize(NormalMatrix * VertexNormal);
-
-    // Calculate the direction vector from the vertex to the camera (origin)
-    CamDir = normalize(-Position.xyz);
 
     vec2 texcoord = VertexTexcoord;
 #if MAT_TEXTURES > 0
