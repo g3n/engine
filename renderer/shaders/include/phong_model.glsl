@@ -25,7 +25,10 @@ void phongModel(vec4 position, vec3 normal, vec3 camDir, vec3 matAmbient, vec3 m
     vec3 diffuseTotal  = vec3(0.0);
     vec3 specularTotal = vec3(0.0);
 
+    bool noLights = true;
+
 #if AMB_LIGHTS>0
+    noLights = false;
     // Ambient lights
     for (int i = 0; i < AMB_LIGHTS; ++i) {
         ambientTotal += AmbientLightColor[i] * matAmbient;
@@ -33,6 +36,7 @@ void phongModel(vec4 position, vec3 normal, vec3 camDir, vec3 matAmbient, vec3 m
 #endif
 
 #if DIR_LIGHTS>0
+    noLights = false;
     // Directional lights
     for (int i = 0; i < DIR_LIGHTS; ++i) {
         vec3 lightDirection = normalize(DirLightPosition(i)); // Vector from fragment to light source
@@ -45,6 +49,7 @@ void phongModel(vec4 position, vec3 normal, vec3 camDir, vec3 matAmbient, vec3 m
 #endif
 
 #if POINT_LIGHTS>0
+    noLights = false;
     // Point lights
     for (int i = 0; i < POINT_LIGHTS; ++i) {
         vec3 lightDirection = PointLightPosition(i) - vec3(position); // Vector from fragment to light source
@@ -61,6 +66,7 @@ void phongModel(vec4 position, vec3 normal, vec3 camDir, vec3 matAmbient, vec3 m
 #endif
 
 #if SPOT_LIGHTS>0
+    noLights = false;
     for (int i = 0; i < SPOT_LIGHTS; ++i) {
         // Calculates the direction and distance from the current vertex to this spot light.
         vec3 lightDirection = SpotLightPosition(i) - vec3(position); // Vector from fragment to light source
@@ -81,7 +87,9 @@ void phongModel(vec4 position, vec3 normal, vec3 camDir, vec3 matAmbient, vec3 m
         }
     }
 #endif
-
+    if (noLights) {
+        diffuseTotal = matDiffuse;
+    }
     // Sets output colors
     ambdiff = ambientTotal + MatEmissiveColor + diffuseTotal;
     spec = specularTotal;

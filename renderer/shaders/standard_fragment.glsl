@@ -1,21 +1,17 @@
-//
-// Fragment Shader template
-//
-
 precision highp float;
 
+// Inputs from vertex shader
+in vec4 Position;     // Fragment position in camera coordinates
+in vec3 Normal;       // Interpolated fragment normal in camera coordinates
+in vec3 CamDir;       // Direction from fragment to camera
+in vec2 FragTexcoord; // Fragment texture coordinates
+
+#include <lights>
 #include <material>
+#include <phong_model>
 
-// Inputs from Vertex shader
-in vec3 ColorFrontAmbdiff;
-in vec3 ColorFrontSpec;
-in vec3 ColorBackAmbdiff;
-in vec3 ColorBackSpec;
-in vec2 FragTexcoord;
-
-// Output
+// Final fragment color
 out vec4 FragColor;
-
 
 void main() {
 
@@ -32,15 +28,22 @@ void main() {
         texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 2);
     #endif
 
-    vec4 colorAmbDiff;
-    vec4 colorSpec;
-    if (gl_FrontFacing) {
-        colorAmbDiff = vec4(ColorFrontAmbdiff, MatOpacity);
-        colorSpec = vec4(ColorFrontSpec, 0);
-    } else {
-        colorAmbDiff = vec4(ColorBackAmbdiff, MatOpacity);
-        colorSpec = vec4(ColorBackSpec, 0);
-    }
-    FragColor = min(colorAmbDiff * texMixed + colorSpec, vec4(1));
-}
+    // Combine material with texture colors
+    vec4 matDiffuse = vec4(MatDiffuseColor, MatOpacity) * texMixed;
+    vec4 matAmbient = vec4(MatAmbientColor, MatOpacity) * texMixed;
 
+    // Normalize interpolated normal as it may have shrinked
+    vec3 fragNormal = normalize(Normal);
+
+    // Invert the fragment normal if not FrontFacing
+    if (!gl_FrontFacing) {
+        fragNormal = -fragNormal;
+    }
+
+    // Calculates the Ambient+Diffuse and Specular colors for this fragment using the Phong model.
+    vec3 Ambdiff, Spec;
+    phongModel(Position, fragNormal, CamDir, vec3(matAmbient), vec3(matDiffuse), Ambdiff, Spec);
+
+    // Final fragment color
+    FragColor = min(vec4(Ambdiff + Spec, matDiffuse.a), vec4(1.0));
+}

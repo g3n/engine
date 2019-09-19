@@ -45,4 +45,3 @@ void main() {
     // Generates final color
     FragColor = min(vec4(Color, MatOpacity) * texMixed, vec4(1));
 }
-

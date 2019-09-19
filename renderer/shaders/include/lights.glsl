@@ -37,4 +37,3 @@
     #define SpotLightLinearDecay(a)		SpotLight[5*a+3].z
     #define SpotLightQuadraticDecay(a)	SpotLight[5*a+4].x
 #endif
-

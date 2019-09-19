@@ -46,7 +46,6 @@ func NewSkybox(data SkyboxData) (*Skybox, error) {
 		matFace.AddTexture(tex)
 		matFace.SetSide(material.SideBack)
 		matFace.SetUseLights(material.UseLightNone)
-		matFace.SetEmissiveColor(&math32.Color{1, 1, 1})
 
 		// Disable writes to the depth buffer (call glDepthMask(GL_FALSE)).
 		// This will cause every other object to draw over the skybox, making it always appear behind everything else.

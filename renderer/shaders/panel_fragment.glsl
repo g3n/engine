@@ -1,7 +1,3 @@
-//
-// Fragment Shader template
-//
-
 precision highp float;
 
 // Texture uniforms
@@ -124,4 +120,3 @@ void main() {
     // Fragment is in margins area (always transparent)
     FragColor = vec4(1,1,1,0);
 }
-

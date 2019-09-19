@@ -163,7 +163,7 @@ func (d *Decoder) newLambertMaterial(se *Lambert) (material.IMaterial, error) {
 func (d *Decoder) newPhongMaterial(se *Phong) (material.IMaterial, error) {
 
 	// Creates material with default color
-	m := material.NewPhong(&math32.Color{0.5, 0.5, 0.5})
+	m := material.NewStandard(&math32.Color{0.5, 0.5, 0.5})
 
 	// If "diffuse" is Color set its value in the material
 	_, ok := se.Diffuse.(*Color)

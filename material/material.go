@@ -2,41 +2,46 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package material contains several types of materials which
-// can be used to set the appearance of graphic object
+// Package material contains virtual materials which
+// specify the appearance of graphic objects.
 package material
 
 import (
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/texture"
+	"github.com/g3n/engine/util/logger"
 )
 
-// Side represents the material's visible side(s)
+// Package logger
+var log = logger.New("MATERIAL", logger.Default)
+
+// Side represents the material's visible side(s).
 type Side int
 
 // The face side(s) to be rendered. The non-rendered side will be culled to improve performance.
 const (
-	SideFront  Side = 0
-	SideBack   Side = 1
-	SideDouble Side = 2
+	SideFront = Side(iota)
+	SideBack
+	SideDouble
 )
 
-// Blending
+// Blending specifies the blending mode.
 type Blending int
 
-// The various blending types
+// The various blending types.
 const (
-	BlendingNone        Blending = 0
-	BlendingNormal      Blending = 1
-	BlendingAdditive    Blending = 2
-	BlendingSubtractive Blending = 3
-	BlendingMultiply    Blending = 4
-	BlendingCustom      Blending = 5
+	BlendNone = Blending(iota)
+	BlendNormal
+	BlendAdditive
+	BlendSubtractive
+	BlendMultiply
+	BlendCustom
 )
 
-// UseLights flags
+// UseLights is a bitmask that specifies which types of lights affect the material.
 type UseLights int
 
+// The possible UseLights values.
 const (
 	UseLightNone        UseLights = 0x00
 	UseLightAmbient     UseLights = 0x01
@@ -62,12 +67,12 @@ type Material struct {
 	shaderUnique  bool              // shader has only one instance (does not depend on lights or textures)
 	ShaderDefines gls.ShaderDefines // shader defines
 
-	uselights   UseLights            // Which light types to consider
-	sidevis     Side                 // Face side(s) visibility
+	side        Side                 // Face side(s) visibility
 	blending    Blending             // Blending mode
+	useLights   UseLights            // Which light types to consider
 	transparent bool                 // Whether at all transparent
 	wireframe   bool                 // Whether to render only the wireframe
-	lineWidth   float32              // Line width for lines and mesh wireframe
+	lineWidth   float32              // Line width for lines and wireframe
 	textures    []*texture.Texture2D // List of textures
 
 	polyOffsetFactor float32 // polygon offset factor
@@ -77,13 +82,15 @@ type Material struct {
 	depthTest bool   // Enable depth buffer test
 	depthFunc uint32 // Active depth test function
 
-	// Equations used for custom blending (when blending=BlendingCustom) // TODO implement methods
-	blendRGB      uint32 // separate blend equation for RGB
-	blendAlpha    uint32 // separate blend equation for Alpha
-	blendSrcRGB   uint32 // separate blend func source RGB
-	blendDstRGB   uint32 // separate blend func dest RGB
-	blendSrcAlpha uint32 // separate blend func source Alpha
-	blendDstAlpha uint32 // separate blend func dest Alpha
+	// TODO stencil properties
+
+	// Equations used for custom blending (when blending=BlendCustom) // TODO implement methods
+	blendRGB      uint32 // separate blending equation for RGB
+	blendAlpha    uint32 // separate blending equation for Alpha
+	blendSrcRGB   uint32 // separate blending func source RGB
+	blendDstRGB   uint32 // separate blending func dest RGB
+	blendSrcAlpha uint32 // separate blending func source Alpha
+	blendDstAlpha uint32 // separate blending func dest Alpha
 }
 
 // NewMaterial creates and returns a pointer to a new Material.
@@ -97,14 +104,14 @@ func NewMaterial() *Material {
 func (mat *Material) Init() *Material {
 
 	mat.refcount = 1
-	mat.uselights = UseLightAll
-	mat.sidevis = SideFront
+	mat.useLights = UseLightAll
+	mat.side = SideFront
 	mat.transparent = false
 	mat.wireframe = false
 	mat.depthMask = true
 	mat.depthFunc = gls.LEQUAL
 	mat.depthTest = true
-	mat.blending = BlendingNormal
+	mat.blending = BlendNormal
 	mat.lineWidth = 1.0
 	mat.polyOffsetFactor = 0
 	mat.polyOffsetUnits = 0
@@ -180,25 +187,25 @@ func (mat *Material) ShaderUnique() bool {
 // By default the material will use all lights
 func (mat *Material) SetUseLights(lights UseLights) {
 
-	mat.uselights = lights
+	mat.useLights = lights
 }
 
 // UseLights returns the current use lights bitmask
 func (mat *Material) UseLights() UseLights {
 
-	return mat.uselights
+	return mat.useLights
 }
 
 // SetSide sets the visible side(s) (SideFront | SideBack | SideDouble)
 func (mat *Material) SetSide(side Side) {
 
-	mat.sidevis = side
+	mat.side = side
 }
 
 // Side returns the current side visibility for this material
 func (mat *Material) Side() Side {
 
-	return mat.sidevis
+	return mat.side
 }
 
 // SetTransparent sets whether this material is transparent.
@@ -207,7 +214,7 @@ func (mat *Material) SetTransparent(state bool) {
 	mat.transparent = state
 }
 
-// Transparent returns whether this material is transparent.
+// Transparent returns whether this material has been set as transparent.
 func (mat *Material) Transparent() bool {
 
 	return mat.transparent
@@ -260,7 +267,7 @@ func (mat *Material) SetPolygonOffset(factor, units float32) {
 func (mat *Material) RenderSetup(gs *gls.GLS) {
 
 	// Sets triangle side view mode
-	switch mat.sidevis {
+	switch mat.side {
 	case SideFront:
 		gs.Enable(gls.CULL_FACE)
 		gs.FrontFace(gls.CCW)
@@ -294,27 +301,27 @@ func (mat *Material) RenderSetup(gs *gls.GLS) {
 
 	// Sets blending
 	switch mat.blending {
-	case BlendingNone:
+	case BlendNone:
 		gs.Disable(gls.BLEND)
-	case BlendingNormal:
+	case BlendNormal:
 		gs.Enable(gls.BLEND)
 		gs.BlendEquation(gls.FUNC_ADD)
 		gs.BlendFunc(gls.SRC_ALPHA, gls.ONE_MINUS_SRC_ALPHA)
-	case BlendingAdditive:
+	case BlendAdditive:
 		gs.Enable(gls.BLEND)
 		gs.BlendEquation(gls.FUNC_ADD)
 		gs.BlendFunc(gls.SRC_ALPHA, gls.ONE)
-	case BlendingSubtractive:
+	case BlendSubtractive:
 		gs.Enable(gls.BLEND)
 		gs.BlendEquation(gls.FUNC_ADD)
 		gs.BlendFunc(gls.ZERO, gls.ONE_MINUS_SRC_COLOR)
 		break
-	case BlendingMultiply:
+	case BlendMultiply:
 		gs.Enable(gls.BLEND)
 		gs.BlendEquation(gls.FUNC_ADD)
 		gs.BlendFunc(gls.ZERO, gls.SRC_COLOR)
 		break
-	case BlendingCustom:
+	case BlendCustom:
 		gs.BlendEquationSeparate(mat.blendRGB, mat.blendAlpha)
 		gs.BlendFuncSeparate(mat.blendSrcRGB, mat.blendDstRGB, mat.blendSrcAlpha, mat.blendDstAlpha)
 		break
@@ -350,7 +357,6 @@ func (mat *Material) RemoveTexture(tex *texture.Texture2D) {
 			break
 		}
 	}
-
 }
 
 // HasTexture checks if the material contains the specified texture

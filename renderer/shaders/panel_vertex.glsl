@@ -1,6 +1,3 @@
-//
-// Vertex shader panel
-//
 #include <attributes>
 
 // Model uniforms
@@ -21,4 +18,3 @@ void main() {
     vec4 pos = vec4(VertexPosition.xyz, 1);
     gl_Position = ModelMatrix * pos;
 }
-
