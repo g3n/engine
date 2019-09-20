@@ -41,7 +41,7 @@ void phongModel(vec4 position, vec3 normal, vec3 camDir, vec3 matAmbient, vec3 m
     // Directional lights
     for (int i = 0; i < DIR_LIGHTS; ++i) {
         vec3 lightDirection = normalize(DirLightPosition(i)); // Vector from fragment to light source
-        float dotNormal = dot(lightDirection, normal); // Dot product between light direction and fragment normal // TODO can remove the max here
+        float dotNormal = dot(lightDirection, normal); // Dot product between light direction and fragment normal
         if (dotNormal > EPS) { // If the fragment is lit
             diffuseTotal += DirLightColor(i) * matDiffuse * dotNormal;
             specularTotal += DirLightColor(i) * MatSpecularColor * pow(max(dot(reflect(-lightDirection, normal), camDir), 0.0), MatShininess);
