@@ -1040,7 +1040,6 @@ void main() {
     vec3 camDir = normalize(-Position.xyz);
 
     // Workaround for gl_FrontFacing
-    #extension GL_OES_standard_derivatives : enable
     vec3 fdx = dFdx(Position.xyz);
     vec3 fdy = dFdy(Position.xyz);
     vec3 faceNormal = normalize(cross(fdx,fdy));
