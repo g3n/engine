@@ -89,7 +89,7 @@ func (d *Decoder) newNode(cnode *Node) (core.INode, error) {
 
 		case gls.POINTS:
 			mat := material.NewPoint(&math32.Color{})
-			mat.SetSize(1000)
+			mat.SetSize(30)
 			node = graphic.NewPoints(geomi, mat)
 
 		case gls.LINES:
