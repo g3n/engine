@@ -45,8 +45,10 @@ Then install the same packages as for Fedora - remember to use `yum` instead of 
 
 ### Windows
 
-The necessary audio libraries sources and DLLs are supplied but they need to be installed
-manually. Please see [Audio libraries for Windows](audio/windows) for details. We tested the Windows build using the [mingw-w64](https://mingw-w64.org) toolchain (you can download [this file](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/8.1.0/threads-posix/seh/x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z) in particular).
+We tested the Windows build using the [mingw-w64](https://mingw-w64.org) toolchain (you can download [this file](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/8.1.0/threads-posix/seh/x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z) in particular).
+
+The necessary [audio DLLs](audio/windows/bin) are supplied and need to be added to your PATH.
+If you would like to build the DLLs yourself you can find the libraries' source code and build instructions [here](audio/windows).
 
 ### macOS
 
