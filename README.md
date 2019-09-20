@@ -96,20 +96,20 @@ The code below is a basic "hello world" application ([hellog3n](https://github.c
 package main
 
 import (
-"github.com/g3n/engine/app"
-"github.com/g3n/engine/camera"
-"github.com/g3n/engine/core"
-"github.com/g3n/engine/geometry"
-"github.com/g3n/engine/gls"
-"github.com/g3n/engine/graphic"
-"github.com/g3n/engine/gui"
-"github.com/g3n/engine/light"
-"github.com/g3n/engine/material"
-"github.com/g3n/engine/math32"
-"github.com/g3n/engine/renderer"
-"github.com/g3n/engine/util"
-"github.com/g3n/engine/window"
-"time"
+	"github.com/g3n/engine/app"
+	"github.com/g3n/engine/camera"
+	"github.com/g3n/engine/core"
+	"github.com/g3n/engine/geometry"
+	"github.com/g3n/engine/gls"
+	"github.com/g3n/engine/graphic"
+	"github.com/g3n/engine/gui"
+	"github.com/g3n/engine/light"
+	"github.com/g3n/engine/material"
+	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/renderer"
+	"github.com/g3n/engine/util"
+	"github.com/g3n/engine/window"
+	"time"
 )
 
 func main() {
