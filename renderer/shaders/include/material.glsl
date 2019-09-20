@@ -24,25 +24,16 @@ uniform vec3 Material[6];
     #define MatTexRepeat(a)		MatTexinfo[(3*a)+1]
     #define MatTexFlipY(a)		bool(MatTexinfo[(3*a)+2].x)
     #define MatTexVisible(a)	bool(MatTexinfo[(3*a)+2].y)
-    #define MatTex(a)           MatTexture[a]
-
-// GLSL 3.30 does not allow indexing texture sampler with non constant values.
-// This function is used to mix the texture with the specified index with the material color.
-// It should be called for each texture index. It uses two externally defined variables:
-// vec4 texColor
-// vec4 texMixed
-vec4 MIX_TEXTURE(vec4 texMixed, vec2 FragTexcoord, int i) {
-    if (MatTexVisible(i)) {
-        vec4 texColor = texture(MatTex(i), FragTexcoord * MatTexRepeat(i) + MatTexOffset(i));
-        if (i == 0) {
-            texMixed = texColor;
-        } else {
-            texMixed = mix(texMixed, texColor, texColor.a);
+    // Alpha compositing (see here: https://ciechanow.ski/alpha-compositing/)
+    vec4 Blend(vec4 texMixed, vec4 texColor) {
+        texMixed.rgb *= texMixed.a;
+        texColor.rgb *= texColor.a;
+        texMixed = texColor + texMixed * (1 - texColor.a);
+        if (texMixed.a > 0.0) {
+            texMixed.rgb /= texMixed.a;
         }
+        return texMixed;
     }
-    return texMixed;
-}
-
 #endif
 
 // TODO for alpha blending dont use mix use implementation below (similar to one in panel shader)

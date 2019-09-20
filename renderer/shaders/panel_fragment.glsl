@@ -85,19 +85,20 @@ void main() {
             // Note that doing a simple linear interpolation (e.g. using mix()) is not correct!
             // The right formula can be found here: https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending
             // For a more in-depth discussion: http://apoorvaj.io/alpha-compositing-opengl-blending-and-premultiplied-alpha.html#toc4
+            // Another great discussion here: https://ciechanow.ski/alpha-compositing/
 
-            // Pre-multiply the content color
+            // Alpha premultiply the content color
             vec4 contentPre = ContentColor;
             contentPre.rgb *= contentPre.a;
 
-            // Pre-multiply the texture color
+            // Alpha premultiply the content color
             vec4 texPre = texColor;
             texPre.rgb *= texPre.a;
 
-            // Combine colors the premultiplied final color
+            // Combine colors to obtain the alpha premultiplied final color
             color = texPre + contentPre * (1.0 - texPre.a);
 
-            // Un-pre-multiply (pre-divide? :P)
+            // Un-alpha-premultiply
             color.rgb /= color.a;
 		}
 

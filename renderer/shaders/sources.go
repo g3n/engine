@@ -125,25 +125,16 @@ uniform vec3 Material[6];
     #define MatTexRepeat(a)		MatTexinfo[(3*a)+1]
     #define MatTexFlipY(a)		bool(MatTexinfo[(3*a)+2].x)
     #define MatTexVisible(a)	bool(MatTexinfo[(3*a)+2].y)
-    #define MatTex(a)           MatTexture[a]
-
-// GLSL 3.30 does not allow indexing texture sampler with non constant values.
-// This function is used to mix the texture with the specified index with the material color.
-// It should be called for each texture index. It uses two externally defined variables:
-// vec4 texColor
-// vec4 texMixed
-vec4 MIX_TEXTURE(vec4 texMixed, vec2 FragTexcoord, int i) {
-    if (MatTexVisible(i)) {
-        vec4 texColor = texture(MatTex(i), FragTexcoord * MatTexRepeat(i) + MatTexOffset(i));
-        if (i == 0) {
-            texMixed = texColor;
-        } else {
-            texMixed = mix(texMixed, texColor, texColor.a);
+    // Alpha compositing (see here: https://ciechanow.ski/alpha-compositing/)
+    vec4 Blend(vec4 texMixed, vec4 texColor) {
+        texMixed.rgb *= texMixed.a;
+        texColor.rgb *= texColor.a;
+        texMixed = texColor + texMixed * (1 - texColor.a);
+        if (texMixed.a > 0.0) {
+            texMixed.rgb /= texMixed.a;
         }
+        return texMixed;
     }
-    return texMixed;
-}
-
 #endif
 
 // TODO for alpha blending dont use mix use implementation below (similar to one in panel shader)
@@ -390,19 +381,20 @@ void main() {
             // Note that doing a simple linear interpolation (e.g. using mix()) is not correct!
             // The right formula can be found here: https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending
             // For a more in-depth discussion: http://apoorvaj.io/alpha-compositing-opengl-blending-and-premultiplied-alpha.html#toc4
+            // Another great discussion here: https://ciechanow.ski/alpha-compositing/
 
-            // Pre-multiply the content color
+            // Alpha premultiply the content color
             vec4 contentPre = ContentColor;
             contentPre.rgb *= contentPre.a;
 
-            // Pre-multiply the texture color
+            // Alpha premultiply the content color
             vec4 texPre = texColor;
             texPre.rgb *= texPre.a;
 
-            // Combine colors the premultiplied final color
+            // Combine colors to obtain the alpha premultiplied final color
             color = texPre + contentPre * (1.0 - texPre.a);
 
-            // Un-pre-multiply (pre-divide? :P)
+            // Un-alpha-premultiply
             color.rgb /= color.a;
 		}
 
@@ -1008,17 +1000,41 @@ out vec4 FragColor;
 
 void main() {
 
-    // Mix material color with textures colors
+    // Compute final texture color
     vec4 texMixed = vec4(1);
-    #if MAT_TEXTURES==1
-        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 0);
-    #elif MAT_TEXTURES==2
-        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 0);
-        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 1);
-    #elif MAT_TEXTURES==3
-        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 0);
-        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 1);
-        texMixed = MIX_TEXTURE(texMixed, FragTexcoord, 2);
+    #if MAT_TEXTURES > 0
+        bool firstTex = true;
+        if (MatTexVisible(0)) {
+            vec4 texColor = texture(MatTexture[0], FragTexcoord * MatTexRepeat(0) + MatTexOffset(0));
+            if (firstTex) {
+                texMixed = texColor;
+                firstTex = false;
+            } else {
+                texMixed = Blend(texMixed, texColor);
+            }
+        }
+        #if MAT_TEXTURES > 1
+            if (MatTexVisible(1)) {
+                vec4 texColor = texture(MatTexture[1], FragTexcoord * MatTexRepeat(1) + MatTexOffset(1));
+                if (firstTex) {
+                    texMixed = texColor;
+                    firstTex = false;
+                } else {
+                    texMixed = Blend(texMixed, texColor);
+                }
+            }
+            #if MAT_TEXTURES > 2
+                if (MatTexVisible(2)) {
+                    vec4 texColor = texture(MatTexture[2], FragTexcoord * MatTexRepeat(2) + MatTexOffset(2));
+                    if (firstTex) {
+                        texMixed = texColor;
+                        firstTex = false;
+                    } else {
+                        texMixed = Blend(texMixed, texColor);
+                    }
+                }
+            #endif
+        #endif
     #endif
 
     // Combine material with texture colors
@@ -1031,8 +1047,12 @@ void main() {
     // Calculate the direction vector from the fragment to the camera (origin)
     vec3 camDir = normalize(-Position.xyz);
 
-    // Invert the fragment normal if not FrontFacing
-    if (!gl_FrontFacing) {
+    // Workaround for gl_FrontFacing
+    #extension GL_OES_standard_derivatives : enable
+    vec3 fdx = dFdx(Position.xyz);
+    vec3 fdy = dFdy(Position.xyz);
+    vec3 faceNormal = normalize(cross(fdx,fdy));
+    if (dot(fragNormal, faceNormal) < 0.0) { // Back-facing
         fragNormal = -fragNormal;
     }
 
