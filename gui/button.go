@@ -136,6 +136,10 @@ func (b *Button) onCursor(evname string, ev interface{}) {
 // onMouseEvent process subscribed mouse events
 func (b *Button) onMouse(evname string, ev interface{}) {
 
+	if !b.Enabled() {
+		return
+	}
+
 	switch evname {
 	case OnMouseDown:
 		Manager().SetKeyFocus(b)
