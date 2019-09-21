@@ -298,7 +298,7 @@ static void load_procs() {
 // for OpenGL errors.
 //
 {{range .Funcs}}
-{{.Rtype}} {{.Fname}} ({{.CParams}}) {
+{{.Rtype}} {{.Fname -}} ({{.CParams}}) {
 
 	{{if ne .Rtype "void"}}
 		{{- .Rtype}} res = {{.Pname}}({{.Args}});
@@ -311,12 +311,11 @@ static void load_procs() {
 			panic(err, "{{.Fname}}");
 		}
 	}
-	{{if ne .Rtype "void" -}}
-		return res;
+	{{- if ne .Rtype "void"}}
+	return res;
 	{{- end}}
 }
-{{end}}
-
+{{end -}}
 `
 
 //
