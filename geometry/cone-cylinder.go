@@ -10,37 +10,41 @@ import (
 	"math"
 )
 
-// Cylinder represents a cylinder geometry
-type Cylinder struct {
-	Geometry
-	RadiusTop      float64
-	RadiusBottom   float64
-	Height         float64
-	RadialSegments int
-	HeightSegments int
-	ThetaStart     float64
-	ThetaLength    float64
-	Top            bool
-	Bottom         bool
+// NewCone creates a cone geometry with the specified base radius, height,
+// number of radial segments, number of height segments, and presence of a bottom cap.
+func NewCone(radius, height float64, radialSegments, heightSegments int, bottom bool) *Geometry {
+	return NewConeSector(radius, height, radialSegments, heightSegments, 0, 2*math.Pi, bottom)
 }
 
-// NewCylinder creates and returns a pointer to a new Cylinder geometry object.
-func NewCylinder(radiusTop, radiusBottom, height float64,
-	radialSegments, heightSegments int,
-	thetaStart, thetaLength float64, top, bottom bool) *Cylinder {
+// NewConeSector creates a cone sector geometry with the specified base radius, height, number of radial segments,
+// number of height segments, sector start angle in radians, sector size angle in radians, and presence of a bottom cap.
+func NewConeSector(radius, height float64, radialSegments, heightSegments int, thetaStart, thetaLength float64, bottom bool) *Geometry {
+	return NewTruncatedConeSector(0, radius, height, radialSegments, heightSegments, thetaStart, thetaLength, false, bottom)
+}
 
-	c := new(Cylinder)
-	c.Geometry.Init()
+// NewCylinder creates a cylinder geometry with the specified radius, height,
+// number of radial segments, number of height segments, and presence of a top and/or bottom cap.
+func NewCylinder(radius, height float64, radialSegments, heightSegments int, top, bottom bool) *Geometry {
+	return NewCylinderSector(radius, height, radialSegments, heightSegments, 0, 2*math.Pi, top, bottom)
+}
 
-	c.RadiusTop = radiusTop
-	c.RadiusBottom = radiusBottom
-	c.Height = height
-	c.RadialSegments = radialSegments
-	c.HeightSegments = heightSegments
-	c.ThetaStart = thetaStart
-	c.ThetaLength = thetaLength
-	c.Top = top
-	c.Bottom = bottom
+// NewCylinderSector creates a cylinder sector geometry with the specified radius, height, number of radial segments,
+// number of height segments, sector start angle in radians, sector size angle in radians, and presence of a top and/or bottom cap.
+func NewCylinderSector(radius, height float64, radialSegments, heightSegments int, thetaStart, thetaLength float64, top, bottom bool) *Geometry {
+	return NewTruncatedConeSector(radius, radius, height, radialSegments, heightSegments, thetaStart, thetaLength, top, bottom)
+}
+
+// NewTruncatedCone creates a truncated cone geometry with the specified top and bottom radii,
+// height, number of radial segments, number of height segments, and presence of a top and/or bottom cap.
+func NewTruncatedCone(radiusTop, radiusBottom, height float64, radialSegments, heightSegments int, top, bottom bool) *Geometry {
+	return NewTruncatedConeSector(radiusTop, radiusBottom, height, radialSegments, heightSegments, 0, 2*math.Pi, top, bottom)
+}
+
+// NewTruncatedConeSector creates a truncated cone sector geometry with the specified top and bottom radii, height, number of radial segments,
+// number of height segments, sector start angle in radians, sector size angle in radians, and presence of a top and/or bottom cap.
+func NewTruncatedConeSector(radiusTop, radiusBottom, height float64, radialSegments, heightSegments int, thetaStart, thetaLength float64, top, bottom bool) *Geometry {
+
+	c := NewGeometry()
 
 	heightHalf := height / 2
 	vertices := [][]int{}

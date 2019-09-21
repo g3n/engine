@@ -10,30 +10,16 @@ import (
 	"math"
 )
 
-// Sphere represents a sphere geometry
-type Sphere struct {
-	Geometry
-	Radius         float64
-	WidthSegments  int
-	HeightSegments int
-	PhiStart       float64
-	PhiLength      float64
-	ThetaStart     float64
-	ThetaLength    float64
+// NewSphere creates a sphere geometry with the specified radius and number of radial segments in each dimension.
+func NewSphere(radius float64, widthSegments, heightSegments int) *Geometry {
+	return NewSphereSector(radius, widthSegments, heightSegments, 0, math.Pi*2, 0, math.Pi)
 }
 
-// NewSphere returns a pointer to a new Sphere geometry object
-func NewSphere(radius float64, widthSegments, heightSegments int, phiStart, phiLength, thetaStart, thetaLength float64) *Sphere {
+// NewSphereSector creates a sphere sector geometry with the specified radius, number of radial segments in each dimension, elevation
+// start angle in radians, elevation size angle in radians, sector start angle in radians, and sector size angle in radians.
+func NewSphereSector(radius float64, widthSegments, heightSegments int, phiStart, phiLength, thetaStart, thetaLength float64) *Geometry {
 
-	s := new(Sphere)
-	s.Geometry.Init()
-
-	s.Radius = radius
-	s.WidthSegments = widthSegments
-	s.HeightSegments = heightSegments
-	s.PhiStart = phiStart
-	s.PhiLength = phiLength
-	s.ThetaStart = thetaStart
+	s := NewGeometry()
 
 	thetaEnd := thetaStart + thetaLength
 	vertexCount := (widthSegments + 1) * (heightSegments + 1)
