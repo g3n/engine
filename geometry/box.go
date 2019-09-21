@@ -9,53 +9,30 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
-// Box represents the geometry of a rectangular cuboid.
-// See https://en.wikipedia.org/wiki/Cuboid#Rectangular_cuboid for more details.
-// A Box geometry is defined by its width, height, and length and also by the number
-// of segments in each dimension.
-type Box struct {
-	Geometry
-	Width          float32
-	Height         float32
-	Length         float32
-	WidthSegments  int // > 0
-	HeightSegments int // > 0
-	LengthSegments int // > 0
+// NewCube creates a cube geometry with the specified size.
+func NewCube(size float32) *Geometry {
+	return NewSegmentedCube(size, 1)
 }
 
-// NewCube creates a new cube geometry of the specified size.
-func NewCube(size float32) *Box {
-	return NewSegmentedBox(size, size, size, 1, 1, 1)
-}
-
-// NewSegmentedCube creates a cube geometry of the specified size and number of segments.
-func NewSegmentedCube(size float32, segments int) *Box {
+// NewSegmentedCube creates a segmented cube geometry with the specified size and number of segments.
+func NewSegmentedCube(size float32, segments int) *Geometry {
 	return NewSegmentedBox(size, size, size, segments, segments, segments)
 }
 
-// NewBox creates a box geometry of the specified width, height, and length.
-func NewBox(width, height, length float32) *Box {
+// NewBox creates a box geometry with the specified width, height, and length.
+func NewBox(width, height, length float32) *Geometry {
 	return NewSegmentedBox(width, height, length, 1, 1, 1)
 }
 
-// NewSegmentedBox creates a box geometry of the specified size and with the specified number
-// of segments in each dimension. This is the Box constructor with most tunable parameters.
-func NewSegmentedBox(width, height, length float32, widthSegments, heightSegments, lengthSegments int) *Box {
+// NewSegmentedBox creates a segmented box geometry with the specified width, height, length, and number of segments in each dimension.
+func NewSegmentedBox(width, height, length float32, widthSegments, heightSegments, lengthSegments int) *Geometry {
 
-	box := new(Box)
-	box.Geometry.Init()
+	box := NewGeometry()
 
 	// Validate arguments
 	if widthSegments <= 0 || heightSegments <= 0 || lengthSegments <= 0 {
 		panic("Invalid argument(s). All segment quantities should be greater than zero.")
 	}
-
-	box.Width = width
-	box.Height = height
-	box.Length = length
-	box.WidthSegments = widthSegments
-	box.HeightSegments = heightSegments
-	box.LengthSegments = lengthSegments
 
 	// Create buffers
 	positions := math32.NewArrayF32(0, 16)
@@ -67,18 +44,18 @@ func NewSegmentedBox(width, height, length float32, widthSegments, heightSegment
 	buildPlane := func(u, v string, udir, vdir int, width, height, length float32, materialIndex uint) {
 
 		offset := positions.Len() / 3
-		gridX := box.WidthSegments
-		gridY := box.HeightSegments
+		gridX := widthSegments
+		gridY := heightSegments
 		var w string
 
 		if (u == "x" && v == "y") || (u == "y" && v == "x") {
 			w = "z"
 		} else if (u == "x" && v == "z") || (u == "z" && v == "x") {
 			w = "y"
-			gridY = box.LengthSegments
+			gridY = lengthSegments
 		} else if (u == "z" && v == "y") || (u == "y" && v == "z") {
 			w = "x"
-			gridX = box.LengthSegments
+			gridX = lengthSegments
 		}
 
 		var normal math32.Vector3
@@ -123,16 +100,16 @@ func NewSegmentedBox(width, height, length float32, widthSegments, heightSegment
 		box.AddGroup(gstart, gcount, int(materialIndex))
 	}
 
-	wHalf := box.Width / 2
-	hHalf := box.Height / 2
-	lHalf := box.Length / 2
+	wHalf := width / 2
+	hHalf := height / 2
+	lHalf := length / 2
 
-	buildPlane("z", "y", -1, -1, box.Length, box.Height, wHalf, 0) // px
-	buildPlane("z", "y", 1, -1, box.Length, box.Height, -wHalf, 1) // nx
-	buildPlane("x", "z", 1, 1, box.Width, box.Length, hHalf, 2)    // py
-	buildPlane("x", "z", 1, -1, box.Width, box.Length, -hHalf, 3)  // ny
-	buildPlane("x", "y", 1, -1, box.Width, box.Height, lHalf, 4)   // pz
-	buildPlane("x", "y", -1, -1, box.Width, box.Height, -lHalf, 5) // nz
+	buildPlane("z", "y", -1, -1, length, height, wHalf, 0) // px
+	buildPlane("z", "y", 1, -1, length, height, -wHalf, 1) // nx
+	buildPlane("x", "z", 1, 1, width, length, hHalf, 2)    // py
+	buildPlane("x", "z", 1, -1, width, length, -hHalf, 3)  // ny
+	buildPlane("x", "y", 1, -1, width, height, lHalf, 4)   // pz
+	buildPlane("x", "y", -1, -1, width, height, -lHalf, 5) // nz
 
 	box.SetIndices(indices)
 	box.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition))
@@ -145,7 +122,7 @@ func NewSegmentedBox(width, height, length float32, widthSegments, heightSegment
 	box.boundingBoxValid = true
 
 	// Update bounding sphere
-	box.boundingSphere.Radius = math32.Sqrt(math32.Pow(width/2,2) + math32.Pow(height/2,2) + math32.Pow(length/2,2))
+	box.boundingSphere.Radius = math32.Sqrt(math32.Pow(width/2, 2) + math32.Pow(height/2, 2) + math32.Pow(length/2, 2))
 	box.boundingSphereValid = true
 
 	// Update area

@@ -10,40 +10,23 @@ import (
 	"math"
 )
 
-// Circle represents the geometry of a filled circle (i.e. a disk)
-// The center of the circle is at the origin, and theta runs counter-clockwise
-// on the XY plane, starting at (x,y,z)=(1,0,0).
-type Circle struct {
-	Geometry
-	Radius      float64
-	Segments    int // >= 3
-	ThetaStart  float64
-	ThetaLength float64
+// NewDisk creates a disk (filled circle) geometry with the specified
+// radius and number of radial segments/triangles (minimum 3).
+func NewDisk(radius float64, segments int) *Geometry {
+	return NewDiskSector(radius, segments, 0, 2*math.Pi)
 }
 
-// NewCircle creates a new circle geometry with the specified radius
-// and number of radial segments/triangles (minimum 3).
-func NewCircle(radius float64, segments int) *Circle {
-	return NewCircleSector(radius, segments, 0, 2*math.Pi)
-}
+// NewDiskSector creates a disk (filled circle) or disk sector geometry with the specified radius,
+// number of radial segments/triangles (minimum 3), sector start angle in radians, and sector size angle in radians.
+// The center of the disk is at the origin, and theta runs counter-clockwise on the XY plane, starting at (x,y,z)=(1,0,0).
+func NewDiskSector(radius float64, segments int, thetaStart, thetaLength float64) *Geometry {
 
-// NewCircleSector creates a new circle or circular sector geometry with the specified radius,
-// number of radial segments/triangles (minimum 3), sector start angle in radians (thetaStart),
-// and sector size angle in radians (thetaLength). This is the Circle constructor with most tunable parameters.
-func NewCircleSector(radius float64, segments int, thetaStart, thetaLength float64) *Circle {
-
-	circ := new(Circle)
-	circ.Geometry.Init()
+	d := NewGeometry()
 
 	// Validate arguments
 	if segments < 3 {
 		panic("Invalid argument: segments. The number of segments needs to be greater or equal to 3.")
 	}
-
-	circ.Radius = radius
-	circ.Segments = segments
-	circ.ThetaStart = thetaStart
-	circ.ThetaLength = thetaLength
 
 	// Create buffers
 	positions := math32.NewArrayF32(0, 16)
@@ -81,14 +64,14 @@ func NewCircleSector(radius float64, segments int, thetaStart, thetaLength float
 		indices.Append(uint32(i), uint32(i)+1, 0)
 	}
 
-	circ.SetIndices(indices)
-	circ.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition))
-	circ.AddVBO(gls.NewVBO(normals).AddAttrib(gls.VertexNormal))
-	circ.AddVBO(gls.NewVBO(uvs).AddAttrib(gls.VertexTexcoord))
+	d.SetIndices(indices)
+	d.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition))
+	d.AddVBO(gls.NewVBO(normals).AddAttrib(gls.VertexNormal))
+	d.AddVBO(gls.NewVBO(uvs).AddAttrib(gls.VertexTexcoord))
 
 	// Update volume
-	circ.volume = 0
-	circ.volumeValid = true
+	d.volume = 0
+	d.volumeValid = true
 
-	return circ
+	return d
 }

@@ -10,27 +10,13 @@ import (
 	"math"
 )
 
-// Torus represents a torus geometry
-type Torus struct {
-	Geometry                // embedded geometry
-	Radius          float64 // Torus radius
-	Tube            float64 // Diameter of the torus tube
-	RadialSegments  int     // Number of radial segments
-	TubularSegments int     // Number of tubular segments
-	Arc             float64 // Central angle
-}
+// NewTorus creates a torus geometry with the specified revolution radius, tube radius,
+// number of radial segments, number of tubular segments, and arc length angle in radians.
+// TODO instead of 'arc' have thetaStart and thetaLength for consistency with other generators
+// TODO then rename this to NewTorusSector and add a NewTorus constructor
+func NewTorus(radius, tubeRadius float64, radialSegments, tubularSegments int, arc float64) *Geometry {
 
-// NewTorus returns a pointer to a new torus geometry
-func NewTorus(radius, tube float64, radialSegments, tubularSegments int, arc float64) *Torus {
-
-	t := new(Torus)
-	t.Geometry.Init()
-
-	t.Radius = radius
-	t.Tube = tube
-	t.RadialSegments = radialSegments
-	t.TubularSegments = tubularSegments
-	t.Arc = arc
+	t := NewGeometry()
 
 	// Create buffers
 	positions := math32.NewArrayF32(0, 0)
@@ -48,9 +34,9 @@ func NewTorus(radius, tube float64, radialSegments, tubularSegments int, arc flo
 			center.Y = float32(radius * math.Sin(u))
 
 			var vertex math32.Vector3
-			vertex.X = float32((radius + tube*math.Cos(v)) * math.Cos(u))
-			vertex.Y = float32((radius + tube*math.Cos(v)) * math.Sin(u))
-			vertex.Z = float32(tube * math.Sin(v))
+			vertex.X = float32((radius + tubeRadius*math.Cos(v)) * math.Cos(u))
+			vertex.Y = float32((radius + tubeRadius*math.Cos(v)) * math.Sin(u))
+			vertex.Z = float32(tubeRadius * math.Sin(v))
 			positions.AppendVector3(&vertex)
 
 			uvs.Append(float32(float64(i)/float64(tubularSegments)), float32(float64(j)/float64(radialSegments)))
