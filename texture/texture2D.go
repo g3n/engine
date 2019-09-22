@@ -2,10 +2,12 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package texture contains several types of textures which can be added to materials.
 package texture
 
 import (
 	"fmt"
+	"github.com/g3n/engine/util/logger"
 	"image"
 	"image/draw"
 	_ "image/gif"
@@ -15,6 +17,9 @@ import (
 
 	"github.com/g3n/engine/gls"
 )
+
+// Package logger
+var log = logger.New("TEX", logger.Default)
 
 // Texture2D represents a texture
 type Texture2D struct {
