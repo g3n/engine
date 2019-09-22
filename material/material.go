@@ -62,7 +62,7 @@ type IMaterial interface {
 type Material struct {
 	refcount int // Current number of references
 
-	// Shader specification // TODO Move ShaderSpecs into Material ?
+	// Shader specification
 	shader        string            // Shader name
 	shaderUnique  bool              // shader has only one instance (does not depend on lights or textures)
 	ShaderDefines gls.ShaderDefines // shader defines
