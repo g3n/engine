@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package util
+package helper
 
 import (
 	"github.com/g3n/engine/geometry"
@@ -12,16 +12,15 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
-// GridHelper is a visual representation of a grid.
-type GridHelper struct {
+// Grid is a visual representation of a grid.
+type Grid struct {
 	graphic.Lines
 }
 
-// NewGridHelper creates and returns a pointer to a new grid help object
-// with the specified size and step.
-func NewGridHelper(size, step float32, color *math32.Color) *GridHelper {
+// NewGrid creates and returns a pointer to a new grid helper with the specified size and step.
+func NewGrid(size, step float32, color *math32.Color) *Grid {
 
-	grid := new(GridHelper)
+	grid := new(Grid)
 
 	half := size / 2
 	positions := math32.NewArrayF32(0, 0)
@@ -34,7 +33,7 @@ func NewGridHelper(size, step float32, color *math32.Color) *GridHelper {
 		)
 	}
 
-	// Creates geometry
+	// Create geometry
 	geom := geometry.NewGeometry()
 	geom.AddVBO(
 		gls.NewVBO(positions).
@@ -42,7 +41,7 @@ func NewGridHelper(size, step float32, color *math32.Color) *GridHelper {
 			AddAttrib(gls.VertexColor),
 	)
 
-	// Creates material
+	// Create material
 	mat := material.NewBasic()
 
 	// Initialize lines with the specified geometry and material
