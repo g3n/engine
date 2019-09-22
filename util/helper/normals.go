@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package util
+package helper
 
 import (
 	"github.com/g3n/engine/core"
@@ -13,20 +13,19 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
-// NormalsHelper is the visual representation of the normals of a target object.
-type NormalsHelper struct {
+// Normals is the visual representation of the normals of a target object.
+type Normals struct {
 	graphic.Lines
 	size           float32
 	targetNode     *core.Node
 	targetGeometry *geometry.Geometry
 }
 
-// NewNormalsHelper creates, initializes and returns a pointer to Normals helper object.
-// This helper shows the surface normals of the specified object.
-func NewNormalsHelper(ig graphic.IGraphic, size float32, color *math32.Color, lineWidth float32) *NormalsHelper {
+// NewNormals creates a normals helper for the specified IGraphic, with the specified size, color, and lineWidth.
+func NewNormals(ig graphic.IGraphic, size float32, color *math32.Color, lineWidth float32) *Normals {
 
 	// Creates new Normals helper
-	nh := new(NormalsHelper)
+	nh := new(Normals)
 	nh.size = size
 
 	// Save the object to show the normals
@@ -57,7 +56,7 @@ func NewNormalsHelper(ig graphic.IGraphic, size float32, color *math32.Color, li
 
 // Update should be called in the render loop to
 // update the normals based on the target object.
-func (nh *NormalsHelper) Update() {
+func (nh *Normals) Update() {
 
 	var v1 math32.Vector3
 	var v2 math32.Vector3

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package util
+package helper
 
 import (
 	"github.com/g3n/engine/geometry"
@@ -12,15 +12,15 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
-// AxisHelper is a visual representation of the three axes.
-type AxisHelper struct {
+// Axes is a visual representation of the three axes.
+type Axes struct {
 	graphic.Lines
 }
 
-// NewAxisHelper returns a pointer to a new AxisHelper object.
-func NewAxisHelper(size float32) *AxisHelper {
+// NewAxes returns a pointer to a new Axes object.
+func NewAxes(size float32) *Axes {
 
-	axis := new(AxisHelper)
+	axes := new(Axes)
 
 	// Create geometry with three orthogonal lines starting at the origin
 	geom := geometry.NewGeometry()
@@ -43,6 +43,6 @@ func NewAxisHelper(size float32) *AxisHelper {
 	mat := material.NewBasic()
 
 	// Initialize lines with the specified geometry and material
-	axis.Lines.Init(geom, mat)
-	return axis
+	axes.Lines.Init(geom, mat)
+	return axes
 }
