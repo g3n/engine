@@ -109,7 +109,7 @@ import (
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/renderer"
-	"github.com/g3n/engine/util"
+	"github.com/g3n/engine/util/helper"
 	"github.com/g3n/engine/window"
 	"time"
 )
@@ -164,7 +164,7 @@ func main() {
 	scene.Add(pointLight)
 
 	// Create and add an axis helper to the scene
-	scene.Add(util.NewAxisHelper(0.5))
+	scene.Add(helper.NewAxes(0.5))
 
 	// Set background color to gray
 	a.Gls().ClearColor(0.5, 0.5, 0.5, 1.0)
