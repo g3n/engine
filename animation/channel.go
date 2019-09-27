@@ -6,8 +6,8 @@ package animation
 
 import (
 	"github.com/g3n/engine/core"
-	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/geometry"
+	"github.com/g3n/engine/math32"
 )
 
 // A Channel associates an animation parameter channel to an interpolation sampler
@@ -47,7 +47,7 @@ func (c *Channel) SetInterpolationTangents(inTangent, outTangent math32.ArrayF32
 	c.outTangent = outTangent
 }
 
-// InterpolationTangents sets the interpolation tangents
+// InterpolationTangents returns the interpolation tangents
 func (c *Channel) InterpolationTangents() (inTangent, outTangent math32.ArrayF32) {
 
 	return c.inTangent, c.outTangent
@@ -92,7 +92,7 @@ func (c *Channel) Update(time float32) {
 	}
 
 	// Interpolate and update
-	relativeDelta := (time-c.keyframes[idx])/(c.keyframes[idx+1]-c.keyframes[idx])
+	relativeDelta := (time - c.keyframes[idx]) / (c.keyframes[idx+1] - c.keyframes[idx])
 	c.interpAction(idx, relativeDelta)
 }
 
@@ -251,16 +251,16 @@ func NewMorphChannel(mg *geometry.MorphGeometry) *MorphChannel {
 		switch mc.interpType {
 		case STEP:
 			mc.interpAction = func(idx int, k float32) {
-				start := idx*numWeights
-				weights := mc.values[start:start+numWeights]
+				start := idx * numWeights
+				weights := mc.values[start : start+numWeights]
 				mg.SetWeights(weights)
 			}
 		case LINEAR:
 			mc.interpAction = func(idx int, k float32) {
-				start1 := idx*numWeights
-				start2 := (idx+1)*numWeights
-				weights1 := mc.values[start1:start1+numWeights]
-				weights2 := mc.values[start2:start2+numWeights]
+				start1 := idx * numWeights
+				start2 := (idx + 1) * numWeights
+				weights1 := mc.values[start1 : start1+numWeights]
+				weights2 := mc.values[start2 : start2+numWeights]
 				weightsNew := make([]float32, numWeights)
 				for i := range weights1 {
 					weightsNew[i] = weights1[i] + (weights2[i]-weights1[i])*k
@@ -269,10 +269,10 @@ func NewMorphChannel(mg *geometry.MorphGeometry) *MorphChannel {
 			}
 		case CUBICSPLINE: // TODO
 			mc.interpAction = func(idx int, k float32) {
-				start1 := idx*numWeights
-				start2 := (idx+1)*numWeights
-				weights1 := mc.values[start1:start1+numWeights]
-				weights2 := mc.values[start2:start2+numWeights]
+				start1 := idx * numWeights
+				start2 := (idx + 1) * numWeights
+				weights1 := mc.values[start1 : start1+numWeights]
+				weights2 := mc.values[start2 : start2+numWeights]
 				weightsNew := make([]float32, numWeights)
 				for i := range weights1 {
 					weightsNew[i] = weights1[i] + (weights2[i]-weights1[i])*k
@@ -290,7 +290,7 @@ type InterpolationType string
 
 // The various interpolation types.
 const (
-	STEP        = InterpolationType("STEP")          // The animated values remain constant to the output of the first keyframe, until the next keyframe.
-	LINEAR      = InterpolationType("LINEAR")        // The animated values are linearly interpolated between keyframes. Spherical linear interpolation (slerp) is used to interpolate quaternions.
-	CUBICSPLINE = InterpolationType("CUBICSPLINE")   // TODO
+	STEP        = InterpolationType("STEP")        // The animated values remain constant to the output of the first keyframe, until the next keyframe.
+	LINEAR      = InterpolationType("LINEAR")      // The animated values are linearly interpolated between keyframes. Spherical linear interpolation (slerp) is used to interpolate quaternions.
+	CUBICSPLINE = InterpolationType("CUBICSPLINE") // TODO
 )
