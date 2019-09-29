@@ -6,44 +6,18 @@
 // The OpenAL documentation can be accessed at https://openal.org/documentation/
 package al
 
-/*
-#cgo darwin   CFLAGS:  -DGO_DARWIN  -I/usr/local/opt/openal-soft/include/AL -I/usr/include/AL
-#cgo freebsd  CFLAGS:  -DGO_FREEBSD -I/usr/local/include/AL
-#cgo linux    CFLAGS:  -DGO_LINUX   -I/usr/include/AL
-#cgo windows  CFLAGS:  -DGO_WINDOWS -I${SRCDIR}/../windows/openal-soft-1.18.2/include/AL
-#cgo darwin   LDFLAGS: -L/usr/local/opt/openal-soft/lib -lopenal
-#cgo freebsd  LDFLAGS: -L/usr/local/lib -lopenal
-#cgo linux    LDFLAGS: -lopenal
-#cgo windows  LDFLAGS: -L${SRCDIR}/../windows/bin -lOpenAL32
-
-#ifdef GO_DARWIN
-#include <stdlib.h>
-#include "al.h"
-#include "alc.h"
-#include "efx.h"
-#endif
-
-#ifdef GO_FREEBSD
-#include <stdlib.h>
-#include "al.h"
-#include "alc.h"
-#include "efx.h"
-#endif
-
-#ifdef GO_LINUX
-#include <stdlib.h>
-#include "al.h"
-#include "alc.h"
-#include "efx.h"
-#endif
-
-#ifdef GO_WINDOWS
-#include <stdlib.h>
-#include "al.h"
-#include "alc.h"
-#include "efx.h"
-#endif
-*/
+// #cgo darwin   CFLAGS:  -DGO_DARWIN  -I/usr/local/opt/openal-soft/include/AL -I/usr/include/AL
+// #cgo freebsd  CFLAGS:  -DGO_FREEBSD -I/usr/local/include/AL
+// #cgo linux    CFLAGS:  -DGO_LINUX   -I/usr/include/AL
+// #cgo windows  CFLAGS:  -DGO_WINDOWS -I${SRCDIR}/../windows/openal-soft-1.18.2/include/AL
+// #cgo darwin   LDFLAGS: -L/usr/local/opt/openal-soft/lib -lopenal
+// #cgo freebsd  LDFLAGS: -L/usr/local/lib -lopenal
+// #cgo linux    LDFLAGS: -lopenal
+// #cgo windows  LDFLAGS: -L${SRCDIR}/../windows/bin -lOpenAL32
+// #include <stdlib.h>
+// #include "al.h"
+// #include "alc.h"
+// #include "efx.h"
 import "C"
 
 import (
