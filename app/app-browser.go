@@ -59,7 +59,7 @@ func App() *Application {
 func (a *Application) Run(update func(rend *renderer.Renderer, deltaTime time.Duration)) {
 
 	// Create channel so later we can prevent application from finishing while we wait for callbacks
-	done := make(chan bool, 0)
+	done := make(chan bool)
 
 	// Initialize start and frame time
 	a.startTime = time.Now()
@@ -83,6 +83,8 @@ func (a *Application) Run(update func(rend *renderer.Renderer, deltaTime time.Du
 		}
 		return nil
 	})
+	defer tick.Release()
+
 	a.cbid = js.Global().Call("requestAnimationFrame", tick)
 
 	// Read from done channel
