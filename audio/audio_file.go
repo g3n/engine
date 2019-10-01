@@ -15,6 +15,12 @@ import (
 	"unsafe"
 )
 
+const (
+	waveHeaderSize = 44
+	fileMark       = "RIFF"
+	fileHead       = "WAVE"
+)
+
 // AudioInfo represents the information associated to an audio file
 type AudioInfo struct {
 	Format     int     // OpenAl Format
