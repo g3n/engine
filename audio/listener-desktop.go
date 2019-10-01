@@ -13,12 +13,12 @@ import (
 	"github.com/g3n/engine/math32"
 )
 
-// Listener is an audio listener positioned in space
+// Listener is an audio listener positioned in space.
 type Listener struct {
 	core.Node
 }
 
-// NewListener returns a pointer to a new Listener object.
+// NewListener creates a Listener object.
 func NewListener() *Listener {
 
 	l := new(Listener)
@@ -26,45 +26,45 @@ func NewListener() *Listener {
 	return l
 }
 
-// SetVelocity sets the velocity of the listener with x, y, z components
+// SetVelocity sets the velocity of the listener with x, y, z components.
 func (l *Listener) SetVelocity(vx, vy, vz float32) {
 
 	al.Listener3f(al.Velocity, vx, vy, vz)
 }
 
-// SetVelocityVec sets the velocity of the listener with a vector
+// SetVelocityVec sets the velocity of the listener with a vector.
 func (l *Listener) SetVelocityVec(v *math32.Vector3) {
 
 	al.Listener3f(al.Velocity, v.X, v.Y, v.Z)
 }
 
-// Velocity returns the velocity of the listener as x, y, z components
+// Velocity returns the velocity of the listener as x, y, z components.
 func (l *Listener) Velocity() (float32, float32, float32) {
 
 	return al.GetListener3f(al.Velocity)
 }
 
-// VelocityVec returns the velocity of the listener as a vector
+// VelocityVec returns the velocity of the listener as a vector.
 func (l *Listener) VelocityVec() math32.Vector3 {
 
 	vx, vy, vz := al.GetListener3f(al.Velocity)
 	return math32.Vector3{vx, vy, vz}
 }
 
-// SetGain sets the gain of the listener
+// SetGain sets the gain of the listener.
 func (l *Listener) SetGain(gain float32) {
 
 	al.Listenerf(al.Gain, gain)
 }
 
-// Gain returns the gain of the listener
+// Gain returns the gain of the listener.
 func (l *Listener) Gain() float32 {
 
 	return al.GetListenerf(al.Gain)
 }
 
-// Render is called by the renderer at each frame
-// Updates the OpenAL position and orientation of this listener
+// Render is called by the renderer at each frame.
+// Updates the position and orientation of the listener.
 func (l *Listener) Render(gl *gls.GLS) {
 
 	// Sets the listener source world position
