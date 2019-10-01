@@ -347,8 +347,8 @@ func Init(width, height int, title string) error {
 
 	// Set up window cursor position callback to dispatch event
 	w.SetCursorPosCallback(func(x *glfw.Window, xpos float64, ypos float64) {
-		w.cursorEv.Xpos = float32(xpos * w.scaleX)
-		w.cursorEv.Ypos = float32(ypos * w.scaleY)
+		w.cursorEv.Xpos = float32(xpos)
+		w.cursorEv.Ypos = float32(ypos)
 		w.cursorEv.Mods = w.mods
 		w.Dispatch(OnCursor, &w.cursorEv)
 	})
