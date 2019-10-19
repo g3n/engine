@@ -325,6 +325,7 @@ type WebGlCanvas struct {
 	sizeEv   SizeEvent
 	cursorEv CursorEvent
 	scrollEv ScrollEvent
+	focusEv  FocusEvent
 
 	// Callbacks
 	onCtxMenu  js.Func
@@ -335,6 +336,8 @@ type WebGlCanvas struct {
 	mouseMove  js.Func
 	mouseWheel js.Func
 	winResize  js.Func
+	winFocus   js.Func
+	winBlur   js.Func
 }
 
 // Init initializes the WebGlCanvas singleton.
@@ -463,6 +466,20 @@ func Init(canvasId string) error {
 	})
 	js.Global().Get("window").Call("addEventListener", "resize", w.winResize)
 
+	// Set up window focus callback to dispatch event
+	w.winFocus = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		w.focusEv.Focused = true
+		w.Dispatch(OnWindowFocus, &w.focusEv)
+		return nil
+	})
+	w.winBlur = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		w.focusEv.Focused = false
+		w.Dispatch(OnWindowFocus, &w.focusEv)
+		return nil
+	})
+	js.Global().Get("window").Call("addEventListener", "onfocus", w.winFocus)
+	js.Global().Get("window").Call("addEventListener", "onblur", w.winBlur)
+
 	//// Set up char callback to dispatch event TODO
 	//w.SetCharModsCallback(func(x *glfw.Window, char rune, mods glfw.ModifierKey) {	//
 	//	w.charEv.Char = char
@@ -535,6 +552,8 @@ func (w *WebGlCanvas) Destroy() {
 	w.canvas.Call("removeEventListener", "mousemove", w.mouseMove)
 	w.canvas.Call("removeEventListener", "wheel", w.mouseWheel)
 	js.Global().Get("window").Call("removeEventListener", "resize", w.winResize)
+	js.Global().Get("window").Call("removeEventListener", "onfocus", w.winFocus)
+	js.Global().Get("window").Call("removeEventListener", "onfocus", w.winBlur)
 
 	// Release callbacks
 	w.onCtxMenu.Release()
@@ -545,6 +564,8 @@ func (w *WebGlCanvas) Destroy() {
 	w.mouseMove.Release()
 	w.mouseWheel.Release()
 	w.winResize.Release()
+	w.winFocus.Release()
+	w.winBlur.Release()
 }
 
 // GetFramebufferSize returns the framebuffer size.

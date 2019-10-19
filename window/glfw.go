@@ -205,6 +205,7 @@ type GlfwWindow struct {
 	sizeEv   SizeEvent
 	cursorEv CursorEvent
 	scrollEv ScrollEvent
+	focusEv  FocusEvent
 
 	mods ModifierKey // Current modifier keys
 
@@ -343,6 +344,12 @@ func Init(width, height int, title string) error {
 		w.posEv.Xpos = xpos
 		w.posEv.Ypos = ypos
 		w.Dispatch(OnWindowPos, &w.posEv)
+	})
+
+	// Set up window focus callback to dispatch event
+	w.SetFocusCallback(func(x *glfw.Window, focused bool) {
+		w.focusEv.Focused = focused
+		w.Dispatch(OnWindowFocus, &w.focusEv)
 	})
 
 	// Set up window cursor position callback to dispatch event
