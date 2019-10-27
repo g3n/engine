@@ -38,6 +38,8 @@ type Texture2D struct {
 	updateData   bool        // texture data needs to be sent
 	updateParams bool        // texture parameters needs to be sent
 	genMipmap    bool        // generate mipmaps flag
+	compressed   bool        // whether the texture is compressed
+	size         int32       // the size of the texture data in bytes
 	data         interface{} // array with texture data
 	uniUnit      gls.Uniform // Texture unit uniform location cache
 	uniInfo      gls.Uniform // Texture info uniform location cache
@@ -104,6 +106,13 @@ func NewTexture2DFromData(width, height int, format int, formatType, iformat int
 
 	t := newTexture2D()
 	t.SetData(width, height, format, formatType, iformat, data)
+	return t
+}
+
+func NewTexture2DFromCompressedData(width, height int, iformat int32, size int32, data interface{}) *Texture2D {
+
+	t := newTexture2D()
+	t.SetDataCompressed(width, height, iformat, size, data)
 	return t
 }
 
@@ -178,6 +187,19 @@ func (t *Texture2D) SetData(width, height int, format int, formatType, iformat i
 	t.format = uint32(format)
 	t.formatType = uint32(formatType)
 	t.iformat = int32(iformat)
+	t.compressed = false
+	t.data = data
+	t.updateData = true
+}
+
+// SetDataCompressed sets the compressed texture data
+func (t *Texture2D) SetDataCompressed(width, height int, iformat int32, size int32, data interface{}) {
+
+	t.width = int32(width)
+	t.height = int32(height)
+	t.iformat = iformat
+	t.compressed = true
+	t.size = size
 	t.data = data
 	t.updateData = true
 }
@@ -282,6 +304,12 @@ func (t *Texture2D) Height() int {
 	return int(t.height)
 }
 
+// Compressed returns whether this texture is compressed
+func (t *Texture2D) Compressed() bool {
+
+	return t.compressed
+}
+
 // DecodeImage reads and decodes the specified image file into RGBA8.
 // The supported image files are PNG, JPEG and GIF.
 func DecodeImage(imgfile string) (*image.RGBA, error) {
@@ -323,16 +351,28 @@ func (t *Texture2D) RenderSetup(gs *gls.GLS, slotIdx, uniIdx int) { // Could hav
 
 	// Transfer texture data to OpenGL if necessary
 	if t.updateData {
-		gs.TexImage2D(
-			gls.TEXTURE_2D, // texture type
-			0,              // level of detail
-			t.iformat,      // internal format
-			t.width,        // width in texels
-			t.height,       // height in texels
-			t.format,       // format of supplied texture data
-			t.formatType,   // type of external format color component
-			t.data,         // image data
-		)
+		if t.compressed {
+			gs.CompressedTexImage2D(
+				gls.TEXTURE_2D,
+				0,
+				uint32(t.iformat),
+				t.width,
+				t.height,
+				t.size,
+				t.data,
+			)
+		} else {
+			gs.TexImage2D(
+				gls.TEXTURE_2D, // texture type
+				0,              // level of detail
+				t.iformat,      // internal format
+				t.width,        // width in texels
+				t.height,       // height in texels
+				t.format,       // format of supplied texture data
+				t.formatType,   // type of external format color component
+				t.data,         // image data
+			)
+		}
 		// Generates mipmaps if requested
 		if t.genMipmap {
 			gs.GenerateMipmap(gls.TEXTURE_2D)
