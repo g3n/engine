@@ -109,6 +109,7 @@ func NewTexture2DFromData(width, height int, format int, formatType, iformat int
 	return t
 }
 
+// NewTexture2DFromCompressedData creates a new compressed texture from data
 func NewTexture2DFromCompressedData(width, height int, iformat int32, size int32, data interface{}) *Texture2D {
 
 	t := newTexture2D()
