@@ -113,7 +113,7 @@ func NewTexture2DFromData(width, height int, format int, formatType, iformat int
 func NewTexture2DFromCompressedData(width, height int, iformat int32, size int32, data interface{}) *Texture2D {
 
 	t := newTexture2D()
-	t.SetDataCompressed(width, height, iformat, size, data)
+	t.SetCompressedData(width, height, iformat, size, data)
 	return t
 }
 
@@ -193,8 +193,8 @@ func (t *Texture2D) SetData(width, height int, format int, formatType, iformat i
 	t.updateData = true
 }
 
-// SetDataCompressed sets the compressed texture data
-func (t *Texture2D) SetDataCompressed(width, height int, iformat int32, size int32, data interface{}) {
+// SetCompressedData sets the compressed texture data
+func (t *Texture2D) SetCompressedData(width, height int, iformat int32, size int32, data interface{}) {
 
 	t.width = int32(width)
 	t.height = int32(height)
