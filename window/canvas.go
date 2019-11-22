@@ -593,6 +593,15 @@ func (w *WebGlCanvas) DisposeAllCustomCursors() {
 	// TODO
 }
 
+// SetCursorMode hides, disables, and returns the cursor back to normal depending on the mode provided
+func (w *WebGlCanvas) SetCursorMode(mode CursorMode) {
+	w.Window.SetInputMode(glfw.CursorMode, int(mode))
+}
+
+func (w *WebGlCanvas) SetCursorPos(x float64, y float64) {
+	w.Window.SetCursorPos(xpos, ypos)
+}
+
 // SetInputMode changes specified input to specified state
 //func (w *WebGlCanvas) SetInputMode(mode InputMode, state int) {
 //

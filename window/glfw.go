@@ -495,6 +495,14 @@ func (w *GlfwWindow) DisposeAllCustomCursors() {
 	w.lastCursorKey = CursorLast
 }
 
+func (w *GlfwWindow) SetCursorMode(mode CursorMode) {
+	w.Window.SetInputMode(glfw.CursorMode, int(mode))
+}
+
+func (w *GlfwWindow) SetCursorPos(xpos float64, ypos float64) {
+	w.Window.SetCursorPos(xpos, ypos)
+}
+
 // Center centers the window on the screen.
 //func (w *GlfwWindow) Center() {
 //

@@ -37,6 +37,8 @@ type IWindow interface {
 	GetScale() (x float64, y float64)
 	CreateCursor(imgFile string, xhot, yhot int) (Cursor, error)
 	SetCursor(cursor Cursor)
+	SetCursorMode(mode CursorMode)
+	SetCursorPos(x float64, y float64)
 	DisposeAllCustomCursors()
 	Destroy()
 }
