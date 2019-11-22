@@ -499,8 +499,8 @@ func (w *GlfwWindow) SetCursorMode(mode CursorMode) {
 	w.Window.SetInputMode(glfw.CursorMode, int(mode))
 }
 
-func (w *GlfwWindow) SetCursorPos(xpos float64, ypos float64) {
-	w.Window.SetCursorPos(xpos, ypos)
+func (w *GlfwWindow) SetCursorPos(x float64, y float64) {
+	w.Window.SetCursorPos(x, y)
 }
 
 // Center centers the window on the screen.
