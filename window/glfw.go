@@ -495,10 +495,12 @@ func (w *GlfwWindow) DisposeAllCustomCursors() {
 	w.lastCursorKey = CursorLast
 }
 
+// SetCursorMode hides, disables, and returns the cursor back to normal depending on the mode provided
 func (w *GlfwWindow) SetCursorMode(mode CursorMode) {
 	w.Window.SetInputMode(glfw.CursorMode, int(mode))
 }
 
+// SetCursorPos sets the cursor position in screen coordinates
 func (w *GlfwWindow) SetCursorPos(x float64, y float64) {
 	w.Window.SetCursorPos(x, y)
 }
