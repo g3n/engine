@@ -5,8 +5,8 @@
 package math32
 
 import (
-	"strings"
 	"fmt"
+	"strings"
 )
 
 // Color4 describes an RGBA color

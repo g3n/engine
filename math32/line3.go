@@ -106,6 +106,5 @@ func (l *Line3) Clone() *Line3 {
 // String returns a formatted string of start and end
 func (l *Line3) String() string {
 
-    return fmt.Sprintf("(Start: %s, End: %s)", l.start.String(), l.end.String())
+	return fmt.Sprintf("(Start: %s, End: %s)", l.start.String(), l.end.String())
 }
-

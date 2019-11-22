@@ -414,4 +414,3 @@ func (v *Vector2) String() string {
 
 	return fmt.Sprintf("(%f, %f)", v.X, v.Y)
 }
-
