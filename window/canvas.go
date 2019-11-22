@@ -599,8 +599,8 @@ func (w *WebGlCanvas) SetCursorMode(mode CursorMode) {
 }
 
 // SetCursorPos sets the cursor position in screen coordinates
-func (w *WebGlCanvas) SetCursorPos(x float64, y float64) {
-	w.Window.SetCursorPos(x, y)
+func (w *WebGlCanvas) SetCursorPos(x int, y int) {
+	w.Window.SetCursorPos(float64(x), float64(y))
 }
 
 // SetInputMode changes specified input to specified state

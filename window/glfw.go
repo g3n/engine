@@ -501,8 +501,8 @@ func (w *GlfwWindow) SetCursorMode(mode CursorMode) {
 }
 
 // SetCursorPos sets the cursor position in screen coordinates
-func (w *GlfwWindow) SetCursorPos(x float64, y float64) {
-	w.Window.SetCursorPos(x, y)
+func (w *GlfwWindow) SetCursorPos(x int, y int) {
+	w.Window.SetCursorPos(float64(x), float64(y))
 }
 
 // Center centers the window on the screen.
