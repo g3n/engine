@@ -497,7 +497,6 @@ func (p *Panel) MinHeight() float32 {
 
 // Pospix returns this panel absolute coordinate in pixels
 func (p *Panel) Pospix() math32.Vector3 {
-
 	return p.pospix
 }
 

@@ -176,6 +176,7 @@ func (w *Window) onCursor(evname string, ev interface{}) {
 					w.SetPositionY(w.Position().Y + w.Height() - minHeight)
 					w.SetHeight(minHeight)
 				}
+				w.UpdateMatrixWorld()
 			}
 			if w.overRight {
 				delta := cev.Xpos - (w.pospix.X + w.width)
@@ -209,6 +210,7 @@ func (w *Window) onCursor(evname string, ev interface{}) {
 					w.SetPositionX(w.Position().X + w.Width() - minWidth)
 					w.SetWidth(minWidth)
 				}
+				w.UpdateMatrixWorld()
 			}
 		} else {
 			// Obtain cursor position relative to window
