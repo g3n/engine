@@ -177,12 +177,20 @@ func (w *Window) onCursor(evname string, ev interface{}) {
 			if w.overRight {
 				delta := cev.Xpos - (w.pospix.X + w.width)
 				newWidth := w.Width() + delta
-				w.SetWidth(math32.Max(newWidth, w.title.label.Width()+w.title.closeButton.Width()))
+				if w.title != nil {
+					w.SetWidth(math32.Max(newWidth, w.title.label.Width()+w.title.closeButton.Width()))
+				} else {
+					w.SetWidth(newWidth)
+				}
 			}
 			if w.overBottom {
 				delta := cev.Ypos - (w.pospix.Y + w.height)
 				newHeight := w.Height() + delta
-				w.SetHeight(math32.Max(newHeight, w.title.height))
+				if w.title != nil {
+					w.SetHeight(math32.Max(newHeight, w.title.height))
+				} else {
+					w.SetHeight(newHeight)
+				}
 			}
 			if w.overLeft {
 				delta := cev.Xpos - w.pospix.X
