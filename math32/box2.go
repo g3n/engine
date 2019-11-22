@@ -4,6 +4,10 @@
 
 package math32
 
+import (
+	"fmt"
+)
+
 // Box2 represents a 2D bounding box defined by two points:
 // the point with minimum coordinates and the point with maximum coordinates.
 type Box2 struct {
@@ -225,4 +229,10 @@ func (b *Box2) Translate(offset *Vector2) *Box2 {
 func (b *Box2) Equals(other *Box2) bool {
 
 	return other.min.Equals(&b.min) && other.max.Equals(&b.max)
+}
+
+// String returns a formatted string of min and max
+func (b *Box2) String() string {
+
+	return fmt.Sprintf("(Min: %s, Max: %s)", b.min.String(), b.max.String())
 }

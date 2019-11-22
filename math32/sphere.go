@@ -4,6 +4,10 @@
 
 package math32
 
+import (
+	"fmt"
+)
+
 // Sphere represents a 3D sphere defined by its center point and a radius
 type Sphere struct {
 	Center Vector3 // center of the sphere
@@ -145,4 +149,10 @@ func (s *Sphere) Translate(offset *Vector3) *Sphere {
 
 	s.Center.Add(offset)
 	return s
+}
+
+// String returns a formatted string of center and radius
+func (s *Sphere) String() string {
+
+	return fmt.Sprintf("(Center: %s, Radius: %f)", s.Center, s.Radius)
 }

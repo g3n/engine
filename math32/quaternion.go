@@ -4,6 +4,10 @@
 
 package math32
 
+import (
+	"fmt"
+)
+
 // Quaternion is quaternion with X,Y,Z and W components.
 type Quaternion struct {
 	X float32
@@ -402,4 +406,10 @@ func (q *Quaternion) ToArray(array []float32, offset int) []float32 {
 func (q *Quaternion) Clone() *Quaternion {
 
 	return NewQuaternion(q.X, q.Y, q.Z, q.W)
+}
+
+// String returns a formatted string of X, Y, Z, W
+func (q *Quaternion) String() string {
+
+	return fmt.Sprintf("(%f, %f, %f, %f)", q.X, q.Y, q.Z, q.W)
 }

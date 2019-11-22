@@ -4,6 +4,10 @@
 
 package math32
 
+import (
+	"fmt"
+)
+
 // Box3 represents a 3D bounding box defined by two points:
 // the point with minimum coordinates and the point with maximum coordinates.
 type Box3 struct {
@@ -287,4 +291,10 @@ func (b *Box3) Equals(other *Box3) bool {
 func (b *Box3) Clone() *Box3 {
 
 	return NewBox3(&b.Min, &b.Max)
+}
+
+// String returns a formatted string of min and max
+func (b *Box3) String() string {
+
+	return fmt.Sprintf("(Min: %s, Max: %s)", b.Min.String(), b.Max.String())
 }

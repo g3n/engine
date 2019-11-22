@@ -6,6 +6,7 @@ package math32
 
 import (
 	"strings"
+	"fmt"
 )
 
 // Color4 describes an RGBA color
@@ -112,4 +113,10 @@ func (c *Color4) FromColor(other *Color, alpha float32) {
 func (c *Color4) ToColor() Color {
 
 	return Color{c.R, c.G, c.B}
+}
+
+// String returns rgba values converted to a string
+func (c *Color4) String() string {
+
+	return fmt.Sprintf("(R: %f, G: %f, B: %f, A: %f)", c.R, c.G, c.B, c.A)
 }

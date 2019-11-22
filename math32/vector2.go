@@ -4,6 +4,10 @@
 
 package math32
 
+import (
+	"fmt"
+)
+
 // Vector2 is a 2D vector/point with X and Y components.
 type Vector2 struct {
 	X float32
@@ -404,3 +408,10 @@ func (v *Vector2) InTriangle(p0, p1, p2 *Vector2) bool {
 
 	return s >= 0 && t >= 0 && (s+t) < 2*A*sign
 }
+
+// String returns x,y as a formatted string
+func (v *Vector2) String() string {
+
+	return fmt.Sprintf("(%f, %f)", v.X, v.Y)
+}
+

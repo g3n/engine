@@ -4,6 +4,10 @@
 
 package math32
 
+import (
+	"fmt"
+)
+
 // Triangle represents a triangle made of three vertices.
 type Triangle struct {
 	a Vector3
@@ -188,4 +192,10 @@ func (t *Triangle) Equals(triangle *Triangle) bool {
 func (t *Triangle) Clone(triangle *Triangle) *Triangle {
 
 	return NewTriangle(nil, nil, nil).Copy(t)
+}
+
+// String returns a formatted string of the triangle.
+func (t *Triangle) String() string {
+
+	return fmt.Sprintf("(%s, %s, %s)", t.a, t.b, t.c)
 }

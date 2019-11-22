@@ -6,6 +6,7 @@ package math32
 
 import (
 	"strings"
+	"fmt"
 )
 
 // Color describes an RGB color
@@ -295,4 +296,10 @@ var mapColorNames = map[string]Color{
 	"whitesmoke":           {0.961, 0.961, 0.961},
 	"yellow":               {1.000, 1.000, 0.000},
 	"yellowgreen":          {0.604, 0.804, 0.196},
+}
+
+// String returns rgb values converted to a string
+func (c *Color) String() string {
+
+	return fmt.Sprintf("(R: %f, G: %f, B: %f)", c.R, c.G, c.B)
 }

@@ -4,6 +4,10 @@
 
 package math32
 
+import (
+	"fmt"
+)
+
 // Vector4 is a vector/point in homogeneous coordinates with X, Y, Z and W components.
 type Vector4 struct {
 	X float32
@@ -630,3 +634,11 @@ func (v *Vector4) Clone() *Vector4 {
 
 	return NewVector4(v.X, v.Y, v.Z, v.W)
 }
+
+
+// String returns x,y,z,w as a formatted string
+func (v *Vector4) String() string {
+
+	return fmt.Sprintf("(%f, %f, %f, %f)", v.X, v.Y, v.Z, v.W)
+}
+

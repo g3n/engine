@@ -4,6 +4,10 @@
 
 package math32
 
+import (
+	"fmt"
+)
+
 // Ray represents an oriented 3D line segment defined by an origin point and a direction vector.
 type Ray struct {
 	origin    Vector3
@@ -508,4 +512,10 @@ func (ray *Ray) Equals(other *Ray) bool {
 func (ray *Ray) Clone() *Ray {
 
 	return NewRay(&ray.origin, &ray.direction)
+}
+
+// String returns a formatted string of origin and direction
+func (ray *Ray) String() string {
+
+	return fmt.Sprintf("(Origin: %s, Direction: %s)", ray.origin.String(), ray.direction.String())
 }

@@ -4,6 +4,10 @@
 
 package math32
 
+import (
+	"fmt"
+)
+
 // Vector3 is a 3D vector/point with X, Y and Z components.
 type Vector3 struct {
 	X float32
@@ -677,4 +681,10 @@ func (v *Vector3) AlmostEquals(other *Vector3, tolerance float32) bool {
 			return true
 	}
 	return false
+}
+
+// String returns x,y,z as a formatted string
+func (v *Vector3) String() string {
+
+	return fmt.Sprintf("(%f, %f, %f)", v.X, v.Y, v.Z)
 }

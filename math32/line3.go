@@ -4,6 +4,10 @@
 
 package math32
 
+import (
+	"fmt"
+)
+
 // Line3 represents a 3D line segment defined by a start and an end point.
 type Line3 struct {
 	start Vector3
@@ -98,3 +102,10 @@ func (l *Line3) Clone() *Line3 {
 
 	return NewLine3(&l.start, &l.end)
 }
+
+// String returns a formatted string of start and end
+func (l *Line3) String() string {
+
+    return fmt.Sprintf("(Start: %s, End: %s)", l.start.String(), l.end.String())
+}
+
