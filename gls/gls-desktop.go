@@ -601,6 +601,19 @@ func (gs *GLS) TexImage2D(target uint32, level int32, iformat int32, width int32
 		ptr(data))
 }
 
+// CompressedTexImage2D specifies a two-dimensional compressed texture image.
+func (gs *GLS) CompressedTexImage2D(target uint32, level uint32, iformat uint32, width int32, height int32, size int32, data interface{}) {
+
+	C.glCompressedTexImage2D(C.GLenum(target),
+		C.GLint(level),
+		C.GLenum(iformat),
+		C.GLsizei(width),
+		C.GLsizei(height),
+		C.GLint(0),
+		C.GLsizei(size),
+		ptr(data))
+}
+
 // TexParameteri sets the specified texture parameter on the specified texture.
 func (gs *GLS) TexParameteri(target uint32, pname uint32, param int32) {
 
