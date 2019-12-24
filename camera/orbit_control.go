@@ -120,6 +120,11 @@ func (oc *OrbitControl) Target() math32.Vector3 {
 	return oc.target
 }
 
+//Set camera orbit target Vector3
+func (oc *OrbitControl) SetTarget(v math32.Vector3) {
+	oc.target = v
+}
+
 // Enabled returns the current OrbitEnabled bitmask.
 func (oc *OrbitControl) Enabled() OrbitEnabled {
 
