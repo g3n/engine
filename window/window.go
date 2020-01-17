@@ -34,7 +34,7 @@ type IWindow interface {
 	Gls() *gls.GLS
 	GetFramebufferSize() (width int, height int)
 	GetSize() (width int, height int)
-	GetScale() (x float64, y float64)
+	GetScale() (x float32, y float32)
 	CreateCursor(imgFile string, xhot, yhot int) (Cursor, error)
 	SetCursor(cursor Cursor)
 	DisposeAllCustomCursors()
@@ -53,7 +53,7 @@ type MouseButton int
 // InputMode corresponds to an input mode.
 type InputMode int
 
-// InputMode corresponds to an input mode.
+// CursorMode corresponds to an cursor mode.
 type CursorMode int
 
 // Cursor corresponds to a g3n standard or user-created cursor icon.
