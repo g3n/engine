@@ -75,12 +75,12 @@ func NewRibbon(paths [][]math32.Vector3, close bool) *Geometry {
 	*/
 	c := NewGeometry()
 
-    var ls, is []int // path lengths, path indexes
+	var ls, is []int // path lengths, path indexes
 	positions := math32.NewArrayF32(0, 0)
 	indices := math32.NewArrayU32(0, 0)
 
 	i := 0
-    for p := 0; p < len(paths); p++ {
+	for p := 0; p < len(paths); p++ {
 		path := paths[p]
 		l := len(path)
 		ls = append(ls, l)
@@ -89,17 +89,17 @@ func NewRibbon(paths [][]math32.Vector3, close bool) *Geometry {
 			positions.AppendVector3(&path[j])
 		}
 		i += l
-    }
+	}
 
-    l1 := ls[0] - 1 // path1 length
+	l1 := ls[0] - 1 // path1 length
 	l2 := ls[1] - 1 // path2 length
 	min := l2
 	if l1 < l2 {
 		min = l1
 	}
-    p := 0
-    i = 0
-    for i <= min && p < len(ls) - 1 {
+	p := 0
+	i = 0
+	for i <= min && p < len(ls) - 1 {
 		t := is[p+1] - is[p] 
 
 		indices.Append(uint32(i), uint32(i+t), uint32(i+1))
@@ -123,7 +123,7 @@ func NewRibbon(paths [][]math32.Vector3, close bool) *Geometry {
 				min = l2 + i
 			}
 		}
-    }
+	}
 
 	normals := math32.NewArrayF32(positions.Size(), positions.Size())
 	normals = CalculateNormals(indices, positions, normals)
@@ -144,9 +144,9 @@ func NewTube(path []math32.Vector3, radius float32, radialSegments int, close bo
 	binormals = make([]math32.Vector3, l)
 
 	tangents[0] = *path[1].Clone().Sub(&path[0])
-    tangents[0].Normalize()
-    tangents[l-1] = *path[l-1].Clone().Sub(&path[l-2])
-    tangents[l-1].Normalize()
+	tangents[0].Normalize()
+	tangents[l-1] = *path[l-1].Clone().Sub(&path[l-2])
+	tangents[l-1].Normalize()
 
 	var tmpVertex *math32.Vector3
 	if (tangents[0].X != 1) {
@@ -158,9 +158,9 @@ func NewTube(path []math32.Vector3, radius float32, radialSegments int, close bo
 	}
 
 	normals[0] = *tangents[0].Clone().Cross(tmpVertex)
-    normals[0].Normalize()
-    binormals[0] = *tangents[0].Clone().Cross(&normals[0])
-    binormals[0].Normalize()
+	normals[0].Normalize()
+	binormals[0] = *tangents[0].Clone().Cross(&normals[0])
+	binormals[0].Normalize()
 	
 	for i := 1; i < l; i++ {
 		prev := *path[i].Clone().Sub(&path[i-1])
@@ -190,10 +190,10 @@ func NewTube(path []math32.Vector3, radius float32, radialSegments int, close bo
 			x := normals[i].X
 			y := normals[i].Y
 			z := normals[i].Z
-            rw := 1 / (x * matrix[3] + y * matrix[7] + z * matrix[11] + matrix[15])
-            newX := (x * matrix[0] + y * matrix[4] + z * matrix[8] + matrix[12]) * rw
-            newY := (x * matrix[1] + y * matrix[5] + z * matrix[9] + matrix[13]) * rw
-            newZ := (x * matrix[2] + y * matrix[6] + z * matrix[10] + matrix[14]) * rw
+			rw := 1 / (x * matrix[3] + y * matrix[7] + z * matrix[11] + matrix[15])
+			newX := (x * matrix[0] + y * matrix[4] + z * matrix[8] + matrix[12]) * rw
+			newY := (x * matrix[1] + y * matrix[5] + z * matrix[9] + matrix[13]) * rw
+			newZ := (x * matrix[2] + y * matrix[6] + z * matrix[10] + matrix[14]) * rw
 			
 			rotated := math32.NewVector3(newX, newY, newZ).MultiplyScalar(radius).Add(&path[i])
 			radialPath = append(radialPath, *rotated)
