@@ -16,7 +16,7 @@ import (
  +-------------------------------------+---+
  |              Title panel            | X |
  +-------------------------------------+---+
- |  Content panel                          |
+ |  Client (content) panel                 |
  |  +-----------------------------------+  |
  |  |                                   |  |
  |  |                                   |  |
@@ -35,7 +35,7 @@ type Window struct {
 	Panel       // Embedded Panel
 	styles      *WindowStyles
 	title       *WindowTitle // internal optional title panel
-	client      Panel        // internal client panel
+	client      Panel        // internal client (content) panel
 	resizable   bool         // Specifies whether the window is resizable
 	drag        bool         // Whether the mouse buttons is pressed (i.e. when dragging)
 	dragPadding float32      // Extra width used to resize (in addition to border sizes)
@@ -121,6 +121,11 @@ func (w *Window) Add(ichild IPanel) *Window {
 
 	w.client.Add(ichild)
 	return w
+}
+
+// Removes a child from the client (content) panel
+func (w *Window) Remove(ichild IPanel) bool {
+	return w.client.Remove(ichild)
 }
 
 // SetLayout sets the layout of the client panel.
