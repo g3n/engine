@@ -76,6 +76,8 @@ type Panel struct {
 	paddingSizes RectBounds // padding sizes in pixel coordinates
 	content      Rect       // current content rectangle in pixel coordinates
 
+	tooltip *Tooltip // tooltip manager
+
 	// Absolute screen position and external size in pixels
 	pospix math32.Vector3
 	width  float32
@@ -886,4 +888,16 @@ func (p *Panel) SetModelMatrix(gl *gls.GLS, mm *math32.Matrix4) {
 		0, 0, 1, p.Position().Z,
 		0, 0, 0, 1,
 	)
+}
+
+// Sets a tooltip for the panel.
+func (p *Panel) SetTooltip(tooltip *Tooltip) {
+	if p.tooltip != nil {
+		p.UnsubscribeAllID(tooltipID)
+	}
+	if tooltip == nil {
+		return
+	}
+	p.tooltip = tooltip
+	p.tooltip.assign(p)
 }
