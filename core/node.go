@@ -5,9 +5,11 @@
 package core
 
 import (
+	"math"
+	"strings"
+
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/math32"
-	"strings"
 )
 
 // INode is the interface for all node types.
@@ -115,7 +117,10 @@ func (n *Node) GetNode() *Node {
 // Computes union of own bounding box with those of all descendents.
 func (n *Node) BoundingBox() math32.Box3 {
 
-	bbox := math32.Box3{n.position, n.position}
+	bbox := math32.Box3{
+		Min: math32.Vector3{X: math.MaxFloat32, Y: math.MaxFloat32, Z: math.MaxFloat32},
+		Max: math32.Vector3{X: -math.MaxFloat32, Y: -math.MaxFloat32, Z: -math.MaxFloat32},
+	}
 	for _, inode := range n.Children() {
 		childBbox := inode.BoundingBox()
 		bbox.Union(&childBbox)

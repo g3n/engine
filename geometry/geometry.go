@@ -6,10 +6,12 @@
 package geometry
 
 import (
+	"math"
+	"strconv"
+
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/util/logger"
-	"strconv"
 )
 
 // Package logger
@@ -317,8 +319,8 @@ func (g *Geometry) BoundingBox() math32.Box3 {
 	}
 
 	// Reset bounding box
-	g.boundingBox.Min.Set(0, 0, 0)
-	g.boundingBox.Max.Set(0, 0, 0)
+	g.boundingBox.Min.Set(math.MaxFloat32, math.MaxFloat32, math.MaxFloat32)
+	g.boundingBox.Max.Set(-math.MaxFloat32, -math.MaxFloat32, -math.MaxFloat32)
 
 	// Expand bounding box by each vertex
 	g.ReadVertices(func(vertex math32.Vector3) bool {
