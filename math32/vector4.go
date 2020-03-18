@@ -630,3 +630,8 @@ func (v *Vector4) Clone() *Vector4 {
 
 	return NewVector4(v.X, v.Y, v.Z, v.W)
 }
+
+// Vector3 shortens the vector4 to a vector3 by removing the z value.
+func (v *Vector4) Vector3() *Vector3 {
+	return &Vector3{X: v.X, Y: v.Y, Z: v.Z}
+}
