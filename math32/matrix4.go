@@ -753,3 +753,13 @@ func (m *Matrix4) Clone() *Matrix4 {
 	cloned = *m
 	return &cloned
 }
+
+// MultiplyVector4 multiples the matrix with the given vector.
+func (m *Matrix4) MultiplyVector4(v *Vector4) *Vector4 {
+	return &Vector4{
+		m[0]*v.X + m[4]*v.Y + m[8]*v.Z + m[12]*v.W,
+		m[1]*v.X + m[5]*v.Y + m[9]*v.Z + m[13]*v.W,
+		m[2]*v.X + m[6]*v.Y + m[10]*v.Z + m[14]*v.W,
+		m[3]*v.X + m[7]*v.Y + m[11]*v.Z + m[15]*v.W,
+	}
+}
