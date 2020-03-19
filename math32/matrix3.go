@@ -310,3 +310,12 @@ func (m *Matrix3) Clone() *Matrix3 {
 	cloned = *m
 	return &cloned
 }
+
+// MultiplyVector3 multiples the matrix with the given vector.
+func (m *Matrix3) MultiplyVector3(v *Vector3) *Vector3 {
+	return &Vector3{
+		m[0]*v.X + m[1]*v.Y + m[2]*v.Z,
+		m[3]*v.X + m[4]*v.Y + m[5]*v.Z,
+		m[6]*v.X + m[7]*v.Y + m[8]*v.Z,
+	}
+}
