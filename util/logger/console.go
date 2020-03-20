@@ -5,7 +5,9 @@
 package logger
 
 import (
-	"os"
+	"io"
+
+	"github.com/mattn/go-colorable"
 )
 
 // Ansi terminal color codes
@@ -40,7 +42,7 @@ var colorMap = map[int]string{
 
 // Console is a console writer used for logging.
 type Console struct {
-	writer *os.File
+	writer io.Writer
 	color  bool
 }
 
@@ -48,8 +50,7 @@ type Console struct {
 // If color is true, this writer uses Ansi codes to write
 // log messages in color accordingly to its level.
 func NewConsole(color bool) *Console {
-
-	return &Console{os.Stdout, color}
+	return &Console{colorable.NewColorableStdout(), color}
 }
 
 // Write writes the provided logger event to the console.
