@@ -678,3 +678,17 @@ func (v *Vector3) AlmostEquals(other *Vector3, tolerance float32) bool {
 	}
 	return false
 }
+
+// GetAxis gets the ith axis of the vector.
+func (v *Vector3) GetAxis(i int) float32 {
+	switch i {
+	case 0:
+		return v.X
+	case 1:
+		return v.Y
+	case 2:
+		return v.Z
+	default:
+		panic("No such index")
+	}
+}

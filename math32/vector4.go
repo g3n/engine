@@ -630,3 +630,19 @@ func (v *Vector4) Clone() *Vector4 {
 
 	return NewVector4(v.X, v.Y, v.Z, v.W)
 }
+
+// GetAxis gets the ith axis of the vector.
+func (v *Vector4) GetAxis(i int) float32 {
+	switch i {
+	case 0:
+		return v.X
+	case 1:
+		return v.Y
+	case 2:
+		return v.Z
+	case 3:
+		return v.W
+	default:
+		panic("No such index")
+	}
+}
