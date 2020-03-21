@@ -416,3 +416,15 @@ func (v *Vector2) GetAxis(i int) float32 {
 		panic("No such index")
 	}
 }
+
+// SetAxis sets the ith axis of the vector.
+func (v *Vector2) SetAxis(i int, value float32) {
+	switch i {
+	case 0:
+		v.X = value
+	case 1:
+		v.Y = value
+	default:
+		panic("No such index")
+	}
+}
