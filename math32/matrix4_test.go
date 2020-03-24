@@ -63,3 +63,25 @@ func TestMatrix4_MultiplyVector4(t *testing.T) {
 		assert.Equalf(t, test.expected, actual, "Failed test %v", i)
 	}
 }
+
+func TestMatrix4_MultiplyVector3(t *testing.T) {
+	tests := []struct{
+		m4 Matrix4
+		v3 Vector3
+	} {
+		{
+			m4: Matrix4{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16},
+			v3:Vector3{1,2,3},
+		},
+		{
+			m4: Matrix4{1,22,333,14,25,6,27,28,39,310,131,1132,133,114,115,116},
+			v3:Vector3{1000,112,34},
+		},
+	}
+
+	for i, test := range tests {
+		actual := test.m4.MultiplyVector3(&test.v3, 1)
+		expected := test.m4.MultiplyVector4(test.v3.Vector4(1)).Vector3()
+		assert.Equalf(t, expected, actual, "Failed test %v", i)
+	}
+}
