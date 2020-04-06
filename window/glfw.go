@@ -14,7 +14,7 @@ import (
 
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/gls"
-	"github.com/go-gl/glfw/v3.2/glfw"
+	"github.com/go-gl/glfw/v3.3/glfw"
 	"image"
 	_ "image/png"
 	"os"
