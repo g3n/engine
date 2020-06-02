@@ -393,7 +393,7 @@ func (v *Vector3) SetLength(l float32) *Vector3 {
 }
 
 // Lerp sets each of this vector's components to the linear interpolated value of
-// alpha between ifself and the corresponding other component.
+// alpha between itself and the corresponding other component.
 // Returns the pointer to this updated vector.
 func (v *Vector3) Lerp(other *Vector3, alpha float32) *Vector3 {
 
