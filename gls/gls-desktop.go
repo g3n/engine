@@ -471,6 +471,54 @@ func (gs *GLS) GenBuffer() uint32 {
 	return buf
 }
 
+// GenFramebuffer creates a new framebuffer.
+// Framebuffers store (usually two) render buffers.
+func (gs *GLS) GenFramebuffer() uint32 {
+	var fb uint32
+	C.glGenFramebuffers(1, (*C.GLuint)(&fb))
+	return fb
+}
+
+// GenRenderbuffer creates a new render buffer.
+func (gs *GLS) GenRenderbuffer() uint32 {
+	var rb uint32
+	C.glGenRenderbuffers(1, (*C.GLuint)(&rb))
+	return rb
+}
+
+// BindFramebuffer sets the current framebuffer.
+func (gs *GLS) BindFramebuffer(fb uint32) {
+	C.glBindFramebuffer(FRAMEBUFFER, C.GLuint(fb))
+}
+
+// BindRenderbuffer sets the current render buffer.
+func (gs *GLS) BindRenderbuffer(rb uint32) {
+	C.glBindRenderbuffer(RENDERBUFFER, C.GLuint(rb))
+}
+
+// RenderbufferStorage allocates space for the bound render buffer.
+// Format is the internal storage format, e.g. RGBA32F
+func (gs *GLS) RenderbufferStorage(format uint, width int, height int) {
+	C.glRenderbufferStorage(RENDERBUFFER, C.GLuint(format), C.GLint(width), C.GLint(height))
+}
+
+// FramebufferRenderbuffer attaches a renderbuffer object to the bound framebuffer object.
+// Attachment is one of COLOR_ATTACHMENT0, DEPTH_ATTACHMENT, or STENCIL_ATTACHMENT.
+func (gs *GLS) FramebufferRenderbuffer(attachment uint, rb uint32) {
+	C.glFramebufferRenderbuffer(DRAW_FRAMEBUFFER, C.GLuint(attachment), RENDERBUFFER, C.GLuint(rb))
+}
+
+// FramebufferTexture attaches a level of a texture object as a logical buffer of a framebuffer object.
+func (gs *GLS) FramebufferTexture(attachment uint, tex uint32) {
+	C.glFramebufferTexture(FRAMEBUFFER, C.GLuint(attachment), C.GLuint(tex), 0)
+}
+
+// ReadBuffer sets the buffer for reading using ReadPixels.
+// Attachment is one of COLOR_ATTACHMENT0, DEPTH_ATTACHMENT, or STENCIL_ATTACHMENT.
+func (gs *GLS) ReadBuffer(attachment uint) {
+	C.glReadBuffer(C.GLuint(attachment))
+}
+
 // GenerateMipmap generates mipmaps for the specified texture target.
 func (gs *GLS) GenerateMipmap(target uint32) {
 
