@@ -23,6 +23,12 @@ func NewVec2() *Vector2 {
 	return &Vector2{X: 0, Y: 0}
 }
 
+// Clone returns a copy of this vector
+func (v *Vector2) Clone() *Vector2 {
+
+	return NewVector2(v.X, v.Y)
+}
+
 // Set sets this vector X and Y components.
 // Returns the pointer to this updated vector.
 func (v *Vector2) Set(x, y float32) *Vector2 {
