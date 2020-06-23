@@ -678,3 +678,8 @@ func (v *Vector3) AlmostEquals(other *Vector3, tolerance float32) bool {
 	}
 	return false
 }
+
+// Vector4 returns a new Vector4 based on this vector and the provided w value.
+func (v *Vector3) Vector4(w float32) *Vector4 {
+	return &Vector4{X: v.X, Y: v.Y, Z: v.Z, W: w}
+}
