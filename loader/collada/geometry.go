@@ -308,7 +308,182 @@ func newMeshPolylist(m *Mesh, pels []interface{}) (*geometry.Geometry, uint32, e
 
 func newMeshTriangles(m *Mesh, tr *Triangles) (*geometry.Geometry, uint32, error) {
 
-	return nil, 0, fmt.Errorf("not implemented yet")
+	// Get vertices positions
+	if len(m.Vertices.Input) != 1 {
+		return nil, 0, fmt.Errorf("Mesh.Vertices.Input length not supported")
+	}
+	vinp := m.Vertices.Input[0]
+	if vinp.Semantic != "POSITION" {
+		return nil, 0, fmt.Errorf("Mesh.Vertices.Input.Semantic:%s not supported", vinp.Semantic)
+	}
+
+	// Get vertices input source
+	inps := getMeshSource(m, vinp.Source)
+	if inps == nil {
+		return nil, 0, fmt.Errorf("Source:%s not found", vinp.Source)
+	}
+
+	// Get vertices input float array
+	// Ignore Accessor (??)
+	posArray, ok := inps.ArrayElement.(*FloatArray)
+	if !ok {
+		return nil, 0, fmt.Errorf("Mesh.Vertices.Input.Source not FloatArray")
+	}
+
+	// Creates buffers
+	positions := math32.NewArrayF32(0, 0)
+	normals := math32.NewArrayF32(0, 0)
+	uvs := math32.NewArrayF32(0, 0)
+	indices := math32.NewArrayU32(0, 0)
+
+	// Creates vertices attributes map for reusing indices
+	mVindex := make(map[[8]float32]uint32)
+	var index uint32
+	geomGroups := make([]geometry.Group, 0)
+	groupMatindex := 0
+
+	// Get VERTEX input
+	inpVertex := getInputSemantic(tr.Input, "VERTEX")
+	if inpVertex == nil {
+		return nil, 0, fmt.Errorf("VERTEX input not found")
+	}
+
+	// Get optional NORMAL input
+	inpNormal := getInputSemantic(tr.Input, "NORMAL")
+	var normArray *FloatArray
+	if inpNormal != nil {
+		// Get normals source
+		source := getMeshSource(m, inpNormal.Source)
+		if source == nil {
+			return nil, 0, fmt.Errorf("NORMAL source:%s not found", inpNormal.Source)
+		}
+		// Get normals source float array
+		normArray, ok = source.ArrayElement.(*FloatArray)
+		if !ok {
+			return nil, 0, fmt.Errorf("NORMAL source:%s not float array", inpNormal.Source)
+		}
+	}
+
+	// Get optional TEXCOORD input
+	inpTexcoord := getInputSemantic(tr.Input, "TEXCOORD")
+	var texArray *FloatArray
+	if inpTexcoord != nil {
+		// Get texture coordinates source
+		source := getMeshSource(m, inpTexcoord.Source)
+		if source == nil {
+			return nil, 0, fmt.Errorf("TEXCOORD source:%s not found", inpTexcoord.Source)
+		}
+		// Get texture coordinates source float array
+		texArray, ok = source.ArrayElement.(*FloatArray)
+		if !ok {
+			return nil, 0, fmt.Errorf("TEXCOORD source:%s not float array", inpTexcoord.Source)
+		}
+	}
+
+	// Initialize geometry group
+	groupStart := indices.Size()
+	// For each primitive index
+	inputCount := len(tr.Input)
+	for i := 0; i < len(tr.P); i += inputCount {
+		// Vertex attributes: position(3) + normal(3) + uv(2)
+		var vx [8]float32
+
+		// Vertex position
+		posIndex := tr.P[i+inpVertex.Offset] * 3
+		// Get position vector and appends to its buffer
+		vx[0] = posArray.Data[posIndex]
+		vx[1] = posArray.Data[posIndex+1]
+		vx[2] = posArray.Data[posIndex+2]
+
+		// Optional vertex normal
+		if inpNormal != nil {
+			// Get normal index from P
+			normIndex := tr.P[i+inpNormal.Offset] * 3
+			// Get normal vector and appends to its buffer
+			vx[3] = normArray.Data[normIndex]
+			vx[4] = normArray.Data[normIndex+1]
+			vx[5] = normArray.Data[normIndex+2]
+		}
+
+		// Optional vertex texture coordinate
+		if inpTexcoord != nil {
+			// Get normal index from P
+			texIndex := tr.P[i+inpTexcoord.Offset] * 2
+			// Get normal vector and appends to its buffer
+			vx[6] = texArray.Data[texIndex]
+			vx[7] = texArray.Data[texIndex+1]
+		}
+
+		// If this vertex and its attributes has already been appended,
+		// reuse it, adding its index to the index buffer
+		// to reuse its index
+		idx, ok := mVindex[vx]
+		if ok {
+			indices.Append(idx)
+			continue
+		}
+		// Appends new vertex position and attributes to its buffers
+		positions.Append(vx[0], vx[1], vx[2])
+		if inpNormal != nil {
+			normals.Append(vx[3], vx[4], vx[5])
+		}
+		if inpTexcoord != nil {
+			uvs.Append(vx[6], vx[7])
+		}
+		indices.Append(index)
+		// Save the index to this vertex position and attributes for
+		// future reuse
+		mVindex[vx] = index
+		index++
+	}
+	// Adds this geometry group to the list
+	geomGroups = append(geomGroups, geometry.Group{
+		Start:    groupStart,
+		Count:    indices.Size() - groupStart,
+		Matindex: groupMatindex,
+		Matid:    tr.Material,
+	})
+
+	// Debug dump
+	//for i := 0; i < positions.Size()/3; i++ {
+	//    vidx := i*3
+	//    msg := fmt.Sprintf("i:%2d position:%v %v %v",
+	//        i, positions.Get(vidx), positions.Get(vidx+1), positions.Get(vidx+2))
+	//    if normals.Size() > 0 {
+	//        msg += fmt.Sprintf("\tnormal:%v %v %v",
+	//            normals.Get(vidx), normals.Get(vidx+1), normals.Get(vidx+2))
+	//    }
+	//    if uvs.Size() > 0 {
+	//	    msg += fmt.Sprintf("\tuv:%v %v", uvs.Get(i*2), uvs.Get(i*2+1))
+	//    }
+	//    log.Debug("%s", msg)
+	//}
+	//log.Debug("indices(%d):%v", indices.Size(), indices)
+	//log.Debug("groups:%v", geomGroups)
+
+	// Creates geometry
+	geom := geometry.NewGeometry()
+
+	// Creates VBO with vertex positions
+	geom.AddVBO(gls.NewVBO(positions).AddAttrib(gls.VertexPosition))
+
+	// Creates VBO with vertex normals
+	if normals.Size() > 0 {
+		geom.AddVBO(gls.NewVBO(normals).AddAttrib(gls.VertexNormal))
+	}
+
+	// Creates VBO with uv coordinates
+	if uvs.Size() > 0 {
+		geom.AddVBO(gls.NewVBO(uvs).AddAttrib(gls.VertexTexcoord))
+	}
+
+	// Sets the geometry indices buffer
+	geom.SetIndices(indices)
+
+	// Add material groups to the geometry
+	geom.AddGroupList(geomGroups)
+
+	return geom, gls.TRIANGLES, nil
 }
 
 func newMeshLines(m *Mesh, ln *Lines) (*geometry.Geometry, uint32, error) {
