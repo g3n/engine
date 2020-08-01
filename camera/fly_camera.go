@@ -9,12 +9,12 @@ import (
 )
 
 
-// FlyControl is a camera controller that allows flying a target point while looking at it.
-// It allows the user to rotate, zoom, and pan a 3D scene using the mouse or keyboard.
+// FlyControl is a camera controller that allows flying through a 3D scene
+// It allows the user to rotate camera using mouse and move camera using keyboard.
 type FlyControl struct {
 	core.Dispatcher                // Embedded event dispatcher
 	cam             *Camera        // Controlled camera
-	enabled         bool   // Which controls are enabled
+	enabled         bool   // If fly control is enabled
 
 	// Public properties
 	MinPolarAngle   float32 // Minimum polar angle in radians (default is 0)
@@ -22,14 +22,14 @@ type FlyControl struct {
 	MinAzimuthAngle float32 // Minimum azimuthal angle in radians (default is negative infinity)
 	MaxAzimuthAngle float32 // Maximum azimuthal angle in radians (default is infinity)
 
-	RotSpeed        float32 // Rotation speed factor (default is 1)
-	FlySpeed     float32 // Fly delta used on each pan key event (default is 35)
+	RotSpeed        float32 // Rotation speed factor (default is 0.6)
+	FlySpeed     	float32 // Fly speed factor (default is 0.3)
 
 	// Internal
-	rotStart  math32.Vector2
+	rotStart math32.Vector2
 }
 
-// NewFlyControl creates and returns a pointer to a new fly control for the specified 
+// NewFlyControl creates and returns a pointer to a new fly control for the specified camera
 func NewFlyControl(cam *Camera) *FlyControl {
 
 	oc := new(FlyControl)
@@ -62,12 +62,12 @@ func (oc *FlyControl) Dispose() {
 	oc.UnsubscribeID(window.OnCursor, &oc)
 }
 
-// Enabled returns the current FlyEnabled bitmask.
+// Enabled returns the current enabled state
 func (oc *FlyControl) Enabled() bool {
 	return oc.enabled
 }
 
-// SetEnabled sets the current FlyEnabled bitmask.
+// SetEnabled sets the current enabled state.
 func (oc *FlyControl) SetEnabled(enabled bool) {
 	if enabled == false {
 		gui.Manager().SetCursorFocus(nil)
@@ -75,6 +75,7 @@ func (oc *FlyControl) SetEnabled(enabled bool) {
 	oc.enabled = enabled
 }
 
+// Rotate rotates the camera by the specified angles.
 func (oc *FlyControl) Rotate(thetaDelta, phiDelta float32) {
 	rot := oc.cam.Rotation()
 
@@ -84,6 +85,7 @@ func (oc *FlyControl) Rotate(thetaDelta, phiDelta float32) {
 	oc.cam.SetRotationY(rot.Y+(thetaDelta*oc.RotSpeed))
 }
 
+// Move moves the camera the specified amount through a 3D scene perpendicular to the viewing direction.
 func (oc *FlyControl) Move(deltaX, deltaZ float32) {
 	oc.cam.TranslateX(deltaX*oc.FlySpeed)
 	oc.cam.TranslateZ(deltaZ*oc.FlySpeed)
