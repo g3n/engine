@@ -11,6 +11,7 @@ import (
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/util/logger"
+	"image"
 )
 
 // Package logger
@@ -37,6 +38,10 @@ type IWindow interface {
 	GetScale() (x float64, y float64)
 	CreateCursor(imgFile string, xhot, yhot int) (Cursor, error)
 	SetCursor(cursor Cursor)
+	SetCursorMode(mode CursorMode)
+	GetCursorPosition() (x,y float64)
+	CaptureScreenshot() image.Image
+	Center()
 	DisposeAllCustomCursors()
 	Destroy()
 }

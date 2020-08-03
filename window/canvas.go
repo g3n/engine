@@ -434,6 +434,7 @@ func Init(canvasId string) error {
 		w.cursorEv.Ypos = float32(event.Get("offsetY").Float()) //* float32(w.scaleY)
 		w.cursorEv.Mods = getModifiers(event)
 		w.Dispatch(OnCursor, &w.cursorEv)
+
 		return nil
 	})
 	w.canvas.Call("addEventListener", "mousemove", w.mouseMove)
@@ -593,9 +594,49 @@ func (w *WebGlCanvas) DisposeAllCustomCursors() {
 	// TODO
 }
 
-// SetInputMode changes specified input to specified state
-//func (w *WebGlCanvas) SetInputMode(mode InputMode, state int) {
-//
-//	// TODO
-//	// Hide cursor etc
-//}
+// GetCursorPosition returns last window's cursor coordinates
+func (w *GlfwWindow) GetCursorPosition() (x,y float64){
+	if w.cursorEv != nil {
+		return w.cursorEv.Xpos, w.cursorEv.Ypos
+	}
+	return 0,0
+}
+
+// SetCursorMode sets the window's cursor mode
+func (w *WebGlCanvas) SetCursorMode(mode CursorMode) {
+
+	switch mode {
+	case CursorNormal:
+		doc := js.Global().Get("document")
+		doc.Call("exitPointerLock")
+		doc.Call("mozExitPointerLock")
+	case CursorDisabled:
+		w.canvas.Call("requestPointerLock")
+		w.canvas.Call("mozRequestPointerLock")
+	}
+}
+
+// CaptureScreenshot returns screenshot of canvas
+func (w *GlfwWindow) CaptureScreenshot() image.Image{
+	width,height := w.GetFramebufferSize()
+	rect := image.Rect(0,0,width,height)
+	rgba := image.NewRGBA(rect)
+
+	imgBytes := w.Gls().ReadPixels(0,0, width, height, gls.RGBA, gls.UNSIGNED_BYTE)
+
+	nBytes := []byte{}
+	rowHeight := 4*width
+	for i := height-1; i >= 0; i-- {
+		nBytes = append(nBytes, imgBytes[rowHeight*i:rowHeight*i+rowHeight]...)
+	}
+	rgba.Pix = nBytes
+
+	return rgba
+}
+
+// Center centers the canvas in the document.
+func (w *GlfwWindow) Center() {
+	//
+	// todo
+	//
+}
