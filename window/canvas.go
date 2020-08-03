@@ -434,6 +434,7 @@ func Init(canvasId string) error {
 		w.cursorEv.Ypos = float32(event.Get("offsetY").Float()) //* float32(w.scaleY)
 		w.cursorEv.Mods = getModifiers(event)
 		w.Dispatch(OnCursor, &w.cursorEv)
+
 		return nil
 	})
 	w.canvas.Call("addEventListener", "mousemove", w.mouseMove)
@@ -593,9 +594,24 @@ func (w *WebGlCanvas) DisposeAllCustomCursors() {
 	// TODO
 }
 
-// SetInputMode changes specified input to specified state
-//func (w *WebGlCanvas) SetInputMode(mode InputMode, state int) {
-//
-//	// TODO
-//	// Hide cursor etc
-//}
+// GetCursorPosition returns last window's cursor coordinates
+func (w *GlfwWindow) GetCursorPosition() (x,y float64){
+	if w.cursorEv != nil {
+		return w.cursorEv.Xpos, w.cursorEv.Ypos
+	}
+	return 0,0
+}
+
+// SetCursorMode sets the window's cursor mode
+func (w *WebGlCanvas) SetCursorMode(mode CursorMode) {
+
+	switch mode {
+	case CursorNormal:
+		doc := js.Global().Get("document")
+		doc.Call("exitPointerLock")
+		doc.Call("mozExitPointerLock")
+	case CursorDisabled:
+		w.canvas.Call("requestPointerLock")
+		w.canvas.Call("mozRequestPointerLock")
+	}
+}

@@ -471,6 +471,16 @@ func (w *GlfwWindow) CreateCursor(imgFile string, xhot, yhot int) (Cursor, error
 	return w.lastCursorKey, nil
 }
 
+// SetCursorMode sets the window's cursor mode
+func (w *GlfwWindow) SetCursorMode(mode CursorMode){
+	w.SetInputMode(glfw.CursorMode, int(mode))
+}
+
+// GetCursorPosition returns last window's cursor coordinates
+func (w *GlfwWindow) GetCursorPosition() (x,y float64){
+	return w.GetCursorPos()
+}
+
 // DisposeCursor deletes the existing custom cursor with the provided int handle.
 func (w *GlfwWindow) DisposeCursor(cursor Cursor) {
 
