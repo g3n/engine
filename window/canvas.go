@@ -531,14 +531,12 @@ func Init(canvasId string) error {
 		}
 
 		if w.fullscreenRequested {
-			println("fullscreenRequested ")
 			if w.canvas.Get("requestFullscreen") != js.Undefined(){
 				w.canvas.Call("requestFullscreen")
 				w.fullscreen = true
 
 				doc.Call("removeEventListener", "fullscreenchange", w.fullscreenChange)
 				w.fullscreenChange = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-					//println(fmt.Sprintf("fullscreenChange %v", doc.Get("fullscreenElement") == js.Undefined()))
 					if doc.Get("fullscreenElement") == js.Null(){
 						if w.fullscreen == true {
 							w.fullscreen = false
@@ -614,8 +612,6 @@ func (w *WebGlCanvas) Fullscreen() bool {
 // SetFullscreen sets this window full screen state for the primary monitor
 func (w *WebGlCanvas) SetFullscreen(full bool) {
 	if full {
-		println("fullscreenRequested 0")
-
 		if w.fullscreenRequested == false && w.cursorLockRequested == false {
 			w.fullscreenRequested = full
 			w.canvas.Call("addEventListener", "click", w.canvasClick)
@@ -708,7 +704,7 @@ func (w *WebGlCanvas) SetCursorMode(mode CursorMode) {
 	if mode == w.cursorMode {
 		return
 	}
-	println(fmt.Sprintf("SetCursorMode %v", mode))
+
 	switch mode {
 	case CursorNormal:
 

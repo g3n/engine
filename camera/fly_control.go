@@ -126,7 +126,6 @@ func (fc *FlyControl) Update(deltaTime time.Duration) {
 
 	if fc.win.CursorMode() == window.CursorDisabled {
 		cursorX, cursorY := fc.win.CursorPosition()
-		//println(fmt.Sprintf("Cursor x %v, y %v", cursorX, cursorY))
 
 		deltaX := (cursorX - fc.cursorPosition[0]) * 0.1 * dt
 		deltaY := (cursorY - fc.cursorPosition[1]) * 0.1 * dt
