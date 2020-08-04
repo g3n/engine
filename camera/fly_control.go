@@ -72,7 +72,7 @@ func (fc *FlyControl) SetEnabled(enabled bool) {
 		fc.win.SetCursorMode(window.CursorNormal)
 		gui.Manager().SetCursorFocus(nil)
 	} else {
-		cursorX, cursorY := fc.win.GetCursorPosition()
+		cursorX, cursorY := fc.win.CursorPosition()
 		fc.cursorPosition[0] = float32(cursorX)
 		fc.cursorPosition[1] = float32(cursorY)
 
@@ -124,20 +124,18 @@ func (fc *FlyControl) Update(deltaTime time.Duration) {
 	}
 	dt := float32(deltaTime.Seconds())
 
-	cX, cY := fc.win.GetCursorPosition()
-	cursorX := float32(cX)
-	cursorY := float32(cY)
+	if fc.win.CursorMode() == window.CursorDisabled {
+		cursorX, cursorY := fc.win.CursorPosition()
+		//println(fmt.Sprintf("Cursor x %v, y %v", cursorX, cursorY))
 
-	c := 6 * math32.Pi / fc.winSize()
-	deltaX := (cursorX - fc.cursorPosition[0]) * c * dt
-	deltaY := (cursorY - fc.cursorPosition[1]) * c * dt
-	fc.rotate(deltaX, deltaY)
-
-	fc.cursorPosition[0] = cursorX
-	fc.cursorPosition[1] = cursorY
+		deltaX := (cursorX - fc.cursorPosition[0]) * 0.1 * dt
+		deltaY := (cursorY - fc.cursorPosition[1]) * 0.1 * dt
+		fc.rotate(deltaX, deltaY)
+		fc.cursorPosition[0] = cursorX
+		fc.cursorPosition[1] = cursorY
+	}
 
 	deltas := [2]float32{0, 0}
-
 	for key, _ := range fc.keyState.PressedKeys() {
 		switch key {
 		case window.KeyUp, window.KeyW:

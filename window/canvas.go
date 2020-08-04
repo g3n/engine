@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/gls"
+	"image"
 	_ "image/png"
 	"syscall/js"
 )
@@ -327,14 +328,24 @@ type WebGlCanvas struct {
 	scrollEv ScrollEvent
 
 	// Callbacks
-	onCtxMenu  js.Func
-	keyDown    js.Func
-	keyUp      js.Func
-	mouseDown  js.Func
-	mouseUp    js.Func
-	mouseMove  js.Func
-	mouseWheel js.Func
-	winResize  js.Func
+	onCtxMenu         js.Func
+	keyDown           js.Func
+	keyUp             js.Func
+	mouseDown         js.Func
+	mouseUp           js.Func
+	mouseMove         js.Func
+	mouseWheel        js.Func
+	winResize         js.Func
+	canvasClick       js.Func
+	pointerLockChange js.Func
+	fullscreenChange  js.Func
+
+
+	//internal
+	cursorMode          CursorMode
+	cursorLockRequested bool
+	fullscreen          bool
+	fullscreenRequested bool
 }
 
 // Init initializes the WebGlCanvas singleton.
@@ -430,8 +441,14 @@ func Init(canvasId string) error {
 	// Set up mouse move callback to dispatch event
 	w.mouseMove = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		event := args[0]
-		w.cursorEv.Xpos = float32(event.Get("offsetX").Float()) //* float32(w.scaleX) TODO
-		w.cursorEv.Ypos = float32(event.Get("offsetY").Float()) //* float32(w.scaleY)
+		if w.cursorMode == CursorDisabled {
+			w.cursorEv.Xpos += float32(event.Get("movementX").Float()) //* float32(w.scaleX) TODO
+			w.cursorEv.Ypos += float32(event.Get("movementY").Float()) //* float32(w.scaleY)
+		} else {
+			w.cursorEv.Xpos = float32(event.Get("offsetX").Float()) //* float32(w.scaleX) TODO
+			w.cursorEv.Ypos = float32(event.Get("offsetY").Float()) //* float32(w.scaleY)
+		}
+
 		w.cursorEv.Mods = getModifiers(event)
 		w.Dispatch(OnCursor, &w.cursorEv)
 
@@ -470,6 +487,84 @@ func Init(canvasId string) error {
 	//	w.charEv.Mods = ModifierKey(mods)
 	//	w.Dispatch(OnChar, &w.charEv)
 	//})
+
+
+	w.cursorMode = CursorNormal
+
+	w.canvasClick = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		if w.cursorLockRequested {
+			if w.canvas.Get("requestPointerLock") != js.Undefined(){
+				w.canvas.Call("requestPointerLock")
+				w.cursorMode = CursorDisabled
+			} else if w.canvas.Get("mozRequestPointerLock") != js.Undefined(){
+				w.canvas.Call("mozRequestPointerLock")
+				w.cursorMode = CursorDisabled
+			} else {
+				js.Global().Call("alert", "Your browser doesn't support requestPointerLock")
+			}
+
+			if w.cursorMode == CursorDisabled {
+				doc := js.Global().Get("document")
+				doc.Call("removeEventListener", "pointerlockchange", w.pointerLockChange)
+				doc.Call("removeEventListener", "mozpointerlockchange", w.pointerLockChange)
+				w.pointerLockChange.Release()
+				w.pointerLockChange = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+					doc := js.Global().Get("document")
+					if doc.Get("pointerLockElement") == w.canvas{
+						w.cursorMode = CursorDisabled
+					} else {
+						if w.cursorMode == CursorDisabled{
+							w.cursorMode = CursorNormal
+							w.SetCursorMode(CursorDisabled)
+						} else {
+							w.cursorMode = CursorNormal
+						}
+					}
+
+					return nil
+				})
+				doc.Call("addEventListener", "pointerlockchange", w.pointerLockChange)
+				doc.Call("addEventListener", "mozpointerlockchange", w.pointerLockChange)
+			}
+
+			w.cursorLockRequested = false
+		}
+
+		if w.fullscreenRequested {
+			println("fullscreenRequested ")
+			if w.canvas.Get("requestFullscreen") != js.Undefined(){
+				w.canvas.Call("requestFullscreen")
+				w.fullscreen = true
+
+				doc.Call("removeEventListener", "fullscreenchange", w.fullscreenChange)
+				w.fullscreenChange = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+					//println(fmt.Sprintf("fullscreenChange %v", doc.Get("fullscreenElement") == js.Undefined()))
+					if doc.Get("fullscreenElement") == js.Null(){
+						if w.fullscreen == true {
+							w.fullscreen = false
+							w.SetFullscreen(true)
+						} else {
+							w.fullscreen = false
+						}
+					} else {
+						w.fullscreen = true
+					}
+					return nil
+				})
+				/*doc.Call("addEventListener", "webkitfullscreenchange", w.fullscreenChange)
+				doc.Call("addEventListener", "mozfullscreenchange", w.fullscreenChange)*/
+				doc.Call("addEventListener", "fullscreenchange", w.fullscreenChange)
+
+			} else {
+				js.Global().Call("alert", "Your browser doesn't support requestFullscreen")
+			}
+
+			w.fullscreenRequested = false
+		}
+
+		w.canvas.Call("removeEventListener", "click", w.canvasClick)
+		return nil
+	})
 
 	win = w // Set singleton
 	return nil
@@ -510,18 +605,27 @@ func (w *WebGlCanvas) Gls() *gls.GLS {
 	return w.gls
 }
 
-// FullScreen returns whether this canvas is fullscreen
-func (w *WebGlCanvas) FullScreen() bool {
+// Fullscreen returns whether this canvas is fullscreen
+func (w *WebGlCanvas) Fullscreen() bool {
 
-	// TODO
-	return false
+	return w.fullscreen
 }
 
-// SetFullScreen sets this window full screen state for the primary monitor
-func (w *WebGlCanvas) SetFullScreen(full bool) {
+// SetFullscreen sets this window full screen state for the primary monitor
+func (w *WebGlCanvas) SetFullscreen(full bool) {
+	if full {
+		println("fullscreenRequested 0")
 
-	// TODO
-	// Make it so that the first user interaction (e.g. click) should set the canvas as fullscreen.
+		if w.fullscreenRequested == false && w.cursorLockRequested == false {
+			w.fullscreenRequested = full
+			w.canvas.Call("addEventListener", "click", w.canvasClick)
+		} else {
+			w.fullscreenRequested = full
+		}
+	} else {
+		js.Global().Get("document").Call("exitFullscreen")
+		w.fullscreen = full
+	}
 }
 
 // Destroy destroys the WebGL canvas and removes all event listeners.
@@ -535,7 +639,10 @@ func (w *WebGlCanvas) Destroy() {
 	w.canvas.Call("removeEventListener", "mouseup", w.mouseUp)
 	w.canvas.Call("removeEventListener", "mousemove", w.mouseMove)
 	w.canvas.Call("removeEventListener", "wheel", w.mouseWheel)
+	w.canvas.Call("removeEventListener", "click", w.canvasClick)
 	js.Global().Get("window").Call("removeEventListener", "resize", w.winResize)
+	js.Global().Get("document").Call("removeEventListener","pointerlockchange", w.pointerLockChange)
+	js.Global().Get("document").Call("removeEventListener","fullscreenChange", w.fullscreenChange)
 
 	// Release callbacks
 	w.onCtxMenu.Release()
@@ -546,6 +653,8 @@ func (w *WebGlCanvas) Destroy() {
 	w.mouseMove.Release()
 	w.mouseWheel.Release()
 	w.winResize.Release()
+	w.canvasClick.Release()
+	w.pointerLockChange.Release()
 }
 
 // GetFramebufferSize returns the framebuffer size.
@@ -594,49 +703,66 @@ func (w *WebGlCanvas) DisposeAllCustomCursors() {
 	// TODO
 }
 
-// GetCursorPosition returns last window's cursor coordinates
-func (w *GlfwWindow) GetCursorPosition() (x,y float64){
-	if w.cursorEv != nil {
-		return w.cursorEv.Xpos, w.cursorEv.Ypos
-	}
-	return 0,0
-}
-
 // SetCursorMode sets the window's cursor mode
 func (w *WebGlCanvas) SetCursorMode(mode CursorMode) {
-
+	if mode == w.cursorMode {
+		return
+	}
+	println(fmt.Sprintf("SetCursorMode %v", mode))
 	switch mode {
 	case CursorNormal:
+
 		doc := js.Global().Get("document")
-		doc.Call("exitPointerLock")
-		doc.Call("mozExitPointerLock")
+		if doc.Get("exitPointerLock") != js.Undefined(){
+			doc.Call("exitPointerLock")
+		} else if doc.Get("mozExitPointerLock") != js.Undefined(){
+			doc.Call("mozExitPointerLock")
+		}
+
+		w.cursorMode = mode
 	case CursorDisabled:
-		w.canvas.Call("requestPointerLock")
-		w.canvas.Call("mozRequestPointerLock")
+		if w.fullscreenRequested == false && w.cursorLockRequested == false {
+			w.canvas.Call("addEventListener", "click", w.canvasClick)
+		}
+		w.cursorLockRequested = true
 	}
+}
+
+// CursorMode gets the window's cursor mode
+func (w *WebGlCanvas) CursorMode() CursorMode{
+	return w.cursorMode
+}
+
+// CursorPosition returns the window's cursor position
+func (w *WebGlCanvas) CursorPosition() (x,y float32){
+	return w.cursorEv.Xpos, w.cursorEv.Ypos
 }
 
 // CaptureScreenshot returns screenshot of canvas
-func (w *GlfwWindow) CaptureScreenshot() image.Image{
+func (w *WebGlCanvas) CaptureScreenshot() image.Image{
 	width,height := w.GetFramebufferSize()
 	rect := image.Rect(0,0,width,height)
 	rgba := image.NewRGBA(rect)
 
-	imgBytes := w.Gls().ReadPixels(0,0, width, height, gls.RGBA, gls.UNSIGNED_BYTE)
+	//todo glReadPixels is not implemented in browser gls
+	/*imgBytes := w.Gls().ReadPixels(0,0, width, height, gls.RGBA, gls.UNSIGNED_BYTE)
 
 	nBytes := []byte{}
 	rowHeight := 4*width
 	for i := height-1; i >= 0; i-- {
 		nBytes = append(nBytes, imgBytes[rowHeight*i:rowHeight*i+rowHeight]...)
 	}
-	rgba.Pix = nBytes
+	rgba.Pix = nBytes*/
 
 	return rgba
 }
 
-// Center centers the canvas in the document.
-func (w *GlfwWindow) Center() {
-	//
-	// todo
-	//
+// Center centers the canvas in the window.
+func (w *WebGlCanvas) Center() {
+	doc := js.Global()
+	width := doc.Get("innerWidth").Int()
+	height := doc.Get("innerHeight").Int()
+	canvasWidth, canvasHeight := w.GetSize()
+
+	w.canvas.Call("setAttribute", "style", fmt.Sprintf("position: relative; left: %vpx; top: %vpx;", width/2-canvasWidth/2, height/2-canvasHeight/2))
 }

@@ -36,10 +36,13 @@ type IWindow interface {
 	GetFramebufferSize() (width int, height int)
 	GetSize() (width int, height int)
 	GetScale() (x float64, y float64)
+	Fullscreen() bool
+	SetFullscreen(full bool)
 	CreateCursor(imgFile string, xhot, yhot int) (Cursor, error)
 	SetCursor(cursor Cursor)
 	SetCursorMode(mode CursorMode)
-	GetCursorPosition() (x,y float64)
+	CursorMode() CursorMode
+	CursorPosition() (x,y float32)
 	CaptureScreenshot() image.Image
 	Center()
 	DisposeAllCustomCursors()

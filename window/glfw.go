@@ -211,6 +211,7 @@ type GlfwWindow struct {
 	// Cursors
 	cursors       map[Cursor]*glfw.Cursor
 	lastCursorKey Cursor
+	cursorMode    CursorMode
 }
 
 // Init initializes the GlfwWindow singleton with the specified width, height, and title.
@@ -360,7 +361,7 @@ func Init(width, height int, title string) error {
 		w.scrollEv.Mods = w.mods
 		w.Dispatch(OnScroll, &w.scrollEv)
 	})
-
+	w.cursorMode = CursorNormal
 	win = w // Set singleton
 	return nil
 }
@@ -473,12 +474,19 @@ func (w *GlfwWindow) CreateCursor(imgFile string, xhot, yhot int) (Cursor, error
 
 // SetCursorMode sets the window's cursor mode
 func (w *GlfwWindow) SetCursorMode(mode CursorMode){
+	w.cursorMode = mode
 	w.SetInputMode(glfw.CursorMode, int(mode))
 }
 
-// GetCursorPosition returns last window's cursor coordinates
-func (w *GlfwWindow) GetCursorPosition() (x,y float64){
-	return w.GetCursorPos()
+// CursorMode gets the window's cursor mode
+func (w *GlfwWindow) CursorMode() CursorMode{
+	return w.cursorMode
+}
+
+// CursorPosition returns the window's cursor position
+func (w *GlfwWindow) CursorPosition() (x,y float32){
+	xx,yy := w.GetCursorPos()
+	return float32(xx), float32(yy)
 }
 
 // DisposeCursor deletes the existing custom cursor with the provided int handle.
