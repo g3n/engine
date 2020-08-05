@@ -8,6 +8,7 @@ package gls
 
 import (
 	"fmt"
+	"github.com/g3n/engine/util/wasm"
 	"syscall/js"
 	"unsafe"
 )
@@ -279,10 +280,10 @@ func (gs *GLS) BlendFuncSeparate(srcRGB uint32, dstRGB uint32, srcAlpha uint32, 
 // bound to target, deleting any pre-existing data store.
 func (gs *GLS) BufferData(target uint32, size int, data interface{}, usage uint32) {
 
-	dataTA := js.TypedArrayOf(data)
+	dataTA, free := wasm.SliceToTypedArray(data)
 	gs.gl.Call("bufferData", int(target), dataTA, int(usage))
 	gs.checkError("BufferData")
-	dataTA.Release()
+	free()
 }
 
 // ClearColor specifies the red, green, blue, and alpha values
@@ -589,7 +590,7 @@ func (gs *GLS) GetString(name uint32) string {
 func (gs *GLS) GetUniformLocation(program uint32, name string) int32 {
 
 	loc := gs.gl.Call("getUniformLocation", gs.programMap[program], name)
-	if loc == js.Null() {
+	if wasm.Equal(loc, js.Null()) {
 		return -1
 	}
 	gs.uniformMap[gs.uniformMapIndex] = loc
@@ -657,10 +658,10 @@ func (gs *GLS) ShaderSource(shader uint32, src string) {
 // TexImage2D specifies a two-dimensional texture image.
 func (gs *GLS) TexImage2D(target uint32, level int32, iformat int32, width int32, height int32, format uint32, itype uint32, data interface{}) {
 
-	dataTA := js.TypedArrayOf(data)
+	dataTA, free := wasm.SliceToTypedArray(data)
 	gs.gl.Call("texImage2D", int(target), level, iformat, width, height, 0, int(format), int(itype), dataTA)
 	gs.checkError("TexImage2D")
-	dataTA.Release()
+	free()
 }
 
 // TexParameteri sets the specified texture parameter on the specified texture.
@@ -732,9 +733,9 @@ func (gs *GLS) Uniform4f(location int32, v0, v1, v2, v3 float32) {
 func (gs *GLS) UniformMatrix3fv(location int32, count int32, transpose bool, pm *float32) {
 
 	data := (*[1 << 30]float32)(unsafe.Pointer(pm))[:9*count]
-	dataTA := js.TypedArrayOf(data)
+	dataTA, free := wasm.SliceToTypedArray(data)
 	gs.gl.Call("uniformMatrix3fv", gs.uniformMap[uint32(location)], transpose, dataTA)
-	dataTA.Release()
+	free()
 	gs.checkError("UniformMatrix3fv")
 	gs.stats.Unisets++
 }
@@ -743,9 +744,9 @@ func (gs *GLS) UniformMatrix3fv(location int32, count int32, transpose bool, pm 
 func (gs *GLS) UniformMatrix4fv(location int32, count int32, transpose bool, pm *float32) {
 
 	data := (*[1 << 30]float32)(unsafe.Pointer(pm))[:16*count]
-	dataTA := js.TypedArrayOf(data)
+	dataTA, free := wasm.SliceToTypedArray(data)
 	gs.gl.Call("uniformMatrix4fv", gs.uniformMap[uint32(location)], transpose, dataTA)
-	dataTA.Release()
+	free()
 	gs.checkError("UniformMatrix4fv")
 	gs.stats.Unisets++
 }
@@ -754,9 +755,9 @@ func (gs *GLS) UniformMatrix4fv(location int32, count int32, transpose bool, pm 
 func (gs *GLS) Uniform1fv(location int32, count int32, v *float32) {
 
 	data := (*[1 << 30]float32)(unsafe.Pointer(v))[:count]
-	dataTA := js.TypedArrayOf(data)
+	dataTA, free := wasm.SliceToTypedArray(data)
 	gs.gl.Call("uniform1fv", gs.uniformMap[uint32(location)], dataTA)
-	dataTA.Release()
+	free()
 	gs.checkError("Uniform1fv")
 	gs.stats.Unisets++
 }
@@ -765,9 +766,9 @@ func (gs *GLS) Uniform1fv(location int32, count int32, v *float32) {
 func (gs *GLS) Uniform2fv(location int32, count int32, v *float32) {
 
 	data := (*[1 << 30]float32)(unsafe.Pointer(v))[:2*count]
-	dataTA := js.TypedArrayOf(data)
+	dataTA, free := wasm.SliceToTypedArray(data)
 	gs.gl.Call("uniform2fv", gs.uniformMap[uint32(location)], dataTA)
-	dataTA.Release()
+	free()
 	gs.checkError("Uniform2fv")
 	gs.stats.Unisets++
 }
@@ -776,9 +777,9 @@ func (gs *GLS) Uniform2fv(location int32, count int32, v *float32) {
 func (gs *GLS) Uniform3fv(location int32, count int32, v *float32) {
 
 	data := (*[1 << 30]float32)(unsafe.Pointer(v))[:3*count]
-	dataTA := js.TypedArrayOf(data)
+	dataTA, free := wasm.SliceToTypedArray(data)
 	gs.gl.Call("uniform3fv", gs.uniformMap[uint32(location)], dataTA)
-	dataTA.Release()
+	free()
 	gs.checkError("Uniform3fv")
 	gs.stats.Unisets++
 }
@@ -787,9 +788,9 @@ func (gs *GLS) Uniform3fv(location int32, count int32, v *float32) {
 func (gs *GLS) Uniform4fv(location int32, count int32, v *float32) {
 
 	data := (*[1 << 30]float32)(unsafe.Pointer(v))[:4*count]
-	dataTA := js.TypedArrayOf(data)
+	dataTA, free := wasm.SliceToTypedArray(data)
 	gs.gl.Call("uniform4fv", gs.uniformMap[uint32(location)], dataTA)
-	dataTA.Release()
+	free()
 	gs.checkError("Uniform4fv")
 	gs.stats.Unisets++
 }
