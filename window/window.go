@@ -8,6 +8,7 @@ package window
 
 import (
 	"fmt"
+
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/util/logger"
@@ -39,6 +40,8 @@ type IWindow interface {
 	SetCursor(cursor Cursor)
 	DisposeAllCustomCursors()
 	Destroy()
+	FullScreen() bool
+	SetFullScreen(full bool)
 }
 
 // Key corresponds to a keyboard key.
