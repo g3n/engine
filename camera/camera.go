@@ -242,11 +242,20 @@ func (c *Camera) ProjMatrix(m *math32.Matrix4) {
 	if c.projChanged {
 		switch c.proj {
 		case Perspective:
-			fov := c.fov
-			if c.axis == Horizontal {
-				fov *= c.aspect
+			t := c.near * math32.Tan(math32.DegToRad(c.fov*0.5))
+			ymax := t
+			ymin := -t
+			xmax := t
+			xmin := -t
+			switch c.axis {
+			case Vertical:
+				xmax *= c.aspect
+				xmin *= c.aspect
+			case Horizontal:
+				ymax /= c.aspect
+				ymin /= c.aspect
 			}
-			c.projMatrix.MakePerspective(fov, c.aspect, c.near, c.far)
+			c.projMatrix.MakeFrustum(xmin, xmax, ymin, ymax, c.near, c.far)
 		case Orthographic:
 			s := c.size / 2
 			var h, w float32
