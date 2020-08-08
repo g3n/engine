@@ -506,7 +506,7 @@ func (v *Vector4) SetAxisAngleFromQuaternion(q *Quaternion) *Vector4 {
 	return v
 }
 
-// SetAxisFromRotationMatrix this vector to be the axis (x, y, z) and angle (w) of a rotation specified the matrix m.
+// SetAxisFromRotationMatrix sets this vector to be the axis (x, y, z) and angle (w) of a rotation specified the matrix m.
 // Assumes the upper 3x3 of m is a pure rotation matrix (i.e, unscaled).
 func (v *Vector4) SetAxisFromRotationMatrix(m *Matrix4) *Vector4 {
 
@@ -634,10 +634,10 @@ func (v *Vector4) Clone() *Vector4 {
 // AlmostEquals returns whether the vector is almost equal to another vector within the specified tolerance.
 func (v *Vector4) AlmostEquals(other *Vector4, tolerance float32) bool {
 
-	if (Abs(v.X - other.X) < tolerance) &&
-		(Abs(v.Y - other.Y) < tolerance) &&
-		(Abs(v.Z - other.Z) < tolerance) &&
-		(Abs(v.W - other.W) < tolerance) {
+	if (Abs(v.X-other.X) < tolerance) &&
+		(Abs(v.Y-other.Y) < tolerance) &&
+		(Abs(v.Z-other.Z) < tolerance) &&
+		(Abs(v.W-other.W) < tolerance) {
 		return true
 	}
 	return false
