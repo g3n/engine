@@ -246,7 +246,7 @@ func (c *Camera) ProjMatrix(m *math32.Matrix4) {
 			if c.axis == Horizontal {
 				fov *= c.aspect
 			}
-			c.projMatrix.MakePerspective(c.fov, c.aspect, c.near, c.far)
+			c.projMatrix.MakePerspective(fov, c.aspect, c.near, c.far)
 		case Orthographic:
 			s := c.size / 2
 			var h, w float32
