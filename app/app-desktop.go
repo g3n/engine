@@ -35,6 +35,10 @@ type Application struct {
 
 // App returns the Application singleton, creating it the first time.
 func App() *Application {
+	return AppSized(width, height, title)
+}
+
+func AppSized(width, height int, title string) *Application {
 
 	// Return singleton if already created
 	if a != nil {
