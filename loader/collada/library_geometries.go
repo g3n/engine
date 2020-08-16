@@ -334,6 +334,14 @@ func (d *Decoder) decMesh(start xml.StartElement, geom *Geometry) error {
 			}
 			continue
 		}
+		// Decodes triangles
+		if child.Name.Local == "triangles" {
+			err = d.decTriangles(child, mesh)
+			if err != nil {
+				return err
+			}
+			continue
+		}
 	}
 }
 
@@ -440,6 +448,40 @@ func (d *Decoder) decPolylist(start xml.StartElement, mesh *Mesh) error {
 				return err
 			}
 			pl.P = p
+		}
+	}
+}
+
+func (d *Decoder) decTriangles(start xml.StartElement, mesh *Mesh) error {
+	tr := &Triangles{}
+
+	tr.Name = findAttrib(start, "name").Value
+	tr.Count, _ = strconv.Atoi(findAttrib(start, "count").Value)
+	tr.Material = findAttrib(start, "material").Value
+	mesh.PrimitiveElements = append(mesh.PrimitiveElements, tr)
+
+	for {
+		// Get next child
+		child, data, err := d.decNextChild(start)
+		if err != nil || child.Name.Local == "" {
+			return err
+		}
+		// Decode input shared
+		if child.Name.Local == "input" {
+			inp, err := d.decInputShared(child)
+			if err != nil {
+				return err
+			}
+			tr.Input = append(tr.Input, inp)
+			continue
+		}
+		// Decode p (primitive)
+		if child.Name.Local == "p" {
+			p, err := d.decPrimitive(child, data)
+			if err != nil {
+				return err
+			}
+			tr.P = p
 		}
 	}
 }
