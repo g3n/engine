@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build !wasm
 // +build !wasm
 
 package gls
@@ -484,6 +485,7 @@ func (gs *GLS) GenFramebuffer() uint32 {
 
 	var fb uint32
 	C.glGenFramebuffers(1, (*C.GLuint)(&fb))
+	gs.stats.Fbos++
 	return fb
 }
 
@@ -492,6 +494,7 @@ func (gs *GLS) GenRenderbuffer() uint32 {
 
 	var rb uint32
 	C.glGenRenderbuffers(1, (*C.GLuint)(&rb))
+	gs.stats.Rbos++
 	return rb
 }
 
@@ -543,6 +546,12 @@ func (gs *GLS) FramebufferTexture2D(attachment uint, textarget uint, tex uint32)
 func (gs *GLS) FramebufferTexture3D(attachment uint, textarget uint, tex uint32, layer int) {
 
 	C.glFramebufferTexture3D(FRAMEBUFFER, C.GLenum(attachment), C.GLenum(textarget), C.GLuint(tex), 0, C.GLint(layer))
+}
+
+// CheckFramebufferStatus get the framebuffer status
+func (gs *GLS) CheckFramebufferStatus() uint32 {
+	res := C.glCheckFramebufferStatus(C.GLenum(FRAMEBUFFER))
+	return uint32(res)
 }
 
 // ReadBuffer sets the buffer for reading using ReadPixels.
