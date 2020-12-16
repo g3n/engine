@@ -13,9 +13,10 @@
 package gls
 
 import (
-	"github.com/g3n/engine/util/logger"
 	"math"
 	"unsafe"
+
+	"github.com/g3n/engine/util/logger"
 )
 
 // Package logger
@@ -33,6 +34,8 @@ type Stats struct {
 	UnilocMiss uint64 // Cumulative number of uniform location cache misses
 	Unisets    uint64 // Cumulative number of uniform sets
 	Drawcalls  uint64 // Cumulative number of draw calls
+	Fbos       uint64 // Number of frame buffer objects
+	Rbos       uint64 // Number of render buffer objects
 }
 
 const (
