@@ -78,7 +78,7 @@ go install ./...
 * Geometry generators: box, sphere, cylinder, torus, etc...
 * Geometries support morph targets and multimaterials
 * Support for animated sprites based on sprite sheets
-* Perspective and ortographic cameras
+* Perspective and orthographic cameras
 * Text image generation and support for TrueType fonts
 * Image textures can be loaded from GIF, PNG or JPEG files
 * Animation framework for position, rotation, and scale of objects
