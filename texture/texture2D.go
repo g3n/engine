@@ -337,10 +337,6 @@ func DecodeImage(imgfile string) (*image.RGBA, error) {
 	return rgba, nil
 }
 
-func (t *Texture2D) TexName() uint32 {
-	return t.texname
-}
-
 // RenderSetup is called by the material render setup
 func (t *Texture2D) RenderSetup(gs *gls.GLS, slotIdx, uniIdx int) { // Could have as input - TEXTURE0 (slot) and uni location
 
