@@ -144,6 +144,7 @@ func (t *Texture2D) Dispose() {
 
 // TexName returns the texture handle for the texture
 func (t *Texture2D) TexName() uint32 {
+
 	return t.texname
 }
 
