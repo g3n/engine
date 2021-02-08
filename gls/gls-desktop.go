@@ -418,6 +418,13 @@ func (gs *GLS) DrawElements(mode uint32, count int32, itype uint32, start uint32
 	gs.stats.Drawcalls++
 }
 
+// DrawBuffer sets which color buffers are to be drawn into.
+// Mode is one of NONE, FRONT_LEFT, FRONT_RIGHT, BACK_LEFT, BACK_RIGHT, FRONT, BACK, LEFT, RIGHT, and FRONT_AND_BACK.
+func (gs *GLS) DrawBuffer(mode uint) {
+
+	C.glDrawBuffer(C.GLuint(mode))
+}
+
 // Enable enables the specified capability.
 func (gs *GLS) Enable(cap int) {
 
