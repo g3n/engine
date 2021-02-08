@@ -527,6 +527,13 @@ func (gs *GLS) ReadBuffer(attachment uint) {
 	C.glReadBuffer(C.GLuint(attachment))
 }
 
+// DrawBuffer sets which color buffers are to be drawn into.
+// Mode is one of NONE, FRONT_LEFT, FRONT_RIGHT, BACK_LEFT, BACK_RIGHT, FRONT, BACK, LEFT, RIGHT, and FRONT_AND_BACK.
+func (gs *GLS) DrawBuffer(mode uint) {
+
+	C.glDrawBuffer(C.GLuint(mode))
+}
+
 // GenerateMipmap generates mipmaps for the specified texture target.
 func (gs *GLS) GenerateMipmap(target uint32) {
 
