@@ -418,9 +418,7 @@ func (n *Node) Remove(ichild INode) bool {
 
 	for pos, current := range n.children {
 		if current == ichild {
-			copy(n.children[pos:], n.children[pos+1:])
-			n.children[len(n.children)-1] = nil
-			n.children = n.children[:len(n.children)-1]
+			n.children = append(n.children[:pos], n.children[pos+1:]...)
 			ichild.GetNode().parent = nil
 			n.Dispatch(OnDescendant, nil)
 			return true
