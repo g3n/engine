@@ -5,10 +5,11 @@
 package geometry
 
 import (
-	"github.com/g3n/engine/gls"
-	"github.com/g3n/engine/math32"
 	"sort"
 	"strconv"
+
+	"github.com/g3n/engine/gls"
+	"github.com/g3n/engine/math32"
 )
 
 // MorphGeometry represents a base geometry and its morph targets.

@@ -414,8 +414,8 @@ func (v *Vector2) InTriangle(p0, p1, p2 *Vector2) bool {
 // AlmostEquals returns whether the vector is almost equal to another vector within the specified tolerance.
 func (v *Vector2) AlmostEquals(other *Vector2, tolerance float32) bool {
 
-	if (Abs(v.X - other.X) < tolerance) &&
-		(Abs(v.Y - other.Y) < tolerance) {
+	if (Abs(v.X-other.X) < tolerance) &&
+		(Abs(v.Y-other.Y) < tolerance) {
 		return true
 	}
 	return false

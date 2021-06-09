@@ -26,7 +26,7 @@ func (g *GLTF) loadMaterialPBR(m *Material) (material.IMaterial, error) {
 	}
 
 	var alphaMode string
-	if len(m.AlphaMode) > 0{
+	if len(m.AlphaMode) > 0 {
 		alphaMode = m.AlphaMode
 	} else {
 		alphaMode = "OPAQUE"
@@ -47,7 +47,7 @@ func (g *GLTF) loadMaterialPBR(m *Material) (material.IMaterial, error) {
 	if pbr.BaseColorFactor != nil {
 		baseColorFactor = math32.Color4{pbr.BaseColorFactor[0], pbr.BaseColorFactor[1], pbr.BaseColorFactor[2], pbr.BaseColorFactor[3]}
 	} else {
-		baseColorFactor = math32.Color4{1,1,1,1}
+		baseColorFactor = math32.Color4{1, 1, 1, 1}
 	}
 	pm.SetBaseColorFactor(&baseColorFactor)
 
@@ -81,7 +81,7 @@ func (g *GLTF) loadMaterialPBR(m *Material) (material.IMaterial, error) {
 		if m.EmissiveTexture != nil {
 			emissiveFactor = math32.Color{1, 1, 1}
 		} else {
-			emissiveFactor = math32.Color{0,0,0}
+			emissiveFactor = math32.Color{0, 0, 0}
 		}
 	}
 	pm.SetEmissiveFactor(&emissiveFactor)

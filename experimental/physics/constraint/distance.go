@@ -12,8 +12,8 @@ import (
 // Constrains two bodies to be at a constant distance from each others center of mass.
 type Distance struct {
 	Constraint
-	distance   float32 // Distance
-	equation   *equation.Contact
+	distance float32 // Distance
+	equation *equation.Contact
 }
 
 // NewDistance creates and returns a pointer to a new Distance constraint object.

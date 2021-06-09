@@ -8,11 +8,12 @@ package collada
 import (
 	"encoding/xml"
 	"fmt"
+	"io"
+	"os"
+
 	"github.com/g3n/engine/geometry"
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/texture"
-	"io"
-	"os"
 )
 
 // Decoder contains all decoded data from collada file

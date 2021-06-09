@@ -9,7 +9,7 @@ package gls
 
 // // Platform build flags
 // #cgo freebsd CFLAGS:  -DGL_GLEXT_PROTOTYPES
-// #cgo freebsd LDFLAGS: 
+// #cgo freebsd LDFLAGS:
 //
 // #cgo linux   CFLAGS:  -DGL_GLEXT_PROTOTYPES
 // #cgo linux   LDFLAGS: -ldl

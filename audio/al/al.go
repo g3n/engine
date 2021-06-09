@@ -375,10 +375,7 @@ func CtxIsExtensionPresent(dev *Device, extname string) bool {
 	cname := (*C.ALCchar)(C.CString(extname))
 	defer C.free(unsafe.Pointer(cname))
 	cres := C.alcIsExtensionPresent(dev.cdev, cname)
-	if cres == C.AL_TRUE {
-		return true
-	}
-	return false
+	return cres == C.AL_TRUE
 }
 
 func CtxGetEnumValue(dev *Device, enumName string) uint32 {
@@ -457,10 +454,7 @@ func Disable(capability uint) {
 func IsEnabled(capability uint) bool {
 
 	cres := C.alIsEnabled(C.ALenum(capability))
-	if cres == C.AL_TRUE {
-		return true
-	}
-	return false
+	return cres == C.AL_TRUE
 }
 
 func GetString(param uint32) string {
@@ -500,10 +494,7 @@ func GetDoublev(param uint32, values []float64) {
 func GetBoolean(param uint32) bool {
 
 	cres := C.alGetBoolean(C.ALenum(param))
-	if cres == C.AL_TRUE {
-		return true
-	}
-	return false
+	return cres == C.AL_TRUE
 }
 
 func GetInteger(param uint32) int32 {
@@ -538,10 +529,7 @@ func IsExtensionPresent(extName string) bool {
 	cstr := (*C.ALchar)(C.CString(extName))
 	defer C.free(unsafe.Pointer(cstr))
 	cres := C.alIsExtensionPresent(cstr)
-	if cres == 0 {
-		return false
-	}
-	return true
+	return cres != 0
 }
 
 func GetEnumValue(enam string) uint32 {
@@ -656,10 +644,7 @@ func DeleteSources(sources []uint32) {
 func IsSource(source uint32) bool {
 
 	cres := C.alIsSource(C.ALuint(source))
-	if cres == C.AL_TRUE {
-		return true
-	}
-	return false
+	return cres == C.AL_TRUE
 }
 
 func Sourcef(source uint32, param uint32, value float32) {
@@ -812,10 +797,7 @@ func DeleteBuffers(buffers []uint32) {
 func IsBuffer(buffer uint32) bool {
 
 	cres := C.alIsBuffer(C.ALuint(buffer))
-	if cres == C.AL_TRUE {
-		return true
-	}
-	return false
+	return cres == C.AL_TRUE
 }
 
 func BufferData(buffer uint32, format uint32, data unsafe.Pointer, size uint32, freq uint32) {

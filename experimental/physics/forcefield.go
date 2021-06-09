@@ -99,7 +99,7 @@ func (pa *AttractorForceField) ForceAt(pos *math32.Vector3) math32.Vector3 {
 	var val float32
 	//log.Error("dist %v", dist)
 	if dist > 0 {
-		val = pa.mass/(dist*dist)
+		val = pa.mass / (dist * dist)
 	} else {
 		val = 0
 	}
@@ -159,6 +159,6 @@ func (pr *RepellerForceField) ForceAt(pos *math32.Vector3) math32.Vector3 {
 	dir.Add(pos)
 	dist := dir.Length()
 	dir.Normalize()
-	dir.MultiplyScalar(pr.mass/(dist*dist)) // TODO multiply by gravitational constant: 6.673×10−11 (N–m2)/kg2
+	dir.MultiplyScalar(pr.mass / (dist * dist)) // TODO multiply by gravitational constant: 6.673×10−11 (N–m2)/kg2
 	return dir
 }

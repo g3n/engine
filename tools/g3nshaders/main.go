@@ -123,7 +123,7 @@ func main() {
 	flag.Parse()
 
 	// If requested, print version and exits
-	if *oVersion == true {
+	if *oVersion {
 		fmt.Fprintf(os.Stderr, "%s v%d.%d\n", PROGNAME, VMAJOR, VMINOR)
 		return
 	}

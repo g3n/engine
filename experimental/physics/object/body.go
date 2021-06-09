@@ -5,19 +5,19 @@
 package object
 
 import (
-	"github.com/g3n/engine/graphic"
-	"github.com/g3n/engine/math32"
-	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/experimental/collision/shape"
+	"github.com/g3n/engine/graphic"
+	"github.com/g3n/engine/material"
+	"github.com/g3n/engine/math32"
 )
 
 // Body represents a physics-driven body.
 type Body struct {
 	*graphic.Graphic // TODO future - embed core.Node instead and calculate properties recursively
 
-	material             *material.Material   // Physics material specifying friction and restitution
-	index int
-	name string
+	material *material.Material // Physics material specifying friction and restitution
+	index    int
+	name     string
 
 	// Mass properties
 	mass       float32 // Total mass
@@ -61,12 +61,12 @@ type Body struct {
 	angularFactor  *math32.Vector3 // Use this property to limit the rotational motion along any world axis. (1,1,1) will allow rotation along all axes while (0,0,0) allows none.
 
 	// Body type and sleep settings
-	bodyType        BodyType
-	sleepState      BodySleepState // Current sleep state.
-	allowSleep      bool           // If true, the body will automatically fall to sleep.
-	sleepSpeedLimit float32        // If the speed (the norm of the velocity) is smaller than this value, the body is considered sleepy.
-	sleepTimeLimit  float32        // If the body has been sleepy for this sleepTimeLimit seconds, it is considered sleeping.
-	timeLastSleepy  float32
+	bodyType               BodyType
+	sleepState             BodySleepState // Current sleep state.
+	allowSleep             bool           // If true, the body will automatically fall to sleep.
+	sleepSpeedLimit        float32        // If the speed (the norm of the velocity) is smaller than this value, the body is considered sleepy.
+	sleepTimeLimit         float32        // If the body has been sleepy for this sleepTimeLimit seconds, it is considered sleeping.
+	timeLastSleepy         float32
 	wakeUpAfterNarrowphase bool
 
 	// Collision settings
@@ -79,7 +79,7 @@ type Body struct {
 	boundingRadius  float32      // Total bounding radius of the body (TODO including its shapes, relative to body.position.)
 
 	// Cached geometry properties
-	faces            [][3]math32.Vector3
+	faces [][3]math32.Vector3
 
 	faceNormals      []math32.Vector3
 	worldFaceNormals []math32.Vector3
@@ -140,12 +140,12 @@ const (
 
 // TODO
 type HullType int
+
 const (
 	Sphere = HullType(iota)
 	Capsule
 	Mesh // use mesh itself
 )
-
 
 // NewBody creates and returns a pointer to a new RigidBody.
 // The igraphic's geometry *must* be convex.
@@ -231,7 +231,7 @@ func (b *Body) Shape() shape.IShape {
 func (b *Body) BoundingBox() math32.Box3 {
 
 	// TODO future allow multiple shapes
-	mat4 := math32.NewMatrix4().Compose(b.position, b.quaternion, math32.NewVector3(1,1,1))
+	mat4 := math32.NewMatrix4().Compose(b.position, b.quaternion, math32.NewVector3(1, 1, 1))
 	localBB := b.shape.BoundingBox()
 	worldBB := localBB.ApplyMatrix4(mat4)
 	return *worldBB
@@ -327,7 +327,7 @@ func (b *Body) SetBodyType(bodyType BodyType) {
 
 func (b *Body) BodyType() BodyType {
 
-	return b. bodyType
+	return b.bodyType
 }
 
 func (b *Body) SetWakeUpAfterNarrowphase(state bool) {
@@ -426,8 +426,8 @@ func (b *Body) AngularDamping() float32 {
 
 func (b *Body) ApplyDamping(dt float32) {
 
-	b.velocity.MultiplyScalar(math32.Pow(1.0 - b.linearDamping, dt))
-	b.angularVelocity.MultiplyScalar(math32.Pow(1.0 - b.angularDamping, dt))
+	b.velocity.MultiplyScalar(math32.Pow(1.0-b.linearDamping, dt))
+	b.angularVelocity.MultiplyScalar(math32.Pow(1.0-b.angularDamping, dt))
 }
 
 func (b *Body) SetLinearFactor(factor *math32.Vector3) {
@@ -581,7 +581,7 @@ func (b *Body) UpdateMassProperties() {
 		b.invRotInertia.Zero()
 	} else {
 		*b.rotInertia = b.GetGeometry().RotationalInertia(b.mass)
-		b.rotInertia.MultiplyScalar(10) // multiply by high density // TODO remove this ?
+		b.rotInertia.MultiplyScalar(10)          // multiply by high density // TODO remove this ?
 		b.invRotInertia.GetInverse(b.rotInertia) // Note: rotInertia is always positive definite and thus always invertible
 	}
 

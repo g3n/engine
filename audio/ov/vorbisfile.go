@@ -138,10 +138,7 @@ func Info(f *File, link int, info *VorbisInfo) error {
 func Seekable(f *File) bool {
 
 	cres := C.ov_seekable(f.vf)
-	if cres == 0 {
-		return false
-	}
-	return true
+	return cres != 0
 }
 
 // Seek seeks to the offset specified (in number pcm samples) within the physical bitstream.

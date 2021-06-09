@@ -5,15 +5,16 @@
 package text
 
 import (
-	"github.com/g3n/engine/math32"
-	"github.com/golang/freetype/truetype"
-	"golang.org/x/image/font"
-	"golang.org/x/image/math/fixed"
 	"image"
 	"image/color"
 	"image/draw"
 	"io/ioutil"
 	"strings"
+
+	"github.com/g3n/engine/math32"
+	"github.com/golang/freetype/truetype"
+	"golang.org/x/image/font"
+	"golang.org/x/image/math/fixed"
 )
 
 // Font represents a TrueType font face.

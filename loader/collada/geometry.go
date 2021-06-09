@@ -6,11 +6,12 @@ package collada
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
+
 	"github.com/g3n/engine/geometry"
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/math32"
-	"reflect"
-	"strings"
 )
 
 // GetGeometry returns a pointer to an instance of the geometry

@@ -13,24 +13,24 @@ func Test(t *testing.T) {
 
 	// m.Get(1, 1) // panics with "runtime error: index out of range" as expected
 
-	m.Set(2,4, true)
-	m.Set(3,2, true)
-	if m.Get(1,1) != false {
+	m.Set(2, 4, true)
+	m.Set(3, 2, true)
+	if m.Get(1, 1) != false {
 		t.Error("Get failed")
 	}
-	if m.Get(2,4) != true {
+	if m.Get(2, 4) != true {
 		t.Error("Get failed")
 	}
-	if m.Get(3,2) != true {
+	if m.Get(3, 2) != true {
 		t.Error("Get failed")
 	}
 
-	m.Set(2,4, false)
-	m.Set(3,2, false)
-	if m.Get(2,4) != false {
+	m.Set(2, 4, false)
+	m.Set(3, 2, false)
+	if m.Get(2, 4) != false {
 		t.Error("Get failed")
 	}
-	if m.Get(3,2) != false {
+	if m.Get(3, 2) != false {
 		t.Error("Get failed")
 	}
 

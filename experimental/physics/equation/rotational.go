@@ -14,7 +14,7 @@ type Rotational struct {
 	Equation
 	axisA    *math32.Vector3 // Local axis in A
 	axisB    *math32.Vector3 // Local axis in B
-	maxAngle float32        // Max angle
+	maxAngle float32         // Max angle
 }
 
 // NewRotational creates and returns a pointer to a new Rotational equation object.

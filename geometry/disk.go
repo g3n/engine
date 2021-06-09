@@ -5,9 +5,10 @@
 package geometry
 
 import (
+	"math"
+
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/math32"
-	"math"
 )
 
 // NewDisk creates a disk (filled circle) geometry with the specified
