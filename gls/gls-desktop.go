@@ -12,9 +12,13 @@ package gls
 import "C"
 
 import (
+	"bytes"
 	"fmt"
 	"reflect"
 	"unsafe"
+	"encoding/binary"
+
+	"github.com/g3n/engine/math32"
 )
 
 // GLS encapsulates the state of an OpenGL context and contains
@@ -341,16 +345,57 @@ func (gs *GLS) DeleteVertexArrays(vaos ...uint32) {
 	gs.stats.Vaos -= len(vaos)
 }
 
-// ReadPixels returns the current rendered image.
+// WithFramebuffer executes f inside a framebuffer context.
+func (gs *GLS) WithFramebuffer(f func()) {
+	fbo := C.GLuint(0)
+	rboColor := C.GLuint(0)
+	rboDepth := C.GLuint(0)
+
+	C.glGenFramebuffers(1, &fbo)
+	C.glGenRenderbuffers(1, &rboColor)
+	C.glGenRenderbuffers(1, &rboDepth)
+
+	C.glBindFramebuffer(FRAMEBUFFER, fbo)
+
+	// Color renderbuffer
+	C.glBindRenderbuffer(RENDERBUFFER, rboColor)
+	C.glRenderbufferStorage(RENDERBUFFER, RGBA32F, C.GLint(gs.viewportWidth), C.GLint(gs.viewportHeight))
+	C.glFramebufferRenderbuffer(DRAW_FRAMEBUFFER, COLOR_ATTACHMENT0, RENDERBUFFER, rboColor)
+
+	// Depth renderbuffer
+	C.glBindRenderbuffer(RENDERBUFFER, rboDepth)
+	C.glRenderbufferStorage(RENDERBUFFER, DEPTH_COMPONENT16, C.GLint(gs.viewportWidth), C.GLint(gs.viewportHeight))
+	C.glFramebufferRenderbuffer(DRAW_FRAMEBUFFER, DEPTH_ATTACHMENT, RENDERBUFFER, rboDepth)
+
+	C.glReadBuffer(COLOR_ATTACHMENT0)
+
+	f()
+
+	C.glDeleteFramebuffers(1, &fbo)
+	C.glDeleteRenderbuffers(1, &rboColor)
+	C.glDeleteRenderbuffers(1, &rboDepth)
+}
+
+// ReadPixels reads from the current rendered image or framebuffer.
 // x, y: specifies the window coordinates of the first pixel that is read from the frame buffer.
 // width, height: specifies the dimensions of the pixel rectangle.
-// format: specifies the format of the pixel data.
-// format_type: specifies the data type of the pixel data.
 // more information: http://docs.gl/gl3/glReadPixels
-func (gs *GLS) ReadPixels(x, y, width, height, format, formatType int) []byte {
-	size := uint32((width - x) * (height - y) * 4)
-	C.glReadPixels(C.GLint(x), C.GLint(y), C.GLsizei(width), C.GLsizei(height), C.GLenum(format), C.GLenum(formatType), unsafe.Pointer(gs.gobufSize(size)))
-	return gs.gobuf[:size]
+func (gs *GLS) ReadPixels(x, y, width, height int) [][]*math32.Color4 {
+	size := uint32(width * height * 4 * 4)
+	C.glReadPixels(C.GLint(x), C.GLint(int(gs.viewportHeight)-y), C.GLsizei(width), C.GLsizei(height), C.GLenum(RGBA), C.GLenum(FLOAT), unsafe.Pointer(gs.gobufSize(size)))
+	pixels := make([][]*math32.Color4, width)
+	for x := 0; x < width; x++ {
+		pixels[x] = make([]*math32.Color4, height)
+		for y := 0; y < height; y++ {
+			var r, g, b, a float32
+			binary.Read(bytes.NewBuffer(gs.gobuf[:size][y*16+x:y*16+x+4]), binary.LittleEndian, &r)
+			binary.Read(bytes.NewBuffer(gs.gobuf[:size][y*16+x+4:y*16+x+8]), binary.LittleEndian, &g)
+			binary.Read(bytes.NewBuffer(gs.gobuf[:size][y*16+x+8:y*16+x+12]), binary.LittleEndian, &b)
+			binary.Read(bytes.NewBuffer(gs.gobuf[:size][y*16+x+12:y*16+x+16]), binary.LittleEndian, &a)
+			pixels[x][y] = &math32.Color4{R: r, G: g, B: b, A: a}
+		}
+	}
+	return pixels
 }
 
 // DepthFunc specifies the function used to compare each incoming pixel
