@@ -134,6 +134,14 @@ func (b *Box3) ExpandByVector(vector *Vector3) *Box3 {
 	return b
 }
 
+// MultiplyByVector extends this bounding box by multiplying it with the specified vector.
+// Returns pointer to this updated bounding box.
+func (b *Box3) MultiplyByVector(vector Vector3) *Box3 {
+	b.Min.Multiply(&vector)
+	b.Max.Multiply(&vector)
+	return b
+}
+
 // ExpandByScalar expands this bounding box by the specified scalar.
 // Returns pointer to this updated bounding box.
 func (b *Box3) ExpandByScalar(scalar float32) *Box3 {
