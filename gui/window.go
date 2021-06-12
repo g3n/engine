@@ -167,32 +167,43 @@ func (w *Window) onCursor(evname string, ev interface{}) {
 		// If already dragging - update window size and position depending
 		// on the cursor position and the borders being dragged
 		if w.drag {
+			titleHeight := float32(0)
+			titleLabelWidth := float32(0)
+			titleCloseBtnWidth := float32(0)
+			if w.title != nil {
+				titleHeight = w.title.height
+				titleLabelWidth = w.title.label.Width()
+				if w.title.closeButton != nil {
+					titleCloseBtnWidth = w.title.closeButton.Width()
+				}
+			}
+
 			if w.overTop {
 				delta := cev.Ypos - w.pospix.Y
 				newHeight := w.Height() - delta
-				minHeight := w.title.height
+				minHeight := titleHeight
 				if newHeight >= minHeight {
 					w.SetPositionY(w.Position().Y + delta)
 					w.SetHeight(math32.Max(newHeight, minHeight))
 				} else {
 					w.SetPositionY(w.Position().Y + w.Height() - minHeight)
-					w.SetHeight(w.title.height)
+					w.SetHeight(titleHeight)
 				}
 			}
 			if w.overRight {
 				delta := cev.Xpos - (w.pospix.X + w.width)
 				newWidth := w.Width() + delta
-				w.SetWidth(math32.Max(newWidth, w.title.label.Width()+w.title.closeButton.Width()))
+				w.SetWidth(math32.Max(newWidth, titleLabelWidth+titleCloseBtnWidth))
 			}
 			if w.overBottom {
 				delta := cev.Ypos - (w.pospix.Y + w.height)
 				newHeight := w.Height() + delta
-				w.SetHeight(math32.Max(newHeight, w.title.height))
+				w.SetHeight(math32.Max(newHeight, titleHeight))
 			}
 			if w.overLeft {
 				delta := cev.Xpos - w.pospix.X
 				newWidth := w.Width() - delta
-				minWidth := w.title.label.Width() + w.title.closeButton.Width()
+				minWidth := titleLabelWidth + titleCloseBtnWidth
 				if newWidth >= minWidth {
 					w.SetPositionX(w.Position().X + delta)
 					w.SetWidth(math32.Max(newWidth, minWidth))
