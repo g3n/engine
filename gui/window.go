@@ -170,29 +170,43 @@ func (w *Window) onCursor(evname string, ev interface{}) {
 			if w.overTop {
 				delta := cev.Ypos - w.pospix.Y
 				newHeight := w.Height() - delta
-				minHeight := w.title.height
+				minHeight := 0
+				if w.title != nil {
+					minHeight = w.title.height
+				}
 				if newHeight >= minHeight {
 					w.SetPositionY(w.Position().Y + delta)
 					w.SetHeight(math32.Max(newHeight, minHeight))
 				} else {
 					w.SetPositionY(w.Position().Y + w.Height() - minHeight)
-					w.SetHeight(w.title.height)
+					w.SetHeight(minHeight)
 				}
 			}
 			if w.overRight {
 				delta := cev.Xpos - (w.pospix.X + w.width)
 				newWidth := w.Width() + delta
-				w.SetWidth(math32.Max(newWidth, w.title.label.Width()+w.title.closeButton.Width()))
+				minWidth := 0
+				if w.title != nil {
+					minWidth = w.title.label.Width() + w.title.closeButton.Width()
+				}
+				w.SetWidth(math32.Max(newWidth, minWidth))
 			}
 			if w.overBottom {
 				delta := cev.Ypos - (w.pospix.Y + w.height)
 				newHeight := w.Height() + delta
-				w.SetHeight(math32.Max(newHeight, w.title.height))
+				minHeight := 0
+				if w.title != nil {
+					minHeight = w.title.height
+				}
+				w.SetHeight(math32.Max(newHeight, minHeight))
 			}
 			if w.overLeft {
 				delta := cev.Xpos - w.pospix.X
 				newWidth := w.Width() - delta
-				minWidth := w.title.label.Width() + w.title.closeButton.Width()
+				minWidth := 0
+				if w.title != nil {
+					minWidth = w.title.label.Width() + w.title.closeButton.Width()
+				}
 				if newWidth >= minWidth {
 					w.SetPositionX(w.Position().X + delta)
 					w.SetWidth(math32.Max(newWidth, minWidth))
