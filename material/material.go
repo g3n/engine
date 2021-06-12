@@ -375,3 +375,9 @@ func (mat *Material) TextureCount() int {
 
 	return len(mat.textures)
 }
+
+// Textures returns a slice with this material's textures
+func (mat *Material) Textures() []*texture.Texture2D {
+
+	return mat.textures
+}

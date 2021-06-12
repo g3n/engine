@@ -143,6 +143,12 @@ func (t *Texture2D) Dispose() {
 	}
 }
 
+// TexName returns the texture handle for the texture
+func (t *Texture2D) TexName() uint32 {
+
+	return t.texname
+}
+
 // SetUniformNames sets the names of the uniforms in the shader for sampler and texture info.
 func (t *Texture2D) SetUniformNames(sampler, info string) {
 
