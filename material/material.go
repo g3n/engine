@@ -73,7 +73,7 @@ type Material struct {
 	transparent bool                 // Whether at all transparent
 	wireframe   bool                 // Whether to render only the wireframe
 	lineWidth   float32              // Line width for lines and wireframe
-	textures    []*texture.Texture2D // List of textures
+	Textures    []*texture.Texture2D // List of Textures
 
 	polyOffsetFactor float32 // polygon offset factor
 	polyOffsetUnits  float32 // polygon offset units
@@ -115,7 +115,7 @@ func (mat *Material) Init() *Material {
 	mat.lineWidth = 1.0
 	mat.polyOffsetFactor = 0
 	mat.polyOffsetUnits = 0
-	mat.textures = make([]*texture.Texture2D, 0)
+	mat.Textures = make([]*texture.Texture2D, 0)
 
 	// Setup shader defines and add default values
 	mat.ShaderDefines = *gls.NewShaderDefines()
@@ -141,7 +141,7 @@ func (mat *Material) Incref() *Material {
 
 // Dispose decrements this material reference count and
 // if necessary releases OpenGL resources, C memory
-// and textures associated with this material.
+// and Textures associated with this material.
 func (mat *Material) Dispose() {
 
 	// Only dispose if last
@@ -149,9 +149,9 @@ func (mat *Material) Dispose() {
 		mat.refcount--
 		return
 	}
-	// Delete textures
-	for i := 0; i < len(mat.textures); i++ {
-		mat.textures[i].Dispose()
+	// Delete Textures
+	for i := 0; i < len(mat.Textures); i++ {
+		mat.Textures[i].Dispose()
 	}
 	mat.Init()
 }
@@ -170,7 +170,7 @@ func (mat *Material) Shader() string {
 
 // SetShaderUnique sets indication that this material shader is unique and
 // does not depend on the number of lights in the scene and/or the
-// number of textures in the material.
+// number of Textures in the material.
 func (mat *Material) SetShaderUnique(unique bool) {
 
 	mat.shaderUnique = unique
@@ -329,10 +329,10 @@ func (mat *Material) RenderSetup(gs *gls.GLS) {
 		panic("Invalid blending")
 	}
 
-	// Render textures
+	// Render Textures
 	// Keep track of counts of unique sampler names to correctly index sampler arrays
 	samplerCounts := make(map[string]int)
-	for slotIdx, tex := range mat.textures {
+	for slotIdx, tex := range mat.Textures {
 		samplerName, _ := tex.GetUniformNames()
 		uniIdx, _ := samplerCounts[samplerName]
 		tex.RenderSetup(gs, slotIdx, uniIdx)
@@ -343,17 +343,17 @@ func (mat *Material) RenderSetup(gs *gls.GLS) {
 // AddTexture adds the specified Texture2d to the material
 func (mat *Material) AddTexture(tex *texture.Texture2D) {
 
-	mat.textures = append(mat.textures, tex)
+	mat.Textures = append(mat.Textures, tex)
 }
 
 // RemoveTexture removes the specified Texture2d from the material
 func (mat *Material) RemoveTexture(tex *texture.Texture2D) {
 
-	for pos, curr := range mat.textures {
+	for pos, curr := range mat.Textures {
 		if curr == tex {
-			copy(mat.textures[pos:], mat.textures[pos+1:])
-			mat.textures[len(mat.textures)-1] = nil
-			mat.textures = mat.textures[:len(mat.textures)-1]
+			copy(mat.Textures[pos:], mat.Textures[pos+1:])
+			mat.Textures[len(mat.Textures)-1] = nil
+			mat.Textures = mat.Textures[:len(mat.Textures)-1]
 			break
 		}
 	}
@@ -362,7 +362,7 @@ func (mat *Material) RemoveTexture(tex *texture.Texture2D) {
 // HasTexture checks if the material contains the specified texture
 func (mat *Material) HasTexture(tex *texture.Texture2D) bool {
 
-	for _, curr := range mat.textures {
+	for _, curr := range mat.Textures {
 		if curr == tex {
 			return true
 		}
@@ -370,8 +370,8 @@ func (mat *Material) HasTexture(tex *texture.Texture2D) bool {
 	return false
 }
 
-// TextureCount returns the current number of textures
+// TextureCount returns the current number of Textures
 func (mat *Material) TextureCount() int {
 
-	return len(mat.textures)
+	return len(mat.Textures)
 }
