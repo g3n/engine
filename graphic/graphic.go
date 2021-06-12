@@ -207,7 +207,7 @@ func (gr *Graphic) GetMaterial(vpos int) material.IMaterial {
 		if gmat.count == 0 {
 			return gmat.imat
 		}
-		if gmat.start >= vpos && gmat.start+gmat.count <= vpos {
+		if gmat.start <= vpos && gmat.start+gmat.count >= vpos {
 			return gmat.imat
 		}
 	}
