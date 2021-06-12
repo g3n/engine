@@ -420,3 +420,11 @@ func (v *Vector2) AlmostEquals(other *Vector2, tolerance float32) bool {
 	}
 	return false
 }
+
+// AngleTo returns the angle between this vector and other
+func (v *Vector2) AngleTo(other *Vector2) float32 {
+
+	theta := v.Dot(other) / (v.Length() * other.Length())
+	// clamp, to handle numerical problems
+	return Acos(Clamp(theta, -1, 1))
+}
