@@ -38,6 +38,16 @@ func NewStandard(color *math32.Color) *Standard {
 	return ms
 }
 
+// NewBlinnPhong creates and returns a pointer to a new Standard material using Blinn-Phong model
+// It is very close to Standard (Phong) model so we need only pass a parameter
+func NewBlinnPhong(color *math32.Color) *Standard {
+
+	ms := new(Standard)
+	ms.Init("standard", color)
+	ms.ShaderDefines.Set("BLINN", "true")
+	return ms
+}
+
 // Init initializes the material setting the specified shader and color
 // It is used mainly when the material is embedded in another type
 func (ms *Standard) Init(shader string, color *math32.Color) {
