@@ -74,17 +74,18 @@ const (
 )
 
 // Window event names. See availability per platform below ("x" indicates available).
-const ( //                             Desktop | Browser |
-	OnWindowPos  = "w.OnWindowPos"  //    x    |         |
-	OnWindowSize = "w.OnWindowSize" //    x    |         |
-	OnKeyUp      = "w.OnKeyUp"      //    x    |    x    |
-	OnKeyDown    = "w.OnKeyDown"    //    x    |    x    |
-	OnKeyRepeat  = "w.OnKeyRepeat"  //    x    |         |
-	OnChar       = "w.OnChar"       //    x    |    x    |
-	OnCursor     = "w.OnCursor"     //    x    |    x    |
-	OnMouseUp    = "w.OnMouseUp"    //    x    |    x    |
-	OnMouseDown  = "w.OnMouseDown"  //    x    |    x    |
-	OnScroll     = "w.OnScroll"     //    x    |    x    |
+const ( //                               Desktop | Browser |
+	OnWindowFocus = "w.OnWindowFocus" //    x    |    x    |
+	OnWindowPos   = "w.OnWindowPos"   //    x    |         |
+	OnWindowSize  = "w.OnWindowSize"  //    x    |         |
+	OnKeyUp       = "w.OnKeyUp"       //    x    |    x    |
+	OnKeyDown     = "w.OnKeyDown"     //    x    |    x    |
+	OnKeyRepeat   = "w.OnKeyRepeat"   //    x    |         |
+	OnChar        = "w.OnChar"        //    x    |    x    |
+	OnCursor      = "w.OnCursor"      //    x    |    x    |
+	OnMouseUp     = "w.OnMouseUp"     //    x    |    x    |
+	OnMouseDown   = "w.OnMouseDown"   //    x    |    x    |
+	OnScroll      = "w.OnScroll"      //    x    |    x    |
 )
 
 // PosEvent describes a windows position changed event
@@ -131,4 +132,9 @@ type ScrollEvent struct {
 	Xoffset float32
 	Yoffset float32
 	Mods    ModifierKey
+}
+
+// FocusEvent describes a focus event
+type FocusEvent struct {
+	Focused bool
 }

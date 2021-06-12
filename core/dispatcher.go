@@ -49,10 +49,9 @@ func (d *Dispatcher) Subscribe(evname string, cb Callback) {
 	d.evmap[evname] = append(d.evmap[evname], subscription{nil, cb})
 }
 
-// SubscribeID subscribes a callback to events events with the given name.
+// SubscribeID subscribes a callback to events with the given name.
 // The user-provided unique id can be used to unsubscribe via UnsubscribeID.
 func (d *Dispatcher) SubscribeID(evname string, id interface{}, cb Callback) {
-
 	d.evmap[evname] = append(d.evmap[evname], subscription{id, cb})
 }
 
