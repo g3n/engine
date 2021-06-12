@@ -471,6 +471,53 @@ func (gs *GLS) GenBuffer() uint32 {
 	return buf
 }
 
+// GenFrameBuffer generates a frame buffer object
+func (gs *GLS) GenFrameBuffer() uint32 {
+	var buf uint32
+	C.glGenFramebuffers(1, (*C.GLuint)(&buf))
+	gs.stats.Fbos++
+	return buf
+}
+
+// BindFramebuffer binds the frame buffer object
+func (gs *GLS) BindFramebuffer(fbo uint32) {
+	C.glBindFramebuffer(C.GLenum(FRAMEBUFFER), C.GLuint(fbo))
+}
+
+// FramebufferTexture2D attach a texture to render the framebuffer into
+func (gs *GLS) FramebufferTexture2D(texture uint32) {
+	C.glFramebufferTexture2D(C.GLenum(FRAMEBUFFER), C.GLenum(COLOR_ATTACHMENT0), C.GLenum(TEXTURE_2D), C.GLuint(texture), C.GLint(0))
+}
+
+// CheckFramebufferStatus get the framebuffer status
+func (gs *GLS) CheckFramebufferStatus() uint32 {
+	res := C.glCheckFramebufferStatus(C.GLenum(FRAMEBUFFER))
+	return uint32(res)
+}
+
+// GenRenderbuffer generates a render buffer object
+func (gs *GLS) GenRenderbuffer() uint32 {
+	var buf uint32
+	C.glGenRenderbuffers(1, (*C.GLuint)(&buf))
+	gs.stats.Rbos++
+	return buf
+}
+
+// BindRenderbuffer binds the render buffer object
+func (gs *GLS) BindRenderbuffer(rbo uint32) {
+	C.glBindRenderbuffer(C.GLenum(RENDERBUFFER), C.GLuint(rbo))
+}
+
+// RenderbufferStorage allocates storage for the render buffer
+func (gs *GLS) RenderbufferStorage(internalformat, width, height int) {
+	C.glRenderbufferStorage(C.GLenum(RENDERBUFFER), C.GLenum(internalformat), C.GLsizei(width), C.GLsizei(height))
+}
+
+// FramebufferRenderbuffer attaches the render buffer to the current frame buffer
+func (gs *GLS) FramebufferRenderbuffer(attachment int, rbo uint32) {
+	C.glFramebufferRenderbuffer(C.GLenum(FRAMEBUFFER), C.GLenum(attachment), C.GLenum(RENDERBUFFER), C.GLuint(rbo))
+}
+
 // GenerateMipmap generates mipmaps for the specified texture target.
 func (gs *GLS) GenerateMipmap(target uint32) {
 
