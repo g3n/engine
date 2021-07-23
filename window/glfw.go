@@ -319,8 +319,8 @@ func Init(width, height int, title string) error {
 		xpos, ypos := x.GetCursorPos()
 		w.mouseEv.Button = MouseButton(button)
 		w.mouseEv.Mods = ModifierKey(mods)
-		w.mouseEv.Xpos = float32(xpos * w.scaleX)
-		w.mouseEv.Ypos = float32(ypos * w.scaleY)
+		w.mouseEv.Xpos = float32(xpos) //* float32(w.scaleX) TODO
+		w.mouseEv.Ypos = float32(ypos) //* float32(w.scaleY)
 		if action == glfw.Press {
 			w.Dispatch(OnMouseDown, &w.mouseEv)
 		} else if action == glfw.Release {
