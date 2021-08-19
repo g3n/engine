@@ -204,7 +204,7 @@ If you find a bug or create a new feature you are encouraged to send pull reques
 
 ## Community
 
-Join our [channel](https://gophers.slack.com/messages/g3n) on Gophers Slack ([Click here to register for Gophers Slack](https://invite.slack.golangbridge.org/)). It's a great way to have your questions answered quickly by the G3N community.
+Join our [Discord channel](https://discord.gg/Dq9FpV4c). It's the best way to have your questions answered quickly by the G3N community.
 
 ## Stargazers over time
 
