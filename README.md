@@ -206,7 +206,7 @@ If you find a bug or create a new feature you are encouraged to send pull reques
 
 ## Community
 
-Join our [Discord channel](https://discord.gg/Dq9FpV4c). It's the best way to have your questions answered quickly by the G3N community.
+Join our [Discord channel](https://discord.gg/NfaeVr8zDg). It's the best way to have your questions answered quickly by the G3N community.
 
 ## Stargazers over time
 
