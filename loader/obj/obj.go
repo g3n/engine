@@ -43,6 +43,11 @@ type Decoder struct {
 	mtlDir        string               // Directory of material file
 }
 
+// DecoderOptions allows ignoring some properties that are unsupported
+type DecoderOptions struct {
+	IgnoreSmooth bool
+}
+
 // Object contains all information about one decoded object
 type Object struct {
 	Name      string   // Object name
@@ -89,11 +94,18 @@ const (
 	mtlType  = "mtl"
 )
 
+// DefaultOptions ignores no fields by default
+func DefaultOptions() *DecoderOptions {
+	return &DecoderOptions{
+		IgnoreSmooth: false,
+	}
+}
+
 // Decode decodes the specified obj and mtl files returning a decoder
 // object and an error. Passing an empty string (or otherwise invalid path)
 // to mtlpath will cause the decoder to check the 'mtllib' file in the OBJ if
 // present, and fall back to a default material as a last resort.
-func Decode(objpath string, mtlpath string) (*Decoder, error) {
+func Decode(objpath string, mtlpath string, options *DecoderOptions) (*Decoder, error) {
 
 	// Opens obj file
 	fobj, err := os.Open(objpath)
@@ -111,7 +123,7 @@ func Decode(objpath string, mtlpath string) (*Decoder, error) {
 	// if fmtl==nil, the io.Reader in DecodeReader() will be (T=*os.File, V=nil)
 	// which is NOT equal to plain nil or (io.Reader, nil) but will produce
 	// the desired result of passing nil to DecodeReader() per it's func comment.
-	dec, err := DecodeReader(fobj, fmtl)
+	dec, err := DecodeReader(fobj, fmtl, options)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +140,7 @@ func Decode(objpath string, mtlpath string) (*Decoder, error) {
 // a ".mtl" file with the same name as the OBJ file if presemt, or a default
 // material as a last resort. No error will be returned for problems
 // with materials--a gray default material will be used if nothing else works.
-func DecodeReader(objreader, mtlreader io.Reader) (*Decoder, error) {
+func DecodeReader(objreader, mtlreader io.Reader, options *DecoderOptions) (*Decoder, error) {
 
 	dec := new(Decoder)
 	dec.Objects = make([]Object, 0)
@@ -140,7 +152,7 @@ func DecodeReader(objreader, mtlreader io.Reader) (*Decoder, error) {
 	dec.line = 1
 
 	// Parses obj lines
-	err := dec.parse(objreader, dec.parseObjLine)
+	err := dec.parse(objreader, dec.parseObjLine, options)
 	if err != nil {
 		return nil, err
 	}
@@ -424,7 +436,7 @@ func (dec *Decoder) parse(reader io.Reader, parseLine func(string) error) error 
 }
 
 // Parses obj file line, dispatching to specific parsers
-func (dec *Decoder) parseObjLine(line string) error {
+func (dec *Decoder) parseObjLine(line string, options *DecoderOptions) error {
 
 	// Ignore empty lines
 	fields := strings.Fields(line)
@@ -464,6 +476,9 @@ func (dec *Decoder) parseObjLine(line string) error {
 		return dec.parseUsemtl(fields[1:])
 	// Smooth
 	case "s":
+		if options.IgnoreSmooth {
+			return nil
+		}
 		return dec.parseSmooth(fields[1:])
 	default:
 		dec.appendWarn(objType, "field not supported: "+ltype)
@@ -692,7 +707,7 @@ func (dec *Decoder) parseUsemtl(fields []string) error {
 	return nil
 }
 
-// parseSmooth parses a "s" decription line:
+// parseSmooth parses a "s" description line:
 // s <0|1>
 func (dec *Decoder) parseSmooth(fields []string) error {
 
