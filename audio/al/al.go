@@ -588,7 +588,7 @@ func GetListener3f(param uint32) (float32, float32, float32) {
 	return float32(cval1), float32(cval2), float32(cval3)
 }
 
-func GetListenerfv(param uint32, values []uint32) {
+func GetListenerfv(param uint32, values []float32) {
 
 	C.alGetListenerfv(C.ALenum(param), (*C.ALfloat)(unsafe.Pointer(&values[0])))
 }
