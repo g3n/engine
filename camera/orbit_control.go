@@ -5,11 +5,12 @@
 package camera
 
 import (
+	"math"
+
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
-	"math"
 )
 
 // OrbitEnabled specifies which control types are enabled.

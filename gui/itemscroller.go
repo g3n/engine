@@ -5,8 +5,9 @@
 package gui
 
 import (
-	"github.com/g3n/engine/window"
 	"math"
+
+	"github.com/g3n/engine/window"
 )
 
 // ItemScroller is the GUI element that allows scrolling of IPanels

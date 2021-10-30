@@ -14,8 +14,8 @@ import (
 // It tries to keep the door in the correct place and with the correct orientation.
 type Hinge struct {
 	PointToPoint
-	axisA   *math32.Vector3           // Rotation axis, defined locally in bodyA.
-	axisB   *math32.Vector3           // Rotation axis, defined locally in bodyB.
+	axisA   *math32.Vector3 // Rotation axis, defined locally in bodyA.
+	axisB   *math32.Vector3 // Rotation axis, defined locally in bodyB.
 	rotEq1  *equation.Rotational
 	rotEq2  *equation.Rotational
 	motorEq *equation.RotationalMotor

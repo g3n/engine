@@ -6,14 +6,16 @@
 // The OpenAL documentation can be accessed at https://openal.org/documentation/
 package al
 
-// #cgo darwin   CFLAGS:  -DGO_DARWIN  -I/usr/local/opt/openal-soft/include/AL -I/usr/include/AL
-// #cgo freebsd  CFLAGS:  -DGO_FREEBSD -I/usr/local/include/AL
-// #cgo linux    CFLAGS:  -DGO_LINUX   -I/usr/include/AL
-// #cgo windows  CFLAGS:  -DGO_WINDOWS -I${SRCDIR}/../windows/openal-soft-1.18.2/include/AL
-// #cgo darwin   LDFLAGS: -L/usr/local/opt/openal-soft/lib -lopenal
-// #cgo freebsd  LDFLAGS: -L/usr/local/lib -lopenal
-// #cgo linux    LDFLAGS: -lopenal
-// #cgo windows  LDFLAGS: -L${SRCDIR}/../windows/bin -lOpenAL32
+// #cgo darwin,amd64  CFLAGS:  -DGO_DARWIN  -I/usr/local/opt/openal-soft/include/AL -I/usr/include/AL
+// #cgo darwin,arm64  CFLAGS:  -DGO_DARWIN  -I/opt/homebrew/opt/openal-soft/include/AL
+// #cgo freebsd       CFLAGS:  -DGO_FREEBSD -I/usr/local/include/AL
+// #cgo linux         CFLAGS:  -DGO_LINUX   -I/usr/include/AL
+// #cgo windows       CFLAGS:  -DGO_WINDOWS -I${SRCDIR}/../windows/openal-soft-1.18.2/include/AL
+// #cgo darwin,amd64  LDFLAGS: -L/usr/local/opt/openal-soft/lib -lopenal
+// #cgo darwin,arm64  LDFLAGS: -L/opt/homebrew/opt/openal-soft/lib -lopenal
+// #cgo freebsd       LDFLAGS: -L/usr/local/lib -lopenal
+// #cgo linux         LDFLAGS: -lopenal
+// #cgo windows       LDFLAGS: -L${SRCDIR}/../windows/bin -lOpenAL32
 // #include <stdlib.h>
 // #include "al.h"
 // #include "alc.h"
@@ -375,10 +377,7 @@ func CtxIsExtensionPresent(dev *Device, extname string) bool {
 	cname := (*C.ALCchar)(C.CString(extname))
 	defer C.free(unsafe.Pointer(cname))
 	cres := C.alcIsExtensionPresent(dev.cdev, cname)
-	if cres == C.AL_TRUE {
-		return true
-	}
-	return false
+	return cres == C.AL_TRUE
 }
 
 func CtxGetEnumValue(dev *Device, enumName string) uint32 {
@@ -457,10 +456,7 @@ func Disable(capability uint) {
 func IsEnabled(capability uint) bool {
 
 	cres := C.alIsEnabled(C.ALenum(capability))
-	if cres == C.AL_TRUE {
-		return true
-	}
-	return false
+	return cres == C.AL_TRUE
 }
 
 func GetString(param uint32) string {
@@ -500,10 +496,7 @@ func GetDoublev(param uint32, values []float64) {
 func GetBoolean(param uint32) bool {
 
 	cres := C.alGetBoolean(C.ALenum(param))
-	if cres == C.AL_TRUE {
-		return true
-	}
-	return false
+	return cres == C.AL_TRUE
 }
 
 func GetInteger(param uint32) int32 {
@@ -538,10 +531,7 @@ func IsExtensionPresent(extName string) bool {
 	cstr := (*C.ALchar)(C.CString(extName))
 	defer C.free(unsafe.Pointer(cstr))
 	cres := C.alIsExtensionPresent(cstr)
-	if cres == 0 {
-		return false
-	}
-	return true
+	return cres != 0
 }
 
 func GetEnumValue(enam string) uint32 {
@@ -598,7 +588,7 @@ func GetListener3f(param uint32) (float32, float32, float32) {
 	return float32(cval1), float32(cval2), float32(cval3)
 }
 
-func GetListenerfv(param uint32, values []uint32) {
+func GetListenerfv(param uint32, values []float32) {
 
 	C.alGetListenerfv(C.ALenum(param), (*C.ALfloat)(unsafe.Pointer(&values[0])))
 }
@@ -656,10 +646,7 @@ func DeleteSources(sources []uint32) {
 func IsSource(source uint32) bool {
 
 	cres := C.alIsSource(C.ALuint(source))
-	if cres == C.AL_TRUE {
-		return true
-	}
-	return false
+	return cres == C.AL_TRUE
 }
 
 func Sourcef(source uint32, param uint32, value float32) {
@@ -812,10 +799,7 @@ func DeleteBuffers(buffers []uint32) {
 func IsBuffer(buffer uint32) bool {
 
 	cres := C.alIsBuffer(C.ALuint(buffer))
-	if cres == C.AL_TRUE {
-		return true
-	}
-	return false
+	return cres == C.AL_TRUE
 }
 
 func BufferData(buffer uint32, format uint32, data unsafe.Pointer, size uint32, freq uint32) {

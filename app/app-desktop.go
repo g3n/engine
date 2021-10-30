@@ -8,11 +8,12 @@ package app
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/g3n/engine/audio/al"
 	"github.com/g3n/engine/audio/vorbis"
 	"github.com/g3n/engine/renderer"
 	"github.com/g3n/engine/window"
-	"time"
 )
 
 // Desktop application defaults
@@ -67,7 +68,7 @@ func (a *Application) Run(update func(rend *renderer.Renderer, deltaTime time.Du
 	a.frameStart = time.Now()
 
 	// Set up recurring calls to user's update function
-	for true {
+	for {
 		// If Exit() was called or there was an attempt to close the window dispatch OnExit event for subscribers.
 		// If no subscriber cancelled the event, terminate the application.
 		if a.IWindow.(*window.GlfwWindow).ShouldClose() {
@@ -121,7 +122,7 @@ func (a *Application) KeyState() *window.KeyState {
 // RunTime returns the elapsed duration since the call to Run().
 func (a *Application) RunTime() time.Duration {
 
-	return time.Now().Sub(a.startTime)
+	return time.Since(a.startTime)
 }
 
 // openDefaultAudioDevice opens the default audio device setting it to the current context

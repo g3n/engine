@@ -6,23 +6,24 @@
 package geometry
 
 import (
-	"github.com/g3n/engine/math32"
-	"github.com/g3n/engine/gls"
 	"math"
+
+	"github.com/g3n/engine/gls"
+	"github.com/g3n/engine/math32"
 )
 
 func CalculateNormals(indices math32.ArrayU32, positions, normals math32.ArrayF32) math32.ArrayF32 {
 	var x1x2, y1y2, z1z2, x3x2, y3y2, z3z2, x, y, z, l float32
 	var x1, y1, z1, x2, y2, z2, x3, y3, z3 int // position indexes
 
-	for i := 0; i < len(indices) / 3; i++ {
-		x1 = int(indices[i * 3] * uint32(3))
+	for i := 0; i < len(indices)/3; i++ {
+		x1 = int(indices[i*3] * uint32(3))
 		y1 = x1 + 1
 		z1 = x1 + 2
-		x2 = int(indices[i * 3 + 1] * uint32(3))
+		x2 = int(indices[i*3+1] * uint32(3))
 		y2 = x2 + 1
 		z2 = x2 + 2
-		x3 = int(indices[i * 3 + 2] * uint32(3))
+		x3 = int(indices[i*3+2] * uint32(3))
 		y3 = x3 + 1
 		z3 = x3 + 2
 
@@ -33,11 +34,11 @@ func CalculateNormals(indices math32.ArrayU32, positions, normals math32.ArrayF3
 		y3y2 = positions[y3] - positions[y2]
 		z3z2 = positions[z3] - positions[z2]
 
-		x = y1y2 * z3z2 - z1z2 * y3y2
-		y = z1z2 * x3x2 - x1x2 * z3z2
-		z = x1x2 * y3y2 - y1y2 * x3x2
+		x = y1y2*z3z2 - z1z2*y3y2
+		y = z1z2*x3x2 - x1x2*z3z2
+		z = x1x2*y3y2 - y1y2*x3x2
 
-		l = float32(math.Sqrt(float64(x) * float64(x) + float64(y) * float64(y) + float64(z) * float64(z)))
+		l = float32(math.Sqrt(float64(x)*float64(x) + float64(y)*float64(y) + float64(z)*float64(z)))
 		if l == 0 {
 			l = 1.0
 		}
@@ -52,26 +53,26 @@ func CalculateNormals(indices math32.ArrayU32, positions, normals math32.ArrayF3
 		normals[y3] += y / l
 		normals[z3] += z / l
 	}
-	for i := 0; i < len(normals) / 3; i++ {
-		x = normals[i * 3]
-		y = normals[i * 3 + 1]
-		z = normals[i * 3 + 2]
-		l = float32(math.Sqrt(float64(x) * float64(x) + float64(y) * float64(y) + float64(z) * float64(z)))
+	for i := 0; i < len(normals)/3; i++ {
+		x = normals[i*3]
+		y = normals[i*3+1]
+		z = normals[i*3+2]
+		l = float32(math.Sqrt(float64(x)*float64(x) + float64(y)*float64(y) + float64(z)*float64(z)))
 		if l == 0 {
 			l = 1.0
 		}
-		normals[i * 3] = x / l
-		normals[i * 3 + 1] = y / l
-		normals[i * 3 + 2] = z / l
+		normals[i*3] = x / l
+		normals[i*3+1] = y / l
+		normals[i*3+2] = z / l
 	}
 	return normals
 }
 
 func NewRibbon(paths [][]math32.Vector3, close bool) *Geometry {
 	/*
-	if len(paths) < 3 {
-		close = false
-	}
+		if len(paths) < 3 {
+			close = false
+		}
 	*/
 	c := NewGeometry()
 
@@ -99,8 +100,8 @@ func NewRibbon(paths [][]math32.Vector3, close bool) *Geometry {
 	}
 	p := 0
 	i = 0
-	for i <= min && p < len(ls) - 1 {
-		t := is[p+1] - is[p] 
+	for i <= min && p < len(ls)-1 {
+		t := is[p+1] - is[p]
 
 		indices.Append(uint32(i), uint32(i+t), uint32(i+1))
 		indices.Append(uint32(i+t+1), uint32(i+1), uint32(i+t))
@@ -111,7 +112,7 @@ func NewRibbon(paths [][]math32.Vector3, close bool) *Geometry {
 				indices.Append(uint32(is[p]+t), uint32(is[p]), uint32(i+t))
 			}
 			p++
-			if p == len(ls) - 1 {
+			if p == len(ls)-1 {
 				break
 			}
 			l1 = ls[p] - 1
@@ -149,11 +150,11 @@ func NewTube(path []math32.Vector3, radius float32, radialSegments int, close bo
 	tangents[l-1].Normalize()
 
 	var tmpVertex *math32.Vector3
-	if (tangents[0].X != 1) {
+	if tangents[0].X != 1 {
 		tmpVertex = math32.NewVector3(1, 0, 0)
-	} else if (tangents[0].Y != 1) {
+	} else if tangents[0].Y != 1 {
 		tmpVertex = math32.NewVector3(0, 1, 0)
-	} else if (tangents[0].Z != 1) {
+	} else if tangents[0].Z != 1 {
 		tmpVertex = math32.NewVector3(0, 0, 1)
 	}
 
@@ -161,14 +162,14 @@ func NewTube(path []math32.Vector3, radius float32, radialSegments int, close bo
 	normals[0].Normalize()
 	binormals[0] = *tangents[0].Clone().Cross(&normals[0])
 	binormals[0].Normalize()
-	
+
 	for i := 1; i < l; i++ {
 		prev := *path[i].Clone().Sub(&path[i-1])
-		if (i < l-1) {
-		  cur := *path[i+1].Clone().Sub(&path[i])
-		  tangents[i] = *prev.Clone().Add(&cur)
-		  tangents[i].Normalize()
-		  
+		if i < l-1 {
+			cur := *path[i+1].Clone().Sub(&path[i])
+			tangents[i] = *prev.Clone().Add(&cur)
+			tangents[i].Normalize()
+
 		}
 		normals[i] = *binormals[i-1].Clone().Cross(&tangents[i])
 		normals[i].Normalize()
@@ -190,11 +191,11 @@ func NewTube(path []math32.Vector3, radius float32, radialSegments int, close bo
 			x := normals[i].X
 			y := normals[i].Y
 			z := normals[i].Z
-			rw := 1 / (x * matrix[3] + y * matrix[7] + z * matrix[11] + matrix[15])
-			newX := (x * matrix[0] + y * matrix[4] + z * matrix[8] + matrix[12]) * rw
-			newY := (x * matrix[1] + y * matrix[5] + z * matrix[9] + matrix[13]) * rw
-			newZ := (x * matrix[2] + y * matrix[6] + z * matrix[10] + matrix[14]) * rw
-			
+			rw := 1 / (x*matrix[3] + y*matrix[7] + z*matrix[11] + matrix[15])
+			newX := (x*matrix[0] + y*matrix[4] + z*matrix[8] + matrix[12]) * rw
+			newY := (x*matrix[1] + y*matrix[5] + z*matrix[9] + matrix[13]) * rw
+			newZ := (x*matrix[2] + y*matrix[6] + z*matrix[10] + matrix[14]) * rw
+
 			rotated := math32.NewVector3(newX, newY, newZ).MultiplyScalar(radius).Add(&path[i])
 			radialPath = append(radialPath, *rotated)
 		}

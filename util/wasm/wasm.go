@@ -1,3 +1,4 @@
+// +build wasm
 // +build go1.13
 
 package wasm
@@ -62,7 +63,7 @@ func sliceToByteSlice(s interface{}) []byte {
 }
 
 func SliceToTypedArray(s interface{}) (val js.Value, free func()) {
-	free = func(){}
+	free = func() {}
 	switch s := s.(type) {
 	case []int8:
 		a := js.Global().Get("Uint8Array").New(len(s))

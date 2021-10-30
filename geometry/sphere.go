@@ -5,9 +5,10 @@
 package geometry
 
 import (
+	"math"
+
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/math32"
-	"math"
 )
 
 // NewSphere creates a sphere geometry with the specified radius and number of radial segments in each dimension.

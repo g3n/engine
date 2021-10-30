@@ -13,8 +13,8 @@ import (
 // Connects two bodies at the specified offset points.
 type PointToPoint struct {
 	Constraint
-	pivotA *math32.Vector3   // Pivot, defined locally in bodyA.
-	pivotB *math32.Vector3   // Pivot, defined locally in bodyB.
+	pivotA *math32.Vector3 // Pivot, defined locally in bodyA.
+	pivotB *math32.Vector3 // Pivot, defined locally in bodyB.
 	eqX    *equation.Contact
 	eqY    *equation.Contact
 	eqZ    *equation.Contact
@@ -40,9 +40,9 @@ func (ptpc *PointToPoint) initialize(bodyA, bodyB IBody, pivotA, pivotB *math32.
 	ptpc.eqY = equation.NewContact(bodyA, bodyB, -maxForce, maxForce)
 	ptpc.eqZ = equation.NewContact(bodyA, bodyB, -maxForce, maxForce)
 
-	ptpc.eqX.SetNormal(&math32.Vector3{1,0,0})
-	ptpc.eqY.SetNormal(&math32.Vector3{0,1,0})
-	ptpc.eqZ.SetNormal(&math32.Vector3{0,0,1})
+	ptpc.eqX.SetNormal(&math32.Vector3{1, 0, 0})
+	ptpc.eqY.SetNormal(&math32.Vector3{0, 1, 0})
+	ptpc.eqZ.SetNormal(&math32.Vector3{0, 0, 1})
 
 	ptpc.AddEquation(&ptpc.eqX.Equation)
 	ptpc.AddEquation(&ptpc.eqY.Equation)

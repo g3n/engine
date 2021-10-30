@@ -71,8 +71,17 @@ func (s *Sprite) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 
 	// Removes any rotation in X and Y axes and compose new model view matrix
 	rotation := s.Rotation()
-	rotation.X = 0
-	rotation.Y = 0
+	actualScale := s.Scale()
+	if actualScale.X >= 0 {
+		rotation.Y = 0
+	} else {
+		rotation.Y = math32.Pi
+	}
+	if actualScale.Y >= 0 {
+		rotation.X = 0
+	} else {
+		rotation.X = math32.Pi
+	}
 	quaternion.SetFromEuler(&rotation)
 	var mvmNew math32.Matrix4
 	mvmNew.Compose(&position, &quaternion, &scale)

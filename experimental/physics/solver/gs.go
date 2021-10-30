@@ -65,13 +65,13 @@ func (gs *GaussSeidel) Solve(dt float32, nBodies int) *Solution {
 	// Things that do not change during iteration can be computed once
 	for i := 0; i < nEquations; i++ {
 		eq := gs.equations[i]
-		gs.solveInvCs = append(gs.solveInvCs, 1.0 / eq.ComputeC())
+		gs.solveInvCs = append(gs.solveInvCs, 1.0/eq.ComputeC())
 		gs.solveBs = append(gs.solveBs, eq.ComputeB(h))
 		gs.solveLambda = append(gs.solveLambda, 0.0)
 	}
 
 	if nEquations > 0 {
-		tolSquared := gs.tolerance*gs.tolerance
+		tolSquared := gs.tolerance * gs.tolerance
 
 		// Iterate over equations
 		for iter = 0; iter < gs.maxIter; iter++ {
@@ -96,12 +96,12 @@ func (gs *GaussSeidel) Solve(dt float32, nBodies int) *Solution {
 				jeB := eq.JeB()
 				GWlambda := jeA.MultiplyVectors(&vA, &wA) + jeB.MultiplyVectors(&vB, &wB)
 
-				deltaLambda := gs.solveInvCs[j] * ( gs.solveBs[j]  - GWlambda - eq.Eps() *lambdaJ)
+				deltaLambda := gs.solveInvCs[j] * (gs.solveBs[j] - GWlambda - eq.Eps()*lambdaJ)
 
 				// Clamp if we are outside the min/max interval
-				if lambdaJ + deltaLambda < eq.MinForce() {
+				if (lambdaJ + deltaLambda) < eq.MinForce() {
 					deltaLambda = eq.MinForce() - lambdaJ
-				} else if lambdaJ + deltaLambda > eq.MaxForce() {
+				} else if (lambdaJ + deltaLambda) > eq.MaxForce() {
 					deltaLambda = eq.MaxForce() - lambdaJ
 				}
 				gs.solveLambda[j] += deltaLambda

@@ -7,13 +7,14 @@ package texture
 
 import (
 	"fmt"
-	"github.com/g3n/engine/util/logger"
 	"image"
 	"image/draw"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
 	"os"
+
+	"github.com/g3n/engine/util/logger"
 
 	"github.com/g3n/engine/gls"
 )
