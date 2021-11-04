@@ -10,6 +10,7 @@ import "github.com/g3n/engine/core"
 type KeyState struct {
 	win    core.IDispatcher
 	states map[Key]bool
+	pressed map[Key]bool
 }
 
 // NewKeyState returns a new KeyState object.
@@ -140,6 +141,7 @@ func NewKeyState(win core.IDispatcher) *KeyState {
 		KeyRightSuper:   false,
 		KeyMenu:         false,
 	}
+	ks.pressed = make(map[Key]bool)
 
 	// Subscribe to window key events
 	ks.win.SubscribeID(OnKeyUp, &ks, ks.onKey)
@@ -161,6 +163,11 @@ func (ks *KeyState) Pressed(k Key) bool {
 	return ks.states[k]
 }
 
+// PressedKeys returns all pressed keys
+func (ks *KeyState) PressedKeys() map[Key]bool {
+	return ks.pressed
+}
+
 // onKey receives key events and updates the internal map of states.
 func (ks *KeyState) onKey(evname string, ev interface{}) {
 
@@ -168,7 +175,9 @@ func (ks *KeyState) onKey(evname string, ev interface{}) {
 	switch evname {
 	case OnKeyUp:
 		ks.states[kev.Key] = false
+		delete(ks.pressed, kev.Key)
 	case OnKeyDown:
 		ks.states[kev.Key] = true
+		ks.pressed[kev.Key] = true
 	}
 }

@@ -211,6 +211,7 @@ type GlfwWindow struct {
 	// Cursors
 	cursors       map[Cursor]*glfw.Cursor
 	lastCursorKey Cursor
+	cursorMode    CursorMode
 }
 
 // Init initializes the GlfwWindow singleton with the specified width, height, and title.
@@ -360,7 +361,7 @@ func Init(width, height int, title string) error {
 		w.scrollEv.Mods = w.mods
 		w.Dispatch(OnScroll, &w.scrollEv)
 	})
-
+	w.cursorMode = CursorNormal
 	win = w // Set singleton
 	return nil
 }
@@ -471,6 +472,23 @@ func (w *GlfwWindow) CreateCursor(imgFile string, xhot, yhot int) (Cursor, error
 	return w.lastCursorKey, nil
 }
 
+// SetCursorMode sets the window's cursor mode
+func (w *GlfwWindow) SetCursorMode(mode CursorMode){
+	w.cursorMode = mode
+	w.SetInputMode(glfw.CursorMode, int(mode))
+}
+
+// CursorMode gets the window's cursor mode
+func (w *GlfwWindow) CursorMode() CursorMode{
+	return w.cursorMode
+}
+
+// CursorPosition returns the window's cursor position
+func (w *GlfwWindow) CursorPosition() (x,y float32){
+	xx,yy := w.GetCursorPos()
+	return float32(xx), float32(yy)
+}
+
 // DisposeCursor deletes the existing custom cursor with the provided int handle.
 func (w *GlfwWindow) DisposeCursor(cursor Cursor) {
 
@@ -495,8 +513,28 @@ func (w *GlfwWindow) DisposeAllCustomCursors() {
 	w.lastCursorKey = CursorLast
 }
 
+// CaptureScreenshot returns screenshot of the window
+func (w *GlfwWindow) CaptureScreenshot() image.Image{
+	width,height := w.GetFramebufferSize()
+	rect := image.Rect(0,0,width,height)
+	rgba := image.NewRGBA(rect)
+
+	//todo pbo/fbo
+	imgBytes := w.Gls().ReadPixels(0,0, width, height, gls.RGBA, gls.UNSIGNED_BYTE)
+
+	nBytes := []byte{}
+	rowHeight := 4*width
+	for i := height-1; i >= 0; i-- {
+		nBytes = append(nBytes, imgBytes[rowHeight*i:rowHeight*i+rowHeight]...)
+	}
+	rgba.Pix = nBytes
+	return rgba
+}
+
 // Center centers the window on the screen.
-//func (w *GlfwWindow) Center() {
-//
-//	// TODO
-//}
+func (w *GlfwWindow) Center() {
+	screenW, screenH := w.ScreenResolution(nil)
+	winW, winH := w.GetSize()
+
+	w.SetPos(screenW/2-winW/2, screenH/2-winH/2)
+}
