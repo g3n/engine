@@ -327,7 +327,7 @@ func (d *Decoder) decMesh(start xml.StartElement, geom *Geometry) error {
 			continue
 		}
 		// Decodes polylist
-		if child.Name.Local == "polylist" {
+		if child.Name.Local == "polylist" || child.Name.Local == "triangles" {
 			err = d.decPolylist(child, mesh)
 			if err != nil {
 				return err
@@ -416,6 +416,15 @@ func (d *Decoder) decPolylist(start xml.StartElement, mesh *Mesh) error {
 	pl.Count, _ = strconv.Atoi(findAttrib(start, "count").Value)
 	pl.Material = findAttrib(start, "material").Value
 	mesh.PrimitiveElements = append(mesh.PrimitiveElements, pl)
+
+	// blender exporter now (since v2.79) exports meshes as <Triangles> when all contained polygons are tris
+	// https://developer.blender.org/rBc9b95c28f64e9d7421b00cbf8ed4ecddd6471ae5
+	if start.Name.Local == "triangles" {
+		pl.Vcount = make([]int, pl.Count)
+		for i := range pl.Vcount {
+			pl.Vcount[i] = 3
+		}
+	}
 
 	for {
 		// Get next child
