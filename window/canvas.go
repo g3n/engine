@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/gls"
+	"github.com/g3n/engine/util/wasm"
 	_ "image/png"
 	"syscall/js"
 )
@@ -357,14 +358,14 @@ func Init(canvasId string) error {
 		w.canvas = doc.Call("createElement", "WebGlCanvas")
 	} else {
 		w.canvas = doc.Call("getElementById", canvasId)
-		if w.canvas == js.Null() {
+		if wasm.Equal(w.canvas, js.Null()) {
 			panic(fmt.Sprintf("Cannot find canvas with provided id: %s", canvasId))
 		}
 	}
 
 	// Get reference to WebGL context
 	webglCtx := w.canvas.Call("getContext", "webgl2")
-	if webglCtx == js.Undefined() {
+	if wasm.Equal(webglCtx, js.Undefined()) {
 		return fmt.Errorf("Browser doesn't support WebGL2")
 	}
 

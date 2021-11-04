@@ -393,7 +393,7 @@ func (v *Vector3) SetLength(l float32) *Vector3 {
 }
 
 // Lerp sets each of this vector's components to the linear interpolated value of
-// alpha between ifself and the corresponding other component.
+// alpha between itself and the corresponding other component.
 // Returns the pointer to this updated vector.
 func (v *Vector3) Lerp(other *Vector3, alpha float32) *Vector3 {
 
@@ -642,12 +642,12 @@ func (v *Vector3) SetFromQuaternion(q *Quaternion) *Vector3 {
 // RandomTangents computes and returns two arbitrary tangents to the vector.
 func (v *Vector3) RandomTangents() (*Vector3, *Vector3) {
 
-	t1 := NewVector3(0,0,0)
-	t2 := NewVector3(0,0,0)
+	t1 := NewVector3(0, 0, 0)
+	t2 := NewVector3(0, 0, 0)
 	length := v.Length()
 	if length > 0 {
 		n := NewVector3(v.X/length, v.Y/length, v.Z/length)
-		randVec := NewVector3(0,0,0)
+		randVec := NewVector3(0, 0, 0)
 		if Abs(n.X) < 0.9 {
 			randVec.SetX(1)
 			t1.CrossVectors(n, randVec)
@@ -671,10 +671,15 @@ func (v *Vector3) RandomTangents() (*Vector3, *Vector3) {
 // AlmostEquals returns whether the vector is almost equal to another vector within the specified tolerance.
 func (v *Vector3) AlmostEquals(other *Vector3, tolerance float32) bool {
 
-	if (Abs(v.X - other.X) < tolerance) &&
-		(Abs(v.Y - other.Y) < tolerance) &&
-		(Abs(v.Z - other.Z) < tolerance) {
-			return true
+	if (Abs(v.X-other.X) < tolerance) &&
+		(Abs(v.Y-other.Y) < tolerance) &&
+		(Abs(v.Z-other.Z) < tolerance) {
+		return true
 	}
 	return false
+}
+
+// Vector4 returns a new Vector4 based on this vector and the provided w value.
+func (v *Vector3) Vector4(w float32) *Vector4 {
+	return &Vector4{X: v.X, Y: v.Y, Z: v.Z, W: w}
 }

@@ -29,7 +29,7 @@ func (sd *ShaderDefines) Unset(name string) {
 // Add adds to this ShaderDefines all the key-value pairs in the specified ShaderDefines.
 func (sd *ShaderDefines) Add(other *ShaderDefines) {
 
-	for k, v := range map[string]string(*other){
+	for k, v := range map[string]string(*other) {
 		(*sd)[k] = v
 	}
 }

@@ -704,11 +704,8 @@ func (dec *Decoder) parseSmooth(fields []string) error {
 		dec.smoothCurrent = false
 		return nil
 	}
-	if fields[0] == "1" || fields[0] == "on" {
-		dec.smoothCurrent = true
-		return nil
-	}
-	return dec.formatError("'s' with invalid value")
+	dec.smoothCurrent = true
+	return nil
 }
 
 /******************************************************************************

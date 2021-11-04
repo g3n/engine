@@ -7,13 +7,14 @@ package texture
 
 import (
 	"fmt"
-	"github.com/g3n/engine/util/logger"
 	"image"
 	"image/draw"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
 	"os"
+
+	"github.com/g3n/engine/util/logger"
 
 	"github.com/g3n/engine/gls"
 )
@@ -140,6 +141,12 @@ func (t *Texture2D) Dispose() {
 		t.gs.DeleteTextures(t.texname)
 		t.gs = nil
 	}
+}
+
+// TexName returns the texture handle for the texture
+func (t *Texture2D) TexName() uint32 {
+
+	return t.texname
 }
 
 // SetUniformNames sets the names of the uniforms in the shader for sampler and texture info.

@@ -265,7 +265,7 @@ func (q *Quaternion) Normalize() *Quaternion {
 // Returns pointer to this updated quaternion.
 func (q *Quaternion) NormalizeFast() *Quaternion {
 
-	f := (3.0-(q.X*q.X + q.Y*q.Y + q.Z*q.Z + q.W*q.W))/2.0
+	f := (3.0 - (q.X*q.X + q.Y*q.Y + q.Z*q.Z + q.W*q.W)) / 2.0
 	if f == 0 {
 		q.X = 0
 		q.Y = 0
@@ -346,9 +346,9 @@ func (q *Quaternion) Slerp(other *Quaternion, t float32) *Quaternion {
 		return q
 	}
 
-	sqrSinHalfTheta := 1.0 - cosHalfTheta * cosHalfTheta
+	sqrSinHalfTheta := 1.0 - cosHalfTheta*cosHalfTheta
 	if sqrSinHalfTheta < 0.001 {
-		s := 1-t
+		s := 1 - t
 		q.W = s*w + t*q.W
 		q.X = s*x + t*q.X
 		q.Y = s*y + t*q.Y
@@ -356,8 +356,8 @@ func (q *Quaternion) Slerp(other *Quaternion, t float32) *Quaternion {
 		return q.Normalize()
 	}
 
-	sinHalfTheta := Sqrt( sqrSinHalfTheta )
-	halfTheta := Atan2( sinHalfTheta, cosHalfTheta )
+	sinHalfTheta := Sqrt(sqrSinHalfTheta)
+	halfTheta := Atan2(sinHalfTheta, cosHalfTheta)
 	ratioA := Sin((1-t)*halfTheta) / sinHalfTheta
 	ratioB := Sin(t*halfTheta) / sinHalfTheta
 

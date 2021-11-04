@@ -43,7 +43,7 @@ func NewLock(bodyA, bodyB IBody, maxForce float32) *Lock {
 	lc.initialize(bodyA, bodyB, &pivotA, &pivotB, maxForce)
 
 	// Store initial rotation of the bodies as unit vectors in the local body spaces
-	UnitX := math32.NewVector3(1,0,0)
+	UnitX := math32.NewVector3(1, 0, 0)
 
 	localA := bodyA.VectorToLocal(UnitX)
 	localB := bodyB.VectorToLocal(UnitX)

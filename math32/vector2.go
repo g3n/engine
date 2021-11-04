@@ -23,6 +23,12 @@ func NewVec2() *Vector2 {
 	return &Vector2{X: 0, Y: 0}
 }
 
+// Clone returns a copy of this vector
+func (v *Vector2) Clone() *Vector2 {
+
+	return NewVector2(v.X, v.Y)
+}
+
 // Set sets this vector X and Y components.
 // Returns the pointer to this updated vector.
 func (v *Vector2) Set(x, y float32) *Vector2 {
@@ -403,4 +409,22 @@ func (v *Vector2) InTriangle(p0, p1, p2 *Vector2) bool {
 	t := (p0.X*p1.Y - p0.Y*p1.X + (p0.Y-p1.Y)*v.X + (p1.X-p0.X)*v.Y) * sign
 
 	return s >= 0 && t >= 0 && (s+t) < 2*A*sign
+}
+
+// AlmostEquals returns whether the vector is almost equal to another vector within the specified tolerance.
+func (v *Vector2) AlmostEquals(other *Vector2, tolerance float32) bool {
+
+	if (Abs(v.X-other.X) < tolerance) &&
+		(Abs(v.Y-other.Y) < tolerance) {
+		return true
+	}
+	return false
+}
+
+// AngleTo returns the angle between this vector and other
+func (v *Vector2) AngleTo(other *Vector2) float32 {
+
+	theta := v.Dot(other) / (v.Length() * other.Length())
+	// clamp, to handle numerical problems
+	return Acos(Clamp(theta, -1, 1))
 }

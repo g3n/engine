@@ -16,7 +16,7 @@ type Plane struct {
 func NewPlane() *Plane {
 
 	p := new(Plane)
-	p.normal = *math32.NewVector3(0,0,1) //*normal
+	p.normal = *math32.NewVector3(0, 0, 1) //*normal
 	return p
 }
 

@@ -6,14 +6,16 @@
 // The libvorbisfile C API reference is at: https://xiph.org/vorbis/doc/vorbisfile/reference.html
 package ov
 
-// #cgo darwin   CFLAGS:  -DGO_DARWIN  -I/usr/include/vorbis -I/usr/local/include/vorbis
-// #cgo freebsd  CFLAGS:  -DGO_FREEBSD -I/usr/include/vorbis -I/usr/local/include/vorbis
-// #cgo linux    CFLAGS:  -DGO_LINUX   -I/usr/include/vorbis
-// #cgo windows  CFLAGS:  -DGO_WINDOWS -I${SRCDIR}/../windows/libvorbis-1.3.5/include/vorbis -I${SRCDIR}/../windows/libogg-1.3.3/include
-// #cgo darwin   LDFLAGS: -L/usr/lib -L/usr/local/lib -lvorbisfile
-// #cgo freebsd  LDFLAGS: -L/usr/lib -L/usr/local/lib -lvorbisfile
-// #cgo linux    LDFLAGS: -lvorbisfile
-// #cgo windows  LDFLAGS: -L${SRCDIR}/../windows/bin -llibvorbisfile
+// #cgo darwin,amd64  CFLAGS:  -DGO_DARWIN  -I/usr/include/vorbis -I/usr/local/include/vorbis
+// #cgo darwin,arm64  CFLAGS:  -DGO_DARWIN  -I/opt/homebrew/include -I/opt/homebrew/include/vorbis
+// #cgo freebsd       CFLAGS:  -DGO_FREEBSD -I/usr/include/vorbis -I/usr/local/include/vorbis
+// #cgo linux         CFLAGS:  -DGO_LINUX   -I/usr/include/vorbis
+// #cgo windows       CFLAGS:  -DGO_WINDOWS -I${SRCDIR}/../windows/libvorbis-1.3.5/include/vorbis -I${SRCDIR}/../windows/libogg-1.3.3/include
+// #cgo darwin,amd64  LDFLAGS: -L/usr/lib -L/usr/local/lib -lvorbisfile
+// #cgo darwin,arm64  LDFLAGS: -L/opt/homebrew/lib -lvorbisfile
+// #cgo freebsd       LDFLAGS: -L/usr/lib -L/usr/local/lib -lvorbisfile
+// #cgo linux         LDFLAGS: -lvorbisfile
+// #cgo windows       LDFLAGS: -L${SRCDIR}/../windows/bin -llibvorbisfile
 // #include <stdlib.h>
 // #include "vorbisfile.h"
 import "C"
@@ -138,10 +140,7 @@ func Info(f *File, link int, info *VorbisInfo) error {
 func Seekable(f *File) bool {
 
 	cres := C.ov_seekable(f.vf)
-	if cres == 0 {
-		return false
-	}
-	return true
+	return cres != 0
 }
 
 // Seek seeks to the offset specified (in number pcm samples) within the physical bitstream.

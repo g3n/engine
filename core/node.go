@@ -132,7 +132,11 @@ func (n *Node) BoundingBox() math32.Box3 {
 func (n *Node) Render(gs *gls.GLS) {}
 
 // Dispose satisfies the INode interface.
-func (n *Node) Dispose() {}
+func (n *Node) Dispose() {
+	for _, child := range n.children {
+		child.Dispose()
+	}
+}
 
 // Clone clones the Node and satisfies the INode interface.
 func (n *Node) Clone() INode {
@@ -142,6 +146,7 @@ func (n *Node) Clone() INode {
 	// TODO clone Dispatcher?
 	clone.Dispatcher.Initialize()
 
+	clone.inode = clone
 	clone.parent = n.parent
 	clone.name = n.name + " (Clone)" // TODO append count?
 	clone.loaderID = n.loaderID

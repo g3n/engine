@@ -5,9 +5,9 @@
 package shape
 
 import (
+	"github.com/g3n/engine/experimental/collision"
 	"github.com/g3n/engine/geometry"
 	"github.com/g3n/engine/math32"
-	"github.com/g3n/engine/experimental/collision"
 )
 
 // ConvexHull is a convex triangle-based geometry used for collision detection and contact resolution.
@@ -20,7 +20,6 @@ type ConvexHull struct {
 	worldFaceNormals []math32.Vector3
 	uniqueEdges      []math32.Vector3
 	worldUniqueEdges []math32.Vector3
-
 }
 
 func NewConvexHull(geom *geometry.Geometry) *ConvexHull {
@@ -357,7 +356,6 @@ func (ch *ConvexHull) clipFaceAgainstHull(posA, penAxis *math32.Vector3, quatA *
 		}
 	}
 
-
 	worldClosestFaceA := ch.WorldFace(closestFaceA, posA, quatA)
 	// DEBUGGING
 	//if n.debugging {
@@ -386,7 +384,7 @@ func (ch *ConvexHull) clipFaceAgainstHull(posA, penAxis *math32.Vector3, quatA *
 		connFaceNormal := worldFaceNormalsA[cfidx]
 		// Choose a vertex in the connected face and use it to find the plane constant
 		worldFirstVertex := connFace[0].Clone().ApplyQuaternion(quatA).Add(posA)
-		planeDelta := - worldFirstVertex.Dot(&connFaceNormal)
+		planeDelta := -worldFirstVertex.Dot(&connFaceNormal)
 		clippedFace = ch.clipFaceAgainstPlane(clippedFace, connFaceNormal.Clone(), planeDelta)
 	}
 
@@ -397,7 +395,7 @@ func (ch *ConvexHull) clipFaceAgainstHull(posA, penAxis *math32.Vector3, quatA *
 	//}
 
 	closestFaceAnormal := worldFaceNormalsA[closestFaceAidx]
-	worldFirstVertex := worldClosestFaceA[0].Clone()//.ApplyQuaternion(quatA).Add(&posA)
+	worldFirstVertex := worldClosestFaceA[0].Clone() //.ApplyQuaternion(quatA).Add(&posA)
 	planeDelta := -worldFirstVertex.Dot(&closestFaceAnormal)
 
 	// For each vertex in the clipped face resolve its depth (relative to the closestFaceA) and create a contact
@@ -410,9 +408,9 @@ func (ch *ConvexHull) clipFaceAgainstHull(posA, penAxis *math32.Vector3, quatA *
 		if depth <= maxDist {
 			if depth <= 0 {
 				contacts = append(contacts, collision.Contact{
-					Point: vertex,
+					Point:  vertex,
 					Normal: closestFaceAnormal,
-					Depth: depth,
+					Depth:  depth,
 				})
 			}
 		}
@@ -421,7 +419,6 @@ func (ch *ConvexHull) clipFaceAgainstHull(posA, penAxis *math32.Vector3, quatA *
 
 	return contacts
 }
-
 
 // clipFaceAgainstPlane clips the specified face against the back of the specified plane.
 // This is used multiple times when finding the portion of a face of one convex hull that is inside another convex hull.
@@ -447,12 +444,12 @@ func (ch *ConvexHull) clipFaceAgainstPlane(face []math32.Vector3, planeNormal *m
 			if dotLast < 0 { // Start < 0, end < 0, so output lastVertex
 				clippedFace = append(clippedFace, lastVertex)
 			} else { // Start < 0, end >= 0, so output intersection
-				newv := firstVertex.Clone().Lerp(&lastVertex, dotFirst / (dotFirst - dotLast))
+				newv := firstVertex.Clone().Lerp(&lastVertex, dotFirst/(dotFirst-dotLast))
 				clippedFace = append(clippedFace, *newv)
 			}
 		} else { // Outside hull
 			if dotLast < 0 { // Start >= 0, end < 0 so output intersection and end
-				newv := firstVertex.Clone().Lerp(&lastVertex, dotFirst / (dotFirst - dotLast))
+				newv := firstVertex.Clone().Lerp(&lastVertex, dotFirst/(dotFirst-dotLast))
 				clippedFace = append(clippedFace, *newv)
 				clippedFace = append(clippedFace, lastVertex)
 			}

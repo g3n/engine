@@ -10,13 +10,14 @@ package audio
 import "C"
 
 import (
+	"io"
+	"time"
+	"unsafe"
+
 	"github.com/g3n/engine/audio/al"
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/math32"
-	"io"
-	"time"
-	"unsafe"
 )
 
 const (

@@ -6,9 +6,10 @@ package collada
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/math32"
-	"strings"
 )
 
 // AnimationTarget contains all animation channels for an specific target node

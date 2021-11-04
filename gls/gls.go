@@ -13,9 +13,10 @@
 package gls
 
 import (
-	"github.com/g3n/engine/util/logger"
 	"math"
 	"unsafe"
+
+	"github.com/g3n/engine/util/logger"
 )
 
 // Package logger

@@ -45,13 +45,13 @@ type IEquation interface {
 // Equation is a SPOOK constraint equation.
 type Equation struct {
 	id         int
-	minForce   float32       // Minimum (read: negative max) force to be applied by the constraint.
-	maxForce   float32       // Maximum (read: positive max) force to be applied by the constraint.
-	bA         IBody // Body "i"
-	bB         IBody // Body "j"
-	a          float32       // SPOOK parameter
-	b          float32       // SPOOK parameter
-	eps        float32       // SPOOK parameter
+	minForce   float32 // Minimum (read: negative max) force to be applied by the constraint.
+	maxForce   float32 // Maximum (read: positive max) force to be applied by the constraint.
+	bA         IBody   // Body "i"
+	bB         IBody   // Body "j"
+	a          float32 // SPOOK parameter
+	b          float32 // SPOOK parameter
+	eps        float32 // SPOOK parameter
 	jeA        JacobianElement
 	jeB        JacobianElement
 	enabled    bool

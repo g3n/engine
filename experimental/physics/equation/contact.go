@@ -25,9 +25,9 @@ func NewContact(bodyA, bodyB IBody, minForce, maxForce float32) *Contact {
 	// minForce default should be 0.
 
 	ce.restitution = 0.5
-	ce.rA = &math32.Vector3{0,0,0}
-	ce.rB = &math32.Vector3{0,0,0}
-	ce.nA = &math32.Vector3{0,0,0}
+	ce.rA = &math32.Vector3{0, 0, 0}
+	ce.rB = &math32.Vector3{0, 0, 0}
+	ce.nA = &math32.Vector3{0, 0, 0}
 
 	ce.Equation.initialize(bodyA, bodyB, minForce, maxForce)
 
@@ -44,7 +44,7 @@ func (ce *Contact) Restitution() float32 {
 	return ce.restitution
 }
 
-func (ce *Contact) SetNormal(newNormal *math32.Vector3)  {
+func (ce *Contact) SetNormal(newNormal *math32.Vector3) {
 
 	ce.nA = newNormal
 }
@@ -54,7 +54,7 @@ func (ce *Contact) Normal() math32.Vector3 {
 	return *ce.nA
 }
 
-func (ce *Contact) SetRA(newRa *math32.Vector3)  {
+func (ce *Contact) SetRA(newRa *math32.Vector3) {
 
 	ce.rA = newRa
 }
@@ -64,7 +64,7 @@ func (ce *Contact) RA() math32.Vector3 {
 	return *ce.rA
 }
 
-func (ce *Contact) SetRB(newRb *math32.Vector3)  {
+func (ce *Contact) SetRB(newRb *math32.Vector3) {
 
 	ce.rB = newRb
 }
@@ -103,7 +103,7 @@ func (ce *Contact) ComputeB(h float32) float32 {
 
 	// Compute iteration
 	ePlusOne := ce.restitution + 1
-	GW := ePlusOne * vB.Dot(ce.nA) - ePlusOne * vA.Dot(ce.nA) + wB.Dot(rnB) - wA.Dot(rnA)
+	GW := ePlusOne*vB.Dot(ce.nA) - ePlusOne*vA.Dot(ce.nA) + wB.Dot(rnB) - wA.Dot(rnA)
 	GiMf := ce.ComputeGiMf()
 
 	return -g*ce.a - GW*ce.b - h*GiMf

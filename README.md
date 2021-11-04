@@ -2,7 +2,9 @@
 <p align="center"><img width="150" src="https://github.com/g3n/g3nd/blob/master/data/images/g3n_logo.png" alt="G3N Banner"/></p>
 <p align="center">
   <a href="https://godoc.org/github.com/g3n/engine"><img src="https://godoc.org/github.com/g3n/engine?status.svg" alt="Godoc"></img></a>
-  <a href="https://goreportcard.com/report/github.com/g3n/engine"><img src="https://goreportcard.com/badge/github.com/g3n/engine"  alt="Go Report Card"/></a>
+  <a href="https://goreportcard.com/report/github.com/g3n/engine"><img src="https://goreportcard.com/badge/github.com/g3n/engine" alt="Go Report Card"/></a>
+  <a href="https://discord.gg/Dq9FpV4c"><img src="https://img.shields.io/badge/Discord-G3N-blue" alt="Discord"/></a>
+  
 </p>
 <p><h1 align="center">G3N - Go 3D Game Engine</h1></p>
 
@@ -78,7 +80,7 @@ go install ./...
 * Geometry generators: box, sphere, cylinder, torus, etc...
 * Geometries support morph targets and multimaterials
 * Support for animated sprites based on sprite sheets
-* Perspective and ortographic cameras
+* Perspective and orthographic cameras
 * Text image generation and support for TrueType fonts
 * Image textures can be loaded from GIF, PNG or JPEG files
 * Animation framework for position, rotation, and scale of objects
@@ -204,4 +206,8 @@ If you find a bug or create a new feature you are encouraged to send pull reques
 
 ## Community
 
-Join our [channel](https://gophers.slack.com/messages/g3n) on Gophers Slack ([Click here to register for Gophers Slack](https://invite.slack.golangbridge.org/)). It's a great way to have your questions answered quickly by the G3N community.
+Join our [Discord channel](https://discord.gg/NfaeVr8zDg). It's the best way to have your questions answered quickly by the G3N community.
+
+## Stargazers over time
+
+[![Stargazers over time](https://starchart.cc/g3n/engine.svg)](https://starchart.cc/g3n/engine)
