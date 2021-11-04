@@ -40,6 +40,8 @@ type IWindow interface {
 	SetCursor(cursor Cursor)
 	DisposeAllCustomCursors()
 	Destroy()
+	FullScreen() bool
+	SetFullScreen(full bool)
 }
 
 // Key corresponds to a keyboard key.
