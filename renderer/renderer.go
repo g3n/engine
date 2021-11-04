@@ -383,7 +383,7 @@ func (r *Renderer) CreatePostprocessor(width, height int32, vertexShaderSource, 
 		},
 	}
 
-	pp.Fbo = r.gs.GenFrameBuffer()
+	pp.Fbo = r.gs.GenFramebuffer()
 	r.gs.BindFramebuffer(pp.Fbo)
 
 	// set up a texture to render into
