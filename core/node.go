@@ -142,6 +142,7 @@ func (n *Node) Clone() INode {
 	// TODO clone Dispatcher?
 	clone.Dispatcher.Initialize()
 
+	clone.inode = clone
 	clone.parent = n.parent
 	clone.name = n.name + " (Clone)" // TODO append count?
 	clone.loaderID = n.loaderID
