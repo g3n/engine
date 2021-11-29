@@ -145,72 +145,74 @@ func DecodeReader(objreader, mtlreader io.Reader) (*Decoder, error) {
 		return nil, err
 	}
 
-	// Parses mtl lines
-	// 1) try passed in mtlreader,
-	// 2) try file in mtllib line
-	// 3) try <obj_filename>.mtl
-	// 4) use default material as last resort
-	dec.matCurrent = nil
-	dec.line = 1
-	// first try: use the material file passed in as an io.Reader
-	err = dec.parse(mtlreader, dec.parseMtlLine)
-	if err != nil {
-
-		// 2) if mtlreader produces an error (eg. it's nil), try the file listed
-		// in the OBJ's matlib line, if it exists.
-		if dec.Matlib != "" {
-			// ... first need to get the path of the OBJ, since mtllib is relative
-			var mtllibPath string
-			if objf, ok := objreader.(*os.File); ok {
-				// NOTE (quillaja): this is a hack because we need the directory of
-				// the OBJ, but can't get it any other way (dec.mtlDir isn't set
-				// until AFTER this function is finished).
-				objdir := filepath.Dir(objf.Name())
-				mtllibPath = filepath.Join(objdir, dec.Matlib)
-				dec.mtlDir = objdir // NOTE (quillaja): should this be set?
-			}
-			mtlf, errMTL := os.Open(mtllibPath)
-			defer mtlf.Close()
-			if errMTL == nil {
-				err = dec.parse(mtlf, dec.parseMtlLine) // will set err to nil if successful
-			}
-		}
-
-		// 3) if the mtllib line fails try <obj_filename>.mtl in the same directory.
-		// process is basically identical to the above code block.
+	if (mtlreader != nil) {
+		// Parses mtl lines
+		// 1) try passed in mtlreader,
+		// 2) try file in mtllib line
+		// 3) try <obj_filename>.mtl
+		// 4) use default material as last resort
+		dec.matCurrent = nil
+		dec.line = 1
+		// first try: use the material file passed in as an io.Reader
+		err = dec.parse(mtlreader, dec.parseMtlLine)
 		if err != nil {
-			var mtlpath string
-			if objf, ok := objreader.(*os.File); ok {
-				objdir := strings.TrimSuffix(objf.Name(), ".obj")
-				mtlpath = objdir + ".mtl"
-				dec.mtlDir = objdir // NOTE (quillaja): should this be set?
-			}
-			mtlf, errMTL := os.Open(mtlpath)
-			defer mtlf.Close()
-			if errMTL == nil {
-				err = dec.parse(mtlf, dec.parseMtlLine) // will set err to nil if successful
-				if err == nil {
-					// log a warning
-					msg := fmt.Sprintf("using material file %s", mtlpath)
-					dec.appendWarn(mtlType, msg)
+
+			// 2) if mtlreader produces an error (eg. it's nil), try the file listed
+			// in the OBJ's matlib line, if it exists.
+			if dec.Matlib != "" {
+				// ... first need to get the path of the OBJ, since mtllib is relative
+				var mtllibPath string
+				if objf, ok := objreader.(*os.File); ok {
+					// NOTE (quillaja): this is a hack because we need the directory of
+					// the OBJ, but can't get it any other way (dec.mtlDir isn't set
+					// until AFTER this function is finished).
+					objdir := filepath.Dir(objf.Name())
+					mtllibPath = filepath.Join(objdir, dec.Matlib)
+					dec.mtlDir = objdir // NOTE (quillaja): should this be set?
+				}
+				mtlf, errMTL := os.Open(mtllibPath)
+				defer mtlf.Close()
+				if errMTL == nil {
+					err = dec.parse(mtlf, dec.parseMtlLine) // will set err to nil if successful
 				}
 			}
-		}
 
-		// 4) handle error(s) instead of simply passing it up the call stack.
-		// range over the materials named in the OBJ file and substitute a default
-		// But log that an error occured.
-		if err != nil {
-			for key := range dec.Materials {
-				dec.Materials[key] = defaultMat
+			// 3) if the mtllib line fails try <obj_filename>.mtl in the same directory.
+			// process is basically identical to the above code block.
+			if err != nil {
+				var mtlpath string
+				if objf, ok := objreader.(*os.File); ok {
+					objdir := strings.TrimSuffix(objf.Name(), ".obj")
+					mtlpath = objdir + ".mtl"
+					dec.mtlDir = objdir // NOTE (quillaja): should this be set?
+				}
+				mtlf, errMTL := os.Open(mtlpath)
+				defer mtlf.Close()
+				if errMTL == nil {
+					err = dec.parse(mtlf, dec.parseMtlLine) // will set err to nil if successful
+					if err == nil {
+						// log a warning
+						msg := fmt.Sprintf("using material file %s", mtlpath)
+						dec.appendWarn(mtlType, msg)
+					}
+				}
 			}
-			// NOTE (quillaja): could be an error of some custom type. But people
-			// tend to ignore errors and pass them up the call stack instead
-			// of handling them... so all this work would probably be wasted.
-			dec.appendWarn(mtlType, "unable to parse a material file for obj. using default material instead.")
+
+			// 4) handle error(s) instead of simply passing it up the call stack.
+			// range over the materials named in the OBJ file and substitute a default
+			// But log that an error occured.
+			if err != nil {
+				fmt.Println("Using default material")
+				for key := range dec.Materials {
+					dec.Materials[key] = defaultMat
+				}
+				// NOTE (quillaja): could be an error of some custom type. But people
+				// tend to ignore errors and pass them up the call stack instead
+				// of handling them... so all this work would probably be wasted.
+				dec.appendWarn(mtlType, "unable to parse a material file for obj. using default material instead.")
+			}
 		}
 	}
-
 	return dec, nil
 }
 
@@ -399,7 +401,7 @@ func (dec *Decoder) loadTex(mat *material.Material, desc *Material) error {
 // parse reads the lines from the specified reader and dispatch them
 // to the specified line parser.
 func (dec *Decoder) parse(reader io.Reader, parseLine func(string) error) error {
-
+	fmt.Println("Hi!", reader)
 	bufin := bufio.NewReader(reader)
 	dec.line = 1
 	for {
