@@ -401,7 +401,6 @@ func (dec *Decoder) loadTex(mat *material.Material, desc *Material) error {
 // parse reads the lines from the specified reader and dispatch them
 // to the specified line parser.
 func (dec *Decoder) parse(reader io.Reader, parseLine func(string) error) error {
-	fmt.Println("Hi!", reader)
 	bufin := bufio.NewReader(reader)
 	dec.line = 1
 	for {
