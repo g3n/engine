@@ -42,9 +42,13 @@ On Unix-based systems the engine depends on some C libraries that can be install
 Enable the EPEL repository:
 
     $ sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-
+    
 Then install the same packages as for Fedora - remember to use `yum` instead of `dnf` for the package installation command.
+    
+### Arch
 
+    $ sudo pacman -S base-devel xorg-server mesa openal libvorbis
+    
 ### Windows
 
 We tested the Windows build using the [mingw-w64](https://mingw-w64.org) toolchain (you can download [this file](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/8.1.0/threads-posix/seh/x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z) in particular).
