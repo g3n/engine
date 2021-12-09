@@ -49,6 +49,10 @@ Then install the same packages as for Fedora - remember to use `yum` instead of 
 
     $ sudo pacman -S base-devel xorg-server mesa openal libvorbis
     
+### Void
+
+    $ sudo xbps-install git xorg-server-devel base-devel libvorbis-devel libvorbis libXxf86vm-devel libXcursor-devel libXrandr-devel libXinerama-devel libopenal libopenal-devel libglvnd-devel
+    
 ### Windows
 
 We tested the Windows build using the [mingw-w64](https://mingw-w64.org) toolchain (you can download [this file](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/8.1.0/threads-posix/seh/x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z) in particular).
