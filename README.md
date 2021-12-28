@@ -35,7 +35,7 @@ On Unix-based systems the engine depends on some C libraries that can be install
 
 ### Fedora
 
-    $ sudo dnf -y install xorg-x11-proto-devel mesa-libGL mesa-libGL-devel openal-soft openal-soft-devel libvorbis libvorbis-devel glfw-devel libXi-devel
+    $ sudo dnf -y install xorg-x11-proto-devel mesa-libGL mesa-libGL-devel openal-soft openal-soft-devel libvorbis libvorbis-devel glfw-devel libXi-devel libXxf86vm-devel
 
 ### CentOS 7
 
