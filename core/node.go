@@ -246,41 +246,27 @@ func (n *Node) UserData() interface{} {
 	return n.userData
 }
 
-// FindPath finds a node with the specified path starting with this node and
-// searching in all its children recursively.
-// A path is the sequence of the names from the first node to the desired node
-// separated by the forward slash.
+// FindPath finds a node with the specified path by recursively searching the children.
+// A path is a sequence of names of nested child nodes, separated by a forward slash.
 func (n *Node) FindPath(path string) INode {
 
-	// Internal recursive function to find node
-	var finder func(inode INode, path string) INode
-	finder = func(inode INode, path string) INode {
-		// Get first component of the path
-		parts := strings.Split(path, "/")
-		if len(parts) == 0 {
-			return nil
-		}
-		first := parts[0]
-		// Checks current node
-		node := inode.GetNode()
-		if node.name != first {
-			return nil
-		}
-		// If the path has finished this is the desired node
-		rest := strings.Join(parts[1:], "/")
-		if rest == "" {
-			return inode
-		}
-		// Otherwise search in this node children
-		for _, ichild := range node.children {
-			found := finder(ichild, rest)
-			if found != nil {
-				return found
-			}
-		}
-		return nil
+	// Split the path into head + tail
+	parts := strings.SplitN(path, "/", 2)
+	if len(parts) != 1 && len(parts) != 2 {
+		panic("expected 1 or 2 parts from SplitN")
 	}
-	return finder(n, path)
+
+	// Search the children
+	for _, ichild := range n.children {
+		if ichild.Name() == parts[0] {
+			if len(parts) == 1 {
+				return ichild
+			}
+			return ichild.GetNode().FindPath(parts[1])
+		}
+	}
+
+	return nil
 }
 
 // FindLoaderID looks in the specified node and in all its children
