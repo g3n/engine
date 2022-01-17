@@ -26,12 +26,21 @@ const (
 	OrbitAll  OrbitEnabled = 0xFF
 )
 
+// rotationStyle specifies which rotation style to use
+type rotationStyle int
+
+const (
+	StyleOrbit  = rotationStyle(iota) // Orbital rotation around a target point in space
+	StyleSwivel                       // Swivel rotation from a fixed point in space
+)
+
 // orbitState bitmask
 type orbitState int
 
 const (
 	stateNone = orbitState(iota)
 	stateRotate
+	stateSwivel
 	stateZoom
 	statePan
 )
@@ -45,6 +54,7 @@ type OrbitControl struct {
 	up              math32.Vector3 // The orbit axis (Y+)
 	enabled         OrbitEnabled   // Which controls are enabled
 	state           orbitState     // Current control state
+	rotStyle        rotationStyle  // Current camera rotation style
 
 	// Public properties
 	MinDistance     float32 // Minimum distance from target (default is 1)
@@ -60,9 +70,10 @@ type OrbitControl struct {
 	KeyPanSpeed     float32 // Pan delta used on each pan key event (default is 35)
 
 	// Internal
-	rotStart  math32.Vector2
-	panStart  math32.Vector2
-	zoomStart float32
+	rotStart    math32.Vector2
+	swivelStart math32.Vector2
+	panStart    math32.Vector2
+	zoomStart   float32
 }
 
 // NewOrbitControl creates and returns a pointer to a new orbit control for the specified camera.
@@ -74,6 +85,7 @@ func NewOrbitControl(cam *Camera) *OrbitControl {
 	oc.target = *math32.NewVec3()
 	oc.up = *math32.NewVector3(0, 1, 0)
 	oc.enabled = OrbitAll
+	oc.rotStyle = StyleOrbit
 
 	oc.MinDistance = 1.0
 	oc.MaxDistance = float32(math.Inf(1))
@@ -138,6 +150,18 @@ func (oc *OrbitControl) SetEnabled(bitmask OrbitEnabled) {
 	oc.enabled = bitmask
 }
 
+// RotationStyle returns the current rotationStyle setting.
+func (oc *OrbitControl) RotationStyle() rotationStyle {
+
+	return oc.rotStyle
+}
+
+// SetRotationStyle sets the current rotationStyle setting.
+func (oc *OrbitControl) SetRotationStyle(rotStyle rotationStyle) {
+
+	oc.rotStyle = rotStyle
+}
+
 // Rotate rotates the camera around the target by the specified angles.
 func (oc *OrbitControl) Rotate(thetaDelta, phiDelta float32) {
 
@@ -165,6 +189,14 @@ func (oc *OrbitControl) Rotate(thetaDelta, phiDelta float32) {
 	// Update camera position and orientation
 	oc.cam.SetPositionVec(oc.target.Clone().Add(&tcam))
 	oc.cam.LookAt(&oc.target, &oc.up)
+}
+
+// Swivel rotates the camera in a fixed position by the specified angles.
+func (oc *OrbitControl) Swivel(thetaDelta, phiDelta float32) {
+
+	// Swivel by rotation only in the X and Y axis
+	r := oc.cam.Rotation()
+	oc.cam.SetRotation(r.X+phiDelta, r.Y+thetaDelta, r.Z)
 }
 
 // Zoom moves the camera closer or farther from the target the specified amount
@@ -221,10 +253,16 @@ func (oc *OrbitControl) onMouse(evname string, ev interface{}) {
 		gui.Manager().SetCursorFocus(oc)
 		mev := ev.(*window.MouseEvent)
 		switch mev.Button {
-		case window.MouseButtonLeft: // Rotate
+		case window.MouseButtonLeft: // Rotate or Swivel
 			if oc.enabled&OrbitRot != 0 {
-				oc.state = stateRotate
-				oc.rotStart.Set(mev.Xpos, mev.Ypos)
+				switch oc.rotStyle {
+				case StyleOrbit:
+					oc.state = stateRotate
+					oc.rotStart.Set(mev.Xpos, mev.Ypos)
+				case StyleSwivel:
+					oc.state = stateSwivel
+					oc.swivelStart.Set(mev.Xpos, mev.Ypos)
+				}
 			}
 		case window.MouseButtonMiddle: // Zoom
 			if oc.enabled&OrbitZoom != 0 {
@@ -258,6 +296,11 @@ func (oc *OrbitControl) onCursor(evname string, ev interface{}) {
 		oc.Rotate(c*(mev.Xpos-oc.rotStart.X),
 			c*(mev.Ypos-oc.rotStart.Y))
 		oc.rotStart.Set(mev.Xpos, mev.Ypos)
+	case stateSwivel:
+		c := -2 * math32.Pi * oc.RotSpeed / oc.winSize()
+		oc.Swivel(c*(mev.Xpos-oc.swivelStart.X),
+			c*(mev.Ypos-oc.swivelStart.Y))
+		oc.swivelStart.Set(mev.Xpos, mev.Ypos)
 	case stateZoom:
 		oc.Zoom(oc.ZoomSpeed * (mev.Ypos - oc.zoomStart))
 		oc.zoomStart = mev.Ypos
@@ -287,15 +330,29 @@ func (oc *OrbitControl) onKey(evname string, ev interface{}) {
 
 	kev := ev.(*window.KeyEvent)
 	if kev.Mods == 0 && oc.enabled&OrbitRot != 0 {
-		switch kev.Key {
-		case window.KeyUp:
-			oc.Rotate(0, -oc.KeyRotSpeed)
-		case window.KeyDown:
-			oc.Rotate(0, oc.KeyRotSpeed)
-		case window.KeyLeft:
-			oc.Rotate(-oc.KeyRotSpeed, 0)
-		case window.KeyRight:
-			oc.Rotate(oc.KeyRotSpeed, 0)
+		switch oc.rotStyle {
+		case StyleOrbit:
+			switch kev.Key {
+			case window.KeyUp:
+				oc.Rotate(0, -oc.KeyRotSpeed)
+			case window.KeyDown:
+				oc.Rotate(0, oc.KeyRotSpeed)
+			case window.KeyLeft:
+				oc.Rotate(-oc.KeyRotSpeed, 0)
+			case window.KeyRight:
+				oc.Rotate(oc.KeyRotSpeed, 0)
+			}
+		case StyleSwivel:
+			switch kev.Key {
+			case window.KeyUp:
+				oc.Swivel(0, -oc.KeyRotSpeed)
+			case window.KeyDown:
+				oc.Swivel(0, oc.KeyRotSpeed)
+			case window.KeyLeft:
+				oc.Swivel(-oc.KeyRotSpeed, 0)
+			case window.KeyRight:
+				oc.Swivel(oc.KeyRotSpeed, 0)
+			}
 		}
 	}
 	if kev.Mods == window.ModControl && oc.enabled&OrbitZoom != 0 {
