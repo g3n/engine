@@ -54,7 +54,7 @@ type FirstPersonControl struct {
 	RotSpeed        float32 // Rotation speed factor (default is 1)
 	MoveSpeed       float32 // Move speed factor (default is 0.1)
 	KeyRotSpeed     float32 // Rotation delta in radians used on each rotation key event (default is the equivalent of 15 degrees)
-	KeyMoveSpeed    float32 // Move delta used on each move key event (default is 35)
+	KeyMoveSpeed    float32 // Move delta used on each move key event (default is 0.5)
 
 	// Internal
 	rotStart  math32.Vector2
@@ -78,7 +78,7 @@ func NewFirstPersonControl(cam *Camera) *FirstPersonControl {
 	fpc.RotSpeed = 1.0
 	fpc.MoveSpeed = 0.1
 	fpc.KeyRotSpeed = 15 * math32.Pi / 180 // 15 degrees as radians
-	fpc.KeyMoveSpeed = 35.0
+	fpc.KeyMoveSpeed = 0.5
 
 	// initialize Z axis rotation to zero for proper X/Y only view rotation
 	fpc.cam.SetRotationZ(0)
@@ -128,17 +128,14 @@ func (fpc *FirstPersonControl) Rotate(thetaDelta, phiDelta float32) {
 // Move moves the camera the specified amount relative from the camera position based on its view direction.
 func (fpc *FirstPersonControl) Move(deltaX, deltaY, deltaZ float32) {
 
-	position := fpc.cam.Position()
-	origPosition := position.Clone()
+	// TODO: The Translate calls handle relaitive camera movement well, however it "flies" in the direction
+	// pointed at rather than "walks" along the XZ plane as desired for this purpose. A new function
+	// for "flying" could be useful but still need to figure out movement without flying.
 
-	// TODO: needs to take into account the view direction not just absolute position
-	deltaVec := &math32.Vector3{X: deltaX, Y: deltaY, Z: deltaZ}
-
-	// Add delta movement offset to camera
-	fpc.cam.SetPositionVec(position.Add(deltaVec))
-
-	// TODO: REMOVE LOGGING
-	log.Error("%v + %v -> %v", origPosition, deltaVec, fpc.cam.Position())
+	// Translate camera by deltas
+	fpc.cam.TranslateX(deltaX)
+	fpc.cam.TranslateY(deltaY)
+	fpc.cam.TranslateZ(deltaZ)
 }
 
 // onMouse is called when an OnMouseDown/OnMouseUp event is received.
@@ -205,7 +202,7 @@ func (fpc *FirstPersonControl) onScroll(evname string, ev interface{}) {
 
 	if fpc.enabled&FPMoveY != 0 {
 		sev := ev.(*window.ScrollEvent)
-		fpc.Move(0, -sev.Yoffset, 0)
+		fpc.Move(0, fpc.KeyMoveSpeed*sev.Yoffset, 0)
 	}
 }
 
@@ -221,33 +218,33 @@ func (fpc *FirstPersonControl) onKey(evname string, ev interface{}) {
 	if kev.Mods == 0 && fpc.enabled&FPRot != 0 {
 		switch kev.Key {
 		case window.KeyUp:
-			fpc.Rotate(0, -fpc.KeyRotSpeed)
-		case window.KeyDown:
 			fpc.Rotate(0, fpc.KeyRotSpeed)
+		case window.KeyDown:
+			fpc.Rotate(0, -fpc.KeyRotSpeed)
 		case window.KeyLeft, window.KeyQ:
-			fpc.Rotate(-fpc.KeyRotSpeed, 0)
-		case window.KeyRight, window.KeyE:
 			fpc.Rotate(fpc.KeyRotSpeed, 0)
+		case window.KeyRight, window.KeyE:
+			fpc.Rotate(-fpc.KeyRotSpeed, 0)
 		}
 	}
 	if kev.Mods == 0 && fpc.enabled&FPMoveY != 0 {
 		switch kev.Key {
 		case window.KeyR:
-			fpc.Move(0, -fpc.KeyMoveSpeed, 0)
-		case window.KeyF:
 			fpc.Move(0, fpc.KeyMoveSpeed, 0)
+		case window.KeyF:
+			fpc.Move(0, -fpc.KeyMoveSpeed, 0)
 		}
 	}
 	if kev.Mods == 0 && fpc.enabled&FPMoveXZ != 0 {
 		switch kev.Key {
 		case window.KeyW:
-			fpc.Move(0, 0, fpc.KeyMoveSpeed)
-		case window.KeyS:
 			fpc.Move(0, 0, -fpc.KeyMoveSpeed)
+		case window.KeyS:
+			fpc.Move(0, 0, fpc.KeyMoveSpeed)
 		case window.KeyA:
-			fpc.Move(fpc.KeyMoveSpeed, 0, 0)
-		case window.KeyD:
 			fpc.Move(-fpc.KeyMoveSpeed, 0, 0)
+		case window.KeyD:
+			fpc.Move(fpc.KeyMoveSpeed, 0, 0)
 		}
 	}
 }
