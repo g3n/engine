@@ -18,12 +18,12 @@ type FPEnabled int
 
 // The possible control types.
 const (
-	FPNone FPEnabled = 0x00
-	FPRot  FPEnabled = 0x01
-	FPZoom FPEnabled = 0x02
-	FPPan  FPEnabled = 0x04
-	FPKeys FPEnabled = 0x08
-	FPAll  FPEnabled = 0xFF
+	FPNone   FPEnabled = 0x00
+	FPRot    FPEnabled = 0x01
+	FPMoveXZ FPEnabled = 0x02
+	FPMoveY  FPEnabled = 0x04
+	FPKeys   FPEnabled = 0x08
+	FPAll    FPEnabled = 0xFF
 )
 
 // fpState bitmask
@@ -32,8 +32,8 @@ type fpState int
 const (
 	fpStateNone = fpState(iota)
 	fpStateRotate
-	fpStateZoom
-	fpStatePan
+	fpStateMoveHorizontal
+	fpStateMoveVertical
 )
 
 // FirstPersonControl is a camera controller that allows looking around from a static point.
@@ -52,15 +52,13 @@ type FirstPersonControl struct {
 	MinAzimuthAngle float32 // Minimum azimuthal angle in radians (default is negative infinity)
 	MaxAzimuthAngle float32 // Maximum azimuthal angle in radians (default is infinity)
 	RotSpeed        float32 // Rotation speed factor (default is 1)
-	ZoomSpeed       float32 // Zoom speed factor (default is 0.1)
+	MoveSpeed       float32 // Move speed factor (default is 0.1)
 	KeyRotSpeed     float32 // Rotation delta in radians used on each rotation key event (default is the equivalent of 15 degrees)
-	KeyZoomSpeed    float32 // Zoom delta used on each zoom key event (default is 2)
-	KeyPanSpeed     float32 // Pan delta used on each pan key event (default is 35)
+	KeyMoveSpeed    float32 // Move delta used on each move key event (default is 35)
 
 	// Internal
 	rotStart  math32.Vector2
-	panStart  math32.Vector2
-	zoomStart float32
+	moveStart math32.Vector3
 }
 
 // NewFirstPersonControl creates and returns a pointer to a new first person control for the specified camera.
@@ -78,10 +76,9 @@ func NewFirstPersonControl(cam *Camera) *FirstPersonControl {
 	fpc.MinAzimuthAngle = float32(math.Inf(-1))
 	fpc.MaxAzimuthAngle = float32(math.Inf(1))
 	fpc.RotSpeed = 1.0
-	fpc.ZoomSpeed = 0.1
+	fpc.MoveSpeed = 0.1
 	fpc.KeyRotSpeed = 15 * math32.Pi / 180 // 15 degrees as radians
-	fpc.KeyZoomSpeed = 2.0
-	fpc.KeyPanSpeed = 35.0
+	fpc.KeyMoveSpeed = 35.0
 
 	// initialize Z axis rotation to zero for proper X/Y only view rotation
 	fpc.cam.SetRotationZ(0)
@@ -128,17 +125,20 @@ func (fpc *FirstPersonControl) Rotate(thetaDelta, phiDelta float32) {
 	fpc.cam.SetRotation(r.X+phiDelta, r.Y+thetaDelta, r.Z)
 }
 
-// Zoom moves the camera closer or farther from the target the specified amount
-// and also updates the camera's orthographic size to match.
-func (fpc *FirstPersonControl) Zoom(delta float32) {
+// Move moves the camera the specified amount relative from the camera position based on its view direction.
+func (fpc *FirstPersonControl) Move(deltaX, deltaY, deltaZ float32) {
 
-	// TODO: rename as Move to allow movement on X/Z plane (or Y instead of Z?)
-}
+	position := fpc.cam.Position()
+	origPosition := position.Clone()
 
-// Pan pans the camera and target the specified amount on the plane perpendicular to the viewing direction.
-func (fpc *FirstPersonControl) Pan(deltaX, deltaY float32) {
+	// TODO: needs to take into account the view direction not just absolute position
+	deltaVec := &math32.Vector3{X: deltaX, Y: deltaY, Z: deltaZ}
 
-	// TODO: same as Move?
+	// Add delta movement offset to camera
+	fpc.cam.SetPositionVec(position.Add(deltaVec))
+
+	// TODO: REMOVE LOGGING
+	log.Error("%v + %v -> %v", origPosition, deltaVec, fpc.cam.Position())
 }
 
 // onMouse is called when an OnMouseDown/OnMouseUp event is received.
@@ -159,15 +159,15 @@ func (fpc *FirstPersonControl) onMouse(evname string, ev interface{}) {
 				fpc.state = fpStateRotate
 				fpc.rotStart.Set(mev.Xpos, mev.Ypos)
 			}
-		case window.MouseButtonMiddle: // Zoom
-			if fpc.enabled&FPZoom != 0 {
-				fpc.state = fpStateZoom
-				fpc.zoomStart = mev.Ypos
+		case window.MouseButtonMiddle: // Move vertical only
+			if fpc.enabled&FPMoveY != 0 {
+				fpc.state = fpStateMoveVertical
+				fpc.moveStart = math32.Vector3{X: 0, Y: mev.Ypos, Z: 0}
 			}
-		case window.MouseButtonRight: // Pan
-			if fpc.enabled&FPPan != 0 {
-				fpc.state = fpStatePan
-				fpc.panStart.Set(mev.Xpos, mev.Ypos)
+		case window.MouseButtonRight: // Move horizontal only
+			if fpc.enabled&FPMoveXZ != 0 {
+				fpc.state = fpStateMoveHorizontal
+				fpc.moveStart = math32.Vector3{X: mev.Xpos, Y: 0, Z: mev.Ypos}
 			}
 		}
 	case window.OnMouseUp:
@@ -191,22 +191,21 @@ func (fpc *FirstPersonControl) onCursor(evname string, ev interface{}) {
 		fpc.Rotate(c*(mev.Xpos-fpc.rotStart.X),
 			c*(mev.Ypos-fpc.rotStart.Y))
 		fpc.rotStart.Set(mev.Xpos, mev.Ypos)
-	case fpStateZoom:
-		fpc.Zoom(fpc.ZoomSpeed * (mev.Ypos - fpc.zoomStart))
-		fpc.zoomStart = mev.Ypos
-	case fpStatePan:
-		fpc.Pan(mev.Xpos-fpc.panStart.X,
-			mev.Ypos-fpc.panStart.Y)
-		fpc.panStart.Set(mev.Xpos, mev.Ypos)
+	case fpStateMoveVertical:
+		fpc.Move(0, fpc.MoveSpeed*(mev.Ypos-fpc.moveStart.Y), 0)
+		fpc.moveStart = math32.Vector3{X: 0, Y: mev.Ypos, Z: 0}
+	case fpStateMoveHorizontal:
+		fpc.Move(fpc.MoveSpeed*(mev.Xpos-fpc.moveStart.X), 0, fpc.MoveSpeed*(mev.Ypos-fpc.moveStart.Z))
+		fpc.moveStart = math32.Vector3{X: mev.Xpos, Y: 0, Z: mev.Ypos}
 	}
 }
 
 // onScroll is called when an OnScroll event is received.
 func (fpc *FirstPersonControl) onScroll(evname string, ev interface{}) {
 
-	if fpc.enabled&FPZoom != 0 {
+	if fpc.enabled&FPMoveY != 0 {
 		sev := ev.(*window.ScrollEvent)
-		fpc.Zoom(-sev.Yoffset)
+		fpc.Move(0, -sev.Yoffset, 0)
 	}
 }
 
@@ -225,30 +224,30 @@ func (fpc *FirstPersonControl) onKey(evname string, ev interface{}) {
 			fpc.Rotate(0, -fpc.KeyRotSpeed)
 		case window.KeyDown:
 			fpc.Rotate(0, fpc.KeyRotSpeed)
-		case window.KeyLeft:
+		case window.KeyLeft, window.KeyQ:
 			fpc.Rotate(-fpc.KeyRotSpeed, 0)
-		case window.KeyRight:
+		case window.KeyRight, window.KeyE:
 			fpc.Rotate(fpc.KeyRotSpeed, 0)
 		}
 	}
-	if kev.Mods == window.ModControl && fpc.enabled&FPZoom != 0 {
+	if kev.Mods == 0 && fpc.enabled&FPMoveY != 0 {
 		switch kev.Key {
-		case window.KeyUp:
-			fpc.Zoom(-fpc.KeyZoomSpeed)
-		case window.KeyDown:
-			fpc.Zoom(fpc.KeyZoomSpeed)
+		case window.KeyR:
+			fpc.Move(0, -fpc.KeyMoveSpeed, 0)
+		case window.KeyF:
+			fpc.Move(0, fpc.KeyMoveSpeed, 0)
 		}
 	}
-	if kev.Mods == window.ModShift && fpc.enabled&FPPan != 0 {
+	if kev.Mods == 0 && fpc.enabled&FPMoveXZ != 0 {
 		switch kev.Key {
-		case window.KeyUp:
-			fpc.Pan(0, fpc.KeyPanSpeed)
-		case window.KeyDown:
-			fpc.Pan(0, -fpc.KeyPanSpeed)
-		case window.KeyLeft:
-			fpc.Pan(fpc.KeyPanSpeed, 0)
-		case window.KeyRight:
-			fpc.Pan(-fpc.KeyPanSpeed, 0)
+		case window.KeyW:
+			fpc.Move(0, 0, fpc.KeyMoveSpeed)
+		case window.KeyS:
+			fpc.Move(0, 0, -fpc.KeyMoveSpeed)
+		case window.KeyA:
+			fpc.Move(fpc.KeyMoveSpeed, 0, 0)
+		case window.KeyD:
+			fpc.Move(-fpc.KeyMoveSpeed, 0, 0)
 		}
 	}
 }
