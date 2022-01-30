@@ -5,8 +5,6 @@
 package camera
 
 import (
-	"math"
-
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/math32"
@@ -45,16 +43,10 @@ type FirstPersonControl struct {
 	state           fpState   // Current control state
 
 	// Public properties
-	MinDistance     float32 // Minimum distance from target (default is 1)
-	MaxDistance     float32 // Maximum distance from target (default is infinity)
-	MinPolarAngle   float32 // Minimum polar angle in radians (default is 0)
-	MaxPolarAngle   float32 // Maximum polar angle in radians (default is Pi)
-	MinAzimuthAngle float32 // Minimum azimuthal angle in radians (default is negative infinity)
-	MaxAzimuthAngle float32 // Maximum azimuthal angle in radians (default is infinity)
-	RotSpeed        float32 // Rotation speed factor (default is 1)
-	MoveSpeed       float32 // Move speed factor (default is 0.1)
-	KeyRotSpeed     float32 // Rotation delta in radians used on each rotation key event (default is the equivalent of 15 degrees)
-	KeyMoveSpeed    float32 // Move delta used on each move key event (default is 0.5)
+	RotSpeed     float32 // Rotation speed factor (default is 1)
+	MoveSpeed    float32 // Move speed factor (default is 0.1)
+	KeyRotSpeed  float32 // Rotation delta in radians used on each rotation key event (default is the equivalent of 15 degrees)
+	KeyMoveSpeed float32 // Move delta used on each move key event (default is 0.5)
 
 	// Internal
 	rotStart  math32.Vector2
@@ -69,12 +61,6 @@ func NewFirstPersonControl(cam *Camera) *FirstPersonControl {
 	fpc.cam = cam
 	fpc.enabled = FPAll
 
-	fpc.MinDistance = 1.0
-	fpc.MaxDistance = float32(math.Inf(1))
-	fpc.MinPolarAngle = 0
-	fpc.MaxPolarAngle = math32.Pi // 180 degrees as radians
-	fpc.MinAzimuthAngle = float32(math.Inf(-1))
-	fpc.MaxAzimuthAngle = float32(math.Inf(1))
 	fpc.RotSpeed = 1.0
 	fpc.MoveSpeed = 0.1
 	fpc.KeyRotSpeed = 15 * math32.Pi / 180 // 15 degrees as radians
@@ -200,9 +186,9 @@ func (fpc *FirstPersonControl) onCursor(evname string, ev interface{}) {
 // onScroll is called when an OnScroll event is received.
 func (fpc *FirstPersonControl) onScroll(evname string, ev interface{}) {
 
-	if fpc.enabled&FPMoveY != 0 {
+	if fpc.enabled&FPMoveXZ != 0 {
 		sev := ev.(*window.ScrollEvent)
-		fpc.Move(0, fpc.KeyMoveSpeed*sev.Yoffset, 0)
+		fpc.Move(0, 0, fpc.KeyMoveSpeed*(-sev.Yoffset))
 	}
 }
 
