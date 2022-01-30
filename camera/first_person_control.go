@@ -32,6 +32,7 @@ const (
 	fpStateRotate
 	fpStateMoveHorizontal
 	fpStateMoveVertical
+	fpStateZoom
 )
 
 // FirstPersonControl is a camera controller that allows looking around from a static point.
@@ -142,10 +143,10 @@ func (fpc *FirstPersonControl) onMouse(evname string, ev interface{}) {
 				fpc.state = fpStateRotate
 				fpc.rotStart.Set(mev.Xpos, mev.Ypos)
 			}
-		case window.MouseButtonMiddle: // Move vertical only
-			if fpc.enabled&FPMoveY != 0 {
-				fpc.state = fpStateMoveVertical
-				fpc.moveStart = math32.Vector3{X: 0, Y: mev.Ypos, Z: 0}
+		case window.MouseButtonMiddle: // Zoom movement only
+			if fpc.enabled&FPMoveXZ != 0 {
+				fpc.state = fpStateZoom
+				fpc.moveStart = math32.Vector3{X: 0, Y: 0, Z: mev.Ypos}
 			}
 		case window.MouseButtonRight: // Move horizontal only
 			if fpc.enabled&FPMoveXZ != 0 {
@@ -174,9 +175,9 @@ func (fpc *FirstPersonControl) onCursor(evname string, ev interface{}) {
 		fpc.Rotate(c*(mev.Xpos-fpc.rotStart.X),
 			c*(mev.Ypos-fpc.rotStart.Y))
 		fpc.rotStart.Set(mev.Xpos, mev.Ypos)
-	case fpStateMoveVertical:
-		fpc.Move(0, fpc.MoveSpeed*(mev.Ypos-fpc.moveStart.Y), 0)
-		fpc.moveStart = math32.Vector3{X: 0, Y: mev.Ypos, Z: 0}
+	case fpStateZoom:
+		fpc.Move(0, 0, fpc.MoveSpeed*(mev.Ypos-fpc.moveStart.Z))
+		fpc.moveStart = math32.Vector3{X: 0, Y: 0, Z: mev.Ypos}
 	case fpStateMoveHorizontal:
 		fpc.Move(fpc.MoveSpeed*(mev.Xpos-fpc.moveStart.X), 0, fpc.MoveSpeed*(mev.Ypos-fpc.moveStart.Z))
 		fpc.moveStart = math32.Vector3{X: mev.Xpos, Y: 0, Z: mev.Ypos}
