@@ -31,7 +31,6 @@ const (
 	fpStateNone = fpState(iota)
 	fpStateRotate
 	fpStateMoveHorizontal
-	fpStateMoveVertical
 	fpStateZoom
 )
 
