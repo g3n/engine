@@ -25,6 +25,7 @@ type Edit struct {
 	selEnd      int    // end column of selection. always > selStart. if selStart == selEnd then nothing is selected.
 	focus       bool   // key focus flag
 	cursorOver  bool
+	mouseDrag   bool // true when the mouse is moved while left mouse button is down. Used for selecting text via mouse
 	blinkID     int
 	caretOn     bool
 	styles      *EditStyles
@@ -73,9 +74,11 @@ func NewEdit(width int, placeHolder string) *Edit {
 	ed.Label.Subscribe(OnKeyDown, ed.onKey)
 	ed.Label.Subscribe(OnKeyRepeat, ed.onKey)
 	ed.Label.Subscribe(OnChar, ed.onChar)
-	ed.Label.Subscribe(OnMouseDown, ed.onMouse)
+	ed.Label.Subscribe(OnMouseDown, ed.onMouseDown)
+	ed.Label.Subscribe(OnMouseUp, ed.onMouseUp)
 	ed.Label.Subscribe(OnCursorEnter, ed.onCursor)
 	ed.Label.Subscribe(OnCursorLeave, ed.onCursor)
+	ed.Label.Subscribe(OnCursor, ed.onCursor)
 	ed.Label.Subscribe(OnEnable, func(evname string, ev interface{}) { ed.update() })
 	ed.Subscribe(OnFocusLost, ed.OnFocusLost)
 
@@ -466,19 +469,36 @@ func (ed *Edit) onChar(evname string, ev interface{}) {
 	ed.CursorInput(string(cev.Char))
 }
 
-// onMouseEvent receives subscribed mouse down events
-func (ed *Edit) onMouse(evname string, ev interface{}) {
+// onMouseDown receives subscribed mouse down events
+func (ed *Edit) onMouseDown(evname string, ev interface{}) {
 
 	e := ev.(*window.MouseEvent)
 	if e.Button != window.MouseButtonLeft {
 		return
 	}
 
+	// set caret to clicked position
+	ed.handleMouse(e.Xpos, false)
+
+	ed.mouseDrag = true
+
+	// Set key focus to this panel
+	// Set the focus AFTER the mouse selection is handled
+	// Otherwise the OnFocus event would fire before the cursor is set.
+	// That way the OnFocus handler could NOT influence the selection
+	// Because it would be overridden/cleared directly afterwards.
+	Manager().SetKeyFocus(ed)
+}
+
+// handleMouse is setting the caret when the mouse is clicked
+// or setting the text selection when the mouse is dragged
+func (ed *Edit) handleMouse(mouseX float32, dragged bool) {
+
 	// Find clicked column
 	var nchars int
 	for nchars = 1; nchars <= text.StrCount(ed.text); nchars++ {
 		width, _ := ed.Label.font.MeasureText(text.StrPrefix(ed.text, nchars))
-		posx := e.Xpos - ed.pospix.X
+		posx := mouseX - ed.pospix.X
 		if posx < editMarginX+float32(width) {
 			break
 		}
@@ -487,14 +507,28 @@ func (ed *Edit) onMouse(evname string, ev interface{}) {
 		ed.focus = true
 		ed.blinkID = Manager().SetInterval(750*time.Millisecond, nil, ed.blink)
 	}
-	ed.CursorPos(nchars - 1)
+	if !dragged {
+		ed.CursorPos(nchars - 1)
+	} else {
+		newPos := nchars - 1
+		if newPos > ed.col {
+			distance := newPos - ed.col
+			for i := 0; i < distance; i++ {
+				ed.SelectRight()
+			}
+		} else if newPos < ed.col {
+			distance := ed.col - newPos
+			for i := 0; i < distance; i++ {
+				ed.SelectLeft()
+			}
+		}
+	}
+}
 
-	// Set key focus to this panel
-	// Set the focus AFTER the mouse selection is handled
-	// Otherwise the OnFocus event would fire before the cursor is set.
-	// That way the OnFocus handler could NOT influence the selection
-	// Because it would be overridden/cleared directly afterwards.
-	Manager().SetKeyFocus(ed)
+// onMouseEvent receives subscribed mouse up events
+func (ed *Edit) onMouseUp(evname string, ev interface{}) {
+
+	ed.mouseDrag = false
 }
 
 // onCursor receives subscribed cursor events
@@ -509,8 +543,14 @@ func (ed *Edit) onCursor(evname string, ev interface{}) {
 	if evname == OnCursorLeave {
 		window.Get().SetCursor(window.ArrowCursor)
 		ed.cursorOver = false
+		ed.mouseDrag = false
 		ed.update()
 		return
+	}
+	if ed.mouseDrag {
+		e := ev.(*window.CursorEvent)
+		// select text based on mouse position
+		ed.handleMouse(e.Xpos, true)
 	}
 }
 
