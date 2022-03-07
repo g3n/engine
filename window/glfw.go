@@ -282,8 +282,8 @@ func Init(width, height int, title string) error {
 	w.cursors[HandCursor] = glfw.CreateStandardCursor(glfw.HandCursor)
 	w.cursors[HResizeCursor] = glfw.CreateStandardCursor(glfw.HResizeCursor)
 	w.cursors[VResizeCursor] = glfw.CreateStandardCursor(glfw.VResizeCursor)
-	w.cursors[DisabledCursor] = glfw.CreateStandardCursor(glfw.StandardCursor(glfw.CursorDisabled))
-	w.cursors[HiddenCursor] = glfw.CreateStandardCursor(glfw.StandardCursor(glfw.CursorHidden))
+	w.cursors[DisabledCursor] = glfw.CreateStandardCursor(glfw.ArrowCursor)
+	w.cursors[HiddenCursor] = glfw.CreateStandardCursor(glfw.ArrowCursor)
 
 	// Preallocate extra G3N standard cursors (diagonal resize cursors)
 	cursorDiag1Png := assets.MustAsset("cursors/diag1.png") // [/]
@@ -456,7 +456,14 @@ func (w *GlfwWindow) SetCursor(cursor Cursor) {
 	if !ok {
 		panic("Invalid cursor")
 	}
-	w.Window.SetCursor(cur)
+
+	if cursor == DisabledCursor {
+		w.Window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
+	} else if cursor == HiddenCursor {
+		w.Window.SetInputMode(glfw.CursorMode, glfw.CursorHidden)
+	} else {
+		w.Window.SetCursor(cur)
+	}
 }
 
 // CreateCursor creates a new custom cursor and returns an int handle.
