@@ -282,6 +282,8 @@ func Init(width, height int, title string) error {
 	w.cursors[HandCursor] = glfw.CreateStandardCursor(glfw.HandCursor)
 	w.cursors[HResizeCursor] = glfw.CreateStandardCursor(glfw.HResizeCursor)
 	w.cursors[VResizeCursor] = glfw.CreateStandardCursor(glfw.VResizeCursor)
+	w.cursors[DisabledCursor] = glfw.CreateStandardCursor(glfw.StandardCursor(glfw.CursorDisabled))
+	w.cursors[HiddenCursor] = glfw.CreateStandardCursor(glfw.StandardCursor(glfw.CursorHidden))
 
 	// Preallocate extra G3N standard cursors (diagonal resize cursors)
 	cursorDiag1Png := assets.MustAsset("cursors/diag1.png") // [/]

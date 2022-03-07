@@ -72,6 +72,8 @@ const (
 	VResizeCursor
 	DiagResize1Cursor
 	DiagResize2Cursor
+	DisabledCursor
+	HiddenCursor
 	CursorLast = DiagResize2Cursor
 )
 
