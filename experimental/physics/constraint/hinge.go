@@ -5,8 +5,8 @@
 package constraint
 
 import (
-	"github.com/bendgk/engine/experimental/physics/equation"
-	"github.com/bendgk/engine/math32"
+	"github.com/g3n/engine/experimental/physics/equation"
+	"github.com/g3n/engine/math32"
 )
 
 // Hinge constraint.

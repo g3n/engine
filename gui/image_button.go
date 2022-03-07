@@ -5,8 +5,8 @@
 package gui
 
 import (
-	"github.com/bendgk/engine/texture"
-	"github.com/bendgk/engine/window"
+	"github.com/g3n/engine/texture"
+	"github.com/g3n/engine/window"
 )
 
 // ImageButton represents an image button GUI element

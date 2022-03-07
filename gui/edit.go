@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bendgk/engine/math32"
-	"github.com/bendgk/engine/text"
-	"github.com/bendgk/engine/window"
+	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/text"
+	"github.com/g3n/engine/window"
 )
 
 // Edit represents a text edit box GUI element

@@ -5,7 +5,7 @@
 package constraint
 
 import (
-	"github.com/bendgk/engine/experimental/physics/equation"
+	"github.com/g3n/engine/experimental/physics/equation"
 )
 
 // Distance is a distance constraint.

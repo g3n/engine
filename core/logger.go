@@ -1,7 +1,7 @@
 package core
 
 import (
-	"github.com/bendgk/engine/util/logger"
+	"github.com/g3n/engine/util/logger"
 )
 
 // Package logger

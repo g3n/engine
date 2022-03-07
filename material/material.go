@@ -7,9 +7,9 @@
 package material
 
 import (
-	"github.com/bendgk/engine/gls"
-	"github.com/bendgk/engine/texture"
-	"github.com/bendgk/engine/util/logger"
+	"github.com/g3n/engine/gls"
+	"github.com/g3n/engine/texture"
+	"github.com/g3n/engine/util/logger"
 )
 
 // Package logger

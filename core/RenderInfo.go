@@ -5,7 +5,7 @@
 package core
 
 import (
-	"github.com/bendgk/engine/math32"
+	"github.com/g3n/engine/math32"
 )
 
 // RenderInfo is passed into Render/RenderSetup calls

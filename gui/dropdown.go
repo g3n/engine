@@ -5,7 +5,7 @@
 package gui
 
 import (
-	"github.com/bendgk/engine/gui/assets/icon"
+	"github.com/g3n/engine/gui/assets/icon"
 )
 
 // DropDown represents a dropdown GUI element.

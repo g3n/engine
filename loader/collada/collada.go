@@ -11,9 +11,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/bendgk/engine/geometry"
-	"github.com/bendgk/engine/material"
-	"github.com/bendgk/engine/texture"
+	"github.com/g3n/engine/geometry"
+	"github.com/g3n/engine/material"
+	"github.com/g3n/engine/texture"
 )
 
 // Decoder contains all decoded data from collada file

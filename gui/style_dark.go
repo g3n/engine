@@ -5,10 +5,10 @@
 package gui
 
 import (
-	"github.com/bendgk/engine/gui/assets"
-	"github.com/bendgk/engine/gui/assets/icon"
-	"github.com/bendgk/engine/math32"
-	"github.com/bendgk/engine/text"
+	"github.com/g3n/engine/gui/assets"
+	"github.com/g3n/engine/gui/assets/icon"
+	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/text"
 )
 
 // NewDarkStyle creates and returns a pointer to the a new "dark" style

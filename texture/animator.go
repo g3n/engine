@@ -7,7 +7,7 @@ package texture
 import (
 	"time"
 
-	"github.com/bendgk/engine/gls"
+	"github.com/g3n/engine/gls"
 )
 
 // Animator can generate a texture animation based on a texture sheet

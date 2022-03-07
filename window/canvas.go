@@ -8,9 +8,9 @@ package window
 
 import (
 	"fmt"
-	"github.com/bendgk/engine/core"
-	"github.com/bendgk/engine/gls"
-	"github.com/bendgk/engine/util/wasm"
+	"github.com/g3n/engine/core"
+	"github.com/g3n/engine/gls"
+	"github.com/g3n/engine/util/wasm"
 	_ "image/png"
 	"syscall/js"
 )
@@ -338,7 +338,7 @@ type WebGlCanvas struct {
 	mouseWheel js.Func
 	winResize  js.Func
 	winFocus   js.Func
-	winBlur    js.Func
+	winBlur   js.Func
 }
 
 // Init initializes the WebGlCanvas singleton.

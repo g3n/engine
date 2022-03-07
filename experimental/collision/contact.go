@@ -4,7 +4,7 @@
 
 package collision
 
-import "github.com/bendgk/engine/math32"
+import "github.com/g3n/engine/math32"
 
 // Contact describes a contact point, normal, and depth.
 type Contact struct {

@@ -6,7 +6,7 @@
 package physics
 
 import (
-	"github.com/bendgk/engine/experimental/physics/object"
+	"github.com/g3n/engine/experimental/physics/object"
 )
 
 // CollisionPair is a pair of bodies that may be colliding.

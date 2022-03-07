@@ -5,8 +5,8 @@
 package graphic
 
 import (
-	"github.com/bendgk/engine/core"
-	"github.com/bendgk/engine/math32"
+	"github.com/g3n/engine/core"
+	"github.com/g3n/engine/math32"
 )
 
 // Skeleton contains armature information.

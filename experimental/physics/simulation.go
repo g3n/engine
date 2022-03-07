@@ -5,14 +5,14 @@
 package physics
 
 import (
-	"github.com/bendgk/engine/core"
-	"github.com/bendgk/engine/experimental/collision"
-	"github.com/bendgk/engine/experimental/collision/shape"
-	"github.com/bendgk/engine/experimental/physics/constraint"
-	"github.com/bendgk/engine/experimental/physics/equation"
-	"github.com/bendgk/engine/experimental/physics/object"
-	"github.com/bendgk/engine/experimental/physics/solver"
-	"github.com/bendgk/engine/math32"
+	"github.com/g3n/engine/experimental/physics/equation"
+	"github.com/g3n/engine/experimental/physics/solver"
+	"github.com/g3n/engine/experimental/physics/constraint"
+	"github.com/g3n/engine/experimental/collision"
+	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/experimental/physics/object"
+	"github.com/g3n/engine/core"
+	"github.com/g3n/engine/experimental/collision/shape"
 )
 
 // Simulation represents a physics simulation.
@@ -21,25 +21,25 @@ type Simulation struct {
 	forceFields []ForceField
 
 	// Bodies under simulation
-	bodies    []*object.Body // Slice of bodies. May contain nil values.
-	nilBodies []int          // Array keeps track of which indices of the 'bodies' array are nil
+	bodies      []*object.Body  // Slice of bodies. May contain nil values.
+	nilBodies   []int           // Array keeps track of which indices of the 'bodies' array are nil
 
 	// Collision tracking
 	collisionMatrix     collision.Matrix // Boolean triangular matrix indicating which pairs of bodies are colliding
 	prevCollisionMatrix collision.Matrix // CollisionMatrix from the previous step.
 
-	allowSleep bool // Makes bodies go to sleep when they've been inactive
-	paused     bool
+	allowSleep  bool                // Makes bodies go to sleep when they've been inactive
+	paused bool
 
-	quatNormalizeSkip int // How often to normalize quaternions. Set to 0 for every step, 1 for every second etc..
-	// A larger value increases performance.
-	// If bodies tend to explode, set to a smaller value (zero to be sure nothing can go wrong).
+	quatNormalizeSkip int  // How often to normalize quaternions. Set to 0 for every step, 1 for every second etc..
+	                       // A larger value increases performance.
+	                       // If bodies tend to explode, set to a smaller value (zero to be sure nothing can go wrong).
 	quatNormalizeFast bool // Set to true to use fast quaternion normalization. It is often enough accurate to use. If bodies tend to explode, set to false.
 
-	time       float32 // The wall-clock time since simulation start
-	stepnumber int     // Number of timesteps taken since start
+	time float32      // The wall-clock time since simulation start
+	stepnumber int    // Number of timesteps taken since start
 	default_dt float32 // Default and last timestep sizes
-	dt         float32 // Currently / last used timestep. Is set to -1 if not available. This value is updated before each internal step, which means that it is "fresh" inside event callbacks.
+	dt float32      // Currently / last used timestep. Is set to -1 if not available. This value is updated before each internal step, which means that it is "fresh" inside event callbacks.
 
 	accumulator float32 // Time accumulator for interpolation. See http://gafferongames.com/game-physics/fix-your-timestep/
 
@@ -47,16 +47,16 @@ type Simulation struct {
 	narrowphase *Narrowphase   // The narrowphase algorithm to use
 	solver      solver.ISolver // The solver algorithm to use, default is Gauss-Seidel
 
-	constraints []constraint.IConstraint // All constraints
+	constraints       []constraint.IConstraint  // All constraints
 
-	materials  []*Material // All added materials
-	cMaterials []*ContactMaterial
+	materials         []*Material               // All added materials
+	cMaterials        []*ContactMaterial
 
 	//contactMaterialTable map[intPair]*ContactMaterial // Used to look up a ContactMaterial given two instances of Material.
 	//defaultMaterial *Material
 	defaultContactMaterial *ContactMaterial
 
-	doProfiling bool
+	doProfiling      bool
 }
 
 // NewSimulation creates and returns a pointer to a new physics simulation.
@@ -65,7 +65,7 @@ func NewSimulation(scene *core.Node) *Simulation {
 	s := new(Simulation)
 	s.time = 0
 	s.dt = -1
-	s.default_dt = 1 / 60
+	s.default_dt = 1/60
 	s.scene = scene
 
 	// Set up broadphase, narrowphase, and solver
@@ -125,7 +125,7 @@ func (s *Simulation) AddBody(body *object.Body, name string) {
 	nilLen := len(s.nilBodies)
 	if nilLen > 0 {
 		idx = s.nilBodies[nilLen]
-		s.nilBodies = s.nilBodies[0 : nilLen-1]
+		s.nilBodies = s.nilBodies[0:nilLen-1]
 	} else {
 		idx = len(s.bodies)
 		s.bodies = append(s.bodies, body)
@@ -176,7 +176,7 @@ func (s *Simulation) RemoveBody(body *object.Body) bool {
 
 // Bodies returns the slice of bodies under simulation.
 // The slice may contain nil values!
-func (s *Simulation) Bodies() []*object.Body {
+func (s *Simulation) Bodies() []*object.Body{
 
 	return s.bodies
 }
@@ -186,6 +186,7 @@ func (s *Simulation) Step(frameDelta float32) {
 	s.StepPlus(frameDelta, 0, 10)
 }
 
+
 // Step steps the simulation.
 // maxSubSteps should be 10 by default
 func (s *Simulation) StepPlus(frameDelta float32, timeSinceLastCalled float32, maxSubSteps int) {
@@ -194,35 +195,35 @@ func (s *Simulation) StepPlus(frameDelta float32, timeSinceLastCalled float32, m
 		return
 	}
 
-	dt := frameDelta //float32(frameDelta.Seconds())
+	dt := frameDelta//float32(frameDelta.Seconds())
 
-	//if timeSinceLastCalled == 0 { // Fixed, simple stepping
+    //if timeSinceLastCalled == 0 { // Fixed, simple stepping
 
-	s.internalStep(dt)
+        s.internalStep(dt)
 
-	// Increment time
-	//s.time += dt
+        // Increment time
+        //s.time += dt
 
-	//} else {
+    //} else {
 	//
-	//    s.accumulator += timeSinceLastCalled
-	//    var substeps = 0
-	//    for s.accumulator >= dt && substeps < maxSubSteps {
-	//        // Do fixed steps to catch up
-	//        s.internalStep(dt)
-	//        s.accumulator -= dt
-	//        substeps++
-	//    }
+    //    s.accumulator += timeSinceLastCalled
+    //    var substeps = 0
+    //    for s.accumulator >= dt && substeps < maxSubSteps {
+    //        // Do fixed steps to catch up
+    //        s.internalStep(dt)
+    //        s.accumulator -= dt
+    //        substeps++
+    //    }
 	//
-	//    var t = (s.accumulator % dt) / dt
-	//    for j := 0; j < len(s.bodies); j++ {
-	//        var b = s.bodies[j]
-	//        b.previousPosition.lerp(b.position, t, b.interpolatedPosition)
-	//        b.previousQuaternion.slerp(b.quaternion, t, b.interpolatedQuaternion)
-	//        b.previousQuaternion.normalize()
-	//    }
-	//    s.time += timeSinceLastCalled
-	//}
+    //    var t = (s.accumulator % dt) / dt
+    //    for j := 0; j < len(s.bodies); j++ {
+    //        var b = s.bodies[j]
+    //        b.previousPosition.lerp(b.position, t, b.interpolatedPosition)
+    //        b.previousQuaternion.slerp(b.quaternion, t, b.interpolatedQuaternion)
+    //        b.previousQuaternion.normalize()
+    //    }
+    //    s.time += timeSinceLastCalled
+    //}
 
 }
 
@@ -241,7 +242,7 @@ func (s *Simulation) Paused() bool {
 // ClearForces sets all body forces in the world to zero.
 func (s *Simulation) ClearForces() {
 
-	for i := 0; i < len(s.bodies); i++ {
+	for i:=0; i < len(s.bodies); i++ {
 		s.bodies[i].ClearForces()
 	}
 }
@@ -292,6 +293,7 @@ func (s *Simulation) GetContactMaterial(bodyA, bodyB *object.Body) *ContactMater
 	return cm
 }
 
+
 // Events =====================
 
 type CollideEvent struct {
@@ -312,6 +314,7 @@ const (
 )
 
 // ===========================
+
 
 // ApplySolution applies the specified solution to the bodies under simulation.
 // The solution is a set of linear and angular velocity deltas for each body.
@@ -390,24 +393,24 @@ func (s *Simulation) internalStep(dt float32) {
 		}
 	}
 
-	// Find pairs of bodies that are potentially colliding (broadphase)
+    // Find pairs of bodies that are potentially colliding (broadphase)
 	pairs := s.broadphase.FindCollisionPairs(s.bodies)
 
 	// Remove some pairs before proceeding to narrowphase based on constraints' colConn property
 	// which specifies if constrained bodies should collide with one another
-	s.prunePairs(pairs) // TODO review/implement
+    s.prunePairs(pairs) // TODO review/implement
 
 	// Precompute world normals/edges only for convex bodies that will undergo narrowphase
 	for _, body := range s.uniqueBodiesFromPairs(pairs) {
-		if ch, ok := body.Shape().(*shape.ConvexHull); ok {
+		if ch, ok := body.Shape().(*shape.ConvexHull); ok{
 			ch.ComputeWorldFaceNormalsAndUniqueEdges(body.Quaternion())
 		}
 	}
 
 	// Switch collision matrices (to keep track of which collisions started/ended)
-	s.collisionMatrixTick()
+    s.collisionMatrixTick()
 
-	// Resolve collisions and generate contact and friction equations
+    // Resolve collisions and generate contact and friction equations
 	contactEqs, frictionEqs := s.narrowphase.GenerateEquations(pairs)
 
 	// Add all friction equations to solver
@@ -421,16 +424,16 @@ func (s *Simulation) internalStep(dt float32) {
 		s.updateSleepAndCollisionMatrix(contactEqs[i])
 	}
 
-	// Add all equations from user-added constraints to the solver
+    // Add all equations from user-added constraints to the solver
 	userAddedEquations := 0
-	for i := 0; i < len(s.constraints); i++ {
+    for i := 0; i < len(s.constraints); i++ {
 		s.constraints[i].Update()
-		eqs := s.constraints[i].Equations()
-		for j := 0; j < len(eqs); j++ {
+        eqs := s.constraints[i].Equations()
+        for j := 0; j < len(eqs); j++ {
 			userAddedEquations++
-			s.solver.AddEquation(eqs[j])
-		}
-	}
+            s.solver.AddEquation(eqs[j])
+        }
+    }
 
 	// Emit events TODO implement
 	s.emitContactEvents()
@@ -447,7 +450,7 @@ func (s *Simulation) internalStep(dt float32) {
 	}
 
 	// If we have any equations to solve
-	if len(frictionEqs)+len(contactEqs)+userAddedEquations > 0 {
+	if len(frictionEqs) + len(contactEqs) + userAddedEquations > 0 {
 		// Update effective mass for all bodies
 		for i := 0; i < len(s.bodies); i++ {
 			s.bodies[i].UpdateEffectiveMassProperties()
@@ -460,39 +463,39 @@ func (s *Simulation) internalStep(dt float32) {
 		s.solver.ClearEquations()
 	}
 
-	// Apply damping (only to dynamic bodies)
-	// See http://code.google.com/p/bullet/issues/detail?id=74 for details
-	for _, body := range s.bodies {
-		if body != nil && body.BodyType() == object.Dynamic {
+    // Apply damping (only to dynamic bodies)
+    // See http://code.google.com/p/bullet/issues/detail?id=74 for details
+    for _, body := range s.bodies {
+        if body != nil && body.BodyType() == object.Dynamic {
 			body.ApplyDamping(dt)
-		}
-	}
+        }
+    }
 
-	// TODO s.Dispatch(World_step_preStepEvent)
+    // TODO s.Dispatch(World_step_preStepEvent)
 
 	// Integrate the forces into velocities and the velocities into position deltas for all bodies
-	// TODO future: quatNormalize := s.stepnumber % (s.quatNormalizeSkip + 1) == 0
-	for _, body := range s.bodies {
+    // TODO future: quatNormalize := s.stepnumber % (s.quatNormalizeSkip + 1) == 0
+    for _, body := range s.bodies {
 		if body != nil {
 			body.Integrate(dt, true, s.quatNormalizeFast)
 		}
-	}
-	s.ClearForces()
+    }
+    s.ClearForces()
 
-	// TODO s.broadphase.dirty = true ?
+    // TODO s.broadphase.dirty = true ?
 
-	// Update world time
-	s.time += dt
-	s.stepnumber += 1
+    // Update world time
+    s.time += dt
+    s.stepnumber += 1
 
-	// TODO s.Dispatch(World_step_postStepEvent)
+    // TODO s.Dispatch(World_step_postStepEvent)
 
-	// Sleeping update
-	if s.allowSleep {
-		for i := 0; i < len(s.bodies); i++ {
-			s.bodies[i].SleepTick(s.time)
-		}
-	}
+    // Sleeping update
+    if s.allowSleep {
+        for i := 0; i < len(s.bodies); i++ {
+            s.bodies[i].SleepTick(s.time)
+        }
+    }
 
 }
 

@@ -5,7 +5,7 @@
 package equation
 
 import (
-	"github.com/bendgk/engine/math32"
+	"github.com/g3n/engine/math32"
 )
 
 // Rotational is a rotational constraint equation.

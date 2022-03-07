@@ -10,10 +10,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bendgk/engine/audio/al"
-	"github.com/bendgk/engine/audio/vorbis"
-	"github.com/bendgk/engine/renderer"
-	"github.com/bendgk/engine/window"
+	"github.com/g3n/engine/audio/al"
+	"github.com/g3n/engine/audio/vorbis"
+	"github.com/g3n/engine/renderer"
+	"github.com/g3n/engine/window"
 )
 
 // Desktop application defaults

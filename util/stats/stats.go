@@ -4,7 +4,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/bendgk/engine/gls"
+	"github.com/g3n/engine/gls"
 )
 
 // Stats contains several statistics useful for performance evaluation
