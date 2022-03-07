@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/g3n/engine/core"
-	"github.com/g3n/engine/geometry"
-	"github.com/g3n/engine/gls"
-	"github.com/g3n/engine/graphic"
-	"github.com/g3n/engine/material"
-	"github.com/g3n/engine/math32"
-	"github.com/g3n/engine/renderer/shaders"
+	"github.com/bendgk/engine/core"
+	"github.com/bendgk/engine/geometry"
+	"github.com/bendgk/engine/gls"
+	"github.com/bendgk/engine/graphic"
+	"github.com/bendgk/engine/material"
+	"github.com/bendgk/engine/math32"
+	"github.com/bendgk/engine/renderer/shaders"
 )
 
 func init() {

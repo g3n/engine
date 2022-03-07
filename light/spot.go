@@ -5,9 +5,9 @@
 package light
 
 import (
-	"github.com/g3n/engine/core"
-	"github.com/g3n/engine/gls"
-	"github.com/g3n/engine/math32"
+	"github.com/bendgk/engine/core"
+	"github.com/bendgk/engine/gls"
+	"github.com/bendgk/engine/math32"
 )
 
 // Spot represents a spotlight

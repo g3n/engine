@@ -5,10 +5,10 @@
 package object
 
 import (
-	"github.com/g3n/engine/experimental/collision/shape"
-	"github.com/g3n/engine/graphic"
-	"github.com/g3n/engine/material"
-	"github.com/g3n/engine/math32"
+	"github.com/bendgk/engine/experimental/collision/shape"
+	"github.com/bendgk/engine/graphic"
+	"github.com/bendgk/engine/material"
+	"github.com/bendgk/engine/math32"
 )
 
 // Body represents a physics-driven body.
@@ -512,8 +512,8 @@ func (b *Body) Sleeping() bool {
 // CollidableWith returns whether the body can collide with the specified body.
 func (b *Body) CollidableWith(other *Body) bool {
 
-	if (b.colFilterGroup & other.colFilterMask == 0) ||
-		(other.colFilterGroup & b.colFilterMask == 0) ||
+	if (b.colFilterGroup&other.colFilterMask == 0) ||
+		(other.colFilterGroup&b.colFilterMask == 0) ||
 		(b.bodyType == Static) && (other.bodyType == Static) {
 		return false
 	}

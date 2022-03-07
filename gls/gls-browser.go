@@ -8,7 +8,7 @@ package gls
 
 import (
 	"fmt"
-	"github.com/g3n/engine/util/wasm"
+	"github.com/bendgk/engine/util/wasm"
 	"syscall/js"
 	"unsafe"
 )

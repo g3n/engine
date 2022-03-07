@@ -5,7 +5,7 @@
 package gui
 
 import (
-	"github.com/g3n/engine/util/logger"
+	"github.com/bendgk/engine/util/logger"
 )
 
 // Package logger

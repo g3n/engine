@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/g3n/engine/core"
-	"github.com/g3n/engine/math32"
+	"github.com/bendgk/engine/core"
+	"github.com/bendgk/engine/math32"
 )
 
 // AnimationTarget contains all animation channels for an specific target node

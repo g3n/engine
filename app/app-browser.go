@@ -8,14 +8,14 @@ package app
 
 import (
 	"fmt"
-	"github.com/g3n/engine/renderer"
-	"github.com/g3n/engine/window"
+	"github.com/bendgk/engine/renderer"
+	"github.com/bendgk/engine/window"
 	"syscall/js"
 	"time"
 )
 
 // Default canvas id
-const canvasId = "g3n-canvas"
+const canvasId = "bendgk-canvas"
 
 // Application
 type Application struct {
