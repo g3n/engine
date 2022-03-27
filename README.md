@@ -3,7 +3,7 @@
 <p align="center">
   <a href="https://godoc.org/github.com/g3n/engine"><img src="https://godoc.org/github.com/g3n/engine?status.svg" alt="Godoc"></img></a>
   <a href="https://goreportcard.com/report/github.com/g3n/engine"><img src="https://goreportcard.com/badge/github.com/g3n/engine" alt="Go Report Card"/></a>
-  <a href="https://discord.gg/Dq9FpV4c"><img src="https://img.shields.io/badge/Discord-G3N-blue" alt="Discord"/></a>
+  <a href="https://discord.gg/NfaeVr8zDg"><img src="https://img.shields.io/badge/Discord-G3N-blue" alt="Discord"/></a>
   
 </p>
 <p><h1 align="center">G3N - Go 3D Game Engine</h1></p>
