@@ -98,7 +98,8 @@ type Panel struct {
 		paddingsColor math32.Color4  // panel padding color
 		contentColor  math32.Color4  // panel content color
 		textureValid  float32        // texture valid flag (bool)
-		dummy         [3]float32     // complete 8 * vec4
+		opacity       float32
+		dummy         [2]float32 // complete 8 * vec4
 	}
 }
 
@@ -135,6 +136,7 @@ func (p *Panel) Initialize(ipan IPanel, width, height float32) { // TODO rename 
 
 	p.width = width
 	p.height = height
+	p.udata.opacity = 1
 
 	// If first time, create panel quad geometry
 	if panelQuadGeometry == nil {
@@ -391,6 +393,22 @@ func (p *Panel) SetPaddingsFrom(src *RectBounds) {
 func (p *Panel) Paddings() RectBounds {
 
 	return p.paddingSizes
+}
+
+// SetOpacity sets the alpha modifier of this panel
+func (p *Panel) SetOpacity(alpha float32) {
+	if alpha > 1 {
+		alpha = 1
+	}
+	if alpha < 0 {
+		alpha = 0
+	}
+	p.udata.opacity = alpha
+}
+
+// Opacity returns current opacity value
+func (p *Panel) Opacity() float32 {
+	return p.udata.opacity
 }
 
 // SetBordersColor sets the color of this panel borders

@@ -332,6 +332,7 @@ uniform vec4 Panel[8];
 #define PaddingColor	Panel[5]		  // panel padding color
 #define ContentColor	Panel[6]		  // panel content color
 #define TextureValid	bool(Panel[7].x)  // texture valid flag
+#define Opacity         Panel[7].y        // panel alpha modifier
 
 // Output
 out vec4 FragColor;
@@ -412,18 +413,21 @@ void main() {
 		}
 
         FragColor = color;
+        FragColor.a *= Opacity;
         return;
     }
 
     // Checks if fragment is inside paddings area
     if (checkRect(Padding)) {
         FragColor = PaddingColor;
+        FragColor.a *= Opacity;
         return;
     }
 
     // Checks if fragment is inside borders area
     if (checkRect(Border)) {
         FragColor = BorderColor;
+        FragColor.a *= Opacity;
         return;
     }
 
