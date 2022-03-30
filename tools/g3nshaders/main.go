@@ -20,6 +20,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"text/template"
 )
@@ -162,6 +163,10 @@ func processDir(dir string, include bool) {
 	if err != nil {
 		panic(err)
 	}
+
+	sort.Slice(finfos, func(i, j int) bool {
+		return finfos[i].Name() < finfos[j].Name()
+	})
 
 	// Process all directory entries.
 	for _, fi := range finfos {
