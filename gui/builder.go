@@ -563,6 +563,10 @@ func (b *Builder) SetAttribs(am map[string]interface{}, ipan IPanel) error {
 		panel.SetName(am[AttribName].(string))
 	}
 
+	if am[AttribId] != nil {
+		panel.SetLoaderID(am[AttribId].(string))
+	}
+
 	if am[AttribVisible] != nil {
 		panel.SetVisible(am[AttribVisible].(bool))
 	}
