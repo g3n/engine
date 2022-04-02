@@ -4,13 +4,28 @@
 
 package shaders
 
-const include_attributes_source = `//
-// Vertex attributes
-//
-layout(location = 0) in  vec3  VertexPosition;
-layout(location = 1) in  vec3  VertexNormal;
-layout(location = 2) in  vec3  VertexColor;
-layout(location = 3) in  vec2  VertexTexcoord;
+const include_morphtarget_vertex2_source = `	vPosition += MorphPosition{i} * morphTargetInfluences[{i}];
+  #ifdef MORPHTARGETS_NORMAL
+	vNormal += MorphNormal{i} * morphTargetInfluences[{i}];
+  #endif`
+
+const include_morphtarget_vertex_declaration2_source = `	in vec3 MorphPosition{i};
+  #ifdef MORPHTARGETS_NORMAL
+	in vec3 MorphNormal{i};
+  #endif
+`
+
+const include_morphtarget_vertex_source = `#ifdef MORPHTARGETS
+
+    #include <morphtarget_vertex2> [MORPHTARGETS]
+
+#endif
+`
+
+const include_morphtarget_vertex_declaration_source = `#ifdef MORPHTARGETS
+	uniform float morphTargetInfluences[MORPHTARGETS];
+	#include <morphtarget_vertex_declaration2> [MORPHTARGETS]
+#endif
 `
 
 const include_bones_vertex_source = `#ifdef BONE_INFLUENCERS
@@ -43,123 +58,6 @@ const include_bones_vertex_source = `#ifdef BONE_INFLUENCERS
 
     #endif
 #endif
-`
-
-const include_bones_vertex_declaration_source = `#ifdef BONE_INFLUENCERS
-    #if BONE_INFLUENCERS > 0
-	uniform mat4 mBones[TOTAL_BONES];
-    in vec4 matricesIndices;
-    in vec4 matricesWeights;
-//    #if BONE_INFLUENCERS > 4
-//        in vec4 matricesIndicesExtra;
-//        in vec4 matricesWeightsExtra;
-//    #endif
-    #endif
-#endif
-`
-
-const include_lights_source = `//
-// Lights uniforms
-//
-
-#if AMB_LIGHTS>0
-    // Ambient lights color uniform
-    uniform vec3 AmbientLightColor[AMB_LIGHTS];
-#endif
-
-#if DIR_LIGHTS>0
-    // Directional lights uniform array. Each directional light uses 2 elements
-    uniform vec3 DirLight[2*DIR_LIGHTS];
-    // Macros to access elements inside the DirectionalLight uniform array
-    #define DirLightColor(a)		DirLight[2*a]
-    #define DirLightPosition(a)		DirLight[2*a+1]
-#endif
-
-#if POINT_LIGHTS>0
-    // Point lights uniform array. Each point light uses 3 elements
-    uniform vec3 PointLight[3*POINT_LIGHTS];
-    // Macros to access elements inside the PointLight uniform array
-    #define PointLightColor(a)			PointLight[3*a]
-    #define PointLightPosition(a)		PointLight[3*a+1]
-    #define PointLightLinearDecay(a)	PointLight[3*a+2].x
-    #define PointLightQuadraticDecay(a)	PointLight[3*a+2].y
-#endif
-
-#if SPOT_LIGHTS>0
-    // Spot lights uniforms. Each spot light uses 5 elements
-    uniform vec3  SpotLight[5*SPOT_LIGHTS];
-    // Macros to access elements inside the PointLight uniform array
-    #define SpotLightColor(a)			SpotLight[5*a]
-    #define SpotLightPosition(a)		SpotLight[5*a+1]
-    #define SpotLightDirection(a)		SpotLight[5*a+2]
-    #define SpotLightAngularDecay(a)	SpotLight[5*a+3].x
-    #define SpotLightCutoffAngle(a)		SpotLight[5*a+3].y
-    #define SpotLightLinearDecay(a)		SpotLight[5*a+3].z
-    #define SpotLightQuadraticDecay(a)	SpotLight[5*a+4].x
-#endif
-`
-
-const include_material_source = `//
-// Material properties uniform
-//
-
-// Material parameters uniform array
-uniform vec3 Material[6];
-// Macros to access elements inside the Material array
-#define MatAmbientColor		Material[0]
-#define MatDiffuseColor     Material[1]
-#define MatSpecularColor    Material[2]
-#define MatEmissiveColor    Material[3]
-#define MatShininess        Material[4].x
-#define MatOpacity          Material[4].y
-#define MatPointSize        Material[4].z
-#define MatPointRotationZ   Material[5].x
-
-#if MAT_TEXTURES > 0
-    // Texture unit sampler array
-    uniform sampler2D MatTexture[MAT_TEXTURES];
-    // Texture parameters (3*vec2 per texture)
-    uniform vec2 MatTexinfo[3*MAT_TEXTURES];
-    // Macros to access elements inside the MatTexinfo array
-    #define MatTexOffset(a)		MatTexinfo[(3*a)]
-    #define MatTexRepeat(a)		MatTexinfo[(3*a)+1]
-    #define MatTexFlipY(a)		bool(MatTexinfo[(3*a)+2].x)
-    #define MatTexVisible(a)	bool(MatTexinfo[(3*a)+2].y)
-    // Alpha compositing (see here: https://ciechanow.ski/alpha-compositing/)
-    vec4 Blend(vec4 texMixed, vec4 texColor) {
-        texMixed.rgb *= texMixed.a;
-        texColor.rgb *= texColor.a;
-        texMixed = texColor + texMixed * (1 - texColor.a);
-        if (texMixed.a > 0.0) {
-            texMixed.rgb /= texMixed.a;
-        }
-        return texMixed;
-    }
-#endif
-`
-
-const include_morphtarget_vertex_source = `#ifdef MORPHTARGETS
-
-    #include <morphtarget_vertex2> [MORPHTARGETS]
-
-#endif
-`
-
-const include_morphtarget_vertex2_source = `	vPosition += MorphPosition{i} * morphTargetInfluences[{i}];
-  #ifdef MORPHTARGETS_NORMAL
-	vNormal += MorphNormal{i} * morphTargetInfluences[{i}];
-  #endif`
-
-const include_morphtarget_vertex_declaration_source = `#ifdef MORPHTARGETS
-	uniform float morphTargetInfluences[MORPHTARGETS];
-	#include <morphtarget_vertex_declaration2> [MORPHTARGETS]
-#endif
-`
-
-const include_morphtarget_vertex_declaration2_source = `	in vec3 MorphPosition{i};
-  #ifdef MORPHTARGETS_NORMAL
-	in vec3 MorphNormal{i};
-  #endif
 `
 
 const include_phong_model_source = `/***
@@ -281,176 +179,206 @@ void phongModel(vec4 position, vec3 normal, vec3 camDir, vec3 matAmbient, vec3 m
 }
 `
 
-const basic_fragment_source = `precision highp float;
-
-in vec3 Color;
-out vec4 FragColor;
-
-void main() {
-
-    FragColor = vec4(Color, 1.0);
-}
+const include_attributes_source = `//
+// Vertex attributes
+//
+layout(location = 0) in  vec3  VertexPosition;
+layout(location = 1) in  vec3  VertexNormal;
+layout(location = 2) in  vec3  VertexColor;
+layout(location = 3) in  vec2  VertexTexcoord;
 `
 
-const basic_vertex_source = `#include <attributes>
+const include_material_source = `//
+// Material properties uniform
+//
 
-// Model uniforms
-uniform mat4 MVP;
+// Material parameters uniform array
+uniform vec3 Material[6];
+// Macros to access elements inside the Material array
+#define MatAmbientColor		Material[0]
+#define MatDiffuseColor     Material[1]
+#define MatSpecularColor    Material[2]
+#define MatEmissiveColor    Material[3]
+#define MatShininess        Material[4].x
+#define MatOpacity          Material[4].y
+#define MatPointSize        Material[4].z
+#define MatPointRotationZ   Material[5].x
 
-// Final output color for fragment shader
-out vec3 Color;
-
-void main() {
-
-    Color = VertexColor;
-    gl_Position = MVP * vec4(VertexPosition, 1.0);
-}
+#if MAT_TEXTURES > 0
+    // Texture unit sampler array
+    uniform sampler2D MatTexture[MAT_TEXTURES];
+    // Texture parameters (3*vec2 per texture)
+    uniform vec2 MatTexinfo[3*MAT_TEXTURES];
+    // Macros to access elements inside the MatTexinfo array
+    #define MatTexOffset(a)		MatTexinfo[(3*a)]
+    #define MatTexRepeat(a)		MatTexinfo[(3*a)+1]
+    #define MatTexFlipY(a)		bool(MatTexinfo[(3*a)+2].x)
+    #define MatTexVisible(a)	bool(MatTexinfo[(3*a)+2].y)
+    // Alpha compositing (see here: https://ciechanow.ski/alpha-compositing/)
+    vec4 Blend(vec4 texMixed, vec4 texColor) {
+        texMixed.rgb *= texMixed.a;
+        texColor.rgb *= texColor.a;
+        texMixed = texColor + texMixed * (1 - texColor.a);
+        if (texMixed.a > 0.0) {
+            texMixed.rgb /= texMixed.a;
+        }
+        return texMixed;
+    }
+#endif
 `
 
-const panel_fragment_source = `precision highp float;
+const include_lights_source = `//
+// Lights uniforms
+//
 
-// Texture uniforms
-uniform sampler2D	MatTexture;
-uniform vec2		MatTexinfo[3];
+#if AMB_LIGHTS>0
+    // Ambient lights color uniform
+    uniform vec3 AmbientLightColor[AMB_LIGHTS];
+#endif
 
-// Macros to access elements inside the MatTexinfo array
-#define MatTexOffset		MatTexinfo[0]
-#define MatTexRepeat		MatTexinfo[1]
-#define MatTexFlipY	    	bool(MatTexinfo[2].x) // not used
-#define MatTexVisible	    bool(MatTexinfo[2].y) // not used
+#if DIR_LIGHTS>0
+    // Directional lights uniform array. Each directional light uses 2 elements
+    uniform vec3 DirLight[2*DIR_LIGHTS];
+    // Macros to access elements inside the DirectionalLight uniform array
+    #define DirLightColor(a)		DirLight[2*a]
+    #define DirLightPosition(a)		DirLight[2*a+1]
+#endif
+
+#if POINT_LIGHTS>0
+    // Point lights uniform array. Each point light uses 3 elements
+    uniform vec3 PointLight[3*POINT_LIGHTS];
+    // Macros to access elements inside the PointLight uniform array
+    #define PointLightColor(a)			PointLight[3*a]
+    #define PointLightPosition(a)		PointLight[3*a+1]
+    #define PointLightLinearDecay(a)	PointLight[3*a+2].x
+    #define PointLightQuadraticDecay(a)	PointLight[3*a+2].y
+#endif
+
+#if SPOT_LIGHTS>0
+    // Spot lights uniforms. Each spot light uses 5 elements
+    uniform vec3  SpotLight[5*SPOT_LIGHTS];
+    // Macros to access elements inside the PointLight uniform array
+    #define SpotLightColor(a)			SpotLight[5*a]
+    #define SpotLightPosition(a)		SpotLight[5*a+1]
+    #define SpotLightDirection(a)		SpotLight[5*a+2]
+    #define SpotLightAngularDecay(a)	SpotLight[5*a+3].x
+    #define SpotLightCutoffAngle(a)		SpotLight[5*a+3].y
+    #define SpotLightLinearDecay(a)		SpotLight[5*a+3].z
+    #define SpotLightQuadraticDecay(a)	SpotLight[5*a+4].x
+#endif
+`
+
+const include_bones_vertex_declaration_source = `#ifdef BONE_INFLUENCERS
+    #if BONE_INFLUENCERS > 0
+	uniform mat4 mBones[TOTAL_BONES];
+    in vec4 matricesIndices;
+    in vec4 matricesWeights;
+//    #if BONE_INFLUENCERS > 4
+//        in vec4 matricesIndicesExtra;
+//        in vec4 matricesWeightsExtra;
+//    #endif
+    #endif
+#endif
+`
+
+const point_fragment_source = `precision highp float;
+
+#include <material>
 
 // Inputs from vertex shader
-in vec2 FragTexcoord;
-
-// Input uniform
-uniform vec4 Panel[8];
-#define Bounds			Panel[0]		  // panel bounds in texture coordinates
-#define Border			Panel[1]		  // panel border in texture coordinates
-#define Padding			Panel[2]		  // panel padding in texture coordinates
-#define Content			Panel[3]		  // panel content area in texture coordinates
-#define BorderColor		Panel[4]		  // panel border color
-#define PaddingColor	Panel[5]		  // panel padding color
-#define ContentColor	Panel[6]		  // panel content color
-#define TextureValid	bool(Panel[7].x)  // texture valid flag
+in vec3 Color;
+flat in mat2 Rotation;
 
 // Output
 out vec4 FragColor;
 
-
-/***
-* Checks if current fragment texture coordinate is inside the
-* supplied rectangle in texture coordinates:
-* rect[0] - position x [0,1]
-* rect[1] - position y [0,1]
-* rect[2] - width [0,1]
-* rect[3] - height [0,1]
-*/
-bool checkRect(vec4 rect) {
-
-    if (FragTexcoord.x < rect[0]) {
-        return false;
-    }
-    if (FragTexcoord.x > rect[0] + rect[2]) {
-        return false;
-    }
-    if (FragTexcoord.y < rect[1]) {
-        return false;
-    }
-    if (FragTexcoord.y > rect[1] + rect[3]) {
-        return false;
-    }
-    return true;
-}
-
-
 void main() {
 
-    // Discard fragment outside of received bounds
-    // Bounds[0] - xmin
-    // Bounds[1] - ymin
-    // Bounds[2] - xmax
-    // Bounds[3] - ymax
-    if (FragTexcoord.x <= Bounds[0] || FragTexcoord.x >= Bounds[2]) {
-        discard;
-    }
-    if (FragTexcoord.y <= Bounds[1] || FragTexcoord.y >= Bounds[3]) {
-        discard;
-    }
+    // Compute final texture color
+    vec4 texMixed = vec4(1);
+    #if MAT_TEXTURES > 0
+        vec2 pointCoord = Rotation * gl_PointCoord - vec2(0.5) + vec2(0.5);
+        bool firstTex = true;
+        if (MatTexVisible(0)) {
+            vec4 texColor = texture(MatTexture[0], pointCoord * MatTexRepeat(0) + MatTexOffset(0));
+            if (firstTex) {
+                texMixed = texColor;
+                firstTex = false;
+            } else {
+                texMixed = Blend(texMixed, texColor);
+            }
+        }
+        #if MAT_TEXTURES > 1
+            if (MatTexVisible(1)) {
+                vec4 texColor = texture(MatTexture[1], pointCoord * MatTexRepeat(1) + MatTexOffset(1));
+                if (firstTex) {
+                    texMixed = texColor;
+                    firstTex = false;
+                } else {
+                    texMixed = Blend(texMixed, texColor);
+                }
+            }
+            #if MAT_TEXTURES > 2
+                if (MatTexVisible(2)) {
+                    vec4 texColor = texture(MatTexture[2], pointCoord * MatTexRepeat(2) + MatTexOffset(2));
+                    if (firstTex) {
+                        texMixed = texColor;
+                        firstTex = false;
+                    } else {
+                        texMixed = Blend(texMixed, texColor);
+                    }
+                }
+            #endif
+        #endif
+    #endif
 
-    // Check if fragment is inside content area
-    if (checkRect(Content)) {
-
-        // If no texture, the color will be the material color.
-        vec4 color = ContentColor;
-
-		if (TextureValid) {
-            // Adjust texture coordinates to fit texture inside the content area
-            vec2 offset = vec2(-Content[0], -Content[1]);
-            vec2 factor = vec2(1.0/Content[2], 1.0/Content[3]);
-            vec2 texcoord = (FragTexcoord + offset) * factor;
-            vec4 texColor = texture(MatTexture, texcoord * MatTexRepeat + MatTexOffset);
-
-            // Mix content color with texture color.
-            // Note that doing a simple linear interpolation (e.g. using mix()) is not correct!
-            // The right formula can be found here: https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending
-            // For a more in-depth discussion: http://apoorvaj.io/alpha-compositing-opengl-blending-and-premultiplied-alpha.html#toc4
-            // Another great discussion here: https://ciechanow.ski/alpha-compositing/
-
-            // Alpha premultiply the content color
-            vec4 contentPre = ContentColor;
-            contentPre.rgb *= contentPre.a;
-
-            // Alpha premultiply the content color
-            vec4 texPre = texColor;
-            texPre.rgb *= texPre.a;
-
-            // Combine colors to obtain the alpha premultiplied final color
-            color = texPre + contentPre * (1.0 - texPre.a);
-
-            // Un-alpha-premultiply
-            color.rgb /= color.a;
-		}
-
-        FragColor = color;
-        return;
-    }
-
-    // Checks if fragment is inside paddings area
-    if (checkRect(Padding)) {
-        FragColor = PaddingColor;
-        return;
-    }
-
-    // Checks if fragment is inside borders area
-    if (checkRect(Border)) {
-        FragColor = BorderColor;
-        return;
-    }
-
-    // Fragment is in margins area (always transparent)
-    FragColor = vec4(1,1,1,0);
+    // Generates final color
+    FragColor = min(vec4(Color, MatOpacity) * texMixed, vec4(1));
 }
 `
 
-const panel_vertex_source = `#include <attributes>
+const physical_vertex_source = `//
+// Physically Based Shading of a microfacet surface material - Vertex Shader
+// Modified from reference implementation at https://github.com/KhronosGroup/glTF-WebGL-PBR
+//
+#include <attributes>
 
 // Model uniforms
-uniform mat4 ModelMatrix;
+uniform mat4 ModelViewMatrix;
+uniform mat3 NormalMatrix;
+uniform mat4 MVP;
 
-// Outputs for fragment shader
+#include <morphtarget_vertex_declaration>
+#include <bones_vertex_declaration>
+
+// Output variables for Fragment shader
+out vec3 Position;
+out vec3 Normal;
+out vec3 CamDir;
 out vec2 FragTexcoord;
-
 
 void main() {
 
-    // Always flip texture coordinates
-    vec2 texcoord = VertexTexcoord;
-    texcoord.y = 1.0 - texcoord.y;
-    FragTexcoord = texcoord;
+    // Transform this vertex position to camera coordinates.
+    Position = vec3(ModelViewMatrix * vec4(VertexPosition, 1.0));
 
-    // Set position
-    vec4 pos = vec4(VertexPosition.xyz, 1);
-    gl_Position = ModelMatrix * pos;
+    // Transform this vertex normal to camera coordinates.
+    Normal = normalize(NormalMatrix * VertexNormal);
+
+    // Calculate the direction vector from the vertex to the camera
+    // The camera is at 0,0,0
+    CamDir = normalize(-Position.xyz);
+
+    // Output texture coordinates to fragment shader
+    FragTexcoord = VertexTexcoord;
+
+    vec3 vPosition = VertexPosition;
+    mat4 finalWorld = mat4(1.0);
+    #include <morphtarget_vertex>
+    #include <bones_vertex>
+
+    gl_Position = MVP * finalWorld * vec4(vPosition, 1.0);
+
 }
 `
 
@@ -869,107 +797,6 @@ void main() {
 }
 `
 
-const physical_vertex_source = `//
-// Physically Based Shading of a microfacet surface material - Vertex Shader
-// Modified from reference implementation at https://github.com/KhronosGroup/glTF-WebGL-PBR
-//
-#include <attributes>
-
-// Model uniforms
-uniform mat4 ModelViewMatrix;
-uniform mat3 NormalMatrix;
-uniform mat4 MVP;
-
-#include <morphtarget_vertex_declaration>
-#include <bones_vertex_declaration>
-
-// Output variables for Fragment shader
-out vec3 Position;
-out vec3 Normal;
-out vec3 CamDir;
-out vec2 FragTexcoord;
-
-void main() {
-
-    // Transform this vertex position to camera coordinates.
-    Position = vec3(ModelViewMatrix * vec4(VertexPosition, 1.0));
-
-    // Transform this vertex normal to camera coordinates.
-    Normal = normalize(NormalMatrix * VertexNormal);
-
-    // Calculate the direction vector from the vertex to the camera
-    // The camera is at 0,0,0
-    CamDir = normalize(-Position.xyz);
-
-    // Output texture coordinates to fragment shader
-    FragTexcoord = VertexTexcoord;
-
-    vec3 vPosition = VertexPosition;
-    mat4 finalWorld = mat4(1.0);
-    #include <morphtarget_vertex>
-    #include <bones_vertex>
-
-    gl_Position = MVP * finalWorld * vec4(vPosition, 1.0);
-
-}
-`
-
-const point_fragment_source = `precision highp float;
-
-#include <material>
-
-// Inputs from vertex shader
-in vec3 Color;
-flat in mat2 Rotation;
-
-// Output
-out vec4 FragColor;
-
-void main() {
-
-    // Compute final texture color
-    vec4 texMixed = vec4(1);
-    #if MAT_TEXTURES > 0
-        vec2 pointCoord = Rotation * gl_PointCoord - vec2(0.5) + vec2(0.5);
-        bool firstTex = true;
-        if (MatTexVisible(0)) {
-            vec4 texColor = texture(MatTexture[0], pointCoord * MatTexRepeat(0) + MatTexOffset(0));
-            if (firstTex) {
-                texMixed = texColor;
-                firstTex = false;
-            } else {
-                texMixed = Blend(texMixed, texColor);
-            }
-        }
-        #if MAT_TEXTURES > 1
-            if (MatTexVisible(1)) {
-                vec4 texColor = texture(MatTexture[1], pointCoord * MatTexRepeat(1) + MatTexOffset(1));
-                if (firstTex) {
-                    texMixed = texColor;
-                    firstTex = false;
-                } else {
-                    texMixed = Blend(texMixed, texColor);
-                }
-            }
-            #if MAT_TEXTURES > 2
-                if (MatTexVisible(2)) {
-                    vec4 texColor = texture(MatTexture[2], pointCoord * MatTexRepeat(2) + MatTexOffset(2));
-                    if (firstTex) {
-                        texMixed = texColor;
-                        firstTex = false;
-                    } else {
-                        texMixed = Blend(texMixed, texColor);
-                    }
-                }
-            #endif
-        #endif
-    #endif
-
-    // Generates final color
-    FragColor = min(vec4(Color, MatOpacity) * texMixed, vec4(1));
-}
-`
-
 const point_vertex_source = `#include <attributes>
 
 // Model uniforms
@@ -1002,6 +829,63 @@ void main() {
     Color = MatEmissiveColor;
 }
 
+`
+
+const standard_vertex_source = `#include <attributes>
+
+// Model uniforms
+uniform mat4 ModelViewMatrix;
+uniform mat3 NormalMatrix;
+uniform mat4 MVP;
+
+#include <material>
+#include <morphtarget_vertex_declaration>
+#include <bones_vertex_declaration>
+
+// Output variables for Fragment shader
+out vec4 Position;
+out vec3 Normal;
+out vec2 FragTexcoord;
+
+void main() {
+
+    // Transform vertex position to camera coordinates
+    Position = ModelViewMatrix * vec4(VertexPosition, 1.0);
+
+    // Transform vertex normal to camera coordinates
+    Normal = normalize(NormalMatrix * VertexNormal);
+
+    vec2 texcoord = VertexTexcoord;
+#if MAT_TEXTURES > 0
+    // Flip texture coordinate Y if requested.
+    if (MatTexFlipY(0)) {
+        texcoord.y = 1.0 - texcoord.y;
+    }
+#endif
+    FragTexcoord = texcoord;
+    vec3 vPosition = VertexPosition;
+    mat4 finalWorld = mat4(1.0);
+    #include <morphtarget_vertex>
+    #include <bones_vertex>
+
+    // Output projected and transformed vertex position
+    gl_Position = MVP * finalWorld * vec4(vPosition, 1.0);
+}
+`
+
+const basic_vertex_source = `#include <attributes>
+
+// Model uniforms
+uniform mat4 MVP;
+
+// Final output color for fragment shader
+out vec3 Color;
+
+void main() {
+
+    Color = VertexColor;
+    gl_Position = MVP * vec4(VertexPosition, 1.0);
+}
 `
 
 const standard_fragment_source = `precision highp float;
@@ -1084,76 +968,192 @@ void main() {
 }
 `
 
-const standard_vertex_source = `#include <attributes>
+const panel_vertex_source = `#include <attributes>
 
 // Model uniforms
-uniform mat4 ModelViewMatrix;
-uniform mat3 NormalMatrix;
-uniform mat4 MVP;
+uniform mat4 ModelMatrix;
 
-#include <material>
-#include <morphtarget_vertex_declaration>
-#include <bones_vertex_declaration>
-
-// Output variables for Fragment shader
-out vec4 Position;
-out vec3 Normal;
+// Outputs for fragment shader
 out vec2 FragTexcoord;
+
 
 void main() {
 
-    // Transform vertex position to camera coordinates
-    Position = ModelViewMatrix * vec4(VertexPosition, 1.0);
-
-    // Transform vertex normal to camera coordinates
-    Normal = normalize(NormalMatrix * VertexNormal);
-
+    // Always flip texture coordinates
     vec2 texcoord = VertexTexcoord;
-#if MAT_TEXTURES > 0
-    // Flip texture coordinate Y if requested.
-    if (MatTexFlipY(0)) {
-        texcoord.y = 1.0 - texcoord.y;
-    }
-#endif
+    texcoord.y = 1.0 - texcoord.y;
     FragTexcoord = texcoord;
-    vec3 vPosition = VertexPosition;
-    mat4 finalWorld = mat4(1.0);
-    #include <morphtarget_vertex>
-    #include <bones_vertex>
 
-    // Output projected and transformed vertex position
-    gl_Position = MVP * finalWorld * vec4(vPosition, 1.0);
+    // Set position
+    vec4 pos = vec4(VertexPosition.xyz, 1);
+    gl_Position = ModelMatrix * pos;
+}
+`
+
+const basic_fragment_source = `precision highp float;
+
+in vec3 Color;
+out vec4 FragColor;
+
+void main() {
+
+    FragColor = vec4(Color, 1.0);
+}
+`
+
+const panel_fragment_source = `precision highp float;
+
+// Texture uniforms
+uniform sampler2D	MatTexture;
+uniform vec2		MatTexinfo[3];
+
+// Macros to access elements inside the MatTexinfo array
+#define MatTexOffset		MatTexinfo[0]
+#define MatTexRepeat		MatTexinfo[1]
+#define MatTexFlipY	    	bool(MatTexinfo[2].x) // not used
+#define MatTexVisible	    bool(MatTexinfo[2].y) // not used
+
+// Inputs from vertex shader
+in vec2 FragTexcoord;
+
+// Input uniform
+uniform vec4 Panel[8];
+#define Bounds			Panel[0]		  // panel bounds in texture coordinates
+#define Border			Panel[1]		  // panel border in texture coordinates
+#define Padding			Panel[2]		  // panel padding in texture coordinates
+#define Content			Panel[3]		  // panel content area in texture coordinates
+#define BorderColor		Panel[4]		  // panel border color
+#define PaddingColor	Panel[5]		  // panel padding color
+#define ContentColor	Panel[6]		  // panel content color
+#define TextureValid	bool(Panel[7].x)  // texture valid flag
+
+// Output
+out vec4 FragColor;
+
+
+/***
+* Checks if current fragment texture coordinate is inside the
+* supplied rectangle in texture coordinates:
+* rect[0] - position x [0,1]
+* rect[1] - position y [0,1]
+* rect[2] - width [0,1]
+* rect[3] - height [0,1]
+*/
+bool checkRect(vec4 rect) {
+
+    if (FragTexcoord.x < rect[0]) {
+        return false;
+    }
+    if (FragTexcoord.x > rect[0] + rect[2]) {
+        return false;
+    }
+    if (FragTexcoord.y < rect[1]) {
+        return false;
+    }
+    if (FragTexcoord.y > rect[1] + rect[3]) {
+        return false;
+    }
+    return true;
+}
+
+
+void main() {
+
+    // Discard fragment outside of received bounds
+    // Bounds[0] - xmin
+    // Bounds[1] - ymin
+    // Bounds[2] - xmax
+    // Bounds[3] - ymax
+    if (FragTexcoord.x <= Bounds[0] || FragTexcoord.x >= Bounds[2]) {
+        discard;
+    }
+    if (FragTexcoord.y <= Bounds[1] || FragTexcoord.y >= Bounds[3]) {
+        discard;
+    }
+
+    // Check if fragment is inside content area
+    if (checkRect(Content)) {
+
+        // If no texture, the color will be the material color.
+        vec4 color = ContentColor;
+
+		if (TextureValid) {
+            // Adjust texture coordinates to fit texture inside the content area
+            vec2 offset = vec2(-Content[0], -Content[1]);
+            vec2 factor = vec2(1.0/Content[2], 1.0/Content[3]);
+            vec2 texcoord = (FragTexcoord + offset) * factor;
+            vec4 texColor = texture(MatTexture, texcoord * MatTexRepeat + MatTexOffset);
+
+            // Mix content color with texture color.
+            // Note that doing a simple linear interpolation (e.g. using mix()) is not correct!
+            // The right formula can be found here: https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending
+            // For a more in-depth discussion: http://apoorvaj.io/alpha-compositing-opengl-blending-and-premultiplied-alpha.html#toc4
+            // Another great discussion here: https://ciechanow.ski/alpha-compositing/
+
+            // Alpha premultiply the content color
+            vec4 contentPre = ContentColor;
+            contentPre.rgb *= contentPre.a;
+
+            // Alpha premultiply the content color
+            vec4 texPre = texColor;
+            texPre.rgb *= texPre.a;
+
+            // Combine colors to obtain the alpha premultiplied final color
+            color = texPre + contentPre * (1.0 - texPre.a);
+
+            // Un-alpha-premultiply
+            color.rgb /= color.a;
+		}
+
+        FragColor = color;
+        return;
+    }
+
+    // Checks if fragment is inside paddings area
+    if (checkRect(Padding)) {
+        FragColor = PaddingColor;
+        return;
+    }
+
+    // Checks if fragment is inside borders area
+    if (checkRect(Border)) {
+        FragColor = BorderColor;
+        return;
+    }
+
+    // Fragment is in margins area (always transparent)
+    FragColor = vec4(1,1,1,0);
 }
 `
 
 // Maps include name with its source code
 var includeMap = map[string]string{
 
-	"attributes":                      include_attributes_source,
-	"bones_vertex":                    include_bones_vertex_source,
-	"bones_vertex_declaration":        include_bones_vertex_declaration_source,
-	"lights":                          include_lights_source,
-	"material":                        include_material_source,
-	"morphtarget_vertex":              include_morphtarget_vertex_source,
 	"morphtarget_vertex2":             include_morphtarget_vertex2_source,
-	"morphtarget_vertex_declaration":  include_morphtarget_vertex_declaration_source,
 	"morphtarget_vertex_declaration2": include_morphtarget_vertex_declaration2_source,
+	"morphtarget_vertex":              include_morphtarget_vertex_source,
+	"morphtarget_vertex_declaration":  include_morphtarget_vertex_declaration_source,
+	"bones_vertex":                    include_bones_vertex_source,
 	"phong_model":                     include_phong_model_source,
+	"attributes":                      include_attributes_source,
+	"material":                        include_material_source,
+	"lights":                          include_lights_source,
+	"bones_vertex_declaration":        include_bones_vertex_declaration_source,
 }
 
 // Maps shader name with its source code
 var shaderMap = map[string]string{
 
-	"basic_fragment":    basic_fragment_source,
-	"basic_vertex":      basic_vertex_source,
-	"panel_fragment":    panel_fragment_source,
-	"panel_vertex":      panel_vertex_source,
-	"physical_fragment": physical_fragment_source,
-	"physical_vertex":   physical_vertex_source,
 	"point_fragment":    point_fragment_source,
+	"physical_vertex":   physical_vertex_source,
+	"physical_fragment": physical_fragment_source,
 	"point_vertex":      point_vertex_source,
-	"standard_fragment": standard_fragment_source,
 	"standard_vertex":   standard_vertex_source,
+	"basic_vertex":      basic_vertex_source,
+	"standard_fragment": standard_fragment_source,
+	"panel_vertex":      panel_vertex_source,
+	"basic_fragment":    basic_fragment_source,
+	"panel_fragment":    panel_fragment_source,
 }
 
 // Maps program name with Proginfo struct with shaders names

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build wasm
 // +build wasm
 
 package window
@@ -267,7 +268,7 @@ var keyMap = map[string]Key{
 	"ControlLeft":  KeyLeftControl,
 	"AltLeft":      KeyLeftAlt,
 	"MetaLeft":     KeyLeftSuper,
-	"ShitRight":    KeyRightShift,
+	"ShiftRight":   KeyRightShift,
 	"ControlRight": KeyRightControl,
 	"AltRight":     KeyRightAlt,
 	"MetaRight":    KeyRightSuper,
@@ -338,7 +339,7 @@ type WebGlCanvas struct {
 	mouseWheel js.Func
 	winResize  js.Func
 	winFocus   js.Func
-	winBlur   js.Func
+	winBlur    js.Func
 }
 
 // Init initializes the WebGlCanvas singleton.

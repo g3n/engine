@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build wasm
 // +build wasm
 
 package app
@@ -30,7 +31,7 @@ type Application struct {
 }
 
 // App returns the Application singleton, creating it the first time.
-func App() *Application {
+func App(width, height, title) *Application {
 
 	// Return singleton if already created
 	if a != nil {

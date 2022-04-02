@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build !wasm
 // +build !wasm
 
 package audio
@@ -96,10 +97,6 @@ func (p *Player) State() int {
 func (p *Player) Play() error {
 
 	state := p.State()
-	// Already playing, nothing to do
-	if state == al.Playing {
-		return nil
-	}
 
 	// If paused, goroutine should be running, just starts playing
 	if state == al.Paused {
@@ -107,37 +104,39 @@ func (p *Player) Play() error {
 		return nil
 	}
 
-	// Inactive or Stopped state
-	if state == al.Initial || state == al.Stopped {
-
-		// Sets file pointer to the beginning
-		err := p.af.Seek(0)
-		if err != nil {
-			return err
-		}
-
-		// Fill buffers with decoded data
-		for i := 0; i < playerBufferCount; i++ {
-			err = p.fillBuffer(p.buffers[i])
-			if err != nil {
-				if err != io.EOF {
-					return err
-				}
-				break
-			}
-		}
-		p.nextBuf = 0
-
-		// Clear previous goroutine response channel
-		select {
-		case _ = <-p.gchan:
-		default:
-		}
-		// Starts playing and starts goroutine to fill buffers
-		al.SourcePlay(p.source)
-		go p.run()
-		return nil
+	// Already playing - stop in order to start from beginning
+	if state == al.Playing {
+		p.Stop()
 	}
+
+	// Sets file pointer to the beginning
+	err := p.af.Seek(0)
+	if err != nil {
+		return err
+	}
+
+	// Fill buffers with decoded data
+	for i := 0; i < playerBufferCount; i++ {
+		err = p.fillBuffer(p.buffers[i])
+		if err != nil {
+			if err != io.EOF {
+				return err
+			}
+			break
+		}
+	}
+	p.nextBuf = 0
+
+	// Clear previous goroutine response channel
+	select {
+	case _ = <-p.gchan:
+	default:
+	}
+
+	// Starts playing and starts goroutine to fill buffers
+	al.SourcePlay(p.source)
+	go p.run()
+	
 	return nil
 }
 
