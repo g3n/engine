@@ -52,7 +52,7 @@ func (c *Color4) Set(r, g, b, a float32) *Color4 {
 	c.R = r
 	c.G = g
 	c.B = b
-	c.A = b
+	c.A = a
 	return c
 }
 
