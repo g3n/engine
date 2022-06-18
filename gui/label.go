@@ -213,7 +213,7 @@ func (l *Label) LineSpacing() float64 {
 // setTextCaret sets the label text and draws a caret at the
 // specified line and column.
 // It is normally used by the Edit widget.
-func (l *Label) setTextCaret(msg string, mx, width, line, col int) {
+func (l *Label) setTextCaret(msg string, mx, width int, drawCaret bool, line, col, selStart, selEnd int) {
 
 	// Set font properties
 	l.font.SetAttributes(&l.style.FontAttributes)
@@ -222,7 +222,7 @@ func (l *Label) setTextCaret(msg string, mx, width, line, col int) {
 	// Create canvas and draw text
 	_, height := l.font.MeasureText(msg)
 	canvas := text.NewCanvas(width, height, &l.style.BgColor)
-	canvas.DrawTextCaret(mx, 0, msg, l.font, line, col)
+	canvas.DrawTextCaret(mx, 0, msg, l.font, drawCaret, line, col, selStart, selEnd)
 
 	// Creates texture if if doesnt exist.
 	if l.tex == nil {

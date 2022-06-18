@@ -270,7 +270,7 @@ func (c Canvas) DrawText(x, y int, text string, f *Font) {
 // the specified line and column.
 // The supplied text string can contain line break escape sequences (\n).
 // TODO Implement caret as a gui.Panel in gui.Edit
-func (c Canvas) DrawTextCaret(x, y int, text string, f *Font, line, col int) error {
+func (c Canvas) DrawTextCaret(x, y int, text string, f *Font, drawCaret bool, line, col, selStart, selEnd int) error {
 
 	// Creates drawer
 	f.updateFace()
@@ -284,9 +284,25 @@ func (c Canvas) DrawTextCaret(x, y int, text string, f *Font, line, col int) err
 	lines := strings.Split(text, "\n")
 	for l, s := range lines {
 		d.Dot = fixed.P(x, py)
+		if selStart != selEnd && l == line && selEnd <= StrCount(s) {
+			width, _ := f.MeasureText(StrPrefix(s, selStart))
+			widthEnd, _ := f.MeasureText(StrPrefix(s, selEnd))
+			// Draw selection caret
+			// TODO This will not work when the selection spans multiple lines
+			// Currently there is no multiline edit text
+			// Once there is, this needs to change
+			caretH := int(f.attrib.PointSize) + 2
+			caretY := int(d.Dot.Y>>6) - int(f.attrib.PointSize) + 2
+			color := Color4RGBA(&math32.Color4{0, 0, 1, 0.5}) // Hardcoded to blue, alpha 50%
+			for w := width; w < widthEnd; w++ {
+				for j := caretY; j < caretY+caretH; j++ {
+					c.RGBA.Set(x+w, j, color)
+				}
+			}
+		}
 		d.DrawString(s)
 		// Checks for caret position
-		if l == line && col <= StrCount(s) {
+		if drawCaret && l == line && col <= StrCount(s) {
 			width, _ := f.MeasureText(StrPrefix(s, col))
 			// Draw caret vertical line
 			caretH := int(f.attrib.PointSize) + 2
