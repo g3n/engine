@@ -412,7 +412,7 @@ func (ed *Edit) CursorInput(s string) {
 func (ed *Edit) redraw(caret bool) {
 
 	line := 0
-	ed.Label.setTextCaret(ed.text, editMarginX, ed.width, caret, line, ed.col, ed.selStart, ed.selEnd)
+	ed.Label.setTextCaret(ed.text, editMarginX, int(ed.Width()), caret, line, ed.col, ed.selStart, ed.selEnd)
 }
 
 // onKey receives subscribed key events
@@ -598,7 +598,7 @@ func (ed *Edit) applyStyle(s *EditStyle) {
 
 	if !ed.focus && len(ed.text) == 0 && len(ed.placeHolder) > 0 {
 		ed.Label.SetColor4(&s.HolderColor)
-		ed.Label.setTextCaret(ed.placeHolder, editMarginX, ed.width, false, -1, ed.col, ed.selStart, ed.selEnd)
+		ed.Label.setTextCaret(ed.placeHolder, editMarginX, int(ed.Width()), false, -1, ed.col, ed.selStart, ed.selEnd)
 	} else {
 		ed.Label.SetColor4(&s.FgColor)
 		ed.redraw(ed.focus)
