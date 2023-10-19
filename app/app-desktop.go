@@ -11,8 +11,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/g3n/engine/audio/al"
-	"github.com/g3n/engine/audio/vorbis"
 	"github.com/g3n/engine/renderer"
 	"github.com/g3n/engine/window"
 )
@@ -22,7 +20,6 @@ type Application struct {
 	window.IWindow                    // Embedded GlfwWindow
 	keyState       *window.KeyState   // Keep track of keyboard state
 	renderer       *renderer.Renderer // Renderer object
-	audioDev       *al.Device         // Default audio device
 	startTime      time.Time          // Application start time
 	frameStart     time.Time          // Frame start time
 	frameDelta     time.Duration      // Duration of last frame
@@ -42,7 +39,6 @@ func App(width, height int, title string) *Application {
 		panic(err)
 	}
 	a.IWindow = window.Get()
-	a.openDefaultAudioDevice()         // Set up audio
 	a.keyState = window.NewKeyState(a) // Create KeyState
 	// Create renderer and add default shaders
 	a.renderer = renderer.NewRenderer(a.Gls())
@@ -85,10 +81,6 @@ func (a *Application) Run(update func(rend *renderer.Renderer, deltaTime time.Du
 		a.IWindow.(*window.GlfwWindow).PollEvents()
 	}
 
-	// Close default audio device
-	if a.audioDev != nil {
-		al.CloseDevice(a.audioDev)
-	}
 	// Destroy window
 	a.Destroy()
 }
@@ -117,34 +109,4 @@ func (a *Application) KeyState() *window.KeyState {
 func (a *Application) RunTime() time.Duration {
 
 	return time.Since(a.startTime)
-}
-
-// openDefaultAudioDevice opens the default audio device setting it to the current context
-func (a *Application) openDefaultAudioDevice() error {
-
-	// Opens default audio device
-	var err error
-	a.audioDev, err = al.OpenDevice("")
-	if err != nil {
-		return fmt.Errorf("opening OpenAL default device: %s", err)
-	}
-	// Check for OpenAL effects extension support
-	var attribs []int
-	if al.IsExtensionPresent("ALC_EXT_EFX") {
-		attribs = []int{al.MAX_AUXILIARY_SENDS, 4}
-	}
-	// Create audio context
-	acx, err := al.CreateContext(a.audioDev, attribs)
-	if err != nil {
-		return fmt.Errorf("creating OpenAL context: %s", err)
-	}
-	// Makes the context the current one
-	err = al.MakeContextCurrent(acx)
-	if err != nil {
-		return fmt.Errorf("setting OpenAL context current: %s", err)
-	}
-	// Logs audio library versions
-	log.Info("%s version: %s", al.GetString(al.Vendor), al.GetString(al.Version))
-	log.Info("%s", vorbis.VersionString())
-	return nil
 }
