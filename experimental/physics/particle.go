@@ -5,8 +5,8 @@
 package physics
 
 //import (
-//	"github.com/g3n/engine/math32"
-//	"github.com/g3n/engine/graphic"
+//	"github.com/xackery/engine/math32"
+//	"github.com/xackery/engine/graphic"
 //)
 //
 //// Particle represents a physics-driven particle.

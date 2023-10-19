@@ -5,7 +5,7 @@
 package equation
 
 import (
-	"github.com/g3n/engine/math32"
+	"github.com/xackery/engine/math32"
 )
 
 // Contact is a contact/non-penetration constraint equation.

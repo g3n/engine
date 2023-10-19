@@ -7,9 +7,9 @@ package graphic
 import (
 	"strconv"
 
-	"github.com/g3n/engine/core"
-	"github.com/g3n/engine/gls"
-	"github.com/g3n/engine/math32"
+	"github.com/xackery/engine/core"
+	"github.com/xackery/engine/gls"
+	"github.com/xackery/engine/math32"
 )
 
 // MaxBoneInfluencers is the maximum number of bone influencers per vertex.

@@ -5,7 +5,7 @@
 // Package app implements a cross-platform G3N app.
 package app
 
-import "github.com/g3n/engine/util/logger"
+import "github.com/xackery/engine/util/logger"
 
 // Package logger
 var log = logger.New("APP", logger.Default)

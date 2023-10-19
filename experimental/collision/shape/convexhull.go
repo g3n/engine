@@ -5,9 +5,9 @@
 package shape
 
 import (
-	"github.com/g3n/engine/experimental/collision"
-	"github.com/g3n/engine/geometry"
-	"github.com/g3n/engine/math32"
+	"github.com/xackery/engine/experimental/collision"
+	"github.com/xackery/engine/geometry"
+	"github.com/xackery/engine/math32"
 )
 
 // ConvexHull is a convex triangle-based geometry used for collision detection and contact resolution.
@@ -247,7 +247,7 @@ func (ch *ConvexHull) ProjectOntoWorldAxis(worldAxis, pos *math32.Vector3, quat 
 
 // =====================================================================
 
-//{array} result The an array of contact point objects, see clipFaceAgainstHull
+// {array} result The an array of contact point objects, see clipFaceAgainstHull
 func (ch *ConvexHull) ClipAgainstHull(chB *ConvexHull, posA, posB *math32.Vector3, quatA, quatB *math32.Quaternion, penAxis *math32.Vector3, minDist, maxDist float32) []collision.Contact {
 
 	var contacts []collision.Contact
@@ -295,8 +295,8 @@ func (ch *ConvexHull) WorldFace(face [3]math32.Vector3, pos *math32.Vector3, qua
 }
 
 // Clip a face against a hull.
-//@param {Array} worldVertsB1 An array of Vec3 with vertices in the world frame.
-//@param Array result Array to store resulting contact points in. Will be objects with properties: point, depth, normal. These are represented in world coordinates.
+// @param {Array} worldVertsB1 An array of Vec3 with vertices in the world frame.
+// @param Array result Array to store resulting contact points in. Will be objects with properties: point, depth, normal. These are represented in world coordinates.
 func (ch *ConvexHull) clipFaceAgainstHull(posA, penAxis *math32.Vector3, quatA *math32.Quaternion, worldClosestFaceB [3]math32.Vector3, minDist, maxDist float32) []collision.Contact {
 
 	contacts := make([]collision.Contact, 0)

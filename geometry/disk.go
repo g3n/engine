@@ -7,8 +7,8 @@ package geometry
 import (
 	"math"
 
-	"github.com/g3n/engine/gls"
-	"github.com/g3n/engine/math32"
+	"github.com/xackery/engine/gls"
+	"github.com/xackery/engine/math32"
 )
 
 // NewDisk creates a disk (filled circle) geometry with the specified

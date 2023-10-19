@@ -9,10 +9,11 @@ package app
 
 import (
 	"fmt"
-	"github.com/g3n/engine/renderer"
-	"github.com/g3n/engine/window"
 	"syscall/js"
 	"time"
+
+	"github.com/xackery/engine/renderer"
+	"github.com/xackery/engine/window"
 )
 
 // Default canvas id

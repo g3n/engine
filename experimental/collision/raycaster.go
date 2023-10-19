@@ -7,12 +7,12 @@ package collision
 import (
 	"sort"
 
-	"github.com/g3n/engine/camera"
-	"github.com/g3n/engine/core"
-	"github.com/g3n/engine/gls"
-	"github.com/g3n/engine/graphic"
-	"github.com/g3n/engine/material"
-	"github.com/g3n/engine/math32"
+	"github.com/xackery/engine/camera"
+	"github.com/xackery/engine/core"
+	"github.com/xackery/engine/gls"
+	"github.com/xackery/engine/graphic"
+	"github.com/xackery/engine/material"
+	"github.com/xackery/engine/math32"
 )
 
 // Raycaster represents an empty object that can cast rays and check for ray intersections.

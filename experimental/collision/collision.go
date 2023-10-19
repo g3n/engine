@@ -6,7 +6,7 @@
 // WARNING: Parts of this package are experimental and incomplete!
 package collision
 
-import "github.com/g3n/engine/geometry"
+import "github.com/xackery/engine/geometry"
 
 // TODO collision checking function dependent on collision shapes
 

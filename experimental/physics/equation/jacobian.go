@@ -4,7 +4,7 @@
 
 package equation
 
-import "github.com/g3n/engine/math32"
+import "github.com/xackery/engine/math32"
 
 // JacobianElement contains 6 entries, 3 spatial and 3 rotational degrees of freedom.
 type JacobianElement struct {

@@ -1,9 +1,9 @@
 package gltf
 
 import (
-	"github.com/g3n/engine/material"
-	"github.com/g3n/engine/math32"
-	"github.com/g3n/engine/texture"
+	"github.com/xackery/engine/material"
+	"github.com/xackery/engine/math32"
+	"github.com/xackery/engine/texture"
 )
 
 // loadMaterialCommon receives an interface value describing a KHR_materials_common extension,

@@ -5,7 +5,7 @@
 // Package renderer implements the scene renderer.
 package renderer
 
-import "github.com/g3n/engine/gls"
+import "github.com/xackery/engine/gls"
 
 type Postprocessor struct {
 	Width    int32

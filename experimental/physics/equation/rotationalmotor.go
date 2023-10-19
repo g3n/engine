@@ -5,7 +5,7 @@
 package equation
 
 import (
-	"github.com/g3n/engine/math32"
+	"github.com/xackery/engine/math32"
 )
 
 // RotationalMotor is a rotational motor constraint equation.

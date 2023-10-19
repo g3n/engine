@@ -5,8 +5,8 @@
 package gui
 
 import (
-	"github.com/g3n/engine/gui/assets/icon"
-	"github.com/g3n/engine/window"
+	"github.com/xackery/engine/gui/assets/icon"
+	"github.com/xackery/engine/window"
 )
 
 const (

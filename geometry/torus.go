@@ -7,8 +7,8 @@ package geometry
 import (
 	"math"
 
-	"github.com/g3n/engine/gls"
-	"github.com/g3n/engine/math32"
+	"github.com/xackery/engine/gls"
+	"github.com/xackery/engine/math32"
 )
 
 // NewTorus creates a torus geometry with the specified revolution radius, tube radius,

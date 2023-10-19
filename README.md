@@ -1,8 +1,8 @@
 
 <p align="center"><img width="150" src="https://github.com/g3n/g3nd/blob/master/data/images/g3n_logo.png" alt="G3N Banner"/></p>
 <p align="center">
-  <a href="https://godoc.org/github.com/g3n/engine"><img src="https://godoc.org/github.com/g3n/engine?status.svg" alt="Godoc"></img></a>
-  <a href="https://goreportcard.com/report/github.com/g3n/engine"><img src="https://goreportcard.com/badge/github.com/g3n/engine" alt="Go Report Card"/></a>
+  <a href="https://godoc.org/github.com/xackery/engine"><img src="https://godoc.org/github.com/xackery/engine?status.svg" alt="Godoc"></img></a>
+  <a href="https://goreportcard.com/report/github.com/xackery/engine"><img src="https://goreportcard.com/badge/github.com/xackery/engine" alt="Go Report Card"/></a>
   <a href="https://discord.gg/NfaeVr8zDg"><img src="https://img.shields.io/badge/Discord-G3N-blue" alt="Discord"/></a>
   
 </p>
@@ -71,7 +71,7 @@ Install the development files of OpenAL and Vorbis using [Homebrew](https://brew
 The following set of commands will download and install the engine along with all its Go dependencies:
   
 ```
-git clone https://github.com/g3n/engine g3n-engine
+git clone https://github.com/xackery/engine g3n-engine
 cd g3n-engine
 go install ./...
 ```
@@ -108,19 +108,19 @@ The code below is a basic "hello world" application ([hellog3n](https://github.c
 package main
 
 import (
-	"github.com/g3n/engine/app"
-	"github.com/g3n/engine/camera"
-	"github.com/g3n/engine/core"
-	"github.com/g3n/engine/geometry"
-	"github.com/g3n/engine/gls"
-	"github.com/g3n/engine/graphic"
-	"github.com/g3n/engine/gui"
-	"github.com/g3n/engine/light"
-	"github.com/g3n/engine/material"
-	"github.com/g3n/engine/math32"
-	"github.com/g3n/engine/renderer"
-	"github.com/g3n/engine/util/helper"
-	"github.com/g3n/engine/window"
+	"github.com/xackery/engine/app"
+	"github.com/xackery/engine/camera"
+	"github.com/xackery/engine/core"
+	"github.com/xackery/engine/geometry"
+	"github.com/xackery/engine/gls"
+	"github.com/xackery/engine/graphic"
+	"github.com/xackery/engine/gui"
+	"github.com/xackery/engine/light"
+	"github.com/xackery/engine/material"
+	"github.com/xackery/engine/math32"
+	"github.com/xackery/engine/renderer"
+	"github.com/xackery/engine/util/helper"
+	"github.com/xackery/engine/window"
 	"time"
 )
 
@@ -199,12 +199,12 @@ For more complex demos please see the [G3N demo program](https://github.com/g3n/
 
 ## Documentation
 
-The complete engine API reference can be found here: [![GoDoc](https://godoc.org/github.com/g3n/engine?status.svg)](https://godoc.org/github.com/g3n/engine).
+The complete engine API reference can be found here: [![GoDoc](https://godoc.org/github.com/xackery/engine?status.svg)](https://godoc.org/github.com/xackery/engine).
 
 There is also the beginning of a Getting Started Guide, and a newly created list of Guides and Tutorials:
 
-* [Getting Started](https://github.com/g3n/engine/wiki/Getting-Started-(WIP))
-* [Guides and Tutorials](https://github.com/g3n/engine/wiki/Guides-and-Tutorials)
+* [Getting Started](https://github.com/xackery/engine/wiki/Getting-Started-(WIP))
+* [Guides and Tutorials](https://github.com/xackery/engine/wiki/Guides-and-Tutorials)
 
 Along with those, a good way to learn how to use the engine is to see the source code of [G3ND - the G3N demo](https://github.com/g3n/g3nd).
   
@@ -218,4 +218,4 @@ Join our [Discord channel](https://discord.gg/NfaeVr8zDg). It's the best way to 
 
 ## Stargazers over time
 
-[![Stargazers over time](https://starchart.cc/g3n/engine.svg)](https://starchart.cc/g3n/engine)
+[![Stargazers over time](https://starchart.cc/xackery/engine.svg)](https://starchart.cc/xackery/engine)

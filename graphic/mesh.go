@@ -5,11 +5,11 @@
 package graphic
 
 import (
-	"github.com/g3n/engine/core"
-	"github.com/g3n/engine/geometry"
-	"github.com/g3n/engine/gls"
-	"github.com/g3n/engine/material"
-	"github.com/g3n/engine/math32"
+	"github.com/xackery/engine/core"
+	"github.com/xackery/engine/geometry"
+	"github.com/xackery/engine/gls"
+	"github.com/xackery/engine/material"
+	"github.com/xackery/engine/math32"
 )
 
 // Mesh is a Graphic with uniforms for the model, view, projection, and normal matrices.

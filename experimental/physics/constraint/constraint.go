@@ -6,8 +6,8 @@
 package constraint
 
 import (
-	"github.com/g3n/engine/experimental/physics/equation"
-	"github.com/g3n/engine/math32"
+	"github.com/xackery/engine/experimental/physics/equation"
+	"github.com/xackery/engine/math32"
 )
 
 type IBody interface {

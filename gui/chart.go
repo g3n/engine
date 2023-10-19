@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/g3n/engine/core"
-	"github.com/g3n/engine/geometry"
-	"github.com/g3n/engine/gls"
-	"github.com/g3n/engine/graphic"
-	"github.com/g3n/engine/material"
-	"github.com/g3n/engine/math32"
-	"github.com/g3n/engine/renderer/shaders"
+	"github.com/xackery/engine/core"
+	"github.com/xackery/engine/geometry"
+	"github.com/xackery/engine/gls"
+	"github.com/xackery/engine/graphic"
+	"github.com/xackery/engine/material"
+	"github.com/xackery/engine/math32"
+	"github.com/xackery/engine/renderer/shaders"
 )
 
 func init() {
@@ -23,10 +23,8 @@ func init() {
 	shaders.AddProgram("shaderChart", "shaderChartVertex", "shaderChartFrag")
 }
 
-//
 // Chart implements a panel which can contain a title, an x scale,
 // an y scale and several graphs
-//
 type Chart struct {
 	Panel                   // Embedded panel
 	left       float32      // Left margin in pixels
@@ -440,10 +438,8 @@ func (ch *Chart) recalc() {
 	}
 }
 
-//
 // chartScaleX is a panel with GL_LINES geometry which draws the chart X horizontal scale axis,
 // vertical lines and line labels.
-//
 type chartScaleX struct {
 	Panel                   // Embedded panel
 	chart     *Chart        // Container chart
@@ -519,10 +515,8 @@ func (sx *chartScaleX) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 	gs.Uniform4f(location, sx.pospix.X, float32(height)-sx.pospix.Y, sx.width, sx.height)
 }
 
-//
 // ChartScaleY is a panel with LINE geometry which draws the chart Y vertical scale axis,
 // horizontal and labels.
-//
 type chartScaleY struct {
 	Panel                   // Embedded panel
 	chart     *Chart        // Container chart
@@ -604,10 +598,8 @@ func (sy *chartScaleY) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 	gs.Uniform4f(location, sy.pospix.X, float32(height)-sy.pospix.Y, sy.width, sy.height)
 }
 
-//
 // Graph is the GUI element that represents a single plotted function.
 // A Chart has an array of Graph objects.
-//
 type Graph struct {
 	Panel                   // Embedded panel
 	chart     *Chart        // Container chart
@@ -717,9 +709,7 @@ func (lg *Graph) RenderSetup(gs *gls.GLS, rinfo *core.RenderInfo) {
 	gs.Uniform4f(location, lg.pospix.X, float32(height)-lg.pospix.Y, lg.width, lg.height)
 }
 
-//
 // Chart material
-//
 type chartMaterial struct {
 	material.Material              // Embedded material
 	color             math32.Color // emissive color
@@ -741,9 +731,7 @@ func (cm *chartMaterial) RenderSetup(gs *gls.GLS) {
 	gs.Uniform3f(cm.uniColor.Location(gs), cm.color.R, cm.color.G, cm.color.B)
 }
 
-//
 // Vertex Shader template
-//
 const shaderChartVertex = `
 // Vertex attributes
 #include <attributes>
@@ -766,9 +754,7 @@ void main() {
 }
 `
 
-//
 // Fragment Shader template
-//
 const shaderChartFrag = `
 precision highp float;
 
