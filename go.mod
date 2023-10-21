@@ -1,6 +1,6 @@
 module github.com/g3n/engine
 
-go 1.13
+go 1.21
 
 require (
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20210410170116-ea3d685f79fb
