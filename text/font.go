@@ -21,21 +21,21 @@ import (
 // Font represents a TrueType font face.
 // Attributes must be set prior to drawing.
 type Font struct {
-	ttf     *truetype.Font // The TrueType font
-	face    font.Face      // The font face
-	attrib  FontAttributes // Internal attribute cache
-	fg      *image.Uniform // Text color cache
-	bg      *image.Uniform // Background color cache
-	scaleX, scaleY float64      // Scales of actual pixel/GL point, used for fix Retina Monitor
-	changed bool           // Whether attributes have changed and the font face needs to be recreated
+	ttf            *truetype.Font // The TrueType font
+	face           font.Face      // The font face
+	attrib         FontAttributes // Internal attribute cache
+	fg             *image.Uniform // Text color cache
+	bg             *image.Uniform // Background color cache
+	scaleX, scaleY float64        // Scales of actual pixel/GL point, used for fix Retina Monitor
+	changed        bool           // Whether attributes have changed and the font face needs to be recreated
 }
 
 // FontAttributes contains tunable attributes of a font.
 type FontAttributes struct {
-	PointSize      float64      // Point size of the font
-	DPI            float64      // Resolution of the font in dots per inch
-	LineSpacing    float64      // Spacing between lines (in terms of font height)
-	Hinting        font.Hinting // Font hinting
+	PointSize   float64      // Point size of the font
+	DPI         float64      // Resolution of the font in dots per inch
+	LineSpacing float64      // Spacing between lines (in terms of font height)
+	Hinting     font.Hinting // Font hinting
 }
 
 func (a *FontAttributes) newTTOptions(scaleX, scaleY float64) *truetype.Options {
