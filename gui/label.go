@@ -226,6 +226,9 @@ func (l *Label) setTextCaret(msg string, mx, width int, drawCaret bool, line, co
 	l.font.SetAttributes(&l.style.FontAttributes)
 	l.font.SetColor(&l.style.FgColor)
 
+	scaleX, scaleY := window.Get().GetScale()
+	l.font.SetScaleXY(scaleX, scaleY)
+
 	// Create canvas and draw text
 	_, height := l.font.MeasureText(msg)
 	canvas := text.NewCanvas(width, height, &l.style.BgColor)
@@ -244,6 +247,6 @@ func (l *Label) setTextCaret(msg string, mx, width int, drawCaret bool, line, co
 	l.tex.SetMinFilter(gls.NEAREST)
 
 	// Updates label panel dimensions
-	l.Panel.SetContentSize(float32(width), float32(height))
+	l.Panel.SetContentSize(float32(width) / float32(scaleX), float32(height) / float32(scaleY))
 	l.text = msg
 }

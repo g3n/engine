@@ -134,6 +134,18 @@ func (f *Font) SetHinting(hinting font.Hinting) {
 	f.changed = true
 }
 
+func (f *Font) ScaleXY() (x, y float64) {
+	return f.scaleX, f.scaleY
+}
+
+func (f *Font) ScaleX() float64 {
+	return f.scaleX
+}
+
+func (f *Font) ScaleY() float64 {
+	return f.scaleY
+}
+
 // SetScale sets the ratio of actual pixel/GL point.
 func (f *Font) SetScaleXY(x, y float64) {
 
@@ -294,6 +306,7 @@ func (c Canvas) DrawTextCaret(x, y int, text string, f *Font, drawCaret bool, li
 	d := &font.Drawer{Dst: c.RGBA, Src: f.fg, Face: f.face}
 
 	// Draw text
+	actualPointSize := int(f.attrib.PointSize * f.scaleY)
 	metrics := f.face.Metrics()
 	py := y + metrics.Ascent.Round()
 	lineHeight := (metrics.Ascent + metrics.Descent).Ceil()
@@ -308,8 +321,8 @@ func (c Canvas) DrawTextCaret(x, y int, text string, f *Font, drawCaret bool, li
 			// TODO This will not work when the selection spans multiple lines
 			// Currently there is no multiline edit text
 			// Once there is, this needs to change
-			caretH := int(f.attrib.PointSize) + 2
-			caretY := int(d.Dot.Y>>6) - int(f.attrib.PointSize) + 2
+			caretH := actualPointSize + 2
+			caretY := int(d.Dot.Y>>6) - actualPointSize + 2
 			color := Color4RGBA(&math32.Color4{0, 0, 1, 0.5}) // Hardcoded to blue, alpha 50%
 			for w := width; w < widthEnd; w++ {
 				for j := caretY; j < caretY+caretH; j++ {
@@ -322,11 +335,13 @@ func (c Canvas) DrawTextCaret(x, y int, text string, f *Font, drawCaret bool, li
 		if drawCaret && l == line && col <= StrCount(s) {
 			width, _ := f.MeasureText(StrPrefix(s, col))
 			// Draw caret vertical line
-			caretH := int(f.attrib.PointSize) + 2
-			caretY := int(d.Dot.Y>>6) - int(f.attrib.PointSize) + 2
+			caretH := actualPointSize + 2
+			caretY := int(d.Dot.Y>>6) - actualPointSize + 2
 			color := Color4RGBA(&math32.Color4{0, 0, 0, 1}) // Hardcoded to black
-			for j := caretY; j < caretY+caretH; j++ {
-				c.RGBA.Set(x+width, j, color)
+			for i := 0; i < int(f.scaleX); i++ {
+				for j := caretY; j < caretY+caretH; j++ {
+					c.RGBA.Set(x+width+i, j, color)
+				}
 			}
 		}
 		py += lineHeight
