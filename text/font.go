@@ -9,6 +9,7 @@ import (
 	"image/color"
 	"image/draw"
 	"io/ioutil"
+	"runtime"
 	"strings"
 
 	"github.com/g3n/engine/math32"
@@ -34,6 +35,20 @@ type FontAttributes struct {
 	DPI         float64      // Resolution of the font in dots per inch
 	LineSpacing float64      // Spacing between lines (in terms of font height)
 	Hinting     font.Hinting // Font hinting
+}
+
+func(a *FontAttributes)newTTOptions() *truetype.Options {
+	dpi := a.DPI
+	// increase the DPI for macOS monitor
+	// TODO: should check the monitor but not the system (for now may not have much affect)
+	if runtime.GOOS == "darwin" {
+		dpi *= 2
+	}
+	return &truetype.Options{
+		Size:    a.PointSize,
+		DPI:     dpi,
+		Hinting: a.Hinting,
+	}
 }
 
 // Font Hinting types.
@@ -75,11 +90,7 @@ func NewFontFromData(fontData []byte) (*Font, error) {
 	f.SetColor(&math32.Color4{0, 0, 0, 1})
 
 	// Create font face
-	f.face = truetype.NewFace(f.ttf, &truetype.Options{
-		Size:    f.attrib.PointSize,
-		DPI:     f.attrib.DPI,
-		Hinting: f.attrib.Hinting,
-	})
+	f.face = truetype.NewFace(f.ttf, f.attrib.newTTOptions())
 
 	return f, nil
 }
@@ -158,11 +169,7 @@ func (f *Font) SetAttributes(fa *FontAttributes) {
 func (f *Font) updateFace() {
 
 	if f.changed {
-		f.face = truetype.NewFace(f.ttf, &truetype.Options{
-			Size:    f.attrib.PointSize,
-			DPI:     f.attrib.DPI,
-			Hinting: f.attrib.Hinting,
-		})
+		f.face = truetype.NewFace(f.ttf, f.attrib.newTTOptions())
 		f.changed = false
 	}
 }
@@ -207,6 +214,7 @@ func (f *Font) Metrics() font.Metrics {
 func (f *Font) DrawText(text string) *image.RGBA {
 
 	width, height := f.MeasureText(text)
+	println(width, height)
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 	draw.Draw(img, img.Bounds(), f.bg, image.ZP, draw.Src)
 	f.DrawTextOnImage(text, 0, 0, img)

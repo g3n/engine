@@ -5,6 +5,8 @@
 package gui
 
 import (
+	"runtime"
+
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/text"
@@ -98,7 +100,12 @@ func (l *Label) SetText(text string) {
 	}
 
 	// Update label panel dimensions
-	l.Panel.SetContentSize(float32(textImage.Rect.Dx()), float32(textImage.Rect.Dy()))
+	width, height := float32(textImage.Rect.Dx()), float32(textImage.Rect.Dy())
+	if runtime.GOOS == "darwin" {
+		// since we enlarged the font texture for higher quality, we have to scale it back to it's original point size
+		width, height = width / 2, height / 2
+	}
+	l.Panel.SetContentSize(width, height)
 }
 
 // Text returns the label text.
