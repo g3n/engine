@@ -9,7 +9,7 @@ import (
 	"image/color"
 	"image/draw"
 	"io/ioutil"
-	"runtime"
+	"math"
 	"strings"
 
 	"github.com/g3n/engine/math32"
@@ -26,23 +26,22 @@ type Font struct {
 	attrib  FontAttributes // Internal attribute cache
 	fg      *image.Uniform // Text color cache
 	bg      *image.Uniform // Background color cache
+	scaleX, scaleY float64      // Scales of actual pixel/GL point, used for fix Retina Monitor
 	changed bool           // Whether attributes have changed and the font face needs to be recreated
 }
 
 // FontAttributes contains tunable attributes of a font.
 type FontAttributes struct {
-	PointSize   float64      // Point size of the font
-	DPI         float64      // Resolution of the font in dots per inch
-	LineSpacing float64      // Spacing between lines (in terms of font height)
-	Hinting     font.Hinting // Font hinting
+	PointSize      float64      // Point size of the font
+	DPI            float64      // Resolution of the font in dots per inch
+	LineSpacing    float64      // Spacing between lines (in terms of font height)
+	Hinting        font.Hinting // Font hinting
 }
 
-func(a *FontAttributes)newTTOptions() *truetype.Options {
+func (a *FontAttributes) newTTOptions(scaleX, scaleY float64) *truetype.Options {
 	dpi := a.DPI
-	// increase the DPI for macOS monitor
-	// TODO: should check the monitor but not the system (for now may not have much affect)
-	if runtime.GOOS == "darwin" {
-		dpi *= 2
+	if scaleX != 0 && scaleY != 0 {
+		dpi *= math.Sqrt(scaleX * scaleY)
 	}
 	return &truetype.Options{
 		Size:    a.PointSize,
@@ -90,7 +89,7 @@ func NewFontFromData(fontData []byte) (*Font, error) {
 	f.SetColor(&math32.Color4{0, 0, 0, 1})
 
 	// Create font face
-	f.face = truetype.NewFace(f.ttf, f.attrib.newTTOptions())
+	f.face = truetype.NewFace(f.ttf, f.attrib.newTTOptions(f.scaleX, f.scaleY))
 
 	return f, nil
 }
@@ -135,6 +134,17 @@ func (f *Font) SetHinting(hinting font.Hinting) {
 	f.changed = true
 }
 
+// SetScale sets the ratio of actual pixel/GL point.
+func (f *Font) SetScaleXY(x, y float64) {
+
+	if x == f.scaleX && y == f.scaleY {
+		return
+	}
+	f.scaleX = x
+	f.scaleY = y
+	f.changed = true
+}
+
 // SetFgColor sets the text color.
 func (f *Font) SetFgColor(color *math32.Color4) {
 
@@ -169,7 +179,7 @@ func (f *Font) SetAttributes(fa *FontAttributes) {
 func (f *Font) updateFace() {
 
 	if f.changed {
-		f.face = truetype.NewFace(f.ttf, f.attrib.newTTOptions())
+		f.face = truetype.NewFace(f.ttf, f.attrib.newTTOptions(f.scaleX, f.scaleY))
 		f.changed = false
 	}
 }
