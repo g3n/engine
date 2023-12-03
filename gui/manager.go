@@ -113,6 +113,15 @@ func (gm *manager) onKeyboard(evname string, ev interface{}) {
 // OnMouseDown/OnMouseUp are dispatched to gm.target or to non-GUI, while
 // OnMouseDownOut/OnMouseUpOut are dispatched to all non-target panels.
 func (gm *manager) onMouse(evname string, ev interface{}) {
+	// To fix #299
+	if gm.cev == nil {
+		mev := ev.(*window.MouseEvent)
+		gm.cev = &window.CursorEvent{
+			Xpos: mev.Xpos,
+			Ypos: mev.Ypos,
+			Mods: mev.Mods,
+		}
+	}
 
 	// Check if gm.scene is nil and if so then there are no IPanels to send events to
 	if gm.scene == nil {
