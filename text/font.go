@@ -214,7 +214,6 @@ func (f *Font) Metrics() font.Metrics {
 func (f *Font) DrawText(text string) *image.RGBA {
 
 	width, height := f.MeasureText(text)
-	println(width, height)
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 	draw.Draw(img, img.Bounds(), f.bg, image.ZP, draw.Src)
 	f.DrawTextOnImage(text, 0, 0, img)
