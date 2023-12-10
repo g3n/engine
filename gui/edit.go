@@ -394,7 +394,7 @@ func (ed *Edit) CursorInput(s string) {
 
 	// Checks if new text exceeds edit width
 	width, _ := ed.Label.font.MeasureText(newText)
-	if float32(width)+editMarginX+float32(1) >= ed.Label.ContentWidth() {
+	if float32(width) / float32(ed.Label.font.ScaleX()) + editMarginX + float32(1) >= ed.Label.ContentWidth() {
 		return
 	}
 
@@ -412,7 +412,8 @@ func (ed *Edit) CursorInput(s string) {
 func (ed *Edit) redraw(caret bool) {
 
 	line := 0
-	ed.Label.setTextCaret(ed.text, editMarginX, ed.width, caret, line, ed.col, ed.selStart, ed.selEnd)
+	scaleX, _ := window.Get().GetScale()
+	ed.Label.setTextCaret(ed.text, editMarginX, int(float64(ed.width) * scaleX), caret, line, ed.col, ed.selStart, ed.selEnd)
 }
 
 // onKey receives subscribed key events
@@ -499,7 +500,7 @@ func (ed *Edit) handleMouse(mouseX float32, dragged bool) {
 	for nchars = 1; nchars <= text.StrCount(ed.text); nchars++ {
 		width, _ := ed.Label.font.MeasureText(text.StrPrefix(ed.text, nchars))
 		posx := mouseX - ed.pospix.X
-		if posx < editMarginX+float32(width) {
+		if posx < editMarginX + float32(float64(width) / ed.Label.font.ScaleX()) {
 			break
 		}
 	}
@@ -597,8 +598,9 @@ func (ed *Edit) applyStyle(s *EditStyle) {
 	//ed.Label.SetBgAlpha(s.BgAlpha)
 
 	if !ed.focus && len(ed.text) == 0 && len(ed.placeHolder) > 0 {
+		scaleX, _ := window.Get().GetScale()
 		ed.Label.SetColor4(&s.HolderColor)
-		ed.Label.setTextCaret(ed.placeHolder, editMarginX, ed.width, false, -1, ed.col, ed.selStart, ed.selEnd)
+		ed.Label.setTextCaret(ed.placeHolder, editMarginX, int(float64(ed.width) * scaleX), false, -1, ed.col, ed.selStart, ed.selEnd)
 	} else {
 		ed.Label.SetColor4(&s.FgColor)
 		ed.redraw(ed.focus)

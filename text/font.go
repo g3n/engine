@@ -9,6 +9,7 @@ import (
 	"image/color"
 	"image/draw"
 	"io/ioutil"
+	"math"
 	"strings"
 
 	"github.com/g3n/engine/math32"
@@ -20,12 +21,13 @@ import (
 // Font represents a TrueType font face.
 // Attributes must be set prior to drawing.
 type Font struct {
-	ttf     *truetype.Font // The TrueType font
-	face    font.Face      // The font face
-	attrib  FontAttributes // Internal attribute cache
-	fg      *image.Uniform // Text color cache
-	bg      *image.Uniform // Background color cache
-	changed bool           // Whether attributes have changed and the font face needs to be recreated
+	ttf            *truetype.Font // The TrueType font
+	face           font.Face      // The font face
+	attrib         FontAttributes // Internal attribute cache
+	fg             *image.Uniform // Text color cache
+	bg             *image.Uniform // Background color cache
+	scaleX, scaleY float64        // Scales of actual pixel/GL point, used for fix Retina Monitor
+	changed        bool           // Whether attributes have changed and the font face needs to be recreated
 }
 
 // FontAttributes contains tunable attributes of a font.
@@ -34,6 +36,18 @@ type FontAttributes struct {
 	DPI         float64      // Resolution of the font in dots per inch
 	LineSpacing float64      // Spacing between lines (in terms of font height)
 	Hinting     font.Hinting // Font hinting
+}
+
+func (a *FontAttributes) newTTOptions(scaleX, scaleY float64) *truetype.Options {
+	dpi := a.DPI
+	if scaleX != 0 && scaleY != 0 {
+		dpi *= math.Sqrt(scaleX * scaleY)
+	}
+	return &truetype.Options{
+		Size:    a.PointSize,
+		DPI:     dpi,
+		Hinting: a.Hinting,
+	}
 }
 
 // Font Hinting types.
@@ -75,11 +89,7 @@ func NewFontFromData(fontData []byte) (*Font, error) {
 	f.SetColor(&math32.Color4{0, 0, 0, 1})
 
 	// Create font face
-	f.face = truetype.NewFace(f.ttf, &truetype.Options{
-		Size:    f.attrib.PointSize,
-		DPI:     f.attrib.DPI,
-		Hinting: f.attrib.Hinting,
-	})
+	f.face = truetype.NewFace(f.ttf, f.attrib.newTTOptions(f.scaleX, f.scaleY))
 
 	return f, nil
 }
@@ -124,6 +134,29 @@ func (f *Font) SetHinting(hinting font.Hinting) {
 	f.changed = true
 }
 
+func (f *Font) ScaleXY() (x, y float64) {
+	return f.scaleX, f.scaleY
+}
+
+func (f *Font) ScaleX() float64 {
+	return f.scaleX
+}
+
+func (f *Font) ScaleY() float64 {
+	return f.scaleY
+}
+
+// SetScale sets the ratio of actual pixel/GL point.
+func (f *Font) SetScaleXY(x, y float64) {
+
+	if x == f.scaleX && y == f.scaleY {
+		return
+	}
+	f.scaleX = x
+	f.scaleY = y
+	f.changed = true
+}
+
 // SetFgColor sets the text color.
 func (f *Font) SetFgColor(color *math32.Color4) {
 
@@ -158,11 +191,7 @@ func (f *Font) SetAttributes(fa *FontAttributes) {
 func (f *Font) updateFace() {
 
 	if f.changed {
-		f.face = truetype.NewFace(f.ttf, &truetype.Options{
-			Size:    f.attrib.PointSize,
-			DPI:     f.attrib.DPI,
-			Hinting: f.attrib.Hinting,
-		})
+		f.face = truetype.NewFace(f.ttf, f.attrib.newTTOptions(f.scaleX, f.scaleY))
 		f.changed = false
 	}
 }
@@ -277,6 +306,7 @@ func (c Canvas) DrawTextCaret(x, y int, text string, f *Font, drawCaret bool, li
 	d := &font.Drawer{Dst: c.RGBA, Src: f.fg, Face: f.face}
 
 	// Draw text
+	actualPointSize := int(f.attrib.PointSize * f.scaleY)
 	metrics := f.face.Metrics()
 	py := y + metrics.Ascent.Round()
 	lineHeight := (metrics.Ascent + metrics.Descent).Ceil()
@@ -291,8 +321,8 @@ func (c Canvas) DrawTextCaret(x, y int, text string, f *Font, drawCaret bool, li
 			// TODO This will not work when the selection spans multiple lines
 			// Currently there is no multiline edit text
 			// Once there is, this needs to change
-			caretH := int(f.attrib.PointSize) + 2
-			caretY := int(d.Dot.Y>>6) - int(f.attrib.PointSize) + 2
+			caretH := actualPointSize + 2
+			caretY := int(d.Dot.Y>>6) - actualPointSize + 2
 			color := Color4RGBA(&math32.Color4{0, 0, 1, 0.5}) // Hardcoded to blue, alpha 50%
 			for w := width; w < widthEnd; w++ {
 				for j := caretY; j < caretY+caretH; j++ {
@@ -305,11 +335,13 @@ func (c Canvas) DrawTextCaret(x, y int, text string, f *Font, drawCaret bool, li
 		if drawCaret && l == line && col <= StrCount(s) {
 			width, _ := f.MeasureText(StrPrefix(s, col))
 			// Draw caret vertical line
-			caretH := int(f.attrib.PointSize) + 2
-			caretY := int(d.Dot.Y>>6) - int(f.attrib.PointSize) + 2
+			caretH := actualPointSize + 2
+			caretY := int(d.Dot.Y>>6) - actualPointSize + 2
 			color := Color4RGBA(&math32.Color4{0, 0, 0, 1}) // Hardcoded to black
-			for j := caretY; j < caretY+caretH; j++ {
-				c.RGBA.Set(x+width, j, color)
+			for i := 0; i < int(f.scaleX); i++ {
+				for j := caretY; j < caretY+caretH; j++ {
+					c.RGBA.Set(x+width+i, j, color)
+				}
 			}
 		}
 		py += lineHeight
