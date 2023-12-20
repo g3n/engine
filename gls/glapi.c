@@ -3055,9 +3055,9 @@ void glVertexAttrib4usv(GLuint index, const GLushort *v) {
 	}
 }
 
-void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer) {
+void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, GLsizeiptr pointer) {
 
-	pglVertexAttribPointer(index, size, type, normalized, stride, pointer);
+	pglVertexAttribPointer(index, size, type, normalized, stride, (void*)(pointer));
 	if (checkError) {
 		GLenum err = pglGetError();
 		if (err != GL_NO_ERROR) {
