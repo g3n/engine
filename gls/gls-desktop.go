@@ -812,7 +812,7 @@ func (gs *GLS) Uniform4fv(location int32, count int32, v *float32) {
 // VertexAttribPointer defines an array of generic vertex attribute data.
 func (gs *GLS) VertexAttribPointer(index uint32, size int32, xtype uint32, normalized bool, stride int32, offset uint32) {
 
-	C.glVertexAttribPointer(C.GLuint(index), C.GLint(size), C.GLenum(xtype), bool2c(normalized), C.GLsizei(stride), unsafe.Pointer(uintptr(offset)))
+	C.glVertexAttribPointer(C.GLuint(index), C.GLint(size), C.GLenum(xtype), bool2c(normalized), C.GLsizei(stride), C.GLsizeiptr(offset))
 }
 
 // Viewport sets the viewport.
