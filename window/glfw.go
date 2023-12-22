@@ -215,6 +215,20 @@ type GlfwWindow struct {
 	lastCursorKey Cursor
 }
 
+func mini(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}
+
+func maxi(x, y int) int {
+	if x > y {
+		return x
+	}
+	return y
+}
+
 // Init initializes the GlfwWindow singleton with the specified width, height, and title.
 func Init(width, height int, title string) error {
 
@@ -399,7 +413,7 @@ func (w *GlfwWindow) SetFullScreen(full bool) {
 		w.lastX, w.lastY = w.GetPos()
 		w.lastWidth, w.lastHeight = w.GetSize()
 		// Get size of primary monitor
-		mon := glfw.GetPrimaryMonitor()
+		mon := w.GetMonitor()
 		vmode := mon.GetVideoMode()
 		width := vmode.Width
 		height := vmode.Height
@@ -427,10 +441,39 @@ func (w *GlfwWindow) GetScale() (x float64, y float64) {
 	return w.scaleX, w.scaleY
 }
 
+// GetMonitor returns the window's best-guessed monitor (by max area).
+// Implemented to allow putting the window in fullscreen mode
+// on the same monitor that contains the window at the moment.
+// So far glfw doesn't provide a proper method for getting the monitor containing the window.
+// It only has GetWindowMonitor() which returns NULL unless the window is in fullscreen mode already.
+// This is a workaround translated from a snippet in C located here: https://stackoverflow.com/a/31526753
+func (w *GlfwWindow) GetMonitor() *glfw.Monitor {
+
+	wx, wy := w.GetPos()
+	ww, wh := w.GetSize()
+
+	bestOverlap := 0
+	bestMonitor := glfw.GetPrimaryMonitor()
+
+	for _, monitor := range glfw.GetMonitors() {
+		mode := monitor.GetVideoMode()
+		mx, my := monitor.GetPos()
+		mw, mh := mode.Width, mode.Height
+		overlap := maxi(0, mini(wx+ww, mx+mw)-maxi(wx, mx)) *
+			maxi(0, mini(wy+wh, my+mh)-maxi(wy, my))
+		if overlap > bestOverlap {
+			bestOverlap = overlap
+			bestMonitor = monitor
+		}
+	}
+
+	return bestMonitor
+}
+
 // ScreenResolution returns the screen resolution
 func (w *GlfwWindow) ScreenResolution(p interface{}) (width, height int) {
 
-	mon := glfw.GetPrimaryMonitor()
+	mon := w.GetMonitor()
 	vmode := mon.GetVideoMode()
 	return vmode.Width, vmode.Height
 }
