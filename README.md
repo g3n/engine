@@ -193,7 +193,7 @@ func main() {
   
 You can download and install `hellog3n` via:
     
-    go get -u github.com/g3n/demos/hellog3n
+    go install github.com/g3n/demos/hellog3n@latest
 
 For more complex demos please see the [G3N demo program](https://github.com/g3n/g3nd).
 
