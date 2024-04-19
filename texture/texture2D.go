@@ -128,6 +128,10 @@ func (t *Texture2D) Incref() *Texture2D {
 	return t
 }
 
+func (t *Texture2D) UpdateTexture() {
+	t.updateData = true
+}
+
 // Dispose decrements this texture reference count and
 // if necessary releases OpenGL resources and C memory
 // associated with this texture.
