@@ -69,3 +69,7 @@ func (i *Image) SetImage(imgfile string) error {
 	i.SetTexture(tex)
 	return nil
 }
+
+func (i *Image) UpdateTexture() {
+	i.tex.UpdateTexture()
+}
