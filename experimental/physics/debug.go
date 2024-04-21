@@ -5,13 +5,13 @@
 package physics
 
 import (
-	"github.com/g3n/engine/core"
-	"github.com/g3n/engine/experimental/collision"
-	"github.com/g3n/engine/geometry"
-	"github.com/g3n/engine/gls"
-	"github.com/g3n/engine/graphic"
-	"github.com/g3n/engine/material"
-	"github.com/g3n/engine/math32"
+	"github.com/Cyberselves/engine/core"
+	"github.com/Cyberselves/engine/experimental/collision"
+	"github.com/Cyberselves/engine/geometry"
+	"github.com/Cyberselves/engine/gls"
+	"github.com/Cyberselves/engine/graphic"
+	"github.com/Cyberselves/engine/material"
+	"github.com/Cyberselves/engine/math32"
 )
 
 // This file contains helpful infrastructure for debugging physics

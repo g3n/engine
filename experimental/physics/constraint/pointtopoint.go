@@ -5,8 +5,8 @@
 package constraint
 
 import (
-	"github.com/g3n/engine/experimental/physics/equation"
-	"github.com/g3n/engine/math32"
+	"github.com/Cyberselves/engine/experimental/physics/equation"
+	"github.com/Cyberselves/engine/math32"
 )
 
 // PointToPoint is an offset constraint.

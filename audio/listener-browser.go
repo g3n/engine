@@ -8,9 +8,9 @@
 package audio
 
 import (
-	"github.com/g3n/engine/core"
-	"github.com/g3n/engine/gls"
-	"github.com/g3n/engine/math32"
+	"github.com/Cyberselves/engine/core"
+	"github.com/Cyberselves/engine/gls"
+	"github.com/Cyberselves/engine/math32"
 )
 
 // Listener is an audio listener positioned in space.

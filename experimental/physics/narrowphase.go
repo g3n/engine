@@ -5,10 +5,10 @@
 package physics
 
 import (
-	"github.com/g3n/engine/experimental/collision/shape"
-	"github.com/g3n/engine/experimental/physics/equation"
-	"github.com/g3n/engine/experimental/physics/object"
-	"github.com/g3n/engine/math32"
+	"github.com/Cyberselves/engine/experimental/collision/shape"
+	"github.com/Cyberselves/engine/experimental/physics/equation"
+	"github.com/Cyberselves/engine/experimental/physics/object"
+	"github.com/Cyberselves/engine/math32"
 )
 
 // Narrowphase
@@ -149,8 +149,8 @@ func (n *Narrowphase) GenerateEquations(pairs []CollisionPair) ([]*equation.Cont
 		// For now these collisions are ignored
 		// TODO future: just want to check for collision (in order to dispatch events) and not create equations
 		justTest := (bodyTypeA == object.Kinematic) && (bodyTypeB == object.Static) ||
-				    (bodyTypeA == object.Static)    && (bodyTypeB == object.Kinematic) ||
-				    (bodyTypeA == object.Kinematic) && (bodyTypeB == object.Kinematic)
+			(bodyTypeA == object.Static) && (bodyTypeB == object.Kinematic) ||
+			(bodyTypeA == object.Kinematic) && (bodyTypeB == object.Kinematic)
 
 		// Get contacts
 		if !justTest {

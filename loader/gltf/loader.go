@@ -19,15 +19,15 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/g3n/engine/animation"
-	"github.com/g3n/engine/camera"
-	"github.com/g3n/engine/core"
-	"github.com/g3n/engine/geometry"
-	"github.com/g3n/engine/gls"
-	"github.com/g3n/engine/graphic"
-	"github.com/g3n/engine/material"
-	"github.com/g3n/engine/math32"
-	"github.com/g3n/engine/texture"
+	"github.com/Cyberselves/engine/animation"
+	"github.com/Cyberselves/engine/camera"
+	"github.com/Cyberselves/engine/core"
+	"github.com/Cyberselves/engine/geometry"
+	"github.com/Cyberselves/engine/gls"
+	"github.com/Cyberselves/engine/graphic"
+	"github.com/Cyberselves/engine/material"
+	"github.com/Cyberselves/engine/math32"
+	"github.com/Cyberselves/engine/texture"
 )
 
 // ParseJSON parses the glTF data from the specified JSON file

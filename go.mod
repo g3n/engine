@@ -1,4 +1,4 @@
-module github.com/g3n/engine
+module github.com/Cyberselves/engine
 
 go 1.13
 

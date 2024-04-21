@@ -13,8 +13,8 @@ import (
 	"os"
 	"unsafe"
 
-	"github.com/g3n/engine/audio/al"
-	"github.com/g3n/engine/audio/ov"
+	"github.com/Cyberselves/engine/audio/al"
+	"github.com/Cyberselves/engine/audio/ov"
 )
 
 const (

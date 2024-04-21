@@ -5,7 +5,7 @@
 package equation
 
 import (
-	"github.com/g3n/engine/math32"
+	"github.com/Cyberselves/engine/math32"
 )
 
 // Friction is a friction constraint equation.

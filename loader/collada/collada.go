@@ -11,9 +11,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/g3n/engine/geometry"
-	"github.com/g3n/engine/material"
-	"github.com/g3n/engine/texture"
+	"github.com/Cyberselves/engine/geometry"
+	"github.com/Cyberselves/engine/material"
+	"github.com/Cyberselves/engine/texture"
 )
 
 // Decoder contains all decoded data from collada file
@@ -66,9 +66,7 @@ func (d *Decoder) SetDirImages(path string) {
 	d.dirImages = path
 }
 
-//
 // Collada DOM root
-//
 type Collada struct {
 	Version             string
 	Asset               Asset
@@ -82,10 +80,8 @@ type Collada struct {
 	Scene               *Scene
 }
 
-//
 // Dump writes to the specified writer a text dump of the decoded Collada DOM
 // to aid debugging.
-//
 func (d *Decoder) Dump(out io.Writer, indent int) {
 
 	fmt.Fprintf(out, "%sCollada version:%s\n", sIndent(indent), d.dom.Version)
@@ -100,9 +96,7 @@ func (d *Decoder) Dump(out io.Writer, indent int) {
 	d.dom.Scene.Dump(out, indent+step)
 }
 
-//
 // Contributor
-//
 type Contributor struct {
 	Author        string
 	AuthorEmail   string
@@ -141,9 +135,7 @@ func (c *Contributor) Dump(out io.Writer, indent int) {
 	}
 }
 
-//
 // Asset
-//
 type Asset struct {
 	Contributor Contributor
 	Created     string
@@ -162,9 +154,7 @@ func (a *Asset) Dump(out io.Writer, indent int) {
 	fmt.Fprintf(out, "%sUpAxis:%s\n", sIndent(ind), a.UpAxis)
 }
 
-//
 // Scene
-//
 type Scene struct {
 	InstanceVisualScene *InstanceVisualScene
 }
@@ -177,9 +167,7 @@ func (s *Scene) Dump(out io.Writer, indent int) {
 	s.InstanceVisualScene.Dump(out, ind)
 }
 
-//
 // InstanceVisualScene
-//
 type InstanceVisualScene struct {
 	Sid  string
 	Name string

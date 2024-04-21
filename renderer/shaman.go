@@ -11,9 +11,9 @@ import (
 
 	"strconv"
 
-	"github.com/g3n/engine/gls"
-	"github.com/g3n/engine/material"
-	"github.com/g3n/engine/renderer/shaders"
+	"github.com/Cyberselves/engine/gls"
+	"github.com/Cyberselves/engine/material"
+	"github.com/Cyberselves/engine/renderer/shaders"
 )
 
 // Regular expression to parse #include <name> [quantity] directive

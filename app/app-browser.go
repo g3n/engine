@@ -9,8 +9,8 @@ package app
 
 import (
 	"fmt"
-	"github.com/g3n/engine/renderer"
-	"github.com/g3n/engine/window"
+	"github.com/Cyberselves/engine/renderer"
+	"github.com/Cyberselves/engine/window"
 	"syscall/js"
 	"time"
 )

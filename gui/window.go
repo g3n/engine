@@ -5,9 +5,9 @@
 package gui
 
 import (
-	"github.com/g3n/engine/gui/assets/icon"
-	"github.com/g3n/engine/math32"
-	"github.com/g3n/engine/window"
+	"github.com/Cyberselves/engine/gui/assets/icon"
+	"github.com/Cyberselves/engine/math32"
+	"github.com/Cyberselves/engine/window"
 )
 
 /*********************************************

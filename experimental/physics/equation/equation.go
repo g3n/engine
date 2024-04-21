@@ -9,7 +9,7 @@
 package equation
 
 import (
-	"github.com/g3n/engine/math32"
+	"github.com/Cyberselves/engine/math32"
 )
 
 // IBody is the interface of all body types.

@@ -4,17 +4,15 @@
 
 package physics
 
-import "github.com/g3n/engine/math32"
+import "github.com/Cyberselves/engine/math32"
 
 // ForceField represents a force field. A force is defined for every point.
 type ForceField interface {
 	ForceAt(pos *math32.Vector3) math32.Vector3
 }
 
-//
 // ConstantForceField is a constant force field.
 // It can be used to simulate surface gravity.
-//
 type ConstantForceField struct {
 	force math32.Vector3
 }
@@ -45,11 +43,9 @@ func (g *ConstantForceField) ForceAt(pos *math32.Vector3) math32.Vector3 {
 	return g.force
 }
 
-//
 // AttractorForceField is a force field where all forces point to a single point.
 // The force strength changes with the inverse distance squared.
 // This can be used to model planetary attractions.
-//
 type AttractorForceField struct {
 	position math32.Vector3
 	mass     float32
@@ -109,10 +105,8 @@ func (pa *AttractorForceField) ForceAt(pos *math32.Vector3) math32.Vector3 {
 	return *dir
 }
 
-//
 // RepellerForceField is a force field where all forces point away from a single point.
 // The force strength changes with the inverse distance squared.
-//
 type RepellerForceField struct {
 	position math32.Vector3
 	mass     float32

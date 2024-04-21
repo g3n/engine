@@ -4,7 +4,7 @@
 
 package shape
 
-import "github.com/g3n/engine/math32"
+import "github.com/Cyberselves/engine/math32"
 
 // Plane is an analytical collision Plane.
 // A plane, facing in the +Z direction. The plane has its surface at z=0 and everything below z=0 is assumed to be solid.

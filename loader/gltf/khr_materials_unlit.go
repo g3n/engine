@@ -1,7 +1,7 @@
 package gltf
 
 import (
-	"github.com/g3n/engine/material"
+	"github.com/Cyberselves/engine/material"
 )
 
 // TODO

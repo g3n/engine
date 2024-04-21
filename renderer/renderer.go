@@ -8,15 +8,15 @@ package renderer
 import (
 	"sort"
 
-	"github.com/g3n/engine/camera"
-	"github.com/g3n/engine/core"
-	"github.com/g3n/engine/gls"
-	"github.com/g3n/engine/graphic"
-	"github.com/g3n/engine/gui"
-	"github.com/g3n/engine/light"
-	"github.com/g3n/engine/material"
-	"github.com/g3n/engine/math32"
-	"github.com/g3n/engine/util/logger"
+	"github.com/Cyberselves/engine/camera"
+	"github.com/Cyberselves/engine/core"
+	"github.com/Cyberselves/engine/gls"
+	"github.com/Cyberselves/engine/graphic"
+	"github.com/Cyberselves/engine/gui"
+	"github.com/Cyberselves/engine/light"
+	"github.com/Cyberselves/engine/material"
+	"github.com/Cyberselves/engine/math32"
+	"github.com/Cyberselves/engine/util/logger"
 )
 
 // Package logger
