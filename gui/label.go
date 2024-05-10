@@ -5,6 +5,7 @@
 package gui
 
 import (
+	"fmt"
 	"github.com/Cyberselves/engine/gls"
 	"github.com/Cyberselves/engine/math32"
 	"github.com/Cyberselves/engine/text"
@@ -73,12 +74,11 @@ func (l *Label) initialize(msg string, font *text.Font) {
 
 // SetText sets and draws the label text using the font.
 func (l *Label) SetText(text string) {
-
-	// Need at least a character to get dimensions
-	l.text = text
-	if text == "" {
-		text = " "
-	}
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered from panic:", r)
+		}
+	}()
 
 	// Set font properties
 	l.font.SetAttributes(&l.style.FontAttributes)
@@ -86,6 +86,13 @@ func (l *Label) SetText(text string) {
 
 	scaleX, scaleY := window.Get().GetScale()
 	l.font.SetScaleXY(scaleX, scaleY)
+
+	// Need at least a character to get dimensions
+
+	l.text = text
+	if text == "" {
+		text = " "
+	}
 
 	// Create an image with the text
 	textImage := l.font.DrawText(text)

@@ -7,6 +7,7 @@ package gui
 import (
 	"github.com/Cyberselves/engine/math32"
 	"github.com/Cyberselves/engine/window"
+	"sync"
 )
 
 // Tree is the tree structure GUI element.
@@ -44,6 +45,7 @@ type TreeNode struct {
 	items    []IPanel  // List of node items
 	expanded bool      // Node expanded flag
 	litem    *ListItem // Reference to ListItem
+	mutex    sync.RWMutex
 }
 
 // NewTree creates and returns a pointer to a new tree widget.
@@ -209,15 +211,19 @@ func newTreeNode(text string, tree *Tree, parNode *TreeNode) *TreeNode {
 
 	// Subscribe to events
 	n.Panel.Subscribe(OnMouseDown, n.onMouse)
-	n.Panel.Subscribe(OnListItemResize, func(evname string, ev interface{}) {
-		n.recalc()
-	})
+	n.Panel.Subscribe(OnListItemResize, n.OnResize)
 	n.tree = tree
 	n.parNode = parNode
 
 	n.update()
 	n.recalc()
 	return n
+}
+
+func (n *TreeNode) OnResize(evname string, ev interface{}) {
+	//n.mutex.Lock()
+	//defer n.mutex.Lock()
+	n.recalc()
 }
 
 // Len returns the number of immediate children of this node
@@ -331,6 +337,8 @@ func (n *TreeNode) onMouse(evname string, ev interface{}) {
 
 	switch evname {
 	case OnMouseDown:
+		//n.mutex.Lock()
+		//defer n.mutex.Lock()
 		n.expanded = !n.expanded
 		n.update()
 		n.recalc()
@@ -374,6 +382,8 @@ func (n *TreeNode) update() {
 // recalc recalculates the positions of the internal node panels
 func (n *TreeNode) recalc() {
 
+	n.mutex.RLock()
+	defer n.mutex.RUnlock()
 	// icon position
 	n.icon.SetPosition(0, 0)
 
@@ -447,7 +457,6 @@ func (n *TreeNode) insertItems(pos int) int {
 
 // updateItems updates this node items, removing or inserting them into the tree scroller
 func (n *TreeNode) updateItems() {
-
 	pos := n.tree.ItemPosition(n)
 	if pos < 0 {
 		return
