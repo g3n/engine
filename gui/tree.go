@@ -464,3 +464,7 @@ func (n *TreeNode) updateItems() {
 	n.removeItems()
 	n.insertItems(pos + 1)
 }
+
+func (n *TreeNode) GetLabel() *Label{
+	return &n.label
+}
