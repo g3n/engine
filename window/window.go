@@ -38,6 +38,7 @@ type IWindow interface {
 	GetScale() (x float64, y float64)
 	CreateCursor(imgFile string, xhot, yhot int) (Cursor, error)
 	SetCursor(cursor Cursor)
+	SetCursorMode(mode CursorMode)
 	DisposeAllCustomCursors()
 	Destroy()
 }
@@ -85,6 +86,7 @@ const ( //                             Desktop | Browser |
 	OnMouseUp    = "w.OnMouseUp"    //    x    |    x    |
 	OnMouseDown  = "w.OnMouseDown"  //    x    |    x    |
 	OnScroll     = "w.OnScroll"     //    x    |    x    |
+	OnLockChange = "w.OnLockChange" //    x    |    x    |
 )
 
 // PosEvent describes a windows position changed event
@@ -131,4 +133,9 @@ type ScrollEvent struct {
 	Xoffset float32
 	Yoffset float32
 	Mods    ModifierKey
+}
+
+// LockEvent describes if cursor is locked or not
+type LockEvent struct {
+	Locked bool
 }

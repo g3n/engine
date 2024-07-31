@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build wasm
 // +build wasm
 
 package window
@@ -326,16 +327,18 @@ type WebGlCanvas struct {
 	sizeEv   SizeEvent
 	cursorEv CursorEvent
 	scrollEv ScrollEvent
+	lockEv   LockEvent
 
 	// Callbacks
-	onCtxMenu  js.Func
-	keyDown    js.Func
-	keyUp      js.Func
-	mouseDown  js.Func
-	mouseUp    js.Func
-	mouseMove  js.Func
-	mouseWheel js.Func
-	winResize  js.Func
+	onCtxMenu   js.Func
+	keyDown     js.Func
+	keyUp       js.Func
+	mouseDown   js.Func
+	mouseUp     js.Func
+	mouseMove   js.Func
+	mouseWheel  js.Func
+	winResize   js.Func
+	pointerLock js.Func
 }
 
 // Init initializes the WebGlCanvas singleton.
@@ -381,6 +384,13 @@ func Init(canvasId string) error {
 	w.canvas.Set("oncontextmenu", w.onCtxMenu)
 
 	// TODO scaling/hidpi (device pixel ratio)
+
+	w.pointerLock = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		w.lockEv.Locked = doc.Get("pointerLockElement").Equal(w.canvas)
+		w.Dispatch(OnLockChange, &w.lockEv)
+		return nil
+	})
+	doc.Call("addEventListener", "pointerlockchange", w.pointerLock)
 
 	// Set up key down callback to dispatch event
 	w.keyDown = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
@@ -431,8 +441,14 @@ func Init(canvasId string) error {
 	// Set up mouse move callback to dispatch event
 	w.mouseMove = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		event := args[0]
-		w.cursorEv.Xpos = float32(event.Get("offsetX").Float()) //* float32(w.scaleX) TODO
-		w.cursorEv.Ypos = float32(event.Get("offsetY").Float()) //* float32(w.scaleY)
+		if w.lockEv.Locked {
+			w.cursorEv.Xpos += float32(event.Get("movementX").Float())
+			w.cursorEv.Ypos += float32(event.Get("movementY").Float())
+		} else {
+			w.cursorEv.Xpos = float32(event.Get("offsetX").Float()) //* float32(w.scaleX) TODO
+			w.cursorEv.Ypos = float32(event.Get("offsetY").Float()) //* float32(w.scaleY)
+		}
+
 		w.cursorEv.Mods = getModifiers(event)
 		w.Dispatch(OnCursor, &w.cursorEv)
 		return nil
@@ -536,6 +552,7 @@ func (w *WebGlCanvas) Destroy() {
 	w.canvas.Call("removeEventListener", "mousemove", w.mouseMove)
 	w.canvas.Call("removeEventListener", "wheel", w.mouseWheel)
 	js.Global().Get("window").Call("removeEventListener", "resize", w.winResize)
+	js.Global().Get("document").Call("removeEventListener", "pointerlockchange", w.pointerLock)
 
 	// Release callbacks
 	w.onCtxMenu.Release()
@@ -546,6 +563,7 @@ func (w *WebGlCanvas) Destroy() {
 	w.mouseMove.Release()
 	w.mouseWheel.Release()
 	w.winResize.Release()
+	w.pointerLock.Release()
 }
 
 // GetFramebufferSize returns the framebuffer size.
@@ -586,6 +604,28 @@ func (w *WebGlCanvas) CreateCursor(imgFile string, xhot, yhot int) (Cursor, erro
 func (w *WebGlCanvas) SetCursor(cursor Cursor) {
 
 	// TODO
+}
+
+// SetCursorMode sets the window's cursor mode.
+// More info: https://developer.mozilla.org/en-US/docs/Web/API/Pointer_Lock_API
+func (w *WebGlCanvas) SetCursorMode(mode CursorMode) {
+	switch mode {
+	case CursorNormal:
+		js.Global().Get("document").Call("exitPointerLock")
+	case CursorHidden:
+	case CursorDisabled:
+		promise := w.Canvas().Call("requestPointerLock", map[string]interface{}{"unadjustedMovement": true})
+		if promise.IsUndefined() {
+			w.Canvas().Call("requestPointerLock")
+		} else {
+			promise.Call("catch", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+				if len(args) > 0 && args[0].Get("name").Equal(js.ValueOf("NotSupportedError")) {
+					w.Canvas().Call("requestPointerLock")
+				}
+				return nil
+			}))
+		}
+	}
 }
 
 // DisposeAllCursors deletes all existing custom cursors.

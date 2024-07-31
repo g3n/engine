@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build !wasm
 // +build !wasm
 
 package window
@@ -205,6 +206,7 @@ type GlfwWindow struct {
 	sizeEv   SizeEvent
 	cursorEv CursorEvent
 	scrollEv ScrollEvent
+	lockEv   LockEvent
 
 	mods ModifierKey // Current modifier keys
 
@@ -448,6 +450,13 @@ func (w *GlfwWindow) SetCursor(cursor Cursor) {
 		panic("Invalid cursor")
 	}
 	w.Window.SetCursor(cur)
+}
+
+// SetCursorMode sets the window's cursor mode.
+func (w *GlfwWindow) SetCursorMode(mode CursorMode) {
+	w.Window.SetInputMode(glfw.CursorMode, int(mode))
+	w.lockEv.Locked = mode == CursorDisabled
+	w.Dispatch(OnLockChange, &w.lockEv)
 }
 
 // CreateCursor creates a new custom cursor and returns an int handle.
