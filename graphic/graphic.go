@@ -207,7 +207,7 @@ func (gr *Graphic) GetMaterial(vpos int) material.IMaterial {
 		if gmat.count == 0 {
 			return gmat.imat
 		}
-		if gmat.start >= vpos && gmat.start+gmat.count <= vpos {
+		if gmat.start <= vpos && gmat.start+gmat.count >= vpos {
 			return gmat.imat
 		}
 	}
@@ -234,6 +234,8 @@ func (gr *Graphic) BoundingBox() math32.Box3 {
 
 	geom := gr.igeom.GetGeometry()
 	bbox := geom.BoundingBox()
+	m := gr.MatrixWorld()
+	bbox.ApplyMatrix4(&m)
 	for _, inode := range gr.Children() {
 		childGraphic, ok := inode.(*Graphic)
 		if ok {

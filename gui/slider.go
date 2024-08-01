@@ -163,6 +163,10 @@ func (s *Slider) setPos(pos float32) {
 // onMouse process subscribed mouse events over the outer panel
 func (s *Slider) onMouse(evname string, ev interface{}) {
 
+	if !s.Enabled() {
+		return
+	}
+
 	mev := ev.(*window.MouseEvent)
 	if mev.Button != window.MouseButtonLeft {
 		return
@@ -187,6 +191,10 @@ func (s *Slider) onMouse(evname string, ev interface{}) {
 
 // onCursor process subscribed cursor events
 func (s *Slider) onCursor(evname string, ev interface{}) {
+
+	if !s.Enabled() {
+		return
+	}
 
 	if evname == OnCursorEnter {
 		s.cursorOver = true
@@ -224,6 +232,10 @@ func (s *Slider) onCursor(evname string, ev interface{}) {
 // onScroll process subscribed scroll events
 func (s *Slider) onScroll(evname string, ev interface{}) {
 
+	if !s.Enabled() {
+		return
+	}
+
 	sev := ev.(*window.ScrollEvent)
 	v := s.pos
 	v += sev.Yoffset * 0.01
@@ -232,6 +244,10 @@ func (s *Slider) onScroll(evname string, ev interface{}) {
 
 // onKey process subscribed key events
 func (s *Slider) onKey(evname string, ev interface{}) {
+
+	if !s.Enabled() {
+		return
+	}
 
 	kev := ev.(*window.KeyEvent)
 	delta := float32(0.01)

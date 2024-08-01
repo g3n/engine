@@ -563,6 +563,10 @@ func (b *Builder) SetAttribs(am map[string]interface{}, ipan IPanel) error {
 		panel.SetName(am[AttribName].(string))
 	}
 
+	if am[AttribId] != nil {
+		panel.SetLoaderID(am[AttribId].(string))
+	}
+
 	if am[AttribVisible] != nil {
 		panel.SetVisible(am[AttribVisible].(bool))
 	}
@@ -875,7 +879,7 @@ func AttribCheckIcons(b *Builder, am map[string]interface{}, fname string) error
 		if err != nil {
 			return b.err(am, fname, fmt.Sprintf("Invalid icon codepoint value/name:%v", parts[i]))
 		}
-		text += string(val)
+		text += string(rune(val))
 	}
 	am[fname] = text
 	return nil

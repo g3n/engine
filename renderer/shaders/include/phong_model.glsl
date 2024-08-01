@@ -28,6 +28,8 @@ void phongModel(vec4 position, vec3 normal, vec3 camDir, vec3 matAmbient, vec3 m
     bool noLights = true;
     const float EPS = 0.00001;
 
+    float specular;
+
 #if AMB_LIGHTS>0
     noLights = false;
     // Ambient lights
@@ -44,7 +46,13 @@ void phongModel(vec4 position, vec3 normal, vec3 camDir, vec3 matAmbient, vec3 m
         float dotNormal = dot(lightDirection, normal); // Dot product between light direction and fragment normal
         if (dotNormal > EPS) { // If the fragment is lit
             diffuseTotal += DirLightColor(i) * matDiffuse * dotNormal;
-            specularTotal += DirLightColor(i) * MatSpecularColor * pow(max(dot(reflect(-lightDirection, normal), camDir), 0.0), MatShininess);
+
+#ifdef BLINN
+            specular = pow(max(dot(normal, normalize(lightDirection + camDir)), 0.0), MatShininess);
+#else
+            specular = pow(max(dot(reflect(-lightDirection, normal), camDir), 0.0), MatShininess);
+#endif
+            specularTotal += DirLightColor(i) * MatSpecularColor * specular;
         }
     }
 #endif
@@ -61,7 +69,13 @@ void phongModel(vec4 position, vec3 normal, vec3 camDir, vec3 matAmbient, vec3 m
             float attenuation = 1.0 / (1.0 + lightDistance * (PointLightLinearDecay(i) + PointLightQuadraticDecay(i) * lightDistance));
             vec3 attenuatedColor = PointLightColor(i) * attenuation;
             diffuseTotal += attenuatedColor * matDiffuse * dotNormal;
-            specularTotal += attenuatedColor * MatSpecularColor * pow(max(dot(reflect(-lightDirection, normal), camDir), 0.0), MatShininess);
+
+#ifdef BLINN
+            specular = pow(max(dot(normal, normalize(lightDirection + camDir)), 0.0), MatShininess);
+#else
+            specular = pow(max(dot(reflect(-lightDirection, normal), camDir), 0.0), MatShininess);
+#endif
+            specularTotal += attenuatedColor * MatSpecularColor * specular;
         }
     }
 #endif
@@ -83,7 +97,13 @@ void phongModel(vec4 position, vec3 normal, vec3 camDir, vec3 matAmbient, vec3 m
                 float spotFactor = pow(angleDot, SpotLightAngularDecay(i));
                 vec3 attenuatedColor = SpotLightColor(i) * attenuation * spotFactor;
                 diffuseTotal += attenuatedColor * matDiffuse * dotNormal;
-                specularTotal += attenuatedColor * MatSpecularColor * pow(max(dot(reflect(-lightDirection, normal), camDir), 0.0), MatShininess);
+
+#ifdef BLINN
+                specular = pow(max(dot(normal, normalize(lightDirection + camDir)), 0.0), MatShininess);
+#else
+                specular = pow(max(dot(reflect(-lightDirection, normal), camDir), 0.0), MatShininess);
+#endif
+                specularTotal += attenuatedColor * MatSpecularColor * specular;
             }
         }
     }

@@ -41,6 +41,8 @@ type IWindow interface {
 	SetCursorMode(mode CursorMode)
 	DisposeAllCustomCursors()
 	Destroy()
+	FullScreen() bool
+	SetFullScreen(full bool)
 }
 
 // Key corresponds to a keyboard key.
@@ -75,18 +77,19 @@ const (
 )
 
 // Window event names. See availability per platform below ("x" indicates available).
-const ( //                             Desktop | Browser |
-	OnWindowPos  = "w.OnWindowPos"  //    x    |         |
-	OnWindowSize = "w.OnWindowSize" //    x    |         |
-	OnKeyUp      = "w.OnKeyUp"      //    x    |    x    |
-	OnKeyDown    = "w.OnKeyDown"    //    x    |    x    |
-	OnKeyRepeat  = "w.OnKeyRepeat"  //    x    |         |
-	OnChar       = "w.OnChar"       //    x    |    x    |
-	OnCursor     = "w.OnCursor"     //    x    |    x    |
-	OnMouseUp    = "w.OnMouseUp"    //    x    |    x    |
-	OnMouseDown  = "w.OnMouseDown"  //    x    |    x    |
-	OnScroll     = "w.OnScroll"     //    x    |    x    |
-	OnLockChange = "w.OnLockChange" //    x    |    x    |
+const ( //                               Desktop | Browser |
+	OnWindowFocus = "w.OnWindowFocus" //    x    |    x    |
+	OnWindowPos   = "w.OnWindowPos"   //    x    |         |
+	OnWindowSize  = "w.OnWindowSize"  //    x    |         |
+	OnKeyUp       = "w.OnKeyUp"       //    x    |    x    |
+	OnKeyDown     = "w.OnKeyDown"     //    x    |    x    |
+	OnKeyRepeat   = "w.OnKeyRepeat"   //    x    |         |
+	OnChar        = "w.OnChar"        //    x    |    x    |
+	OnCursor      = "w.OnCursor"      //    x    |    x    |
+	OnMouseUp     = "w.OnMouseUp"     //    x    |    x    |
+	OnMouseDown   = "w.OnMouseDown"   //    x    |    x    |
+	OnScroll      = "w.OnScroll"      //    x    |    x    |
+	OnLockChange  = "w.OnLockChange"  //    x    |    x    |
 )
 
 // PosEvent describes a windows position changed event
@@ -138,4 +141,9 @@ type ScrollEvent struct {
 // LockEvent describes if cursor is locked or not
 type LockEvent struct {
 	Locked bool
+}
+
+// FocusEvent describes a focus event
+type FocusEvent struct {
+	Focused bool
 }

@@ -268,7 +268,7 @@ var keyMap = map[string]Key{
 	"ControlLeft":  KeyLeftControl,
 	"AltLeft":      KeyLeftAlt,
 	"MetaLeft":     KeyLeftSuper,
-	"ShitRight":    KeyRightShift,
+	"ShiftRight":   KeyRightShift,
 	"ControlRight": KeyRightControl,
 	"AltRight":     KeyRightAlt,
 	"MetaRight":    KeyRightSuper,
@@ -327,18 +327,21 @@ type WebGlCanvas struct {
 	sizeEv   SizeEvent
 	cursorEv CursorEvent
 	scrollEv ScrollEvent
+	focusEv  FocusEvent
 	lockEv   LockEvent
 
 	// Callbacks
-	onCtxMenu   js.Func
-	keyDown     js.Func
-	keyUp       js.Func
-	mouseDown   js.Func
-	mouseUp     js.Func
-	mouseMove   js.Func
-	mouseWheel  js.Func
-	winResize   js.Func
-	pointerLock js.Func
+	onCtxMenu  js.Func
+	keyDown    js.Func
+	keyUp      js.Func
+	mouseDown  js.Func
+	mouseUp    js.Func
+	mouseMove  js.Func
+	mouseWheel js.Func
+	winResize  js.Func
+	winFocus   js.Func
+	winBlur    js.Func
+	mouseLock  js.Func
 }
 
 // Init initializes the WebGlCanvas singleton.
@@ -385,12 +388,12 @@ func Init(canvasId string) error {
 
 	// TODO scaling/hidpi (device pixel ratio)
 
-	w.pointerLock = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	w.mouseLock = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		w.lockEv.Locked = doc.Get("pointerLockElement").Equal(w.canvas)
 		w.Dispatch(OnLockChange, &w.lockEv)
 		return nil
 	})
-	doc.Call("addEventListener", "pointerlockchange", w.pointerLock)
+	doc.Call("addEventListener", "pointerlockchange", w.mouseLock)
 
 	// Set up key down callback to dispatch event
 	w.keyDown = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
@@ -480,6 +483,20 @@ func Init(canvasId string) error {
 	})
 	js.Global().Get("window").Call("addEventListener", "resize", w.winResize)
 
+	// Set up window focus callback to dispatch event
+	w.winFocus = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		w.focusEv.Focused = true
+		w.Dispatch(OnWindowFocus, &w.focusEv)
+		return nil
+	})
+	w.winBlur = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		w.focusEv.Focused = false
+		w.Dispatch(OnWindowFocus, &w.focusEv)
+		return nil
+	})
+	js.Global().Get("window").Call("addEventListener", "onfocus", w.winFocus)
+	js.Global().Get("window").Call("addEventListener", "onblur", w.winBlur)
+
 	//// Set up char callback to dispatch event TODO
 	//w.SetCharModsCallback(func(x *glfw.Window, char rune, mods glfw.ModifierKey) {	//
 	//	w.charEv.Char = char
@@ -552,7 +569,9 @@ func (w *WebGlCanvas) Destroy() {
 	w.canvas.Call("removeEventListener", "mousemove", w.mouseMove)
 	w.canvas.Call("removeEventListener", "wheel", w.mouseWheel)
 	js.Global().Get("window").Call("removeEventListener", "resize", w.winResize)
-	js.Global().Get("document").Call("removeEventListener", "pointerlockchange", w.pointerLock)
+	js.Global().Get("window").Call("removeEventListener", "onfocus", w.winFocus)
+	js.Global().Get("window").Call("removeEventListener", "onfocus", w.winBlur)
+	js.Global().Get("document").Call("removeEventListener", "pointerlockchange", w.mouseLock)
 
 	// Release callbacks
 	w.onCtxMenu.Release()
@@ -563,7 +582,9 @@ func (w *WebGlCanvas) Destroy() {
 	w.mouseMove.Release()
 	w.mouseWheel.Release()
 	w.winResize.Release()
-	w.pointerLock.Release()
+	w.winFocus.Release()
+	w.winBlur.Release()
+	w.mouseLock.Release()
 }
 
 // GetFramebufferSize returns the framebuffer size.

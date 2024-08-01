@@ -95,10 +95,7 @@ func (g *Geometry) AddGroup(start, count, matIndex int) *Group {
 
 // AddGroupList adds the specified list of groups to this geometry.
 func (g *Geometry) AddGroupList(groups []Group) {
-
-	for _, group := range groups {
-		g.groups = append(g.groups, group)
-	}
+	g.groups = append(g.groups, groups...)
 }
 
 // GroupCount returns the number of geometry groups (for multimaterial).

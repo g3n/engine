@@ -3,7 +3,7 @@
 <p align="center">
   <a href="https://godoc.org/github.com/g3n/engine"><img src="https://godoc.org/github.com/g3n/engine?status.svg" alt="Godoc"></img></a>
   <a href="https://goreportcard.com/report/github.com/g3n/engine"><img src="https://goreportcard.com/badge/github.com/g3n/engine" alt="Go Report Card"/></a>
-  <a href="https://discord.gg/Dq9FpV4c"><img src="https://img.shields.io/badge/Discord-G3N-blue" alt="Discord"/></a>
+  <a href="https://discord.gg/NfaeVr8zDg"><img src="https://img.shields.io/badge/Discord-G3N-blue" alt="Discord"/></a>
   
 </p>
 <p><h1 align="center">G3N - Go 3D Game Engine</h1></p>
@@ -35,16 +35,24 @@ On Unix-based systems the engine depends on some C libraries that can be install
 
 ### Fedora
 
-    $ sudo dnf -y install xorg-x11-proto-devel mesa-libGL mesa-libGL-devel openal-soft openal-soft-devel libvorbis libvorbis-devel glfw-devel libXi-devel
+    $ sudo dnf -y install xorg-x11-proto-devel mesa-libGL mesa-libGL-devel openal-soft openal-soft-devel libvorbis libvorbis-devel glfw-devel libXi-devel libXxf86vm-devel
 
 ### CentOS 7
 
 Enable the EPEL repository:
 
     $ sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-
+    
 Then install the same packages as for Fedora - remember to use `yum` instead of `dnf` for the package installation command.
+    
+### Arch
 
+    $ sudo pacman -S base-devel xorg-server mesa openal libvorbis
+    
+### Void
+
+    $ sudo xbps-install git xorg-server-devel base-devel libvorbis-devel libvorbis libXxf86vm-devel libXcursor-devel libXrandr-devel libXinerama-devel libopenal libopenal-devel libglvnd-devel
+    
 ### Windows
 
 We tested the Windows build using the [mingw-w64](https://mingw-w64.org) toolchain (you can download [this file](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/8.1.0/threads-posix/seh/x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z) in particular).
@@ -185,7 +193,7 @@ func main() {
   
 You can download and install `hellog3n` via:
     
-    go get -u github.com/g3n/demos/hellog3n
+    go install github.com/g3n/demos/hellog3n@latest
 
 For more complex demos please see the [G3N demo program](https://github.com/g3n/g3nd).
 
@@ -206,7 +214,7 @@ If you find a bug or create a new feature you are encouraged to send pull reques
 
 ## Community
 
-Join our [Discord channel](https://discord.gg/Dq9FpV4c). It's the best way to have your questions answered quickly by the G3N community.
+Join our [Discord channel](https://discord.gg/NfaeVr8zDg). It's the best way to have your questions answered quickly by the G3N community.
 
 ## Stargazers over time
 

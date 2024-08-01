@@ -9,6 +9,7 @@ import (
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/text"
 	"github.com/g3n/engine/texture"
+	"github.com/g3n/engine/window"
 )
 
 // Label is a panel which contains a texture with text.
@@ -83,6 +84,9 @@ func (l *Label) SetText(text string) {
 	l.font.SetAttributes(&l.style.FontAttributes)
 	l.font.SetColor(&l.style.FgColor)
 
+	scaleX, scaleY := window.Get().GetScale()
+	l.font.SetScaleXY(scaleX, scaleY)
+
 	// Create an image with the text
 	textImage := l.font.DrawText(text)
 
@@ -98,7 +102,10 @@ func (l *Label) SetText(text string) {
 	}
 
 	// Update label panel dimensions
-	l.Panel.SetContentSize(float32(textImage.Rect.Dx()), float32(textImage.Rect.Dy()))
+	width, height := float32(textImage.Rect.Dx()), float32(textImage.Rect.Dy())
+	// since we enlarged the font texture for higher quality, we have to scale it back to it's original point size
+	width, height = width / float32(scaleX), height / float32(scaleY)
+	l.Panel.SetContentSize(width, height)
 }
 
 // Text returns the label text.
@@ -213,16 +220,19 @@ func (l *Label) LineSpacing() float64 {
 // setTextCaret sets the label text and draws a caret at the
 // specified line and column.
 // It is normally used by the Edit widget.
-func (l *Label) setTextCaret(msg string, mx, width, line, col int) {
+func (l *Label) setTextCaret(msg string, mx, width int, drawCaret bool, line, col, selStart, selEnd int) {
 
 	// Set font properties
 	l.font.SetAttributes(&l.style.FontAttributes)
 	l.font.SetColor(&l.style.FgColor)
 
+	scaleX, scaleY := window.Get().GetScale()
+	l.font.SetScaleXY(scaleX, scaleY)
+
 	// Create canvas and draw text
 	_, height := l.font.MeasureText(msg)
 	canvas := text.NewCanvas(width, height, &l.style.BgColor)
-	canvas.DrawTextCaret(mx, 0, msg, l.font, line, col)
+	canvas.DrawTextCaret(mx, 0, msg, l.font, drawCaret, line, col, selStart, selEnd)
 
 	// Creates texture if if doesnt exist.
 	if l.tex == nil {
@@ -237,6 +247,6 @@ func (l *Label) setTextCaret(msg string, mx, width, line, col int) {
 	l.tex.SetMinFilter(gls.NEAREST)
 
 	// Updates label panel dimensions
-	l.Panel.SetContentSize(float32(width), float32(height))
+	l.Panel.SetContentSize(float32(width) / float32(scaleX), float32(height) / float32(scaleY))
 	l.text = msg
 }

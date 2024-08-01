@@ -206,6 +206,7 @@ type GlfwWindow struct {
 	sizeEv   SizeEvent
 	cursorEv CursorEvent
 	scrollEv ScrollEvent
+	focusEv  FocusEvent
 	lockEv   LockEvent
 
 	mods ModifierKey // Current modifier keys
@@ -347,6 +348,12 @@ func Init(width, height int, title string) error {
 		w.Dispatch(OnWindowPos, &w.posEv)
 	})
 
+	// Set up window focus callback to dispatch event
+	w.SetFocusCallback(func(x *glfw.Window, focused bool) {
+		w.focusEv.Focused = focused
+		w.Dispatch(OnWindowFocus, &w.focusEv)
+	})
+
 	// Set up window cursor position callback to dispatch event
 	w.SetCursorPosCallback(func(x *glfw.Window, xpos float64, ypos float64) {
 		w.cursorEv.Xpos = float32(xpos)
@@ -373,15 +380,15 @@ func (w *GlfwWindow) Gls() *gls.GLS {
 	return w.gls
 }
 
-// Fullscreen returns whether this windows is currently fullscreen.
-func (w *GlfwWindow) Fullscreen() bool {
+// FullScreen returns whether this windows is currently fullscreen.
+func (w *GlfwWindow) FullScreen() bool {
 
 	return w.fullscreen
 }
 
-// SetFullscreen sets this window as fullscreen on the primary monitor
+// SetFullScreen sets this window as fullscreen on the primary monitor
 // TODO allow for fullscreen with resolutions different than the monitor's
-func (w *GlfwWindow) SetFullscreen(full bool) {
+func (w *GlfwWindow) SetFullScreen(full bool) {
 
 	// If already in the desired state, nothing to do
 	if w.fullscreen == full {
@@ -389,6 +396,9 @@ func (w *GlfwWindow) SetFullscreen(full bool) {
 	}
 	// Set window fullscreen on the primary monitor
 	if full {
+		// Save current position and size of the window
+		w.lastX, w.lastY = w.GetPos()
+		w.lastWidth, w.lastHeight = w.GetSize()
 		// Get size of primary monitor
 		mon := glfw.GetPrimaryMonitor()
 		vmode := mon.GetVideoMode()
@@ -397,9 +407,6 @@ func (w *GlfwWindow) SetFullscreen(full bool) {
 		// Set as fullscreen on the primary monitor
 		w.SetMonitor(mon, 0, 0, width, height, vmode.RefreshRate)
 		w.fullscreen = true
-		// Save current position and size of the window
-		w.lastX, w.lastY = w.GetPos()
-		w.lastWidth, w.lastHeight = w.GetSize()
 	} else {
 		// Restore window to previous position and size
 		w.SetMonitor(nil, w.lastX, w.lastY, w.lastWidth, w.lastHeight, glfw.DontCare)

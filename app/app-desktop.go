@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build !wasm
 // +build !wasm
 
 package app
@@ -16,13 +17,6 @@ import (
 	"github.com/g3n/engine/window"
 )
 
-// Desktop application defaults
-const (
-	title  = "G3N Application"
-	width  = 800
-	height = 600
-)
-
 // Application
 type Application struct {
 	window.IWindow                    // Embedded GlfwWindow
@@ -35,7 +29,7 @@ type Application struct {
 }
 
 // App returns the Application singleton, creating it the first time.
-func App() *Application {
+func App(width, height int, title string) *Application {
 
 	// Return singleton if already created
 	if a != nil {

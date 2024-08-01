@@ -62,6 +62,7 @@ func NewPerspective(aspect, near, far, fov float32, axis Axis) *Camera {
 
 	c := new(Camera)
 	c.Node.Init(c)
+	c.SetDirection(0, 0, -1)
 	c.aspect = aspect
 	c.near = near
 	c.far = far
@@ -78,6 +79,7 @@ func NewOrthographic(aspect, near, far, size float32, axis Axis) *Camera {
 
 	c := new(Camera)
 	c.Node.Init(c)
+	c.SetDirection(0, 0, -1)
 	c.aspect = aspect
 	c.near = near
 	c.far = far

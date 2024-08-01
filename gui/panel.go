@@ -592,7 +592,7 @@ func (p *Panel) Intersects(other *Panel) bool {
 }
 
 // SetEnabled sets the panel enabled state
-// A disabled panel do not process key or mouse events.
+// A disabled panel does not process events.
 func (p *Panel) SetEnabled(state bool) {
 
 	p.enabled = state
