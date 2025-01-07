@@ -207,6 +207,7 @@ type GlfwWindow struct {
 	cursorEv CursorEvent
 	scrollEv ScrollEvent
 	focusEv  FocusEvent
+	lockEv   LockEvent
 
 	mods ModifierKey // Current modifier keys
 
@@ -499,6 +500,13 @@ func (w *GlfwWindow) SetCursor(cursor Cursor) {
 		panic("Invalid cursor")
 	}
 	w.Window.SetCursor(cur)
+}
+
+// SetCursorMode sets the window's cursor mode.
+func (w *GlfwWindow) SetCursorMode(mode CursorMode) {
+	w.Window.SetInputMode(glfw.CursorMode, int(mode))
+	w.lockEv.Locked = mode == CursorDisabled
+	w.Dispatch(OnLockChange, &w.lockEv)
 }
 
 // CreateCursor creates a new custom cursor and returns an int handle.
