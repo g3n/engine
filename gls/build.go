@@ -11,6 +11,9 @@ package gls
 // #cgo freebsd CFLAGS:  -DGL_GLEXT_PROTOTYPES
 // #cgo freebsd LDFLAGS:
 //
+// #cgo openbsd CFLAGS:  -DGL_GLEXT_PROTOTYPES -I/usr/X11R6/include
+// #cgo openbsd LDFLAGS: -L/usr/X11R6/lib -lGL
+//
 // #cgo linux   CFLAGS:  -DGL_GLEXT_PROTOTYPES
 // #cgo linux   LDFLAGS: -ldl
 //

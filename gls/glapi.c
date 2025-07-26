@@ -92,7 +92,7 @@ static PFNGLXGETPROCADDRESSPROC glx_get_proc_address;
 // open_libgl opens the OpenGL shared object for Linux/Freebsd
 static int open_libgl(void) {
 
-	libgl = dlopen("libGL.so.1", RTLD_LAZY | RTLD_GLOBAL);
+	libgl = dlopen("libGL.so", RTLD_LAZY | RTLD_GLOBAL);
 	if (libgl == NULL) {
 		return -1;
 	}

@@ -1,5 +1,5 @@
-github.com/go-gl/glfw/v3.3/glfw v0.0.0-20210410170116-ea3d685f79fb h1:T6gaWBvRzJjuOrdCtg8fXXjKai2xSDqWTcKFUPuw8Tw=
-github.com/go-gl/glfw/v3.3/glfw v0.0.0-20210410170116-ea3d685f79fb/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
+github.com/go-gl/glfw/v3.3/glfw v0.0.0-20250301202403-da16c1255728 h1:RkGhqHxEVAvPM0/R+8g7XRwQnHatO0KAuVcwHo8q9W8=
+github.com/go-gl/glfw/v3.3/glfw v0.0.0-20250301202403-da16c1255728/go.mod h1:SyRD8YfuKk+ZXlDqYiqe1qMSqjNgtHzBTG810KUagMc=
 github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 h1:DACJavvAHhabrF08vX0COfcOBJRhZ8lUbR+ZWIs0Y5g=
 github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0/go.mod h1:E/TSTwGwJL78qG/PmXZO1EjYhfJinVAhrmmHX6Z8B9k=
 golang.org/x/image v0.0.0-20210607152325-775e3b0c77b9 h1:D0iM1dTCbD5Dg1CbuvLC/v/agLc79efSj/L35Q3Vqhs=
