@@ -99,7 +99,7 @@ func (b *Box2) Center(optionalTarget *Vector2) *Vector2 {
 	return result.AddVectors(&b.min, &b.max).MultiplyScalar(0.5)
 }
 
-// Size calculates the size of this bounding box: the vector  from
+// Size calculates the size of this bounding box: the vector from
 // its minimum point to its maximum point.
 // Store pointer to the calculated size into optionalTarget, if not nil,
 // and also returns it.
@@ -111,7 +111,7 @@ func (b *Box2) Size(optionalTarget *Vector2) *Vector2 {
 	} else {
 		result = optionalTarget
 	}
-	return result.SubVectors(&b.min, &b.max)
+	return result.SubVectors(&b.max, &b.min)
 }
 
 // ExpandByPoint may expand this bounding box to include the specified point.
