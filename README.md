@@ -127,7 +127,7 @@ import (
 func main() {
 
 	// Create application and scene
-	a := app.App(800, 600, "Hello World")
+	a := app.App()
 	scene := core.NewNode()
 
 	// Set the scene to be managed by the gui manager
