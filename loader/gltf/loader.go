@@ -731,8 +731,10 @@ func (g *GLTF) LoadMaterial(matIdx int) (material.IMaterial, error) {
 		}
 	}
 
-	// Cache material
-	g.Materials[matIdx].cache = imat
+	if imat != nil {
+		// Cache material
+		g.Materials[matIdx].cache = imat
+	}
 
 	return imat, err
 }
