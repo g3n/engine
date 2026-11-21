@@ -726,6 +726,9 @@ func (g *GLTF) LoadMaterial(matIdx int) (material.IMaterial, error) {
 	} else {
 		// Material is normally PBR
 		imat, err = g.loadMaterialPBR(&matData)
+		if err != nil {
+			log.Debug("material is not pbr: %v", err)
+		}
 	}
 
 	// Cache material
