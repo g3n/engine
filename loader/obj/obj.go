@@ -321,26 +321,43 @@ func (dec *Decoder) NewGeometry(obj *Object) (*geometry.Geometry, error) {
 	uvs := math32.NewArrayF32(0, 0)
 	indices := math32.NewArrayU32(0, 0)
 
-	// copy all vertex info from the decoded Object, face and index to the geometry
-	copyVertex := func(face *Face, idx int) {
+	// copy all vertex info from the decoded Object, face and index to the geometry.
+	// Face indices come from the (potentially untrusted) OBJ file, so they are
+	// validated against the decoded arrays to avoid an out-of-range panic. The
+	// bounds are expressed using the element count (len/stride) rather than
+	// stride*index so the check cannot itself overflow on 32-bit platforms.
+	copyVertex := func(face *Face, idx int) error {
 		var vec3 math32.Vector3
 		var vec2 math32.Vector2
 
 		pos := positions.Size() / 3
 		// Copy vertex position and append to geometry
-		dec.Vertices.GetVector3(3*face.Vertices[idx], &vec3)
+		vi := face.Vertices[idx]
+		if vi < 0 || vi >= len(dec.Vertices)/3 {
+			return fmt.Errorf("obj: face vertex index %d out of range (have %d vertices)", vi, len(dec.Vertices)/3)
+		}
+		dec.Vertices.GetVector3(3*vi, &vec3)
 		positions.AppendVector3(&vec3)
 		// Copy vertex normal and append to geometry
 		if face.Normals[idx] != invINDEX {
-			dec.Normals.GetVector3(3*face.Normals[idx], &vec3)
+			ni := face.Normals[idx]
+			if ni < 0 || ni >= len(dec.Normals)/3 {
+				return fmt.Errorf("obj: face normal index %d out of range (have %d normals)", ni, len(dec.Normals)/3)
+			}
+			dec.Normals.GetVector3(3*ni, &vec3)
 			normals.AppendVector3(&vec3)
 		}
 		// Copy vertex uv and append to geometry
 		if face.Uvs[idx] != invINDEX {
-			dec.Uvs.GetVector2(2*face.Uvs[idx], &vec2)
+			ui := face.Uvs[idx]
+			if ui < 0 || ui >= len(dec.Uvs)/2 {
+				return fmt.Errorf("obj: face uv index %d out of range (have %d uvs)", ui, len(dec.Uvs)/2)
+			}
+			dec.Uvs.GetVector2(2*ui, &vec2)
 			uvs.AppendVector2(&vec2)
 		}
 		indices.Append(uint32(pos))
+		return nil
 	}
 
 	var group *geometry.Group
@@ -355,9 +372,15 @@ func (dec *Decoder) NewGeometry(obj *Object) (*geometry.Geometry, error) {
 		}
 		// Copy face vertices to geometry
 		for idx := 1; idx < len(face.Vertices)-1; idx++ {
-			copyVertex(&face, 0)
-			copyVertex(&face, idx)
-			copyVertex(&face, idx+1)
+			if err := copyVertex(&face, 0); err != nil {
+				return nil, err
+			}
+			if err := copyVertex(&face, idx); err != nil {
+				return nil, err
+			}
+			if err := copyVertex(&face, idx+1); err != nil {
+				return nil, err
+			}
 			group.Count += 3
 		}
 	}
