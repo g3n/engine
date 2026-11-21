@@ -345,7 +345,22 @@ func (rc *Raycaster) RaycastMesh(m *graphic.Mesh, intersects *[]Intersect) {
 	i := 0
 	geom.ReadFaces(func(vA, vB, vC math32.Vector3) bool {
 		// Checks intersection of the ray with this face
-		mat := m.GetMaterial(i).GetMaterial()
+
+		var imat material.IMaterial
+		for _, v := range m.Materials() {
+			if imat == nil {
+				continue
+			}
+
+			// TODO: check if material is transparent to
+			// see if we select it or not?
+			imat = v.IMaterial()
+		}
+
+		if imat == nil {
+			return false
+		}
+		mat := imat.GetMaterial()
 		var point math32.Vector3
 		intersect := checkIntersection(mat, &vA, &vB, &vC, &point)
 		if intersect != nil {
